@@ -49,7 +49,7 @@ Keywords: "${keywords || ''}"
 Description: "${description || ''}"`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: gemini-1.5-flash
       contents: prompt,
       config: {
         systemInstruction,
