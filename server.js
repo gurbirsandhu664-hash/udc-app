@@ -1,5 +1,3 @@
-require('dotenv').config();
-const express = require('express');
 const cors = require('cors');
 const Groq = require('groq-sdk');
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
