@@ -3,8 +3,9 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-const MODEL = (process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim();
+const PORT = process.env.PORT || 3000;
+const GEMINI_MODEL = (process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim();
+const GROQ_MODEL = (process.env.GROQ_MODEL || 'openai/gpt-oss-120b').trim();
 
 app.use(cors());
 app.use(express.json({limit:'1mb'}));
@@ -31,148 +32,122 @@ Do not add auxiliaries merely because they are possible.
 If the title is too ambiguous for a defensible number, return MORE_INFO_NEEDED.
 For literature distinguish 81 language/linguistics from 82 literature.
 For history/geography identify the actual geographic or historical subject.
-Return concise cataloguer-style reasoning, not hidden chain-of-thought.`;
+Return concise cataloguer-style reasoning, not hidden chain-of-thought.
+Return ONLY valid JSON matching the requested fields.`;
 
-function normalize(r){
-return{
-status:r?.status||'SUCCESS',
-finalUdc:r?.finalUdc||'',
-mainClass:r?.mainClass||'',
-mainSubject:r?.mainSubject||'',
-subSubject:r?.subSubject||'',
-auxiliaries:Array.isArray(r?.auxiliaries)?r.auxiliaries:[],
-notation:Array.isArray(r?.notation)?r.notation:[],
-explanation:r?.explanation||'',
-confidence:r?.confidence||'Low',
-infoNeeded:r?.infoNeeded||'',
-alternatives:Array.isArray(r?.alternatives)?r.alternatives:[],
-verificationNote:r?.verificationNote||'Verify the final notation against the authoritative UDC schedules before cataloguing.'
-};}
+function normalizeResult(r){
+  return {
+    status:r?.status||'SUCCESS', finalUdc:r?.finalUdc||'', mainClass:r?.mainClass||'',
+    mainSubject:r?.mainSubject||'', subSubject:r?.subSubject||'',
+    auxiliaries:Array.isArray(r?.auxiliaries)?r.auxiliaries:[],
+    notation:Array.isArray(r?.notation)?r.notation:[], explanation:r?.explanation||'',
+    confidence:r?.confidence||'Low', infoNeeded:r?.infoNeeded||'',
+    alternatives:Array.isArray(r?.alternatives)?r.alternatives:[],
+    verificationNote:r?.verificationNote||'Verify the final notation against the authoritative UDC schedules before cataloguing.'
+  };
+}
 
+function schemaInstruction(){
+  return `Return JSON object with exactly these logical fields:
+status: "SUCCESS" or "MORE_INFO_NEEDED";
+finalUdc: string;
+mainClass: string;
+mainSubject: string;
+subSubject: string;
+auxiliaries: array of objects {"notation":string,"purpose":string};
+notation: array of objects {"symbol":string,"meaning":string};
+explanation: string;
+confidence: "High" or "Medium" or "Low";
+infoNeeded: string;
+alternatives: array of objects {"udc":string,"whenToUse":string};
+verificationNote: string.`;
+}
 
-async function classifyWithGroq(prompt) {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error('GROQ_API_KEY is not configured.');
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60000);
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.05,
-        response_format: { type: 'json_object' }
-      }),
-      signal: controller.signal
-    });
-    const raw = await response.text();
-    if (!response.ok) {
-      let message = raw;
-      try { const j = JSON.parse(raw); message = j?.error?.message || raw; } catch (_) {}
-      throw new Error(`Groq API error (${response.status}): ${message}`);
+async function fetchJson(url, options, label){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),60000);
+  try{
+    const response=await fetch(url,{...options,signal:controller.signal});
+    const raw=await response.text();
+    let data={};
+    try{data=raw?JSON.parse(raw):{};}catch(_){data={raw};}
+    if(!response.ok){
+      const msg=data?.error?.message || data?.error?.status || data?.message || raw || `HTTP ${response.status}`;
+      throw new Error(`${label} API error (${response.status}): ${msg}`);
     }
-    const data = JSON.parse(raw);
-    const text = data?.choices?.[0]?.message?.content || '';
-    if (!text) throw new Error('Groq returned an empty response.');
-    return JSON.parse(text);
-  } finally {
-    clearTimeout(timer);
-  }
+    return data;
+  }finally{clearTimeout(timer);}
+}
+
+async function classifyWithGemini(prompt){
+  const key=process.env.GEMINI_API_KEY?.trim();
+  if(!key) throw new Error('GEMINI_API_KEY is not configured.');
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(key)}`;
+  const data=await fetchJson(url,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      systemInstruction:{parts:[{text:SYSTEM}]},
+      contents:[{role:'user',parts:[{text:prompt+'\n\n'+schemaInstruction()}]}],
+      generationConfig:{temperature:0.05,responseMimeType:'application/json'}
+    })
+  },'Gemini');
+  const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim();
+  if(!text) throw new Error('Gemini returned an empty response.');
+  return JSON.parse(text);
+}
+
+async function classifyWithGroq(prompt){
+  const key=process.env.GROQ_API_KEY?.trim();
+  if(!key) throw new Error('GROQ_API_KEY is not configured.');
+  const data=await fetchJson('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({model:GROQ_MODEL,messages:[
+      {role:'system',content:SYSTEM+'\n\n'+schemaInstruction()},
+      {role:'user',content:prompt}
+    ],temperature:0.05,response_format:{type:'json_object'}})
+  },'Groq');
+  const text=data?.choices?.[0]?.message?.content?.trim();
+  if(!text) throw new Error('Groq returned an empty response.');
+  return JSON.parse(text);
 }
 
 app.get('/api/health',(req,res)=>res.json({
-ok:true,
-geminiConfigured:Boolean(process.env.GEMINI_API_KEY),
-model:MODEL,
-runtime:process.version
+  ok:true,
+  geminiConfigured:Boolean(process.env.GEMINI_API_KEY?.trim()),
+  groqConfigured:Boolean(process.env.GROQ_API_KEY?.trim()),
+  geminiModel:GEMINI_MODEL,
+  groqModel:GROQ_MODEL,
+  runtime:process.version
 }));
 
 app.get('/api/classes',(req,res)=>res.json(MAIN_CLASSES));
 
-app.post('/api/classify', async (req,res) => {
-  try {
-    const { title, author='', keywords='', description='' } = req.body || {};
-    if (!title || !String(title).trim()) {
-      return res.status(400).json({ error: 'Book title is required.' });
-    }
-
-    const prompt = `Classify this bibliographic item using UDC ONLY.
+app.post('/api/classify',async(req,res)=>{
+  const {title,author='',keywords='',description=''}=req.body||{};
+  if(!title||!String(title).trim()) return res.status(400).json({error:'Book title is required.'});
+  const prompt=`Classify this bibliographic item using UDC ONLY.
 Title: ${JSON.stringify(String(title).trim())}
 Author: ${JSON.stringify(author)}
 Keywords: ${JSON.stringify(keywords)}
 Description: ${JSON.stringify(description)}
 
 Top-level UDC classes for orientation only:
-${Object.entries(MAIN_CLASSES).map(([k,v]) => `${k} — ${v}`).join('\n')}
+${Object.entries(MAIN_CLASSES).map(([k,v])=>`${k} — ${v}`).join('\n')}
 
 Return a defensible classification. If the supplied information is insufficient for a specific number, use MORE_INFO_NEEDED rather than guessing.`;
-
-    // Primary: Gemini
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        const client = getAI();
-        const response = await client.models.generateContent({
-          model: MODEL,
-          contents: prompt,
-          config: {
-            systemInstruction: SYSTEM,
-            temperature: 0.05,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                status: { type: Type.STRING, enum: ['SUCCESS','MORE_INFO_NEEDED'] },
-                finalUdc: { type: Type.STRING },
-                mainClass: { type: Type.STRING },
-                mainSubject: { type: Type.STRING },
-                subSubject: { type: Type.STRING },
-                auxiliaries: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { notation:{type:Type.STRING}, purpose:{type:Type.STRING} }, required:['notation','purpose'] } },
-                notation: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { symbol:{type:Type.STRING}, meaning:{type:Type.STRING} }, required:['symbol','meaning'] } },
-                explanation: { type: Type.STRING },
-                confidence: { type: Type.STRING, enum:['High','Medium','Low'] },
-                infoNeeded: { type: Type.STRING },
-                alternatives: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { udc:{type:Type.STRING}, whenToUse:{type:Type.STRING} }, required:['udc','whenToUse'] } },
-                verificationNote: { type: Type.STRING }
-              },
-              required: ['status','finalUdc','mainClass','mainSubject','explanation','confidence','verificationNote']
-            }
-          }
-        });
-        const text = (response.text || '').trim();
-        if (!text) throw new Error('Gemini returned an empty response.');
-        return res.json(normalizeResult(JSON.parse(text)));
-      } catch (e) {
-        console.error('Gemini failed; trying Groq:', e.message || e);
-      }
-    }
-
-    // Backup: Groq
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const result = normalizeResult(await classifyWithGroq(prompt));
-        result.verificationNote = `${result.verificationNote} Groq was used as the backup provider.`;
-        return res.json(result);
-      } catch (e) {
-        console.error('Groq fallback failed:', e.message || e);
-      }
-    }
-
-    return res.status(503).json({
-      error: 'Both AI providers are unavailable. Check the API keys, model names, and provider quotas.'
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message || 'Classification failed.' });
-  }
+  const errors=[];
+  if(process.env.GEMINI_API_KEY?.trim()){
+    try{return res.json(normalizeResult(await classifyWithGemini(prompt)));}
+    catch(e){console.error('Gemini failed:',e.message);errors.push(`Gemini: ${e.message}`);}
+  } else errors.push('Gemini: API key not configured');
+  if(process.env.GROQ_API_KEY?.trim()){
+    try{
+      const result=normalizeResult(await classifyWithGroq(prompt));
+      result.verificationNote=`${result.verificationNote} Groq was used as the backup provider.`;
+      return res.json(result);
+    }catch(e){console.error('Groq failed:',e.message);errors.push(`Groq: ${e.message}`);}
+  } else errors.push('Groq: API key not configured');
+  res.status(503).json({error:'Both AI providers are unavailable.',details:errors});
 });
 
 app.get('/',(req,res)=>res.type('html').send(`<!doctype html>
