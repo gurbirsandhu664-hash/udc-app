@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = (process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim();
 
 app.use(cors());
 app.use(express.json({limit:'1mb'}));
@@ -49,6 +49,46 @@ alternatives:Array.isArray(r?.alternatives)?r.alternatives:[],
 verificationNote:r?.verificationNote||'Verify the final notation against the authoritative UDC schedules before cataloguing.'
 };}
 
+
+async function classifyWithGroq(prompt) {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) throw new Error('GROQ_API_KEY is not configured.');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.05,
+        response_format: { type: 'json_object' }
+      }),
+      signal: controller.signal
+    });
+    const raw = await response.text();
+    if (!response.ok) {
+      let message = raw;
+      try { const j = JSON.parse(raw); message = j?.error?.message || raw; } catch (_) {}
+      throw new Error(`Groq API error (${response.status}): ${message}`);
+    }
+    const data = JSON.parse(raw);
+    const text = data?.choices?.[0]?.message?.content || '';
+    if (!text) throw new Error('Groq returned an empty response.');
+    return JSON.parse(text);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 app.get('/api/health',(req,res)=>res.json({
 ok:true,
 geminiConfigured:Boolean(process.env.GEMINI_API_KEY),
@@ -58,87 +98,82 @@ runtime:process.version
 
 app.get('/api/classes',(req,res)=>res.json(MAIN_CLASSES));
 
-app.post('/api/classify',async(req,res)=>{
-try{
-const {title,author='',keywords='',description=''}=req.body||{};
-if(!title||!String(title).trim())return res.status(400).json({error:'Book title is required.'});
-const key=process.env.GEMINI_API_KEY;
-if(!key)return res.status(503).json({error:'GEMINI_API_KEY is missing in Render Environment.'});
+app.post('/api/classify', async (req,res) => {
+  try {
+    const { title, author='', keywords='', description='' } = req.body || {};
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: 'Book title is required.' });
+    }
 
-const prompt=`${SYSTEM}
-
-Classify this bibliographic item using UDC ONLY.
-
+    const prompt = `Classify this bibliographic item using UDC ONLY.
 Title: ${JSON.stringify(String(title).trim())}
-Author: ${JSON.stringify(String(author))}
-Keywords: ${JSON.stringify(String(keywords))}
-Description: ${JSON.stringify(String(description))}
+Author: ${JSON.stringify(author)}
+Keywords: ${JSON.stringify(keywords)}
+Description: ${JSON.stringify(description)}
 
-Top-level classes for orientation:
-${Object.entries(MAIN_CLASSES).map(([k,v])=>`${k} — ${v}`).join('\n')}
+Top-level UDC classes for orientation only:
+${Object.entries(MAIN_CLASSES).map(([k,v]) => `${k} — ${v}`).join('\n')}
 
-Return ONLY valid JSON:
-{
-"status":"SUCCESS",
-"finalUdc":"",
-"mainClass":"",
-"mainSubject":"",
-"subSubject":"",
-"auxiliaries":[{"notation":"","purpose":""}],
-"notation":[{"symbol":"","meaning":""}],
-"explanation":"",
-"confidence":"Low",
-"infoNeeded":"",
-"alternatives":[{"udc":"","whenToUse":""}],
-"verificationNote":""
-}
+Return a defensible classification. If the supplied information is insufficient for a specific number, use MORE_INFO_NEEDED rather than guessing.`;
 
-If a specific number cannot be defended, use MORE_INFO_NEEDED rather than guessing.`;
+    // Primary: Gemini
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const client = getAI();
+        const response = await client.models.generateContent({
+          model: MODEL,
+          contents: prompt,
+          config: {
+            systemInstruction: SYSTEM,
+            temperature: 0.05,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                status: { type: Type.STRING, enum: ['SUCCESS','MORE_INFO_NEEDED'] },
+                finalUdc: { type: Type.STRING },
+                mainClass: { type: Type.STRING },
+                mainSubject: { type: Type.STRING },
+                subSubject: { type: Type.STRING },
+                auxiliaries: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { notation:{type:Type.STRING}, purpose:{type:Type.STRING} }, required:['notation','purpose'] } },
+                notation: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { symbol:{type:Type.STRING}, meaning:{type:Type.STRING} }, required:['symbol','meaning'] } },
+                explanation: { type: Type.STRING },
+                confidence: { type: Type.STRING, enum:['High','Medium','Low'] },
+                infoNeeded: { type: Type.STRING },
+                alternatives: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { udc:{type:Type.STRING}, whenToUse:{type:Type.STRING} }, required:['udc','whenToUse'] } },
+                verificationNote: { type: Type.STRING }
+              },
+              required: ['status','finalUdc','mainClass','mainSubject','explanation','confidence','verificationNote']
+            }
+          }
+        });
+        const text = (response.text || '').trim();
+        if (!text) throw new Error('Gemini returned an empty response.');
+        return res.json(normalizeResult(JSON.parse(text)));
+      } catch (e) {
+        console.error('Gemini failed; trying Groq:', e.message || e);
+      }
+    }
 
-const controller=new AbortController();
-const timer=setTimeout(()=>controller.abort(),60000);
-let response;
-try{
-response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`,{
-method:'POST',
-headers:{'Content-Type':'application/json','x-goog-api-key':key},
-body:JSON.stringify({
-contents:[{parts:[{text:prompt}]}],
-generationConfig:{temperature:0.05,responseMimeType:'application/json'}
-}),
-signal:controller.signal
+    // Backup: Groq
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const result = normalizeResult(await classifyWithGroq(prompt));
+        result.verificationNote = `${result.verificationNote} Groq was used as the backup provider.`;
+        return res.json(result);
+      } catch (e) {
+        console.error('Groq fallback failed:', e.message || e);
+      }
+    }
+
+    return res.status(503).json({
+      error: 'Both AI providers are unavailable. Check the API keys, model names, and provider quotas.'
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message || 'Classification failed.' });
+  }
 });
-}finally{clearTimeout(timer);}
-
-const raw=await response.text();
-console.log('Gemini HTTP status:',response.status);
-console.log('Gemini response:',raw.slice(0,5000));
-
-if(!response.ok){
-let message=raw;
-try{const j=JSON.parse(raw);message=j?.error?.message||j?.error?.status||raw;}catch(_){}
-return res.status(response.status).json({error:`Gemini API error: ${message}`});
-}
-
-let data;
-try{data=JSON.parse(raw);}catch(_){return res.status(502).json({error:'Gemini returned an invalid API response.'});}
-
-const text=(data?.candidates?.[0]?.content?.parts||[]).map(p=>p?.text||'').join('').trim();
-if(!text)return res.status(502).json({error:'Gemini returned no classification text.'});
-
-let result;
-try{result=JSON.parse(text);}
-catch(_){
-const cleaned=text.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/\s*```$/i,'').trim();
-try{result=JSON.parse(cleaned);}
-catch(err){return res.status(502).json({error:'Gemini returned text that was not valid classification JSON.',raw:text.slice(0,3000)});}
-}
-return res.json(normalize(result));
-}catch(err){
-console.error('CLASSIFY ERROR:',err);
-if(err?.name==='AbortError')return res.status(504).json({error:'Gemini request timed out after 60 seconds.'});
-return res.status(500).json({error:err?.message||'Classification failed.'});
-}});
 
 app.get('/',(req,res)=>res.type('html').send(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f">
