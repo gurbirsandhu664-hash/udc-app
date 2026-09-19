@@ -24,6 +24,26 @@ const MAIN_CLASSES={
 '9':'Geography. Biography. History'
 };
 
+
+const ANSWER_KEY = UDC_RULES.answerKey || {};
+function exactAnswerKey(title){
+  const key=String(title||'').trim().toLowerCase().replace(/\s+/g,' ');
+  return ANSWER_KEY[key] || null;
+}
+function answerKeyResult(title, entry){
+  return normalizeResult({
+    status:'SUCCESS', finalUdc:entry.finalUdc, mainClass:entry.finalUdc.match(/^\d+/)?.[0]||'',
+    mainSubject:entry.mainSubject, subSubject:'',
+    auxiliaries:[],
+    notation:[{symbol:entry.finalUdc,meaning:entry.reason}],
+    explanation:entry.reason,
+    confidence:'High', infoNeeded:'', alternatives:[],
+    verificationNote:'Exact match from the tool answer key; verify against the authorized UDC Abridged schedule for examination/cataloguing use.',
+    operatorDecision:[],
+    ruleChecks:[{rule:'Exact title answer key',result:'PASS',detail:'Deterministic answer-key match used before AI inference.'}]
+  });
+}
+
 const SYSTEM=`You are a strict Universal Decimal Classification (UDC) cataloguing assistant for an UDC Abridged Practice Tool.
 Use UDC only; never DDC. The connected reference dataset is the source of truth for exact numbers.
 Never invent, autocomplete, or hallucinate a class or auxiliary. If an exact notation cannot be verified from the supplied dataset, return MORE_INFO_NEEDED and explain what must be verified.
@@ -157,6 +177,8 @@ app.post('/api/parse',async(req,res)=>{
 app.post('/api/classify',async(req,res)=>{
   const {title,author='',keywords='',description=''}=req.body||{};
   if(!title||!String(title).trim()) return res.status(400).json({error:'Book title is required.'});
+  const keyMatch=exactAnswerKey(title);
+  if(keyMatch) return res.json(answerKeyResult(String(title).trim(),keyMatch));
   const prompt=`Classify this bibliographic item using UDC ONLY.
 Title: ${JSON.stringify(String(title).trim())}
 Author: ${JSON.stringify(author)}

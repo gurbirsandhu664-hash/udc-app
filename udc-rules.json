@@ -34,7 +34,11 @@
     "-04": "Relations, processes and operations",
     "-05": "Persons and personal characteristics"
   },
-  "specialAuxiliaryIndicators": [".0", "-", "'"],
+  "specialAuxiliaryIndicators": [
+    ".0",
+    "-",
+    "'"
+  ],
   "cancelled": {
     "table1i": "Point of view is cancelled in current UDC; former Table 1i numbers must not be generated. Relevant concepts were relocated to -02, -05 and colon combinations."
   },
@@ -53,5 +57,201 @@
     "For literature, distinguish language/linguistics from literature and literary form from physical/document form.",
     "For history/geography, distinguish subject, place and time; add place/time only when supported by the title or description.",
     "Preserve exact punctuation and decimal notation in the final UDC expression."
+  ],
+  "answerKey": {
+    "english drama": {
+      "finalUdc": "821.111-2",
+      "mainSubject": "English drama",
+      "reason": "821.111 English literature + -2 drama; do not add a document-form auxiliary merely because the title is a literary work."
+    },
+    "english poetry": {
+      "finalUdc": "821.111-1",
+      "mainSubject": "English poetry",
+      "reason": "821.111 English literature + -1 poetry."
+    },
+    "english fiction": {
+      "finalUdc": "821.111-3",
+      "mainSubject": "English fiction",
+      "reason": "821.111 English literature + -3 fiction."
+    },
+    "dictionary of language and literature": {
+      "finalUdc": "8(038)",
+      "mainSubject": "Linguistics and literature",
+      "reason": "8 is the broad class for linguistics/literature; (038) is the dictionary form auxiliary. This is a broad practice classification; verify if the work is restricted to language or literature."
+    },
+    "handbook of science and technology": {
+      "finalUdc": "5/6(035)",
+      "mainSubject": "Science and technology",
+      "reason": "5 and 6 are consecutive main classes, so / is used for the consecutive extension; (035) is handbook form."
+    },
+    "science and arts": {
+      "finalUdc": "[5+7]",
+      "mainSubject": "Science and arts",
+      "reason": "5 and 7 are non-consecutive coordinated subjects; + is the coordination sign. Square brackets preserve the grouped compound where needed."
+    },
+    "history of india": {
+      "finalUdc": "94(540)",
+      "mainSubject": "History of India",
+      "reason": "94 history + (540) India place auxiliary."
+    },
+    "geography of india": {
+      "finalUdc": "91(540)",
+      "mainSubject": "Geography of India",
+      "reason": "91 geography + (540) India place auxiliary."
+    },
+    "indian constitution": {
+      "finalUdc": "342(540)",
+      "mainSubject": "Constitutional law of India",
+      "reason": "342 constitutional law + (540) India place auxiliary."
+    },
+    "indian philosophy": {
+      "finalUdc": "1(540)",
+      "mainSubject": "Indian philosophy",
+      "reason": "1 philosophy + (540) India place auxiliary."
+    },
+    "indian art": {
+      "finalUdc": "7(540)",
+      "mainSubject": "Art in India",
+      "reason": "7 arts + (540) India place auxiliary."
+    },
+    "punjabi literature": {
+      "finalUdc": "821.214.22",
+      "mainSubject": "Punjabi literature",
+      "reason": "Literature in Punjabi; language-specific literature notation."
+    },
+    "punjabi poetry": {
+      "finalUdc": "821.214.22-1",
+      "mainSubject": "Punjabi poetry",
+      "reason": "Punjabi literature + -1 poetry."
+    },
+    "punjabi drama": {
+      "finalUdc": "821.214.22-2",
+      "mainSubject": "Punjabi drama",
+      "reason": "Punjabi literature + -2 drama."
+    },
+    "computer science": {
+      "finalUdc": "004",
+      "mainSubject": "Computer science",
+      "reason": "004 computer science."
+    },
+    "computer programming": {
+      "finalUdc": "004.42",
+      "mainSubject": "Computer programming",
+      "reason": "004.42 programming."
+    },
+    "mathematics": {
+      "finalUdc": "51",
+      "mainSubject": "Mathematics",
+      "reason": "51 mathematics."
+    },
+    "physics": {
+      "finalUdc": "53",
+      "mainSubject": "Physics",
+      "reason": "53 physics."
+    },
+    "chemistry": {
+      "finalUdc": "54",
+      "mainSubject": "Chemistry",
+      "reason": "54 chemistry."
+    },
+    "biology": {
+      "finalUdc": "57",
+      "mainSubject": "Biology",
+      "reason": "57 biological sciences."
+    },
+    "medicine": {
+      "finalUdc": "61",
+      "mainSubject": "Medicine",
+      "reason": "61 medical sciences."
+    },
+    "engineering": {
+      "finalUdc": "62",
+      "mainSubject": "Engineering",
+      "reason": "62 engineering."
+    },
+    "agriculture": {
+      "finalUdc": "63",
+      "mainSubject": "Agriculture",
+      "reason": "63 agriculture."
+    },
+    "library science": {
+      "finalUdc": "02",
+      "mainSubject": "Library science",
+      "reason": "02 librarianship/library science."
+    },
+    "cataloguing": {
+      "finalUdc": "025.3",
+      "mainSubject": "Cataloguing",
+      "reason": "025.3 cataloguing."
+    },
+    "classification": {
+      "finalUdc": "025.4",
+      "mainSubject": "Classification",
+      "reason": "025.4 classification."
+    },
+    "journalism": {
+      "finalUdc": "070",
+      "mainSubject": "Journalism",
+      "reason": "070 journalism and press."
+    },
+    "philosophy": {
+      "finalUdc": "1",
+      "mainSubject": "Philosophy",
+      "reason": "1 philosophy."
+    },
+    "religion": {
+      "finalUdc": "2",
+      "mainSubject": "Religion",
+      "reason": "2 religion/theology."
+    },
+    "political science": {
+      "finalUdc": "32",
+      "mainSubject": "Political science",
+      "reason": "32 politics."
+    },
+    "economics": {
+      "finalUdc": "33",
+      "mainSubject": "Economics",
+      "reason": "33 economics."
+    },
+    "law": {
+      "finalUdc": "34",
+      "mainSubject": "Law",
+      "reason": "34 law."
+    },
+    "education": {
+      "finalUdc": "37",
+      "mainSubject": "Education",
+      "reason": "37 education."
+    },
+    "literature": {
+      "finalUdc": "82",
+      "mainSubject": "Literature",
+      "reason": "82 literature."
+    },
+    "linguistics": {
+      "finalUdc": "81",
+      "mainSubject": "Linguistics",
+      "reason": "81 linguistics."
+    },
+    "geography": {
+      "finalUdc": "91",
+      "mainSubject": "Geography",
+      "reason": "91 geography."
+    },
+    "history": {
+      "finalUdc": "94",
+      "mainSubject": "History",
+      "reason": "94 general history."
+    }
+  },
+  "answerKeyPolicy": [
+    "Exact answer-key matches must be returned deterministically before AI inference.",
+    "Do not label an answer VERIFIED unless it is actually present in the answer key or an authorized reference dataset.",
+    "For titles involving two subjects, choose + only for non-consecutive coordination; choose / only for a consecutive extension supported by the schedule.",
+    "Do not use + merely because a title contains the word and.",
+    "Do not add (0...) unless the title identifies a document form.",
+    "Dictionary uses (038); handbook/manual uses (035) in the supplied practice reference.",
+    "Never generate cancelled Table 1i point-of-view notation as current notation."
   ]
 }
