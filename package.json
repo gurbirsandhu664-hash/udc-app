@@ -1,9 +1,1 @@
-{
-  "name": "udc-ultimate-v12",
-  "version": "12.0.0",
-  "private": true,
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  }
-}
+{"name":"udc-ultimate-v13-final-corrected","version":"13.0.0","private":true,"main":"server.js","scripts":{"start":"node server.js"},"engines":{"node":">=18"}}

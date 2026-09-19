@@ -1,15 +1,7 @@
-# UDC Ultimate V12 — Key-Loaded Final
+# UDC Ultimate V15 — 2700 Semantic Corrected
 
-Actual answer-key entries: 2700.
+UDC-only practice classifier. The 2700-title key is loaded first for exact-title answers, with semantic fallback rules for titles outside the key.
 
-V12 loads `udc-2600-key.json` at server startup, refuses to report healthy when fewer than 2700 entries are loaded, checks exact normalized/punctuation-insensitive titles first, and exposes `/health` with the loaded count.
+Key corrections include Indian Constitution = 342(540), Indian Art = 7(540), Indian Literature = 821.21(540), and Dictionary of Language and Literature = 80(038).
 
-Critical exact rules:
-- English Drama -> 821.111-2
-- Hindi Language -> 811.214.21
-- Science and Technology -> 5/6
-- Science and Arts -> 5+7
-- Heart Disease -> 616.12
-- Library Classification: A Practice Manual -> 025.42
-
-This is a practice classifier, not a reproduction of the licensed complete UDC Master Reference File.
+The public UDC Summary contains around 2,600 selected classes from a scheme of more than 70,000 entries; this project is a practice classifier and does not reproduce the complete licensed UDC Master Reference File.
