@@ -130,8 +130,15 @@ const GEMINI_KEYS = getKeys('GEMINI_API_KEY');
 const GROQ_KEYS = getKeys('GROQ_API_KEY');
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GOOGLE_API_KEY = String(process.env.GOOGLE_API_KEY || '').trim();
+const GOOGLE_CX = String(process.env.GOOGLE_CX || '').trim();
 
 const UDC_SYSTEM = `You are a strict Universal Decimal Classification (UDC) cataloguing assistant. UDC ONLY; never DDC. Analyze the complete book title semantically, not isolated keywords. Prefer the most specific defensible UDC notation. Use auxiliaries only when the title supports them. Respect UDC notation symbols and their meaning: + coordination, / consecutive extension, : relation, [ ] grouping, = language auxiliary, (0...) form auxiliaries, (1/9...) place auxiliaries, and time auxiliaries in quotes. For literature, distinguish language, literature, and literary form such as drama/poetry/fiction. Do not invent a precise number when evidence is insufficient. If uncertain, return confidence Low and explain what must be verified in the licensed/current UDC schedule. Return ONLY valid JSON with keys: udc, mainSubject, subSubject, explanation, confidence, aux. No markdown.`;
+
+function isValidUdc(udc) {
+  const v = String(udc || '').trim();
+  return !!v && v !== '0' && v !== '—' && v !== '-' && /^\d/.test(v);
+}
 
 function extractJson(text) {
   const s = String(text || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
@@ -155,7 +162,7 @@ async function gemini(title) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(key)}`;
-        const body = { systemInstruction: { parts: [{ text: UDC_SYSTEM }] }, contents: [{ role: 'user', parts: [{ text: `Classify this book title: ${title}` }] }], generationConfig: { temperature: 0.05, responseMimeType: 'application/json', maxOutputTokens: 500 } };
+        const body = { systemInstruction: { parts: [{ text: UDC_SYSTEM + '\nUse Google Search grounding when it can help verify the title, subject, language, literary form, geography, or current UDC-related evidence. Never treat an arbitrary web page as an official UDC schedule; use web evidence only as supporting context.' }] }, contents: [{ role: 'user', parts: [{ text: `Classify this book title: ${title}` }] }], tools: [{ googleSearch: {} }], generationConfig: { temperature: 0.05, responseMimeType: 'application/json', maxOutputTokens: 500 } };
         const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const txt = await resp.text();
         if (!resp.ok) {
@@ -167,8 +174,13 @@ async function gemini(title) {
         const data = JSON.parse(txt);
         const out = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
         const j = extractJson(out);
-        if (!j.udc) throw new Error('Gemini returned no UDC number');
-        return baseResult(title, { udc: j.udc, mainSubject: j.mainSubject, subSubject: j.subSubject, explanation: j.explanation, aux: j.aux }, j.confidence || 'Medium', 'Gemini AI');
+        if (!isValidUdc(j.udc)) throw new Error('Gemini returned no defensible UDC number');
+        const gm = data?.candidates?.[0]?.groundingMetadata || data?.candidates?.[0]?.grounding_metadata || {};
+        const sources = Array.isArray(gm.groundingChunks) ? gm.groundingChunks.filter(x => x.web && x.web.uri).map(x => ({ title: x.web.title || 'Google result', uri: x.web.uri })) : [];
+        const r = baseResult(title, { udc: j.udc, mainSubject: j.mainSubject, subSubject: j.subSubject, explanation: j.explanation, aux: j.aux }, j.confidence || 'Medium', sources.length ? 'Gemini + Google Search' : 'Gemini AI');
+        r.sources = sources.slice(0, 8);
+        r.googleGrounded = sources.length > 0;
+        return r;
       } catch (e) { last = e; if (attempt === 0) await sleep(400); }
     }
   }
@@ -197,7 +209,7 @@ async function groq(title) {
         const data = JSON.parse(txt);
         const out = data?.choices?.[0]?.message?.content || '';
         const j = extractJson(out);
-        if (!j.udc) throw new Error('Groq returned no UDC number');
+        if (!isValidUdc(j.udc)) throw new Error('Groq returned no defensible UDC number');
         return baseResult(title, { udc: j.udc, mainSubject: j.mainSubject, subSubject: j.subSubject, explanation: j.explanation, aux: j.aux }, j.confidence || 'Medium', 'Groq AI');
       } catch (e) { last = e; if (attempt === 0) await sleep(400); }
     }
@@ -205,12 +217,44 @@ async function groq(title) {
   throw last || new Error('Groq unavailable');
 }
 
+async function googleSearch(title) {
+  if (!GOOGLE_API_KEY || !GOOGLE_CX) throw new Error('Google Custom Search not configured');
+  const q = encodeURIComponent(`UDC Universal Decimal Classification \"${title}\"`);
+  const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(GOOGLE_API_KEY)}&cx=${encodeURIComponent(GOOGLE_CX)}&q=${q}&num=8`;
+  const resp = await fetch(url);
+  const txt = await resp.text();
+  if (!resp.ok) throw new Error(`Google Search ${resp.status}`);
+  const data = JSON.parse(txt);
+  return (data.items || []).slice(0,8).map(x => ({ title: x.title || 'Google result', uri: x.link, snippet: x.snippet || '' }));
+}
+
+async function groqWithGoogle(title, googleSources) {
+  if (!GROQ_KEYS.length) throw new Error('Groq API key not configured');
+  const evidence = googleSources.map((x,i) => `[${i+1}] ${x.title}\n${x.snippet}\n${x.uri}`).join('\n\n');
+  const prompt = `Classify this book title using UDC ONLY. Google Search evidence is supporting context, not an official UDC schedule.\nTITLE: ${title}\nGOOGLE EVIDENCE:\n${evidence}`;
+  let last;
+  for (let i=0;i<GROQ_KEYS.length;i++) {
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${GROQ_KEYS[i]}`}, body:JSON.stringify({model:GROQ_MODEL,temperature:0.05,max_tokens:500,response_format:{type:'json_object'},messages:[{role:'system',content:UDC_SYSTEM},{role:'user',content:prompt}]}) });
+      const txt=await resp.text(); if(!resp.ok){last=new Error(`Groq ${resp.status}`);continue;}
+      const j=extractJson(JSON.parse(txt)?.choices?.[0]?.message?.content||'');
+      if(!isValidUdc(j.udc)) throw new Error('Groq returned no defensible UDC number');
+      const r=baseResult(title,{udc:j.udc,mainSubject:j.mainSubject,subSubject:j.subSubject,explanation:j.explanation,aux:j.aux},j.confidence||'Medium','Groq + Google Search');
+      r.sources=googleSources; r.googleGrounded=true; return r;
+    } catch(e){last=e;}
+  }
+  throw last || new Error('Groq Google fallback unavailable');
+}
+
 function safeFallback(title, errors) {
-  return baseResult(title, {
-    udc: '0', mainSubject: 'Unresolved title', subSubject: 'Verification required',
-    explanation: 'No local title-key match was found and the AI providers were unavailable. No specific UDC number was invented. ' + errors.join(' | '),
-    aux: []
-  }, 'Low', 'Verification required');
+  return {
+    title, bookTitle: title, udc: '—', finalUdcNumber: '—', proposedUdcNumber: '—',
+    baseClass: '—', mainClass: '—', subject: 'Verification required', mainSubject: 'Verification required',
+    subSubject: 'No verified classification available', confidence: 'Low',
+    explanation: 'No verified local-key or AI classification was available. The app will not invent a UDC number or display 0 as an answer.',
+    cataloguerExplanation: 'Verification required before assigning a UDC number.', alternatives: [], aux: [],
+    verifiedRule: false, source: 'Verification required', sources: [], googleGrounded: false
+  };
 }
 
 async function classify(title) {
@@ -225,17 +269,22 @@ async function classify(title) {
   // 2) Gemini first.
   try { return await gemini(raw); }
   catch (e) { errors.push(e.message); }
-  // 3) Groq fallback. Gemini quota errors never reach the browser.
+  // 3) If configured, use Google Custom Search evidence and let Groq classify from it.
+  try {
+    const gs = await googleSearch(raw);
+    if (gs.length) return await groqWithGoogle(raw, gs);
+  } catch (e) { errors.push(e.message); }
+  // 4) Plain Groq fallback. Gemini quota errors never reach the browser.
   try { return await groq(raw); }
   catch (e) { errors.push(e.message); }
-  // 4) Safe local fallback, never a fake specific classification.
+  // 5) Safe fallback: never fabricate a number and never show 0.
   return safeFallback(raw, errors);
 }
 
 app.get('/health', (req, res) => res.json({
-  ok: true, service: 'UDC Ultimate', version: 'V20-Gemini-Groq-Stable',
+  ok: true, service: 'UDC Ultimate', version: 'V21-Google-Gemini-Groq',
   localTitleRecords: localMap.size,
-  providers: { gemini: GEMINI_KEYS.length > 0, groq: GROQ_KEYS.length > 0 },
+  providers: { gemini: GEMINI_KEYS.length > 0, groq: GROQ_KEYS.length > 0, googleSearch: GOOGLE_API_KEY.length > 0 && GOOGLE_CX.length > 0 },
   models: { gemini: GEMINI_MODEL, groq: GROQ_MODEL }
 }));
 
@@ -254,4 +303,4 @@ app.post('/classify', async (req, res) => {
   catch (e) { res.status(200).json(safeFallback(String(req.body?.title || ''), [e.message])); }
 });
 
-app.listen(PORT, () => console.log(`UDC Ultimate V20 listening on ${PORT}`));
+app.listen(PORT, () => console.log(`UDC Ultimate V21 listening on ${PORT}`));

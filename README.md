@@ -1,33 +1,20 @@
-# UDC Ultimate V20 — Gemini + Groq Stable
+# UDC Ultimate V21 — Google + Gemini + Groq
 
-UDC-only classifier. It does not use DDC.
+UDC-only classifier. Local title keys are checked first. Unknown titles use Gemini with Google Search grounding, then optional Google Custom Search + Groq, then Groq.
 
-## Provider order
-1. Existing local UDC title key (`udc-2700-key.json` or `udc-2600-key.json`) — exact/fuzzy protected answer first.
-2. Gemini API — primary AI classification.
-3. Groq API — automatic fallback when Gemini is unavailable, including quota/rate-limit failures.
-4. Safe `Verification required` fallback if both providers fail.
+## Environment variables
+- `GEMINI_API_KEY` (and `_2` … `_10`)
+- `GROQ_API_KEY` (and `_2` … `_10`)
+- Optional Google Custom Search fallback: `GOOGLE_API_KEY` and `GOOGLE_CX`
+- Optional models: `GEMINI_MODEL`, `GROQ_MODEL`
 
-The browser never receives raw Gemini/Groq quota errors as the classification result.
+## Important behavior
+- Never displays `0` as a fabricated classification.
+- A provider quota/429 is handled server-side and does not expose the raw provider error to the user.
+- Gemini uses Google Search grounding when available.
+- Google Search evidence is shown inside the app when returned.
+- A specific UDC number is only displayed when a local key/provider returns a defensible number.
 
-## Render Environment Variables
-Required/recommended:
-- `GEMINI_API_KEY`
-- `GROQ_API_KEY`
-
-Optional second keys (the server can rotate through them):
-- `GEMINI_API_KEY_2`
-- `GROQ_API_KEY_2`
-
-Optional models:
-- `GEMINI_MODEL=gemini-2.5-flash`
-- `GROQ_MODEL=llama-3.3-70b-versatile`
-
-Keep your existing `udc-2700-key.json` and/or `udc-2600-key.json` in the project folder. Keep `udc-rules.json` too if you use it.
-
-## Important quota note
-Two API keys do not automatically double Gemini quota when both keys belong to the same Google project; Google applies Gemini rate limits at the project level. This app therefore uses Gemini→Groq failover and retries rather than pretending quota can be removed in code.
-
-## Deploy
-Build command: `npm install`
+## Render
 Start command: `npm start`
+Node: 18+

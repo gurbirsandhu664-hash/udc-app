@@ -1,8 +1,8 @@
 {
-  "name": "udc-ultimate-v20",
-  "version": "20.0.0",
+  "name": "udc-ultimate-v21",
+  "version": "21.0.0",
   "private": true,
-  "description": "UDC-only classifier with local title key, Gemini primary and Groq fallback",
+  "description": "UDC-only classifier with local key, Google-grounded Gemini and Groq fallback",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" },
