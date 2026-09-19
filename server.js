@@ -181,7 +181,7 @@ function readBody(req){return new Promise((resolve,reject)=>{let d='';req.on('da
 const server=http.createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
-    if(req.method==='GET' && (url.pathname==='/health'||url.pathname==='/api/health')) return json(res,200,{ok:!keyError,service:'UDC Ultimate Classifier',version:'V15-2700-SEMANTIC-CORRECTED',keyLoaded:!keyError,titleCount:key.entries?.length||0});
+    if(req.method==='GET' && (url.pathname==='/health'||url.pathname==='/api/health')) return json(res,200,{ok:!keyError,service:'UDC Ultimate Classifier',version:'V15.1-2700-FINAL',keyLoaded:!keyError,titleCount:key.entries?.length||0});
     if(req.method==='GET' && url.pathname==='/api/key-info') return json(res,200,{ok:!keyError,titleCount:key.entries?.length||0,version:key.version||'unknown',edition:key.edition_note||'UDC practice key'});
     if(req.method==='POST' && (url.pathname==='/api/classify'||url.pathname==='/classify')){
       const body=await readBody(req); let p={}; try{p=JSON.parse(body||'{}')}catch{}
@@ -191,4 +191,4 @@ const server=http.createServer(async(req,res)=>{
     return send(res,404,'text/plain; charset=utf-8','Not found');
   }catch(e){console.error(e);json(res,500,{ok:false,error:e.message});}
 });
-server.listen(PORT,'0.0.0.0',()=>console.log(`UDC V15-2700-SEMANTIC-CORRECTED listening on ${PORT} | key=${key.entries?.length||0}`));
+server.listen(PORT,'0.0.0.0',()=>console.log(`UDC V15.1-2700-FINAL listening on ${PORT} | key=${key.entries?.length||0}`));
