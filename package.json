@@ -1,8 +1,8 @@
 {
-  "name": "udc-ultimate-v8",
-  "version": "8.0.0",
+  "name": "udc-ultimate-final-corrected",
+  "version": "9.0.0",
   "private": true,
-  "description": "UDC-only title classifier with rule-based subject analysis and UDC Summary references",
+  "description": "UDC-only title classifier with deterministic answer-key rules and broad subject fallback",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
