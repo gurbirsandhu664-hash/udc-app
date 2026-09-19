@@ -1,86 +1,14 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>UDC Ultimate V17 — Google Verify</title>
-<style>
-:root{--bg:#08101d;--card:#111c2d;--line:#263956;--text:#eef4ff;--muted:#9eacc2;--accent:#62a7ff;--good:#39d98a;--warn:#ffca58}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#07101c,#10162a);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
-main{max-width:980px;margin:auto;padding:28px 16px 60px}.hero,.card{background:rgba(17,28,45,.94);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 18px 55px #0005}.hero{margin-bottom:18px}
-h1{margin:0 0 7px;font-size:clamp(28px,6vw,48px)}h2{margin:0 0 15px}.sub{color:var(--muted)}
-.row{display:flex;gap:10px;margin-top:20px}.row input{flex:1;min-width:0;padding:18px;border-radius:16px;border:2px solid var(--line);background:#060b14;color:white;font-size:18px}.btn{border:0;border-radius:16px;padding:0 25px;background:linear-gradient(100deg,#7658f4,#4fb9dc);color:white;font-weight:800;font-size:16px;cursor:pointer}
-.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}.chip{padding:9px 13px;border:1px solid var(--line);border-radius:999px;color:#c5d2e7;background:#0c1524;cursor:pointer}
-.status{margin-top:14px;color:var(--muted);font-size:14px}.status b{color:var(--good)}
-.card{margin-top:18px}.num{font-size:50px;font-weight:900;margin:7px 0}.label{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em}.source{display:inline-block;margin-top:12px;padding:7px 10px;border-radius:9px;background:#173a2b;color:#8ff0bb}
-.google{margin-top:18px}.result{padding:15px 0;border-top:1px solid var(--line)}a{color:#78b9ff}.warning{padding:12px;border-radius:12px;background:#3a2e14;color:#ffd777;margin-bottom:12px}
-.small{font-size:13px;color:var(--muted)}button:disabled{opacity:.55}
-</style>
-</head>
-<body>
-<main>
-<section class="hero">
-  <h1>UDC Ultimate V17</h1>
-  <div class="sub">UDC ONLY · 2,700-title local key · Google discovery/verification fallback</div>
-  <div class="row">
-    <input id="title" autocomplete="off" placeholder="Enter any book title…" />
-    <button class="btn" id="go">CLASSIFY</button>
-  </div>
-  <div class="chips">
-    <button class="chip">Heart Disease</button>
-    <button class="chip">Science and Arts</button>
-    <button class="chip">Science and Technology</button>
-    <button class="chip">Hindi Language</button>
-    <button class="chip">English Drama</button>
-    <button class="chip">Library Classification</button>
-    <button class="chip">History of India</button>
-  </div>
-  <div class="status" id="status">Checking service…</div>
-</section>
-<div id="out"></div>
-</main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#08111f"><title>UDC Ultimate V19 — Gemini + Google</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#07101d;color:#edf4ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:920px;margin:auto;padding:26px 16px 70px}.card{background:#101b2b;border:1px solid #294365;border-radius:26px;padding:26px;margin-bottom:18px}h1{font-size:clamp(30px,7vw,54px);margin:0 0 8px}.sub{color:#aabbd4;line-height:1.55}.row{display:flex;gap:12px;margin-top:24px}input{flex:1;min-width:0;background:#070e19;color:#fff;border:2px solid #2a4770;border-radius:18px;padding:18px;font-size:18px;outline:none}button{border:0;border-radius:18px;min-height:58px;padding:0 27px;background:linear-gradient(110deg,#7557ff,#43b9d8);color:#fff;font-weight:850;font-size:16px;cursor:pointer}.chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.chip{min-height:auto;padding:9px 13px;border:1px solid #2a4770;background:#0b1423;color:#c1cee2;border-radius:999px}.status{margin-top:17px;color:#91a5c3}.ok{color:#42e5a1}.result{margin-top:21px;background:#091321;border-radius:22px;padding:24px}.badge{display:inline-block;padding:7px 11px;border-radius:999px;background:#182b47;color:#bdd3f0}.label{margin-top:17px;color:#91a6c7;font-size:13px;letter-spacing:.12em;text-transform:uppercase}.num{font-size:49px;font-weight:900;overflow-wrap:anywhere;margin:4px 0 15px}.field{margin:14px 0}.field b{display:block;font-size:18px;margin-bottom:5px}.field span{color:#c8d5e9;line-height:1.55}.sources a{display:block;color:#78baff;margin:9px 0;overflow-wrap:anywhere}.warn{color:#ffd36f}@media(max-width:650px){.row{flex-direction:column}button{width:100%}}</style></head>
+<body><main class="wrap"><section class="card"><h1>UDC Ultimate V19</h1><div class="sub"><b>UDC ONLY</b> · Local 2,700-title key · Gemini + Google Search grounding · answer shown directly inside the app</div>
+<div class="row"><input id="title" autocomplete="off" placeholder="Enter any book title…"><button id="go">CLASSIFY</button></div>
+<div class="chips"><button class="chip">History of India</button><button class="chip">Heart Disease</button><button class="chip">English Drama</button><button class="chip">Hindi Language</button><button class="chip">Science and Technology</button><button class="chip">Science and Arts</button></div>
+<div id="status" class="status">Checking server…</div><div id="out"></div></section>
+<section class="card"><div class="sub">The local key is checked first. For a title outside the local key, Gemini can use Google Search grounding and return the researched answer and source links inside this result card. Google is a discovery/grounding layer, not itself an official UDC database.</div></section></main>
 <script>
-const $=s=>document.querySelector(s);
-const input=$("#title"), out=$("#out"), status=$("#status");
-document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{input.value=b.textContent; classify()});
-async function init(){
- try{
-  const r=await fetch("/api/status"), d=await r.json();
-  status.innerHTML=`<b>Ready</b> · ${d.localTitles.toLocaleString()} local key records · Google fallback ${d.googleConfigured?"CONNECTED":"not configured"}`;
- }catch{status.textContent="Service status unavailable";}
-}
-async function classify(){
- const title=input.value.trim(); if(!title){input.focus();return}
- out.innerHTML='<section class="card"><h2>Searching UDC…</h2><div class="small">Checking local key first, then Google if configured.</div></section>';
- $("#go").disabled=true;
- try{
-  const r=await fetch("/api/classify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title})});
-  const d=await r.json(); render(d);
- }catch(e){out.innerHTML=`<section class="card"><h2>Error</h2><div>${esc(e.message)}</div></section>`}
- $("#go").disabled=false;
-}
-function render(d){
- if(d.result){
-  const x=d.result, num=x.udc||x.notation||x.number||"";
-  out.innerHTML=`<section class="card">
-   <div class="label">Local UDC key match</div><div class="num">${esc(num||"—")}</div>
-   <h2>${esc(x.subject||x.mainSubject||x.title||d.title)}</h2>
-   <div>${esc(x.explanation||x.breakdown||"Verified local practice-key entry.")}</div>
-   <div class="source">Source: ${esc(x.source)}</div>
-  </section>`;
-  return;
- }
- const g=d.google||{};
- let html=`<section class="card google"><div class="label">Google UDC discovery</div><h2>${esc(d.title)}</h2>`;
- if(g.warning) html+=`<div class="warning">${esc(g.warning)}</div>`;
- if(g.error) html+=`<div>${esc(g.error)}</div>`;
- if(g.directUrl) html+=`<p><a href="${esc(g.directUrl)}" target="_blank" rel="noopener">Open Google search</a></p>`;
- if(g.items?.length) g.items.forEach(x=>html+=`<div class="result"><b>${esc(x.title)}</b><div class="small">${esc(x.displayLink||"")}</div><p>${esc(x.snippet||"")}</p><a href="${esc(x.link)}" target="_blank" rel="noopener">Open source</a></div>`);
- if(!g.items?.length && !g.directUrl && !g.error) html+=`<div class="small">No Google results returned.</div>`;
- html+=`</section>`; out.innerHTML=html;
-}
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-$("#go").onclick=classify; input.addEventListener("keydown",e=>{if(e.key==="Enter")classify()}); init();
-</script>
-</body>
-</html>
+const $=id=>document.getElementById(id);
+async function status(){try{const x=await(await fetch('/api/status')).json();$('status').innerHTML=`<span class="ok">Ready</span> · ${Number(x.localRecords||0).toLocaleString()} local records · Gemini + Google ${x.geminiGoogleConfigured?'ON':'OFF'}`}catch(e){$('status').textContent='Server connection error'}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function classify(){const t=$('title').value.trim();if(!t){$('title').focus();return}$('go').disabled=true;$('go').textContent='VERIFYING…';$('out').innerHTML='<div class="result">Checking local UDC key and Gemini + Google…</div>';try{const x=await(await fetch('/api/classify?title='+encodeURIComponent(t))).json();const src=(x.sources||[]).filter(s=>s&&s.url).map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title||s.url)}</a>`).join('');$('out').innerHTML=`<div class="result"><span class="badge">${esc(x.verification||'Review required')}</span><div class="label">Final UDC Number</div><div class="num">${esc(x.finalUDC||'Review required')}</div><div class="field"><b>Main Subject</b><span>${esc(x.mainSubject||'—')}</span></div><div class="field"><b>Sub Subject</b><span>${esc(x.subSubject||'—')}</span></div><div class="field"><b>Explanation</b><span>${esc(x.explanation||'—')}</span></div><div class="field"><b>Confidence</b><span>${esc(x.confidence||'Low')}</span></div>${src?`<div class="field sources"><b>Verification sources</b>${src}</div>`:''}</div>`}catch(e){$('out').innerHTML='<div class="result warn">Classification failed. Check Render logs and Gemini API configuration.</div>'}finally{$('go').disabled=false;$('go').textContent='CLASSIFY'}}
+$('go').onclick=classify;$('title').addEventListener('keydown',e=>{if(e.key==='Enter')classify()});document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('title').value=c.textContent;classify()});status();
+</script></body></html>

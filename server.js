@@ -1,159 +1,72 @@
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
+const http=require("http"),fs=require("fs"),path=require("path"),{URL}=require("url");
+const PORT=process.env.PORT||10000,HOST="0.0.0.0";
+const GEMINI_KEY=process.env.GEMINI_API_KEY||"";
+const GEMINI_MODEL=process.env.GEMINI_MODEL||"gemini-2.5-flash";
+const ROOT=__dirname;
+let records=[];
+function flatten(x,out){
+ if(Array.isArray(x)){for(const v of x)flatten(v,out);return}
+ if(x&&typeof x==="object"){
+  const title=x.title||x.bookTitle||x.name||x.query;
+  const udc=x.udc||x.number||x.notation||x.classification||x.class;
+  if(title&&udc)out.push({title:String(title),udc:String(udc),...x});
+  for(const v of Object.values(x))if(v&&typeof v==="object")flatten(v,out);
+ }
+}
+for(const file of ["udc-2700-key.json","udc-2600-key.json","udc-rules.json"]){
+ try{const p=path.join(ROOT,file);if(fs.existsSync(p))flatten(JSON.parse(fs.readFileSync(p,"utf8")),records)}
+ catch(e){console.log("Key warning:",file,e.message)}
+}
+function norm(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s.():+\/\-]/gu," ").replace(/\s+/g," ").trim()}
+function localMatch(t){
+ const n=norm(t),exact=records.find(r=>norm(r.title)===n);if(exact)return exact;
+ let best=null,score=0;
+ for(const r of records){const a=new Set(n.split(" ")),b=new Set(norm(r.title).split(" "));let c=0;for(const w of a)if(b.has(w))c++;const s=c/Math.max(a.size,b.size);if(s>score){score=s;best=r}}
+ return score>=.86?best:null;
+}
+const PROMPT=`You are an expert Universal Decimal Classification (UDC) verification assistant.
+Use UDC ONLY. NEVER use Dewey Decimal Classification (DDC).
+Classify the meaning of the book title, not isolated keywords.
+Use Google Search grounding to research the title when needed.
+Prefer official UDC Consortium/UDC documentation and reputable library catalogues, national libraries and university library catalogues.
+Do not invent a UDC number. If evidence is insufficient, leave finalUDC empty and say Review required.
+Consider main classes and legitimate auxiliaries: common auxiliaries, place, language, time, form, and relation signs such as +, /, :, ::, parentheses and brackets when supported by UDC rules.
+For language/literature, distinguish language, literature and literary form.
+Return ONLY JSON:
+{"bookTitle":"","finalUDC":"","mainSubject":"","subSubject":"","explanation":"","confidence":"High|Medium|Low","verification":"Google-grounded verification|Review required","sources":[{"title":"","url":""}]}
+The answer must be about UDC, not DDC.`;
 
-const app = express();
-const PORT = process.env.PORT || 10000;
-const ROOT = __dirname;
-
-app.use(express.json({limit: "1mb"}));
-app.use(express.static(ROOT));
-
-function loadJson(filename) {
-  try {
-    const p = path.join(ROOT, filename);
-    if (!fs.existsSync(p)) return [];
-    const raw = JSON.parse(fs.readFileSync(p, "utf8"));
-    if (Array.isArray(raw)) return raw;
-    if (Array.isArray(raw.items)) return raw.items;
-    if (Array.isArray(raw.titles)) return raw.titles;
-    if (typeof raw === "object") {
-      return Object.entries(raw).map(([title, value]) => {
-        if (typeof value === "string") return {title, udc: value};
-        return {title, ...value};
-      });
-    }
-    return [];
-  } catch (e) {
-    console.error("Key load error:", filename, e.message);
-    return [];
+async function askGemini(title){
+ if(!GEMINI_KEY)return null;
+ const body={contents:[{role:"user",parts:[{text:PROMPT+"\nBook title: "+title}]}],
+ tools:[{google_search:{}}],
+ generationConfig:{temperature:0.1,responseMimeType:"application/json"}};
+ const u=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
+ const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+ const d=await r.json();if(!r.ok)throw Error(d?.error?.message||"Gemini request failed");
+ const text=(d.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+ try{return JSON.parse(text)}catch(e){const m=text.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null}
+}
+function send(res,status,obj){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});res.end(JSON.stringify(obj))}
+const srv=http.createServer(async(req,res)=>{
+ try{
+  const u=new URL(req.url,`http://${req.headers.host}`);
+  if(req.method==="GET"&&u.pathname==="/api/status")return send(res,200,{ready:true,version:"V19",localRecords:records.length,geminiGoogleConfigured:!!GEMINI_KEY});
+  if(req.method==="GET"&&u.pathname==="/api/classify"){
+   const title=(u.searchParams.get("title")||"").trim();if(!title)return send(res,400,{error:"Enter a book title"});
+   const hit=localMatch(title);
+   if(hit)return send(res,200,{bookTitle:title,finalUDC:String(hit.udc||""),mainSubject:hit.mainSubject||hit.subject||"",subSubject:hit.subSubject||hit.subsubject||"",explanation:hit.explanation||hit.breakdown||"Matched in local UDC practice key.",confidence:"High",verification:"Local key",sources:[]});
+   if(!GEMINI_KEY)return send(res,200,{bookTitle:title,finalUDC:"",mainSubject:"",subSubject:"",explanation:"Gemini API key is not configured on the server.",confidence:"Low",verification:"Review required",sources:[]});
+   try{
+    const ans=await askGemini(title);
+    if(!ans)throw Error("No structured answer returned");
+    ans.bookTitle=ans.bookTitle||title;ans.sources=Array.isArray(ans.sources)?ans.sources:[];
+    ans.verification=ans.finalUDC?"Google-grounded verification":"Review required";
+    return send(res,200,ans);
+   }catch(e){return send(res,502,{bookTitle:title,finalUDC:"",mainSubject:"",subSubject:"",explanation:"Google-grounded Gemini verification failed: "+e.message,confidence:"Low",verification:"Review required",sources:[]})}
   }
-}
-
-let key = [
-  ...loadJson("udc-2700-key.json"),
-  ...loadJson("udc-2600-key.json")
-];
-
-function norm(s) {
-  return String(s || "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function localMatch(title) {
-  const q = norm(title);
-  if (!q) return null;
-
-  let exact = key.find(x => norm(x.title || x.bookTitle || x.name) === q);
-  if (exact) return {...exact, source: "Local UDC practice key", match: "exact"};
-
-  // Whole-word / phrase scoring. Never fabricate a UDC number.
-  const qt = new Set(q.split(" "));
-  let best = null, bestScore = 0;
-  for (const x of key) {
-    const t = norm(x.title || x.bookTitle || x.name);
-    if (!t) continue;
-    const tt = new Set(t.split(" "));
-    let common = 0;
-    for (const w of qt) if (tt.has(w)) common++;
-    const score = common / Math.max(qt.size, tt.size);
-    if (score > bestScore) { bestScore = score; best = x; }
-  }
-  if (best && bestScore >= 0.82) return {...best, source: "Local UDC practice key", match: "high phrase match"};
-  return null;
-}
-
-function googleConfigured() {
-  return !!(process.env.GOOGLE_API_KEY && process.env.GOOGLE_CX);
-}
-
-app.get("/api/status", (req,res) => {
-  res.json({
-    ok: true,
-    version: "V17 Google UDC",
-    localTitles: key.length,
-    googleConfigured: googleConfigured(),
-    googleNote: "Google search is a discovery/verification layer, not an authoritative UDC database."
-  });
+  if(req.method==="GET"){return fs.readFile(path.join(ROOT,"index.html"),(e,b)=>{if(e){res.writeHead(404);return res.end("Not found")}res.writeHead(200,{"Content-Type":"text/html; charset=utf-8"});res.end(b)})}
+  res.writeHead(405);res.end("Method not allowed")
+ }catch(e){send(res,500,{error:e.message})}
 });
-
-app.post("/api/classify", async (req,res) => {
-  const title = String(req.body.title || "").trim();
-  if (!title) return res.status(400).json({error:"Enter a book title."});
-
-  const local = localMatch(title);
-  if (local) return res.json({
-    mode: "local",
-    title,
-    result: local,
-    google: null
-  });
-
-  if (!googleConfigured()) {
-    return res.json({
-      mode: "google-not-configured",
-      title,
-      result: null,
-      google: {
-        configured: false,
-        query: `${title} UDC Universal Decimal Classification`,
-        directUrl: `https://www.google.com/search?q=${encodeURIComponent(title + " UDC Universal Decimal Classification")}`
-      }
-    });
-  }
-
-  try {
-    const u = new URL("https://www.googleapis.com/customsearch/v1");
-    u.searchParams.set("key", process.env.GOOGLE_API_KEY);
-    u.searchParams.set("cx", process.env.GOOGLE_CX);
-    u.searchParams.set("q", `${title} UDC Universal Decimal Classification`);
-    u.searchParams.set("num", "10");
-    u.searchParams.set("hl", "en");
-    u.searchParams.set("gl", "in");
-
-    const r = await fetch(u);
-    const data = await r.json();
-    if (!r.ok) {
-      return res.json({
-        mode: "google-error",
-        title,
-        result: null,
-        google: {configured:true, error:data.error?.message || "Google search request failed."}
-      });
-    }
-
-    const items = (data.items || []).map(x => ({
-      title: x.title,
-      link: x.link,
-      displayLink: x.displayLink,
-      snippet: x.snippet
-    }));
-
-    res.json({
-      mode: "google",
-      title,
-      result: null,
-      google: {
-        configured: true,
-        query: `${title} UDC Universal Decimal Classification`,
-        items,
-        warning: "Google results are not treated as an authoritative UDC classification. Verify the notation against an authorised UDC source."
-      }
-    });
-  } catch (e) {
-    res.json({
-      mode: "google-error",
-      title,
-      result: null,
-      google: {configured:true, error:e.message}
-    });
-  }
-});
-
-app.get("*", (req,res) => res.sendFile(path.join(ROOT, "index.html")));
-
-app.listen(PORT, () => console.log(`UDC Ultimate V17 running on port ${PORT}`));
+srv.listen(PORT,HOST,()=>console.log(`UDC V19 running. local=${records.length}, Gemini+Google=${!!GEMINI_KEY}`));

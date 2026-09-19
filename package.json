@@ -1,16 +1,13 @@
 {
-  "name": "udc-ultimate-v17-google",
-  "version": "17.0.0",
+  "name": "udc-ultimate-v19",
+  "version": "19.0.0",
   "private": true,
-  "description": "UDC-only classifier with local practice key and optional Google Programmable Search fallback",
-  "main": "server.js",
+  "description": "UDC-only classifier with local practice key and Gemini Google Search grounding",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "express": "^4.21.2"
-  }
+  "dependencies": {}
 }
