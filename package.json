@@ -1,8 +1,7 @@
 {
-  "name": "udc-ultimate-final-corrected",
+  "name": "udc-ultimate-v9",
   "version": "9.0.0",
   "private": true,
-  "description": "UDC-only title classifier with deterministic answer-key rules and broad subject fallback",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

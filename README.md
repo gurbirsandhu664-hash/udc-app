@@ -1,12 +1,11 @@
-# UDC Ultimate FINAL-CORRECTED
+# UDC Ultimate V9 — 2700 Title Practice Key
 
-UDC-only title classifier for practice and reference. Exact answer-key rules run before broad subject inference.
+Replace:
+- server.js
+- index.html
+- udc-2600-key.json
 
-Important: UDC is copyrighted. This package does not contain the complete proprietary UDC Master Reference File. Exact cataloguing should be checked against the licensed UDC edition used by the library.
+Keep package.json if your Render project already has the required dependencies; this version uses only Node built-ins.
 
-## Deploy on Render
-- Build Command: leave empty
-- Start Command: `npm start`
-- Port: `10000` (Render supplies PORT automatically)
-
-Keep `package.json`. Replace `index.html` and `server.js` with these files.
+The key contains 2700 deterministic practice titles. It is not the complete licensed UDC MRF.
+Start: `npm start`
