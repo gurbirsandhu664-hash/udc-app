@@ -1,279 +1,92 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0a0e14">
-<title>UDC Ultimate V21 · Google + Gemini + Groq</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>UDC Ultimate V18</title>
 <style>
-  :root{--bg:#07090f;--bg-2:#0d1219;--bg-3:#121a24;--bg-4:#182230;--line:#1a2433;--line-2:#283547;--txt:#eaf0f7;--txt-2:#8b9bb0;--txt-3:#5a6a80;--p1:#a855f7;--p2:#06b6d4;--p3:#22c55e;--p4:#f59e0b;--p5:#ec4899;--p6:#6366f1;--p-glow:rgba(168,85,247,.35);--mono:'SF Mono','SFMono-Regular',Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif}
-  [data-theme="light"]{--bg:#eef1f6;--bg-2:#fff;--bg-3:#f5f8fc;--bg-4:#eef3fa;--line:#dde5ef;--line-2:#c5d2e0;--txt:#0a1628;--txt-2:#5a6b80;--txt-3:#8a99ab;--p1:#8b3dfa;--p2:#0a8bc4;--p3:#16a34a;--p4:#c47a0a;--p5:#db2777;--p6:#4f46e5;--p-glow:rgba(139,61,250,.2)}
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;padding:12px;display:flex;justify-content:center;align-items:flex-start;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .shell{width:100%;max-width:900px;background:var(--bg-2);border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.6);position:relative}
-  .shell:before{content:'';position:absolute;top:-120px;left:-80px;width:340px;height:340px;background:radial-gradient(circle,var(--p-glow),transparent 70%);pointer-events:none;z-index:0}
-  header{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-3);border-bottom:1px solid var(--line);position:relative;z-index:1}
-  .logo{display:flex;align-items:center;gap:10px;min-width:0}.logo-mark{width:44px;height:44px;flex-shrink:0;border-radius:13px;background:linear-gradient(135deg,var(--p1),var(--p2));display:grid;place-items:center;font-size:1.1rem;color:#fff;box-shadow:0 0 24px var(--p-glow);font-family:var(--mono);font-weight:800}.logo-txt h1{font-size:1rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}.logo-txt p{font-size:.65rem;color:var(--txt-2);font-weight:600;letter-spacing:.05em;text-transform:uppercase}.hdr-actions{display:flex;gap:6px}.icon-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--bg-2);color:var(--txt-2);display:grid;place-items:center;cursor:pointer;font-size:.9rem}.icon-btn:active{transform:scale(.92)}.icon-btn:hover{color:var(--p1);border-color:var(--p1)}
-  .content{padding:20px;position:relative;z-index:1}.hero-input{position:relative;margin-bottom:10px}.hero-input input{width:100%;padding:20px 60px 20px 22px;border:2px solid var(--line-2);border-radius:16px;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:1.05rem;font-weight:500;outline:none}.hero-input input:focus{border-color:var(--p1);box-shadow:0 0 0 4px var(--p-glow)}.hero-input input::placeholder{color:var(--txt-3);font-weight:400}.hero-go{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;font-size:1.05rem;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 20px var(--p-glow)}.hero-go:active{transform:translateY(-50%) scale(.92)}.hero-go{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;z-index:5;position:absolute}
-  .quick-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.qc{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg-3);color:var(--txt-2);font-size:.75rem;font-weight:600;cursor:pointer}.qc:hover{border-color:var(--p1);color:var(--p1)}
-  .tabs{display:flex;gap:4px;background:var(--bg-3);padding:5px;border-radius:14px;margin-bottom:18px;border:1px solid var(--line);overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{flex:1;min-width:fit-content;padding:10px 14px;border:none;border-radius:10px;background:transparent;color:var(--txt-2);font-family:var(--sans);font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}.tab.on{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;box-shadow:0 4px 14px var(--p-glow)}
-  .pane{display:none;animation:in .3s ease}.pane.on{display:block}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-  .loading{display:none;text-align:center;padding:40px 20px}.loading.on{display:block}.spinner{width:48px;height:48px;margin:0 auto 16px;border:3px solid var(--line-2);border-top-color:var(--p1);border-right-color:var(--p2);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading p{font-size:.85rem;color:var(--txt-2);font-weight:600}
-  .answer{display:none;animation:in .35s ease}.answer.on{display:block}.ans-head{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(6,182,212,.08));border:2px solid var(--p1);border-radius:22px;padding:26px 20px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden}.ans-head-lbl{font-size:.68rem;color:var(--txt-3);font-weight:800;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}.ans-head-num{font-family:var(--mono);font-size:2.3rem;font-weight:800;background:linear-gradient(135deg,var(--p1),var(--p2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.03em;word-break:break-all;line-height:1.15}.ans-head-sub{font-size:.85rem;color:var(--txt-2);margin-top:10px;font-weight:600}.db-badge{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:4px 12px;border-radius:999px;background:rgba(34,197,94,.15);color:var(--p3);border:1px solid var(--p3);font-size:.65rem;font-weight:800;text-transform:uppercase}.db-badge.auto{background:rgba(245,158,11,.15);color:var(--p4);border-color:var(--p4)}
-  .section{background:var(--bg-3);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}.section-title{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;display:flex;align-items:center;gap:7px;padding-bottom:10px;border-bottom:1px solid var(--line)}.section-title i{color:var(--p2)}.section-title.purple i{color:var(--p1)}.section-title.orange i{color:var(--p4)}.section-title.indigo i{color:var(--p6)}.section-title.pink i{color:var(--p5)}
-  .nv-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-family:var(--mono);font-size:1.25rem;font-weight:800;padding:16px 14px;background:var(--bg);border-radius:12px;border:1px dashed var(--line-2);min-height:56px}.nv-token{padding:6px 8px;border-radius:8px}.nv-token.main{background:rgba(6,182,212,.18);color:var(--p2);border:1px solid var(--p2)}.nv-token.sym{background:rgba(168,85,247,.18);color:var(--p1);border:1px solid var(--p1);padding:6px 10px}.nv-token.place{background:rgba(34,197,94,.18);color:var(--p3);border:1px solid var(--p3)}.nv-token.lang{background:rgba(6,182,212,.18);color:var(--p2);border:1px solid var(--p2)}.nv-token.form{background:rgba(245,158,11,.18);color:var(--p4);border:1px solid var(--p4)}.nv-token.time{background:rgba(236,72,153,.18);color:var(--p5);border:1px solid var(--p5)}.nv-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.nv-lg{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--bg);border:1px solid var(--line-2);font-size:.72rem;font-weight:600;color:var(--txt-2)}.nv-lg-dot{width:8px;height:8px;border-radius:50%}
-  .info-row{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:.9rem}.info-row:last-child{border-bottom:none}.info-lbl{font-size:.7rem;font-weight:700;color:var(--txt-3);text-transform:uppercase;letter-spacing:.06em}.info-val{color:var(--txt);font-weight:500;word-break:break-word}.chips{display:flex;flex-wrap:wrap;gap:5px}.chip{padding:4px 11px;border-radius:999px;background:var(--bg);border:1px solid var(--line-2);font-size:.72rem;font-weight:600;color:var(--p2)}.chip.kw{color:var(--txt-2);font-weight:500}
-  .sm-row{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}.sm-row:last-child{border-bottom:none}.sm-sym{flex-shrink:0;font-family:var(--mono);font-size:1rem;font-weight:800;color:var(--p1);min-width:70px;text-align:center;padding:8px 10px;background:var(--bg);border-radius:8px;border:1px solid var(--line-2);word-break:break-all}.sm-body{flex:1;min-width:0}.sm-name{font-size:.86rem;font-weight:700;color:var(--txt);margin-bottom:3px}.sm-desc{font-size:.76rem;color:var(--txt-2);line-height:1.5;font-weight:500}.sm-badge{display:inline-block;font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:4px;margin-left:6px;letter-spacing:.05em}.smb-main{background:rgba(6,182,212,.2);color:var(--p2)}.smb-sym{background:rgba(168,85,247,.2);color:var(--p1)}.smb-place{background:rgba(34,197,94,.2);color:var(--p3)}.smb-lang{background:rgba(6,182,212,.2);color:var(--p2)}.smb-form{background:rgba(245,158,11,.2);color:var(--p4)}.smb-time{background:rgba(236,72,153,.2);color:var(--p5)}
-  .explain-box{background:var(--bg);border-radius:14px;padding:18px;font-family:var(--mono);font-size:.79rem;line-height:1.85;color:var(--txt-2);white-space:pre-wrap;word-break:break-word;border:1px solid var(--line)}.alt-list{display:flex;flex-direction:column;gap:8px}.alt-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg);border:1px solid var(--line-2);border-radius:10px;cursor:pointer}.alt-udc{font-family:var(--mono);font-weight:800;color:var(--p2);font-size:.9rem}.alt-name{font-size:.82rem;color:var(--txt-2);font-weight:600;text-align:right;flex:1;margin-left:12px}
-  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.act{flex:1;min-width:calc(33.33% - 6px);padding:12px 10px;border-radius:11px;border:1px solid var(--line-2);background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}.act:hover{border-color:var(--p1);color:var(--p1)}.act.primary{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-color:transparent}
-  .browse-search{display:flex;gap:8px;margin-bottom:14px}.browse-search input{flex:1;padding:13px 16px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--bg);color:var(--txt);font-size:.9rem;outline:none}.browse-search button{padding:0 18px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff}.browse-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}.bg-item{padding:12px;background:var(--bg-3);border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:left;color:var(--txt)}.bg-code{font-family:var(--mono);font-size:1rem;font-weight:800;color:var(--p1);margin-bottom:3px}.bg-name{font-size:.72rem;color:var(--txt-2);font-weight:500}.list-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;background:var(--bg-3);border:1px solid var(--line);border-radius:12px;margin-bottom:7px;cursor:pointer}.li-info{min-width:0;flex:1}.li-t{font-size:.88rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}.li-meta{display:flex;gap:8px;align-items:center;font-size:.7rem;color:var(--txt-3);flex-wrap:wrap}.li-udc{font-family:var(--mono);font-weight:800;font-size:.72rem;color:var(--p2);background:rgba(6,182,212,.1);padding:3px 10px;border-radius:999px;border:1px solid var(--p2)}.empty{text-align:center;padding:36px 20px;color:var(--txt-3)}.empty-ico{font-size:2.4rem;margin-bottom:10px;opacity:.35;display:block}.empty p{font-size:.82rem;font-weight:500;line-height:1.6}.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;padding:13px 24px;border-radius:999px;font-size:.83rem;font-weight:800;z-index:9999;opacity:0;transition:.3s;pointer-events:none}.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-  @media(max-width:520px){body{padding:8px}.shell{border-radius:18px}header{padding:12px 14px}.content{padding:16px}.ans-head-num{font-size:1.55rem}.info-row{grid-template-columns:1fr;gap:3px}.hero-input input{padding:17px 56px 17px 18px;font-size:1rem}.hero-go{width:42px;height:42px;right:6px}.act{min-width:calc(50% - 4px);font-size:.72rem}.sm-sym{min-width:55px;font-size:.85rem;padding:6px 8px}.nv-line{font-size:1rem;padding:12px}}
-  @media(max-width:360px){.acts{flex-direction:column}.act{width:100%}}
+*{box-sizing:border-box}body{margin:0;background:#070a12;color:#eef3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:900px;margin:auto;padding:22px 14px 60px}
+.card{background:#111827;border:1px solid #263552;border-radius:26px;padding:22px;box-shadow:0 18px 60px #0005}
+h1{margin:0;font-size:30px}.sub{color:#9eabc4;margin:7px 0 20px}
+.row{display:flex;gap:12px}.input{flex:1;min-width:0;background:#050810;color:white;border:2px solid #2c4269;border-radius:20px;padding:18px;font-size:19px;outline:none}
+button{border:0;border-radius:18px;padding:0 24px;font-weight:800;font-size:17px;color:white;background:linear-gradient(135deg,#7557ff,#45bfe9);cursor:pointer;min-width:150px}
+button:disabled{opacity:.55;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.chip{padding:10px 14px;border-radius:999px;background:#151d2c;border:1px solid #2a3955;color:#b9c5da;cursor:pointer}
+.status{margin-top:17px;color:#9eabc4}.ok{color:#58dc92}.warn{color:#ffbd55}.bad{color:#ff7b88}
+.result{margin-top:18px}.hero{border:2px solid #8b5cf6;border-radius:25px;padding:22px;background:#15182b}
+.label{font-size:12px;letter-spacing:3px;color:#8491aa;font-weight:800}.udc{font-size:44px;font-weight:900;margin:10px 0;color:#76a6ff;word-break:break-word}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}.box{background:#0c1220;border:1px solid #263552;border-radius:17px;padding:15px}.box b{display:block;color:#8795ae;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px}.box div{font-size:16px;line-height:1.45}
+.sources{margin-top:14px}.sources a{display:block;color:#76b9ff;margin:8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{margin-top:18px;padding:24px;border:1px dashed #40506e;border-radius:20px;color:#aeb9cc}
+@media(max-width:650px){.row{flex-direction:column}.row button{height:58px}.grid{grid-template-columns:1fr}.udc{font-size:36px}}
 </style>
 </head>
 <body>
-<div class="shell">
-<header><div class="logo"><div class="logo-mark">UDC</div><div class="logo-txt"><h1>UDC Ultimate V21</h1><p>UDC Only · Google + Gemini + Groq</p></div></div><div class="hdr-actions"><button class="icon-btn" id="themeBtn">◐</button></div></header>
-<div class="content">
-<div class="hero-input"><input type="text" id="q" placeholder="Type any book title..." autocomplete="off" autocapitalize="words"><button type="button" class="hero-go" id="go" aria-label="Classify book title">→</button></div>
-<div class="quick-row" id="quickChips"></div>
-<div class="tabs"><button class="tab on" data-pane="answer">⚡ Answer</button><button class="tab" data-pane="browse">▦ Browse</button><button class="tab" data-pane="saved">🔖 Saved</button></div>
-<div class="pane on" id="pane-answer"><div class="loading" id="loading"><div class="spinner"></div><p id="loadingText">Checking local UDC key → Google-grounded Gemini → Groq fallback...</p></div><div class="answer" id="answer">
-<div class="ans-head"><div class="ans-head-lbl">Correct UDC Classification</div><div class="ans-head-num" id="ansUdc">—</div><div class="ans-head-sub" id="ansSub">—</div><div id="ansBadge"></div></div>
-<div class="section"><div class="section-title">⌘ Tokenized Notation</div><div class="nv-line" id="nvLine">—</div><div class="nv-legend" id="nvLegend"></div></div>
-<div class="section"><div class="section-title purple">ⓘ Book Information</div><div class="info-row"><div class="info-lbl">Book Title</div><div class="info-val" id="ansTitle">—</div></div><div class="info-row"><div class="info-lbl">Subject</div><div class="info-val" id="ansSubject">—</div></div><div class="info-row"><div class="info-lbl">Keywords</div><div class="info-val"><div class="chips" id="ansKw"></div></div></div></div>
-<div class="section"><div class="section-title orange">⌘ Symbol-by-Symbol Breakdown</div><div id="symMap"></div></div>
-<div class="section"><div class="section-title indigo">▤ Full Explanation</div><div class="explain-box" id="ansExplain">—</div></div><div class="section" id="googleSection" style="display:none"><div class="section-title">🌐 Google Verification Sources</div><div id="googleSources"></div></div>
-<div class="section" id="altSection" style="display:none"><div class="section-title pink">↝ Alternative Classifications</div><div class="alt-list" id="altList"></div></div>
-<div class="acts"><button class="act primary" id="aCopy">Copy Answer</button><button class="act" id="aCopyUdc">Copy UDC</button><button class="act" id="aShare">Share</button><button class="act" id="aPrint">Print</button><button class="act" id="aSave">Save</button><button class="act" id="aClear">New</button></div>
-</div></div>
-<div class="pane" id="pane-browse"><div class="browse-search"><input type="text" id="browseQ" placeholder="Search database by keyword or UDC..."><button id="browseGo">⌕</button></div><div id="browseResults"></div><div class="section-title" style="margin-top:20px;border:none;font-size:.75rem">▦ Database Subjects</div><div class="browse-grid" id="browseGrid"></div></div>
-<div class="pane" id="pane-saved"><div class="section-title" style="border:none;font-size:.75rem">🔖 Saved Classifications</div><div id="savedList"></div></div>
-</div></div><div class="toast" id="toast"></div>
+<div class="wrap">
+  <div class="card">
+    <h1>UDC Ultimate V18</h1>
+    <div class="sub">UDC ONLY · 2,700-title local key · Gemini + Google grounding · Groq fallback</div>
+    <div class="row">
+      <input id="title" class="input" placeholder="Enter Book Title" autocomplete="off">
+      <button id="go">CLASSIFY</button>
+    </div>
+    <div class="chips">
+      <span class="chip">History of India</span>
+      <span class="chip">Dictionary of Language and Literature</span>
+      <span class="chip">English Drama</span>
+      <span class="chip">Science and Technology</span>
+      <span class="chip">Bible in Hindi</span>
+    </div>
+    <div id="status" class="status">Ready.</div>
+    <div id="result"></div>
+  </div>
+</div>
 <script>
-(function(){
-'use strict';
-const UDC_DATABASE=[
-{title:'english drama',udc:'821.111-2',subject:'English Drama',keywords:['english','drama','play','theatre'],note:'821.111 = English literature; -2 = Drama form'},
-{title:'english literature',udc:'821.111',subject:'English Literature',keywords:['english','literature'],note:'821.111 = English literature'},
-{title:'english poetry',udc:'821.111-1',subject:'English Poetry',keywords:['english','poetry'],note:'821.111 + -1 = English poetry'},
-{title:'english fiction',udc:'821.111-3',subject:'English Fiction',keywords:['english','fiction','novel'],note:'821.111 + -3 = English fiction'},
-{title:'english novel',udc:'821.111-3',subject:'English Novel',keywords:['english','novel'],note:'821.111 + -3'},
-{title:'english essay',udc:'821.111-4',subject:'English Essay',keywords:['english','essay'],note:'821.111 + -4'},
-{title:'shakespeare',udc:'821.111-2',subject:'Shakespeare (English Drama)',keywords:['shakespeare'],note:'Shakespeare classified with English drama'},
-{title:'shakespeare plays',udc:'821.111-2',subject:'Shakespeare Plays',keywords:['shakespeare','play'],note:'English drama'},
-{title:'hamlet',udc:'821.111-2',subject:'Hamlet (Shakespeare)',keywords:['hamlet','shakespeare'],note:'English drama'},
-{title:'macbeth',udc:'821.111-2',subject:'Macbeth (Shakespeare)',keywords:['macbeth','shakespeare'],note:'English drama'},
-{title:'english theatre',udc:'821.111-2',subject:'English Theatre',keywords:['english','theatre'],note:'English drama'},
-{title:'british drama',udc:'821.111-2',subject:'British Drama',keywords:['british','drama'],note:'English drama'},
-{title:'american literature',udc:'821.111(73)',subject:'American Literature',keywords:['american','literature'],note:'821.111 + (73) USA'},
-{title:'american drama',udc:'821.111(73)-2',subject:'American Drama',keywords:['american','drama'],note:'American English drama'},
-{title:'american poetry',udc:'821.111(73)-1',subject:'American Poetry',keywords:['american','poetry'],note:'American poetry'},
-{title:'indian literature',udc:'821.21',subject:'Indian Literature',keywords:['indian','literature'],note:'821.21 = Indic literature'},
-{title:'indian english literature',udc:'821.111(540)',subject:'Indian English Literature',keywords:['indian','english','literature'],note:'821.111 + (540)'},
-{title:'indian drama',udc:'821.21-2',subject:'Indian Drama',keywords:['indian','drama'],note:'821.21 + -2'},
-{title:'indian poetry',udc:'821.21-1',subject:'Indian Poetry',keywords:['indian','poetry'],note:'821.21 + -1'},
-{title:'indian fiction',udc:'821.21-3',subject:'Indian Fiction',keywords:['indian','fiction'],note:'821.21 + -3'},
-{title:'hindi literature',udc:'821.214.21',subject:'Hindi Literature',keywords:['hindi','literature'],note:'821.214.21'},
-{title:'punjabi literature',udc:'821.214.22',subject:'Punjabi Literature',keywords:['punjabi','literature'],note:'821.214.22'},
-{title:'punjabi poetry',udc:'821.214.22-1',subject:'Punjabi Poetry',keywords:['punjabi','poetry'],note:'821.214.22 + -1'},
-{title:'urdu literature',udc:'821.214.31',subject:'Urdu Literature',keywords:['urdu','literature'],note:'821.214.31'},
-{title:'bengali literature',udc:'821.214.32',subject:'Bengali Literature',keywords:['bengali','literature'],note:'821.214.32'},
-{title:'tamil literature',udc:'821.214.42',subject:'Tamil Literature',keywords:['tamil','literature'],note:'821.214.42'},
-{title:'sanskrit literature',udc:'821.211',subject:'Sanskrit Literature',keywords:['sanskrit','literature'],note:'821.211'},
-{title:'sanskrit drama',udc:'821.211-2',subject:'Sanskrit Drama',keywords:['sanskrit','drama'],note:'821.211 + -2'},
-{title:'literature',udc:'82',subject:'Literature',keywords:['literature'],note:'82 = Literature'},
-{title:'drama',udc:'82-2',subject:'Drama',keywords:['drama'],note:'82-2 = Drama form'},
-{title:'poetry',udc:'82-1',subject:'Poetry',keywords:['poetry'],note:'82-1'},
-{title:'fiction',udc:'82-3',subject:'Fiction',keywords:['fiction'],note:'82-3'},
-{title:'novel',udc:'82-3',subject:'Novel',keywords:['novel'],note:'82-3'},
-{title:'essay',udc:'82-4',subject:'Essay',keywords:['essay'],note:'82-4'},
-{title:'short story',udc:'82-32',subject:'Short Story',keywords:['short','story'],note:'82-32'},
-{title:'theatre',udc:'792',subject:'Theatre',keywords:['theatre'],note:'792 = Theatre'},
-{title:'history of india',udc:'94(540)',subject:'History of India',keywords:['history','india'],note:'94 + (540)'},
-{title:'indian history',udc:'94(540)',subject:'Indian History',keywords:['indian','history'],note:'94 + (540)'},
-{title:'history of punjab',udc:'94(540.15)',subject:'History of Punjab',keywords:['history','punjab'],note:'94 + (540.15)'},
-{title:'sikh history',udc:'94(540.15)',subject:'Sikh History',keywords:['sikh','history'],note:'94 + (540.15)'},
-{title:'world history',udc:'94',subject:'World History',keywords:['world','history'],note:'94 = General history'},
-{title:'history of europe',udc:'94(4)',subject:'History of Europe',keywords:['history','europe'],note:'94 + (4)'},
-{title:'history of asia',udc:'94(5)',subject:'History of Asia',keywords:['history','asia'],note:'94 + (5)'},
-{title:'history of china',udc:'94(510)',subject:'History of China',keywords:['history','china'],note:'94 + (510)'},
-{title:'history of pakistan',udc:'94(549)',subject:'History of Pakistan',keywords:['history','pakistan'],note:'94 + (549)'},
-{title:'geography of india',udc:'91(540)',subject:'Geography of India',keywords:['geography','india'],note:'91 + (540)'},
-{title:'indian geography',udc:'91(540)',subject:'Indian Geography',keywords:['indian','geography'],note:'91 + (540)'},
-{title:'world geography',udc:'91',subject:'World Geography',keywords:['world','geography'],note:'91 = Geography'},
-{title:'geography of punjab',udc:'91(540.15)',subject:'Geography of Punjab',keywords:['geography','punjab'],note:'91 + (540.15)'},
-{title:'physical geography',udc:'911.2',subject:'Physical Geography',keywords:['physical','geography'],note:'911.2'},
-{title:'human geography',udc:'911.3',subject:'Human Geography',keywords:['human','geography'],note:'911.3'},
-{title:'sikhism',udc:'2-1/-9(540.15)',subject:'Sikhism',keywords:['sikhism'],note:'2 religion + (540.15)'},
-{title:'sikh religion',udc:'2(540.15)',subject:'Sikh Religion',keywords:['sikh','religion'],note:'2 + (540.15)'},
-{title:'guru granth sahib',udc:'2-23(540.15)',subject:'Guru Granth Sahib',keywords:['guru granth sahib'],note:'2-23 sacred text'},
-{title:'hinduism',udc:'233',subject:'Hinduism',keywords:['hinduism'],note:'233 = Hinduism'},
-{title:'islam',udc:'28',subject:'Islam',keywords:['islam'],note:'28 = Islam'},
-{title:'christianity',udc:'27',subject:'Christianity',keywords:['christianity'],note:'27'},
-{title:'buddhism',udc:'24',subject:'Buddhism',keywords:['buddhism'],note:'24'},
-{title:'jainism',udc:'26',subject:'Jainism',keywords:['jainism'],note:'26'},
-{title:'religion',udc:'2',subject:'Religion',keywords:['religion'],note:'2 = Religion'},
-{title:'indian constitution',udc:'342(540)',subject:'Indian Constitution',keywords:['constitution','india'],note:'342 + (540)'},
-{title:'constitution of india',udc:'342(540)',subject:'Constitution of India',keywords:['constitution'],note:'342 + (540)'},
-{title:'indian politics',udc:'32(540)',subject:'Indian Politics',keywords:['indian','politics'],note:'32 + (540)'},
-{title:'politics',udc:'32',subject:'Political Science',keywords:['politics'],note:'32'},
-{title:'political science',udc:'32',subject:'Political Science',keywords:['political','science'],note:'32'},
-{title:'democracy',udc:'321.7',subject:'Democracy',keywords:['democracy'],note:'321.7'},
-{title:'elections',udc:'324',subject:'Elections',keywords:['elections'],note:'324'},
-{title:'parliament',udc:'328',subject:'Parliament',keywords:['parliament'],note:'328'},
-{title:'public administration',udc:'35',subject:'Public Administration',keywords:['public','administration'],note:'35'},
-{title:'human rights',udc:'342.7',subject:'Human Rights',keywords:['human','rights'],note:'342.7'},
-{title:'international relations',udc:'327',subject:'International Relations',keywords:['international','relations'],note:'327'},
-{title:'india pakistan relations',udc:'327(540:549)',subject:'India-Pakistan Relations',keywords:['india','pakistan'],note:'327 + (540:549)'},
-{title:'india china relations',udc:'327(540:510)',subject:'India-China Relations',keywords:['india','china'],note:'327 + (540:510)'},
-{title:'foreign policy of india',udc:'327(540)',subject:'Foreign Policy of India',keywords:['foreign policy','india'],note:'327 + (540)'},
-{title:'diplomacy',udc:'327',subject:'Diplomacy',keywords:['diplomacy'],note:'327'},
-{title:'economy of india',udc:'33(540)',subject:'Economy of India',keywords:['economy','india'],note:'33 + (540)'},
-{title:'indian economy',udc:'33(540)',subject:'Indian Economy',keywords:['indian','economy'],note:'33 + (540)'},
-{title:'economics',udc:'33',subject:'Economics',keywords:['economics'],note:'33'},
-{title:'banking',udc:'336.71',subject:'Banking',keywords:['banking'],note:'336.71'},
-{title:'finance',udc:'336',subject:'Finance',keywords:['finance'],note:'336'},
-{title:'tourism',udc:'338.48',subject:'Tourism',keywords:['tourism'],note:'338.48'},
-{title:'law',udc:'34',subject:'Law',keywords:['law'],note:'34'},
-{title:'constitutional law',udc:'342',subject:'Constitutional Law',keywords:['constitutional law'],note:'342'},
-{title:'criminal law',udc:'343',subject:'Criminal Law',keywords:['criminal law'],note:'343'},
-{title:'civil law',udc:'347',subject:'Civil Law',keywords:['civil law'],note:'347'},
-{title:'international law',udc:'341',subject:'International Law',keywords:['international law'],note:'341'},
-{title:'education',udc:'37',subject:'Education',keywords:['education'],note:'37'},
-{title:'indian education',udc:'37(540)',subject:'Indian Education',keywords:['indian','education'],note:'37 + (540)'},
-{title:'educational psychology',udc:'37.015.3',subject:'Educational Psychology',keywords:['educational','psychology'],note:'37.015.3'},
-{title:'higher education',udc:'378',subject:'Higher Education',keywords:['higher','education'],note:'378'},
-{title:'teaching methods',udc:'37.02',subject:'Teaching Methods',keywords:['teaching'],note:'37.02'},
-{title:'philosophy',udc:'1',subject:'Philosophy',keywords:['philosophy'],note:'1'},
-{title:'indian philosophy',udc:'1(540)',subject:'Indian Philosophy',keywords:['indian','philosophy'],note:'1 + (540)'},
-{title:'ethics',udc:'17',subject:'Ethics',keywords:['ethics'],note:'17'},
-{title:'logic',udc:'16',subject:'Logic',keywords:['logic'],note:'16'},
-{title:'psychology',udc:'159.9',subject:'Psychology',keywords:['psychology'],note:'159.9'},
-{title:'sociology',udc:'316',subject:'Sociology',keywords:['sociology'],note:'316'},
-{title:'indian society',udc:'316(540)',subject:'Indian Society',keywords:['indian','society'],note:'316 + (540)'},
-{title:'anthropology',udc:'572',subject:'Anthropology',keywords:['anthropology'],note:'572'},
-{title:'demography',udc:'314',subject:'Demography',keywords:['demography'],note:'314'},
-{title:'science',udc:'5',subject:'Science',keywords:['science'],note:'5'},
-{title:'mathematics',udc:'51',subject:'Mathematics',keywords:['mathematics'],note:'51'},
-{title:'algebra',udc:'512',subject:'Algebra',keywords:['algebra'],note:'512'},
-{title:'geometry',udc:'514',subject:'Geometry',keywords:['geometry'],note:'514'},
-{title:'calculus',udc:'517',subject:'Calculus',keywords:['calculus'],note:'517'},
-{title:'statistics',udc:'519.2',subject:'Statistics',keywords:['statistics'],note:'519.2'},
-{title:'physics',udc:'53',subject:'Physics',keywords:['physics'],note:'53'},
-{title:'chemistry',udc:'54',subject:'Chemistry',keywords:['chemistry'],note:'54'},
-{title:'biology',udc:'57',subject:'Biology',keywords:['biology'],note:'57'},
-{title:'botany',udc:'58',subject:'Botany',keywords:['botany'],note:'58'},
-{title:'zoology',udc:'59',subject:'Zoology',keywords:['zoology'],note:'59'},
-{title:'astronomy',udc:'52',subject:'Astronomy',keywords:['astronomy'],note:'52'},
-{title:'geology',udc:'55',subject:'Geology',keywords:['geology'],note:'55'},
-{title:'ecology',udc:'574',subject:'Ecology',keywords:['ecology'],note:'574'},
-{title:'environmental science',udc:'504',subject:'Environmental Science',keywords:['environmental'],note:'504'},
-{title:'computer science',udc:'004',subject:'Computer Science',keywords:['computer','science'],note:'004'},
-{title:'computer programming',udc:'004.42',subject:'Computer Programming',keywords:['programming'],note:'004.42'},
-{title:'programming',udc:'004.42',subject:'Programming',keywords:['programming'],note:'004.42'},
-{title:'software engineering',udc:'004.41',subject:'Software Engineering',keywords:['software','engineering'],note:'004.41'},
-{title:'artificial intelligence',udc:'004.8',subject:'Artificial Intelligence',keywords:['artificial','intelligence'],note:'004.8'},
-{title:'machine learning',udc:'004.85',subject:'Machine Learning',keywords:['machine','learning'],note:'004.85'},
-{title:'database systems',udc:'004.65',subject:'Database Systems',keywords:['database'],note:'004.65'},
-{title:'computer networks',udc:'004.7',subject:'Computer Networks',keywords:['networks'],note:'004.7'},
-{title:'cybersecurity',udc:'004.49',subject:'Cybersecurity',keywords:['cybersecurity'],note:'004.49'},
-{title:'medicine',udc:'61',subject:'Medicine',keywords:['medicine'],note:'61'},
-{title:'anatomy',udc:'611',subject:'Anatomy',keywords:['anatomy'],note:'611'},
-{title:'physiology',udc:'612',subject:'Physiology',keywords:['physiology'],note:'612'},
-{title:'pharmacology',udc:'615',subject:'Pharmacology',keywords:['pharmacology'],note:'615'},
-{title:'surgery',udc:'617',subject:'Surgery',keywords:['surgery'],note:'617'},
-{title:'ayurveda',udc:'615.89',subject:'Ayurveda',keywords:['ayurveda'],note:'615.89'},
-{title:'nursing',udc:'616-083',subject:'Nursing',keywords:['nursing'],note:'616-083'},
-{title:'agriculture',udc:'63',subject:'Agriculture',keywords:['agriculture'],note:'63'},
-{title:'indian agriculture',udc:'63(540)',subject:'Indian Agriculture',keywords:['indian','agriculture'],note:'63 + (540)'},
-{title:'farming',udc:'631.5',subject:'Farming',keywords:['farming'],note:'631.5'},
-{title:'horticulture',udc:'635',subject:'Horticulture',keywords:['horticulture'],note:'635'},
-{title:'forestry',udc:'630',subject:'Forestry',keywords:['forestry'],note:'630'},
-{title:'animal husbandry',udc:'636',subject:'Animal Husbandry',keywords:['animal husbandry'],note:'636'},
-{title:'engineering',udc:'62',subject:'Engineering',keywords:['engineering'],note:'62'},
-{title:'mechanical engineering',udc:'621',subject:'Mechanical Engineering',keywords:['mechanical'],note:'621'},
-{title:'electrical engineering',udc:'621.3',subject:'Electrical Engineering',keywords:['electrical'],note:'621.3'},
-{title:'civil engineering',udc:'624',subject:'Civil Engineering',keywords:['civil'],note:'624'},
-{title:'management',udc:'65',subject:'Management',keywords:['management'],note:'65'},
-{title:'business management',udc:'65',subject:'Business Management',keywords:['business','management'],note:'65'},
-{title:'marketing',udc:'658.8',subject:'Marketing',keywords:['marketing'],note:'658.8'},
-{title:'accounting',udc:'657',subject:'Accounting',keywords:['accounting'],note:'657'},
-{title:'entrepreneurship',udc:'658.1',subject:'Entrepreneurship',keywords:['entrepreneurship'],note:'658.1'},
-{title:'art',udc:'7',subject:'Art',keywords:['art'],note:'7'},
-{title:'painting',udc:'75',subject:'Painting',keywords:['painting'],note:'75'},
-{title:'sculpture',udc:'73',subject:'Sculpture',keywords:['sculpture'],note:'73'},
-{title:'architecture',udc:'72',subject:'Architecture',keywords:['architecture'],note:'72'},
-{title:'indian architecture',udc:'72(540)',subject:'Indian Architecture',keywords:['indian','architecture'],note:'72 + (540)'},
-{title:'music',udc:'78',subject:'Music',keywords:['music'],note:'78'},
-{title:'indian music',udc:'78(540)',subject:'Indian Music',keywords:['indian','music'],note:'78 + (540)'},
-{title:'dance',udc:'793.3',subject:'Dance',keywords:['dance'],note:'793.3'},
-{title:'cinema',udc:'791',subject:'Cinema',keywords:['cinema'],note:'791'},
-{title:'indian cinema',udc:'791(540)',subject:'Indian Cinema',keywords:['indian','cinema'],note:'791 + (540)'},
-{title:'photography',udc:'77',subject:'Photography',keywords:['photography'],note:'77'},
-{title:'sports',udc:'796',subject:'Sports',keywords:['sports'],note:'796'},
-{title:'cricket',udc:'796.358',subject:'Cricket',keywords:['cricket'],note:'796.358'},
-{title:'football',udc:'796.332',subject:'Football',keywords:['football'],note:'796.332'},
-{title:'hockey',udc:'796.355',subject:'Hockey',keywords:['hockey'],note:'796.355'},
-{title:'library science',udc:'02',subject:'Library Science',keywords:['library','science'],note:'02'},
-{title:'cataloguing',udc:'025.3',subject:'Cataloguing',keywords:['cataloguing'],note:'025.3'},
-{title:'classification',udc:'025.4',subject:'Classification',keywords:['classification'],note:'025.4'},
-{title:'journalism',udc:'070',subject:'Journalism',keywords:['journalism'],note:'070'},
-{title:'mass communication',udc:'316.77',subject:'Mass Communication',keywords:['mass communication'],note:'316.77'},
-{title:'linguistics',udc:'81',subject:'Linguistics',keywords:['linguistics'],note:'81'},
-{title:'grammar',udc:'81',subject:'Grammar',keywords:['grammar'],note:'81'},
-{title:'english language',udc:'811.111',subject:'English Language',keywords:['english','language'],note:'811.111'},
-{title:'hindi language',udc:'811.214.21',subject:'Hindi Language',keywords:['hindi','language'],note:'811.214.21'},
-{title:'punjabi language',udc:'811.214.22',subject:'Punjabi Language',keywords:['punjabi','language'],note:'811.214.22'},
-{title:'sanskrit language',udc:'811.211',subject:'Sanskrit Language',keywords:['sanskrit','language'],note:'811.211'},
-{title:'military science',udc:'355',subject:'Military Science',keywords:['military'],note:'355'},
-{title:'war',udc:'355.01',subject:'War',keywords:['war'],note:'355.01'},
-{title:'indian army',udc:'355(540)',subject:'Indian Army',keywords:['indian army'],note:'355 + (540)'},
-{title:'biography',udc:'92',subject:'Biography',keywords:['biography'],note:'92'},
-{title:'autobiography',udc:'92',subject:'Autobiography',keywords:['autobiography'],note:'92'}
-];
-const PLACE={'india':{code:'(540)',name:'India'},'punjab':{code:'(540.15)',name:'Punjab'},'pakistan':{code:'(549)',name:'Pakistan'},'china':{code:'(510)',name:'China'},'japan':{code:'(520)',name:'Japan'},'asia':{code:'(5)',name:'Asia'},'europe':{code:'(4)',name:'Europe'},'africa':{code:'(6)',name:'Africa'},'usa':{code:'(73)',name:'United States'},'england':{code:'(420)',name:'England'},'australia':{code:'(94)',name:'Australia'},'canada':{code:'(71)',name:'Canada'},'world':{code:'(100)',name:'World'}};
-const LANG={'english':{code:'=111',name:'English'},'hindi':{code:'=214.21',name:'Hindi'},'punjabi':{code:'=214.22',name:'Punjabi'},'urdu':{code:'=214.31',name:'Urdu'},'bengali':{code:'=214.32',name:'Bengali'},'tamil':{code:'=214.42',name:'Tamil'},'sanskrit':{code:'=211',name:'Sanskrit'}};
-const FORM={'dictionary':{code:'(038)',name:'Dictionary'},'encyclopedia':{code:'(031)',name:'Encyclopedia'},'handbook':{code:'(035)',name:'Handbook'},'manual':{code:'(035)',name:'Manual'},'textbook':{code:'(075)',name:'Textbook'},'atlas':{code:'(084)',name:'Atlas'},'guide':{code:'(036)',name:'Guide'},'thesis':{code:'(043)',name:'Thesis'},'report':{code:'(047)',name:'Report'}};
-const TIME={'ancient':{code:'".../05"',name:'Ancient'},'medieval':{code:'"05/14"',name:'Medieval'},'modern':{code:'"15/20"',name:'Modern'},'contemporary':{code:'"19/20"',name:'Contemporary'},'colonial':{code:'"17/19"',name:'Colonial era'}};
-const DESC={'82':['Literature','Literature, literary works'],'821.111':['English Literature','English literature in English language'],'821.111-2':['English Drama','Drama written in English language'],'821.111-1':['English Poetry','Poetry written in English'],'821.111-3':['English Fiction','Fiction in English'],'821.21':['Indian Literature','Indian literature'],'821.214.22':['Punjabi Literature','Literature in Punjabi language'],'94':['History','General history'],'91':['Geography','Geography and travel'],'2':['Religion','Religion and theology'],'32':['Political Science','Politics and government'],'327':['International Relations','Relations between nations'],'33':['Economics','Economic science'],'34':['Law','Legal science'],'37':['Education','Education and teaching'],'1':['Philosophy','Philosophy'],'159.9':['Psychology','Human psychology'],'316':['Sociology','Society and social behaviour'],'5':['Science','Natural sciences'],'51':['Mathematics','Mathematics'],'53':['Physics','Physics'],'54':['Chemistry','Chemistry'],'57':['Biology','Biological sciences'],'61':['Medicine','Medical sciences'],'62':['Engineering','Engineering and technology'],'63':['Agriculture','Agriculture and farming'],'65':['Management','Business administration'],'7':['The Arts','Arts and recreation'],'78':['Music','Music'],'791':['Cinema','Motion pictures'],'792':['Theatre','Theatre and drama'],'796':['Sports','Sports and games'],'81':['Linguistics','Language studies'],'070':['Journalism','Journalism and press'],'02':['Library Science','Library science and librarianship'],'355':['Military Science','Military science'],'92':['Biography','Biography and autobiography'],'004':['Computer Science','Computing and data processing'],'004.42':['Programming','Computer programming'],'004.8':['Artificial Intelligence','AI and machine learning'],'572':['Anthropology','Anthropology'],'314':['Demography','Population studies'],'504':['Environmental Science','Environment and ecology'],'615.89':['Ayurveda','Ayurvedic medicine'],'338.48':['Tourism','Tourism economics'],'336':['Finance','Finance and banking'],'378':['Higher Education','Universities'],'793.3':['Dance','Dance'],'77':['Photography','Photography'],'17':['Ethics','Ethics'],'16':['Logic','Logic']};
-function findPlace(code){return Object.values(PLACE).find(x=>x.code===code)||null}
-function parseAux(udc){const a=[];const pm=udc.match(/\(([^)]+)\)/g)||[];pm.forEach(p=>{const c=p.replace(/[()]/g,'');if(c.includes(':')){const z=c.split(':');a.push({type:'relation',code:p,name:(findPlace('('+z[0]+')')?.name||z[0])+' : '+(findPlace('('+z[1]+')')?.name||z[1]),desc:'Relation between places'})}else{const x=findPlace(p);if(x)a.push({type:'place',code:p,name:x.name,desc:'Geographic auxiliary'})}});(udc.match(/=\d[\d.]*/g)||[]).forEach(l=>{const x=Object.values(LANG).find(y=>y.code===l);if(x)a.push({type:'language',code:l,name:x.name,desc:'Language auxiliary'})});(udc.match(/\(0\d+\)/g)||[]).forEach(f=>{const x=Object.values(FORM).find(y=>y.code===f);if(x)a.push({type:'form',code:f,name:x.name,desc:'Form auxiliary'})});(udc.match(/"[^"]+"/g)||[]).forEach(t=>{const x=Object.values(TIME).find(y=>y.code===t);a.push({type:'time',code:t,name:x?.name||'Time period',desc:'Time auxiliary'})});const lf=udc.match(/-[123]/);if(lf)a.push({type:'literary',code:lf[0],name:{'-1':'Poetry','-2':'Drama','-3':'Fiction'}[lf[0]],desc:'Literary form division'});return a}
-function detect(s,d){for(const [k,v] of Object.entries(d))if(s.includes(k))return v;return null}
-function build(entry,title,source='db'){const aux=parseAux(entry.udc);return{title,subject:entry.subject,udc:entry.udc,baseClass:entry.udc.split(/[+\-:(=]/)[0],aux,keywords:entry.keywords,source,explanation:explain(entry,aux),symbolExplains:symbols(entry,aux),alternatives:[]}}
-function symbols(e,a){const b=e.udc.split(/[+\-:(=]/)[0].match(/^[\d.]+/)?.[0]||e.udc;const bi=DESC[b];const rows=[{sym:b,name:bi?.[0]||e.subject,desc:bi?.[1]||e.note,badge:'MAIN',badgeClass:'smb-main'}];a.forEach(x=>rows.push({sym:x.code,name:x.name,desc:x.desc,badge:x.type==='place'?'PLACE':x.type==='language'?'LANG':x.type==='form'?'FORM':x.type==='time'?'TIME':'SYMBOL',badgeClass:'smb-'+(x.type==='place'?'place':x.type==='language'?'lang':x.type==='form'?'form':x.type==='time'?'time':'sym')}));return rows}
-function explain(e,a){let x=['▎ SUBJECT',e.subject,'','▎ DATABASE MATCH','This classification is sourced from the local UDC database.','Note: '+(e.note||''),'','▎ NOTATION BREAKDOWN','Full notation: '+e.udc];a.forEach(z=>x.push('  '+z.code+'  →  '+z.name+' ('+z.desc+')'));x.push('','▎ SYMBOL MEANING','  ( ) = place/form auxiliary','  : = relation','  = = language auxiliary','  " " = time auxiliary','  - = literary form division');return x.join('\n')}
-function classify(t){const l=t.toLowerCase().trim();let e=UDC_DATABASE.find(x=>x.title===l)||UDC_DATABASE.find(x=>l.includes(x.title)&&x.title.length>3);if(e)return build(e,t);let best=null,score=0;UDC_DATABASE.forEach(x=>{let s=0;(x.keywords||[]).forEach(k=>{if(l.includes(k))s+=k.length*2});if(s>score){score=s;best=x}});if(best&&score>5)return build(best,t,'db-fuzzy');let base='0',subject='General Works';if(l.includes('history')){base='94';subject='History'}else if(l.includes('literature')){base='82';subject='Literature'}else if(l.includes('science')){base='5';subject='Science'}else if(l.includes('law')){base='34';subject='Law'}else if(l.includes('medicine')){base='61';subject='Medicine'}const p=detect(l,PLACE),la=detect(l,LANG),f=detect(l,FORM),ti=detect(l,TIME);let udc=base,aux=[];[p,la,f,ti].forEach(x=>{if(x){udc+=x.code;aux.push(x)}});const entry={title:t,subject,udc,keywords:[subject.toLowerCase()],note:'Auto-classified'};return build(entry,t,'auto')}
-const state={current:null,saved:[]};try{state.saved=JSON.parse(localStorage.getItem('udcdb_saved')||'[]')}catch(e){}
-const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s),esc=t=>String(t??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200)}
-function copy(t,m){if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast(m||'Copied')).catch(()=>toast('Copy failed'));else toast('Copy unavailable')}
-function render(r){
-  const udc=(r.udc&&r.udc!=='0')?r.udc:'—';
-  $('#ansUdc').textContent=udc; $('#ansSub').textContent=r.subject||r.mainSubject||'Verification required';
-  $('#ansTitle').textContent=r.title||''; $('#ansSubject').textContent=r.subject||r.mainSubject||'Verification required';
-  $('#ansExplain').textContent=r.explanation||'Verification required.';
-  const src=r.source||'UDC'; const grounded=!!r.googleGrounded;
-  $('#ansBadge').innerHTML='<span class="db-badge '+(grounded?'':'auto')+'">'+(grounded?'🌐 GOOGLE-GROUNDED '+esc(src).toUpperCase():'✓ '+esc(src).toUpperCase())+'</span>';
-  const base=r.baseClass&&r.baseClass!=='0'?r.baseClass:udc;
-  $('#nvLine').innerHTML='<span class="nv-token main">'+esc(base)+'</span>'+(r.aux||[]).map(a=>'<span class="nv-token sym">'+esc(a.code&&a.code.charAt(0)==='('?'( )':a.type==='language'?'=':a.type==='time'?'\"':'')+'</span><span class="nv-token '+(a.type==='place'?'place':a.type==='language'?'lang':a.type==='form'?'form':'time')+'">'+esc((a.code||'').replace(/[()=\"]/g,''))+'</span>').join('');
-  $('#nvLegend').innerHTML=(r.aux||[]).map(a=>'<span class="nv-lg"><span class="nv-lg-dot"></span>'+esc(a.name||a.type||'Auxiliary')+'</span>').join('');
-  $('#symMap').innerHTML=(r.symbolExplains||[]).map(x=>'<div class="sm-row"><div class="sm-sym">'+esc(x.sym||'')+'</div><div class="sm-body"><div class="sm-name">'+esc(x.name||'')+'<span class="sm-badge '+esc(x.badgeClass||'smb-sym')+'">'+esc(x.badge||'SYMBOL')+'</span></div><div class="sm-desc">'+esc(x.desc||'')+'</div></div></div>').join('') || '<div class="empty"><p>Notation breakdown will appear when a verified UDC number is available.</p></div>';
-  $('#ansKw').innerHTML=(r.keywords||[]).map(k=>'<span class="chip kw">'+esc(k)+'</span>').join('');
-  const gs=Array.isArray(r.sources)?r.sources:[]; $('#googleSection').style.display=gs.length?'block':'none';
-  $('#googleSources').innerHTML=gs.map(x=>'<div class="list-item" style="cursor:default"><div class="li-info"><div class="li-t">'+esc(x.title||'Google result')+'</div><div class="li-meta"><a href="'+esc(x.uri||'#')+'" target="_blank" rel="noopener noreferrer" style="color:var(--p2);overflow-wrap:anywhere">Open source</a></div></div></div>').join('');
-  updateSave();
+const titleEl=document.getElementById('title'),go=document.getElementById('go'),statusEl=document.getElementById('status'),result=document.getElementById('result');
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{titleEl.value=c.textContent; classify()});
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function show(r){
+  if(!r || !r.verified || !r.udc){
+    result.innerHTML=`<div class="empty"><b>STATUS: NOT VERIFIED</b><br><br>${esc(r?.message||'No reliable UDC classification was found.')}<br><br><span class="warn">No UDC number has been invented or substituted.</span></div>`;
+    return;
+  }
+  const src=(r.sources||[]).map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title||x.url)}</a>`).join('');
+  result.innerHTML=`
+  <div class="result">
+    <div class="hero">
+      <div class="label">VERIFIED UDC CLASSIFICATION</div>
+      <div class="udc">${esc(r.udc)}</div>
+      <div class="ok">✓ ${esc(r.verificationLabel||'Verified')}</div>
+      <div class="grid">
+        <div class="box"><b>Book Title</b><div>${esc(r.title)}</div></div>
+        <div class="box"><b>Confidence</b><div>${esc(r.confidence||'Not stated')}</div></div>
+        <div class="box"><b>Main Subject</b><div>${esc(r.mainSubject||'—')}</div></div>
+        <div class="box"><b>Sub Subject</b><div>${esc(r.subSubject||'—')}</div></div>
+      </div>
+      <div class="box" style="margin-top:12px"><b>Explanation</b><div>${esc(r.explanation||'—')}</div></div>
+      ${src?`<div class="sources"><b>Evidence used</b>${src}</div>`:''}
+    </div>
+  </div>`;
 }
-function updateSave(){if(!state.current)return;const b=$('#aSave');const yes=state.saved.some(x=>x.title===state.current.title&&x.udc===state.current.udc);b.textContent=yes?'🔖 Saved':'Save'}
-async function run(){const t=$('#q').value.trim();if(!t){toast('Enter a book title');return}$('#answer').classList.remove('on');$('#loading').classList.add('on');$('#loadingText').textContent='Checking local UDC key → Google-grounded Gemini → Groq fallback...';try{const resp=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t})});const r=await resp.json();if(!r.symbolExplains){r.baseClass=r.baseClass||r.mainClass||((r.udc&&r.udc!=='0')?String(r.udc).split(/[.(="'\-+/:]/)[0]:'—');r.keywords=[r.mainSubject||r.subject||'UDC'];r.aux=r.aux||[];r.symbolExplains=(r.aux||[]).map(a=>({sym:a.code||'',name:a.name||a.type||'Auxiliary',desc:a.desc||a.name||'',badge:(a.type||'AUX').toUpperCase(),badgeClass:'smb-'+(a.type||'sym')}));}state.current=r;render(r);$('#loading').classList.remove('on');$('#answer').classList.add('on')}catch(e){$('#loading').classList.remove('on');toast('Server unavailable — try again');} }
-function full(r){return 'UDC DATABASE PRO\\n\\nBOOK TITLE: '+r.title+'\\nSUBJECT: '+r.subject+'\\nUDC NUMBER: '+r.udc+'\\n\\n'+r.explanation}
-const classes=[['82','Literature'],['821.111','English Lit'],['821.111-2','English Drama'],['821.21','Indian Lit'],['821.214.22','Punjabi Lit'],['94','History'],['91','Geography'],['2','Religion'],['32','Politics'],['327','Intl Relations'],['33','Economics'],['34','Law'],['37','Education'],['1','Philosophy'],['159.9','Psychology'],['316','Sociology'],['5','Science'],['51','Mathematics'],['53','Physics'],['54','Chemistry'],['57','Biology'],['61','Medicine'],['62','Engineering'],['63','Agriculture'],['65','Management'],['7','Arts'],['78','Music'],['791','Cinema'],['792','Theatre'],['796','Sports'],['81','Linguistics'],['070','Journalism'],['02','Library Science'],['355','Military'],['92','Biography'],['004','Computer Sci']];
-function browseGrid(){$('#browseGrid').innerHTML=classes.map(c=>'<button class="bg-item"><div class="bg-code">'+c[0]+'</div><div class="bg-name">'+c[1]+'</div></button>').join('');$$('.bg-item').forEach((b,i)=>b.onclick=()=>{$('#q').value=classes[i][1];switchTab('answer');run()})}
-function searchBrowse(){const q=$('#browseQ').value.toLowerCase().trim();const rs=UDC_DATABASE.filter(e=>e.title.includes(q)||e.subject.toLowerCase().includes(q)||e.udc.includes(q)).slice(0,30);$('#browseResults').innerHTML=rs.map(e=>'<div class="list-item" data-t="'+esc(e.title)+'"><div class="li-info"><div class="li-t">'+esc(e.title)+'</div><div class="li-meta"><span class="li-udc">'+esc(e.udc)+'</span><span>'+esc(e.subject)+'</span></div></div></div>').join('')||'<div class="empty"><p>No matches found.</p></div>';$$('.list-item').forEach(x=>x.onclick=()=>{$('#q').value=x.dataset.t;switchTab('answer');run()})}
-function saved(){const b=$('#savedList');if(!state.saved.length){b.innerHTML='<div class="empty"><p>No saved items yet.</p></div>';return}b.innerHTML=state.saved.map(x=>'<div class="list-item" data-id="'+x.id+'"><div class="li-info"><div class="li-t">'+esc(x.title)+'</div><div class="li-meta"><span class="li-udc">'+esc(x.udc)+'</span></div></div></div>').join('');$$('.list-item').forEach(x=>x.onclick=()=>{state.current=state.saved.find(y=>y.id===x.dataset.id);render(state.current);switchTab('answer')})}
-function switchTab(n){$$('.tab').forEach(x=>x.classList.toggle('on',x.dataset.pane===n));$$('.pane').forEach(x=>x.classList.toggle('on',x.id==='pane-'+n));if(n==='saved')saved()}
-$('#go').addEventListener('click',run,{passive:true}); $('#go').addEventListener('touchend',e=>{e.preventDefault();run();},{passive:false}); $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run()}});$$('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.pane));$('#browseGo').onclick=searchBrowse;$('#browseQ').onkeypress=e=>{if(e.key==='Enter')searchBrowse()};$('#aCopy').onclick=()=>state.current&&copy(full(state.current),'Full answer copied');$('#aCopyUdc').onclick=()=>state.current&&copy(state.current.udc,'UDC copied');$('#aShare').onclick=()=>state.current&&(navigator.share?navigator.share({title:'UDC: '+state.current.title,text:full(state.current)}):copy(full(state.current),'Copied'));$('#aPrint').onclick=()=>window.print();$('#aSave').onclick=()=>{if(!state.current)return;const i=state.saved.findIndex(x=>x.title===state.current.title&&x.udc===state.current.udc);if(i>=0){state.saved.splice(i,1);toast('Removed')}else{state.saved.unshift({...state.current,id:Date.now()+'',time:new Date().toISOString()});toast('Saved')}localStorage.setItem('udcdb_saved',JSON.stringify(state.saved));updateSave()};$('#aClear').onclick=()=>{$('#q').value='';$('#answer').classList.remove('on');$('#q').focus()};$('#themeBtn').onclick=()=>{const l=document.documentElement.getAttribute('data-theme')==='light';if(l){document.documentElement.removeAttribute('data-theme');localStorage.setItem('udcdb_theme','dark')}else{document.documentElement.setAttribute('data-theme','light');localStorage.setItem('udcdb_theme','light')}};const quick=['English Drama','Shakespeare','Hamlet','English Literature','Punjabi Literature','History of India','Indian Constitution','International Relations','India Pakistan Relations','Geography of India','Sikhism','Indian Philosophy','Cricket','Computer Programming','Library Science','Modern History of India'];$('#quickChips').innerHTML=quick.map(x=>'<button class="qc">'+x+'</button>').join('');$$('.qc').forEach((b,i)=>b.onclick=()=>{$('#q').value=quick[i];run()});if(localStorage.getItem('udcdb_theme')==='light')document.documentElement.setAttribute('data-theme','light');browseGrid();
-})();
+async function classify(){
+  const title=titleEl.value.trim();
+  if(!title)return;
+  go.disabled=true;statusEl.className='status';statusEl.textContent='Checking local UDC key…';result.innerHTML='';
+  try{
+    const res=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});
+    const data=await res.json();
+    statusEl.textContent=data.providerStatus||'Completed.';
+    statusEl.className='status '+(data.verified?'ok':'warn');
+    show(data);
+  }catch(e){
+    statusEl.textContent='Service error — no answer was invented.';
+    statusEl.className='status bad';
+    show({verified:false,message:'The classification service could not be reached.'});
+  }finally{go.disabled=false}
+}
+go.onclick=classify;
+titleEl.addEventListener('keydown',e=>{if(e.key==='Enter')classify()});
 </script>
 </body>
 </html>
