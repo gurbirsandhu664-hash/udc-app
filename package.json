@@ -1,6 +1,6 @@
 {
-  "name":"udc-ultimate-v24",
-  "version":"24.0.0",
+  "name":"udc-ultimate-v25",
+  "version":"25.0.0",
   "private":true,
   "type":"module",
   "scripts":{"start":"node server.js"},
