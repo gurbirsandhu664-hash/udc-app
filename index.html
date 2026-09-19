@@ -1,47 +1,35 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>UDC Search Engine V28</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020"><title>UDC Search Engine V30</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#070b14;color:#eef3ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-.wrap{max-width:980px;margin:auto;padding:20px}.card{background:#101827;border:1px solid #263957;border-radius:26px;padding:24px}
-h1{margin:0;font-size:31px}.sub{color:#9ba9c1;margin:6px 0 22px}.search{display:flex;gap:10px}
-input{flex:1;background:#070c16;border:2px solid #30476b;border-radius:18px;padding:18px;color:#fff;font-size:18px;outline:0}
-button{border:0;border-radius:17px;padding:0 25px;background:#705cff;color:white;font-weight:800;font-size:16px;cursor:pointer}
-button:disabled{opacity:.5}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}.chip{padding:9px 13px;background:#172236;border:1px solid #2b3d5b;border-radius:99px;cursor:pointer;color:#b9c6db}
-#status{color:#9ba9c1;margin:16px 0}.result{background:#151d2c;border:1px solid #304263;border-radius:22px;padding:20px}
-.udc{font-size:45px;font-weight:900;margin:8px 0;color:#7ea7ff}.badge{display:inline-block;padding:7px 10px;border-radius:99px;background:#1c3450;color:#8ed4ff;font-size:12px;font-weight:800}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.box{background:#0c1320;border:1px solid #263957;border-radius:15px;padding:14px}.box b{display:block;color:#8291aa;font-size:11px;letter-spacing:1px;margin-bottom:5px}.sources a{display:block;color:#75baff;margin:7px 0;word-break:break-all}
-@media(max-width:650px){.search{flex-direction:column}.search button{height:56px}.grid{grid-template-columns:1fr}.udc{font-size:37px}}
+:root{--bg:#070b14;--panel:#101827;--panel2:#0b1220;--line:#263957;--muted:#94a3bd;--text:#f3f6ff;--accent:#7664ff;--accent2:#54b9e8;--ok:#68df92;--warn:#ffbd55}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#1c2142 0,#070b14 48%);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}.wrap{max-width:980px;margin:auto;padding:18px}.hero{background:linear-gradient(145deg,#121a2b,#0c1320);border:1px solid var(--line);border-radius:30px;padding:24px;box-shadow:0 18px 60px #0006}.brand{display:flex;gap:14px;align-items:center}.logo{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:25px;font-weight:950}.title{font-size:clamp(30px,7vw,54px);line-height:1;margin:0}.v{color:#9c8cff}.sub{margin:10px 0 22px;color:var(--muted);font-size:15px}.search{display:grid;grid-template-columns:1fr 190px;gap:10px}.search input{width:100%;background:#050912;border:2px solid #334a70;border-radius:20px;padding:18px 19px;color:#fff;font-size:18px;outline:none}.search input:focus{border-color:#7f70ff;box-shadow:0 0 0 4px #7664ff22}.search button{border:0;border-radius:20px;background:linear-gradient(100deg,#7358ff,#5bbbe6);color:white;font-weight:900;font-size:17px;cursor:pointer;min-height:58px}.search button:disabled{opacity:.55;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0}.chip{background:#151f31;border:1px solid #2e4263;color:#b9c6db;border-radius:999px;padding:10px 14px;cursor:pointer}.status{min-height:25px;margin:16px 0;color:var(--muted)}.result{background:linear-gradient(150deg,#151e31,#0c1422);border:1px solid #33496c;border-radius:26px;padding:22px;margin-top:10px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center}.badge{display:inline-flex;border:1px solid #326b4a;background:#102b1d;color:var(--ok);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;letter-spacing:.7px}.udc{font-size:clamp(40px,10vw,70px);font-weight:950;letter-spacing:1px;color:#80a7ff;margin:10px 0 5px;overflow-wrap:anywhere}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:18px}.box{background:#080f1b;border:1px solid #243653;border-radius:17px;padding:15px}.box b{display:block;color:#7f8fa9;font-size:11px;letter-spacing:2px;margin-bottom:7px}.explain{line-height:1.6;color:#dbe3f2}.sources a{display:block;color:#7fc8ff;margin:8px 0;word-break:break-word}.empty{border-color:#5b4930}.empty .badge{color:var(--warn);border-color:#80602c;background:#2b2110}.foot{color:#71819b;font-size:12px;margin-top:18px;line-height:1.6}
+@media(max-width:680px){.wrap{padding:10px}.hero{padding:17px;border-radius:23px}.search{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
 </style></head>
-<body><div class="wrap"><div class="card">
-<h1>UDC Search Engine <span style="color:#8d79ff">V28</span></h1>
-<div class="sub">Live UDC evidence search · Gemini FINAL · Groq research · No local 2700-title key</div>
-<div class="search"><input id="q" placeholder="Enter book title, e.g. Education"><button id="go">SEARCH UDC</button></div>
-<div class="chips">
-<span class="chip">Education</span><span class="chip">English Drama</span><span class="chip">Hindi Language</span>
-<span class="chip">History of India</span><span class="chip">Dictionary of Language and Literature</span>
-</div><div id="status">Ready.</div><div id="out"></div>
-</div></div>
+<body><main class="wrap"><section class="hero">
+<div class="brand"><div class="logo">UDC</div><div><h1 class="title">UDC Search Engine <span class="v">V30</span></h1><div class="sub">Gemini FINAL · Groq research · Google grounding · UDC-only · no fake 0/DDC fallback</div></div></div>
+<div class="search"><input id="q" autocomplete="off" placeholder="Enter any book title…"><button id="go">SEARCH UDC</button></div>
+<div class="chips"><button class="chip">History of India</button><button class="chip">Education</button><button class="chip">English Drama</button><button class="chip">Bible in Hindi</button><button class="chip">Dictionary of Language and Literature</button><button class="chip">Science and Technology</button></div>
+<div id="status" class="status">Ready — enter a title.</div><div id="out"></div>
+<div class="foot">Final classification is produced by Gemini after UDC-focused web grounding. Groq is used only as research support. If a defensible UDC number cannot be verified, the tool shows a clean verification status instead of inventing a number.</div>
+</section></main>
 <script>
 const q=document.querySelector('#q'),go=document.querySelector('#go'),status=document.querySelector('#status'),out=document.querySelector('#out');
-document.querySelectorAll('.chip').forEach(x=>x.onclick=()=>{q.value=x.textContent;run()});
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function render(r){
- if(!r?.verified||!r.udc){out.innerHTML='<div class="result"><b>NO VERIFIED UDC RESULT</b><p>'+esc(r?.message||'No defensible UDC number was found.')+'</p></div>';return}
- const src=(r.sources||[]).map(s=>'<a target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.title||s.url)+'</a>').join('');
- out.innerHTML='<div class="result"><span class="badge">'+esc(r.providerStatus||'UDC RESULT')+'</span><div class="udc">'+esc(r.udc)+'</div>'+
- '<div class="grid"><div class="box"><b>TITLE</b>'+esc(r.title)+'</div><div class="box"><b>CONFIDENCE</b>'+esc(r.confidence)+'</div>'+
- '<div class="box"><b>MAIN SUBJECT</b>'+esc(r.mainSubject)+'</div><div class="box"><b>SUBJECT / FORM</b>'+esc(r.subSubject)+'</div></div>'+
- '<div class="box" style="margin-top:10px"><b>UDC BREAKDOWN</b>'+esc(r.explanation)+'</div>'+
- (src?'<div class="box sources" style="margin-top:10px"><b>EVIDENCE</b>'+src+'</div>':'')+'</div>'
+ if(!r?.verified||!r.udc){
+  out.innerHTML='<div class="result empty"><span class="badge">'+esc(r?.status||'VERIFICATION REQUIRED')+'</span><h2>NO VERIFIED UDC RESULT</h2><p class="explain">'+esc(r?.message||'No defensible UDC classification was verified. No number was invented.')+'</p></div>';return;
+ }
+ const src=(r.sources||[]).map(s=>'<a target="_blank" rel="noopener noreferrer" href="'+esc(s.url)+'">'+esc(s.title||s.url)+'</a>').join('');
+ out.innerHTML='<div class="result"><div class="top"><span class="badge">✓ VERIFIED · GEMINI FINAL</span><span style="color:#71819b;font-size:12px">'+esc(r.evidenceLevel||'')+'</span></div><div class="udc">'+esc(r.udc)+'</div><div class="grid"><div class="box"><b>BOOK TITLE</b>'+esc(r.title)+'</div><div class="box"><b>CONFIDENCE</b>'+esc(r.confidence)+'</div><div class="box"><b>MAIN SUBJECT</b>'+esc(r.mainSubject)+'</div><div class="box"><b>SUB SUBJECT / FORM</b>'+esc(r.subSubject)+'</div></div><div class="box" style="margin-top:11px"><b>UDC BREAKDOWN / EXPLANATION</b><div class="explain">'+esc(r.explanation)+'</div></div>'+(src?'<div class="box sources" style="margin-top:11px"><b>VERIFICATION EVIDENCE</b>'+src+'</div>':'')+'</div>';
 }
 async function run(){
- let title=q.value.trim();if(!title)return;go.disabled=true;status.textContent='Searching UDC evidence…';out.innerHTML='';
- try{let res=await fetch('/api/classify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({title})});let r=await res.json();status.textContent=r.providerStatus||'Complete';render(r)}
- catch(e){status.textContent='Temporary service problem';render({verified:false,message:'The search service is temporarily unavailable. No number was invented.'})}
+ const title=q.value.trim();if(!title)return;go.disabled=true;status.textContent='Searching UDC evidence and preparing Gemini verification…';out.innerHTML='';
+ try{const response=await fetch('/api/classify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({title})});const r=await response.json();status.textContent=r.verified?'Verified UDC result':'Verification status';render(r)}
+ catch(e){status.textContent='Temporary connection problem';render({verified:false,status:'SERVICE_UNAVAILABLE',message:'The service could not complete verification. Please try again. No UDC number was invented.'})}
  finally{go.disabled=false}
 }
-go.onclick=run;q.onkeydown=e=>{if(e.key==='Enter')run()}
+document.querySelectorAll('.chip').forEach(x=>x.addEventListener('click',()=>{q.value=x.textContent;run()}));go.addEventListener('click',run);q.addEventListener('keydown',e=>{if(e.key==='Enter')run()});
 </script></body></html>
