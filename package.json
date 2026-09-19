@@ -1,18 +1,10 @@
 {
-  "name": "udc-classifier-pro",
-  "version": "3.1.0",
+  "name": "udc-ultimate-v8",
+  "version": "8.0.0",
   "private": true,
-  "type": "commonjs",
+  "description": "UDC-only title classifier with rule-based subject analysis and UDC Summary references",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "start": "node server.js"
   }
 }
