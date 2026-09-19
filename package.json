@@ -1,9 +1,17 @@
 {
-  "name":"udc-ultimate-v25",
-  "version":"25.0.0",
-  "private":true,
-  "type":"module",
-  "scripts":{"start":"node server.js"},
-  "engines":{"node":">=20"},
-  "dependencies":{"@google/genai":"^1.17.0","express":"^5.1.0","groq-sdk":"^0.33.0"}
+  "name": "udc-search-engine-v28",
+  "version": "28.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "@google/genai": "^1.17.0",
+    "groq-sdk": "^0.33.0"
+  }
 }

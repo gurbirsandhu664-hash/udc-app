@@ -1,29 +1,47 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#070b15"><title>UDC Ultimate V26</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UDC Search Engine V28</title>
 <style>
-:root{--bg:#050811;--card:#101827;--card2:#0a101c;--line:#293b5c;--txt:#eef4ff;--muted:#9aa9c0;--blue:#7fa7ff;--green:#55e294;--amber:#ffc45b;--red:#ff7f8d;--p:#805cff;--c:#49bfe8}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#1a2442 0,transparent 34%),var(--bg);color:var(--txt);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}.wrap{max-width:960px;margin:auto;padding:16px 12px 60px}.card{background:rgba(16,24,39,.98);border:1px solid var(--line);border-radius:30px;padding:20px;box-shadow:0 25px 80px #0009}header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:13px}.logo{width:58px;height:58px;border-radius:17px;background:linear-gradient(135deg,var(--p),var(--c));display:grid;place-items:center;font-weight:950;font-size:18px}.title h1{margin:0;font-size:29px}.title p{margin:5px 0 0;color:var(--muted);font-size:13px}.version{border:1px solid #405579;border-radius:999px;padding:8px 11px;color:#c2d0e5;font-size:11px;font-weight:900}.inputRow{display:flex;gap:10px}.input{flex:1;min-width:0;background:#040811;color:#fff;border:2px solid #30476f;border-radius:21px;padding:18px;font-size:18px;outline:none}.input:focus{border-color:#7187ff;box-shadow:0 0 0 4px #7187ff20}.go{width:155px;border:0;border-radius:21px;background:linear-gradient(135deg,var(--p),var(--c));color:#fff;font-size:17px;font-weight:950;cursor:pointer}.go:disabled{opacity:.58;cursor:wait}.controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 13px;background:#0c1422;border:1px solid #253755;border-radius:16px}.switch{display:flex;align-items:center;gap:8px;color:#b8c6db;font-size:13px}.switch input{width:18px;height:18px;accent-color:#7e62ff}.flow{font-size:12px;color:#8494ad;text-align:right}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.chip{border:1px solid #304361;background:#131d2d;color:#b9c8df;border-radius:999px;padding:9px 13px;cursor:pointer;font-size:13px}.status{margin-top:15px;color:var(--muted);font-size:14px}.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}.hero{margin-top:17px;border:2px solid var(--p);border-radius:27px;background:linear-gradient(145deg,#181d34,#101a29);padding:21px}.eyebrow{font-size:12px;letter-spacing:3px;font-weight:950;color:#8d9bb4}.udc{font-size:50px;line-height:1.08;font-weight:950;color:var(--blue);margin:8px 0;overflow-wrap:anywhere}.provider{display:inline-block;padding:7px 12px;border-radius:999px;background:#102a1e;border:1px solid #3c9765;color:var(--green);font-weight:850;font-size:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.box{background:var(--card2);border:1px solid #263754;border-radius:17px;padding:14px}.box b{display:block;font-size:10px;letter-spacing:1.8px;color:#8796ae;margin-bottom:7px}.box div{font-size:16px;line-height:1.5}.sources{margin-top:14px}.sources b{font-size:10px;letter-spacing:1.6px;color:#8796ae}.sources a{display:block;color:#7fbaff;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty{margin-top:17px;border:1px dashed #53637d;border-radius:21px;padding:20px;color:#b8c4d6;background:#0c1320;line-height:1.55}.empty strong{color:var(--amber)}.suggestions{margin-top:13px;display:grid;gap:8px}.suggestion{width:100%;text-align:left;background:#111a29;color:#dce6f7;border:1px solid #2b3e5f;border-radius:14px;padding:11px 13px;cursor:pointer}.suggestion small{display:block;color:#8495af;margin-top:3px}.foot{margin-top:17px;text-align:center;color:#74839a;font-size:11px;line-height:1.55}@media(max-width:650px){.inputRow{flex-direction:column}.go{width:100%;height:58px}.grid{grid-template-columns:1fr}.title h1{font-size:24px}.version{display:none}.controls{align-items:flex-start;flex-direction:column}.flow{text-align:left}.udc{font-size:39px}}
-</style>
-</head>
-<body><main class="wrap"><section class="card">
-<header><div class="brand"><div class="logo">UDC</div><div class="title"><h1>UDC Ultimate V26</h1><p>Direct Match · Gemini FINAL · Google Grounding · Optional Groq Research</p></div></div><div class="version">V26 FINAL</div></header>
-<div class="inputRow"><input id="title" class="input" placeholder="Enter Book Title" autocomplete="off" autocapitalize="sentences"><button id="go" class="go">CLASSIFY</button></div>
-<div class="controls"><label class="switch"><input id="ai" type="checkbox" checked><span>Gemini AI fallback ON</span></label><label class="switch"><input id="groq" type="checkbox" checked><span>Groq research optional</span></label><div class="flow">Direct key → close key → Gemini FINAL → optional research → Gemini FINAL</div></div>
-<div class="chips"><button class="chip">History of India</button><button class="chip">Education</button><button class="chip">Dictionary of Language and Literature</button><button class="chip">English Drama</button><button class="chip">Science and Technology</button><button class="chip">Bible in Hindi</button><button class="chip">Library Classification</button><button class="chip">Hindi Drama</button></div>
-<div id="status" class="status">Ready · 2701-title direct key checked first.</div><div id="result"></div>
-<div class="foot">UDC ONLY · Never DDC · Direct matches are quota-free · Gemini owns every AI FINAL · Groq never publishes a final UDC · No invented 0</div>
-</section></main>
+*{box-sizing:border-box}body{margin:0;background:#070b14;color:#eef3ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:980px;margin:auto;padding:20px}.card{background:#101827;border:1px solid #263957;border-radius:26px;padding:24px}
+h1{margin:0;font-size:31px}.sub{color:#9ba9c1;margin:6px 0 22px}.search{display:flex;gap:10px}
+input{flex:1;background:#070c16;border:2px solid #30476b;border-radius:18px;padding:18px;color:#fff;font-size:18px;outline:0}
+button{border:0;border-radius:17px;padding:0 25px;background:#705cff;color:white;font-weight:800;font-size:16px;cursor:pointer}
+button:disabled{opacity:.5}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}.chip{padding:9px 13px;background:#172236;border:1px solid #2b3d5b;border-radius:99px;cursor:pointer;color:#b9c6db}
+#status{color:#9ba9c1;margin:16px 0}.result{background:#151d2c;border:1px solid #304263;border-radius:22px;padding:20px}
+.udc{font-size:45px;font-weight:900;margin:8px 0;color:#7ea7ff}.badge{display:inline-block;padding:7px 10px;border-radius:99px;background:#1c3450;color:#8ed4ff;font-size:12px;font-weight:800}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.box{background:#0c1320;border:1px solid #263957;border-radius:15px;padding:14px}.box b{display:block;color:#8291aa;font-size:11px;letter-spacing:1px;margin-bottom:5px}.sources a{display:block;color:#75baff;margin:7px 0;word-break:break-all}
+@media(max-width:650px){.search{flex-direction:column}.search button{height:56px}.grid{grid-template-columns:1fr}.udc{font-size:37px}}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1>UDC Search Engine <span style="color:#8d79ff">V28</span></h1>
+<div class="sub">Live UDC evidence search · Gemini FINAL · Groq research · No local 2700-title key</div>
+<div class="search"><input id="q" placeholder="Enter book title, e.g. Education"><button id="go">SEARCH UDC</button></div>
+<div class="chips">
+<span class="chip">Education</span><span class="chip">English Drama</span><span class="chip">Hindi Language</span>
+<span class="chip">History of India</span><span class="chip">Dictionary of Language and Literature</span>
+</div><div id="status">Ready.</div><div id="out"></div>
+</div></div>
 <script>
-const titleEl=document.getElementById('title'),go=document.getElementById('go'),statusEl=document.getElementById('status'),result=document.getElementById('result'),aiEl=document.getElementById('ai'),groqEl=document.getElementById('groq');
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+const q=document.querySelector('#q'),go=document.querySelector('#go'),status=document.querySelector('#status'),out=document.querySelector('#out');
+document.querySelectorAll('.chip').forEach(x=>x.onclick=()=>{q.value=x.textContent;run()});
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function render(r){
- if(!r||!r.verified||!r.udc){const ss=(r?.suggestions||[]).map(x=>`<button class="suggestion" data-title="${esc(x.title)}"><b>${esc(x.title)}</b><small>UDC ${esc(x.udc)} · ${esc(x.subject||'')}</small></button>`).join('');result.innerHTML=`<div class="empty"><strong>${esc(r?.verificationLabel||'VERIFICATION REQUIRED')}</strong><br><br>${esc(r?.message||'No verified UDC classification was found.')} ${ss?'<div class="suggestions">'+ss+'</div>':''}</div>`;result.querySelectorAll('.suggestion').forEach(b=>b.onclick=()=>{titleEl.value=b.dataset.title;classify()});return}
- const src=(r.sources||[]).map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title||x.url)}</a>`).join('');
- result.innerHTML=`<div class="hero"><div class="eyebrow">${r.matchType==='direct'||r.matchType==='direct-near'?'DIRECT UDC MATCH':'GEMINI FINAL CLASSIFICATION'}</div><div class="udc">${esc(r.udc)}</div><span class="provider">${esc(r.verificationLabel||'Gemini FINAL')}</span><div class="grid"><div class="box"><b>BOOK TITLE</b><div>${esc(r.title)}</div></div><div class="box"><b>CONFIDENCE</b><div>${esc(r.confidence||'Medium')}</div></div><div class="box"><b>MAIN SUBJECT</b><div>${esc(r.mainSubject||'—')}</div></div><div class="box"><b>SUB SUBJECT</b><div>${esc(r.subSubject||'—')}</div></div></div><div class="box" style="margin-top:10px"><b>EXPLANATION</b><div>${esc(r.explanation||'—')}</div></div>${src?`<div class="sources"><b>EVIDENCE SOURCES</b>${src}</div>`:''}</div>`;
+ if(!r?.verified||!r.udc){out.innerHTML='<div class="result"><b>NO VERIFIED UDC RESULT</b><p>'+esc(r?.message||'No defensible UDC number was found.')+'</p></div>';return}
+ const src=(r.sources||[]).map(s=>'<a target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.title||s.url)+'</a>').join('');
+ out.innerHTML='<div class="result"><span class="badge">'+esc(r.providerStatus||'UDC RESULT')+'</span><div class="udc">'+esc(r.udc)+'</div>'+
+ '<div class="grid"><div class="box"><b>TITLE</b>'+esc(r.title)+'</div><div class="box"><b>CONFIDENCE</b>'+esc(r.confidence)+'</div>'+
+ '<div class="box"><b>MAIN SUBJECT</b>'+esc(r.mainSubject)+'</div><div class="box"><b>SUBJECT / FORM</b>'+esc(r.subSubject)+'</div></div>'+
+ '<div class="box" style="margin-top:10px"><b>UDC BREAKDOWN</b>'+esc(r.explanation)+'</div>'+
+ (src?'<div class="box sources" style="margin-top:10px"><b>EVIDENCE</b>'+src+'</div>':'')+'</div>'
 }
-async function classify(){const title=titleEl.value.trim();if(!title){statusEl.textContent='Enter a book title';statusEl.className='status warn';return}go.disabled=true;result.innerHTML='';statusEl.className='status';statusEl.textContent='Checking direct UDC key…';try{const res=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,ai:aiEl.checked,groqResearch:groqEl.checked})});const r=await res.json();statusEl.textContent=r.providerStatus||'Completed';statusEl.className='status '+(r.verified?'ok':'warn');render(r)}catch(e){statusEl.textContent='Service unavailable · no answer invented';statusEl.className='status bad';render({verified:false,message:'The classification service could not be reached.'})}finally{go.disabled=false}}
-go.onclick=classify;titleEl.addEventListener('keydown',e=>{if(e.key==='Enter')classify()});document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{titleEl.value=c.textContent;classify()});
+async function run(){
+ let title=q.value.trim();if(!title)return;go.disabled=true;status.textContent='Searching UDC evidence…';out.innerHTML='';
+ try{let res=await fetch('/api/classify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({title})});let r=await res.json();status.textContent=r.providerStatus||'Complete';render(r)}
+ catch(e){status.textContent='Temporary service problem';render({verified:false,message:'The search service is temporarily unavailable. No number was invented.'})}
+ finally{go.disabled=false}
+}
+go.onclick=run;q.onkeydown=e=>{if(e.key==='Enter')run()}
 </script></body></html>
