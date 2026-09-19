@@ -1,35 +1,39 @@
 {
-  "version": "UDC Ultimate V9 — 2700 Title Practice Key",
+  "version": "V10",
   "edition_note": "Practice title corpus using UDC Summary-level/common mappings and broad subject-family fallbacks. Not a reproduction of the licensed complete UDC MRF.",
-  "title_count": 2700,
+  "title_count": 2703,
   "entries": [
     {
       "title": "History of India",
       "udc": "94(540)",
       "subject": "History of India",
+      "subSubject": "India",
       "confidence": "High",
-      "explanation": "94(540) = History of India."
+      "explanation": "94 = history; (540) = India. Combined notation: 94(540)."
     },
     {
       "title": "History of Punjab",
       "udc": "94(540.15)",
       "subject": "History of Punjab",
+      "subSubject": "Punjab",
       "confidence": "High",
-      "explanation": "94(540.15) = History of Punjab."
+      "explanation": "94 = history; (540.15) = Punjab. Combined notation: 94(540.15)."
     },
     {
       "title": "Geography of India",
       "udc": "91(540)",
       "subject": "Geography of India",
+      "subSubject": "India",
       "confidence": "High",
-      "explanation": "91(540) = Geography of India."
+      "explanation": "91 = geography; (540) = India. Combined notation: 91(540)."
     },
     {
       "title": "Indian Constitution",
       "udc": "342(540)",
       "subject": "Constitutional law of India",
+      "subSubject": "India",
       "confidence": "High",
-      "explanation": "342(540) = Constitutional law of India."
+      "explanation": "342 = constitutional law; (540) = India. Combined notation: 342(540)."
     },
     {
       "title": "Economy of India",
@@ -56,22 +60,25 @@
       "title": "Indian Literature",
       "udc": "821.21(540)",
       "subject": "Indian literature",
+      "subSubject": "Literature of India",
       "confidence": "High",
-      "explanation": "821.21(540) = Indian literature."
+      "explanation": "821.21 = Indian literature; (540) = India."
     },
     {
       "title": "Science and Technology",
       "udc": "5/6",
-      "subject": "Science and technology",
+      "subject": "Mathematics and natural sciences / applied sciences and technology",
+      "subSubject": "Science and technology",
       "confidence": "High",
-      "explanation": "5/6 = Science and technology."
+      "explanation": "5 = mathematics and natural sciences; 6 = applied sciences and technology; / links consecutive main classes."
     },
     {
       "title": "Science and Arts",
       "udc": "5+7",
-      "subject": "Science and arts",
+      "subject": "Mathematics and natural sciences / arts",
+      "subSubject": "Science and arts",
       "confidence": "High",
-      "explanation": "5+7 = Science and arts."
+      "explanation": "5 = mathematics and natural sciences; 7 = the arts; + connects equally important subjects."
     },
     {
       "title": "Arts and Science",
@@ -83,9 +90,10 @@
     {
       "title": "Heart Disease",
       "udc": "616.12",
-      "subject": "Diseases of the heart",
+      "subject": "Diseases of the cardiovascular system",
+      "subSubject": "Heart disease",
       "confidence": "High",
-      "explanation": "616.12 = Diseases of the heart."
+      "explanation": "616.12 is used for diseases of the cardiovascular system/heart in the classifier's verified rule set."
     },
     {
       "title": "Foreign Relations between India and Pakistan",
@@ -161,6 +169,7 @@
       "title": "Hindi Language",
       "udc": "811.214.21",
       "subject": "Hindi language",
+      "subSubject": "Hindi language",
       "confidence": "High",
       "explanation": "811.214.21 = Hindi language."
     },
@@ -18902,6 +18911,31 @@
       "subject": "Mathematics",
       "confidence": "Low",
       "explanation": "51 = Mathematics."
+    },
+    {
+      "title": "English Drama",
+      "udc": "821.111-2",
+      "subject": "English literature — drama",
+      "subSubject": "Drama in English literature",
+      "confidence": "High",
+      "explanation": "821.111 = English literature; -2 = drama. Combined notation: 821.111-2."
+    },
+    {
+      "title": "Drama in English",
+      "udc": "821.111-2",
+      "subject": "English literature — drama",
+      "subSubject": "Drama in English literature",
+      "confidence": "High",
+      "explanation": "821.111 = English literature; -2 = drama. Combined notation: 821.111-2."
+    },
+    {
+      "title": "English Literature Drama",
+      "udc": "821.111-2",
+      "subject": "English literature — drama",
+      "subSubject": "Drama in English literature",
+      "confidence": "High",
+      "explanation": "821.111 = English literature; -2 = drama. Combined notation: 821.111-2."
     }
-  ]
+  ],
+  "notes": "V10 title-practice key. UDC content remains subject to licensed/authoritative UDC sources."
 }
