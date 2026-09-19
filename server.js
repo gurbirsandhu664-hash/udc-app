@@ -13,7 +13,7 @@ const RULES=JSON.parse(fs.readFileSync(path.join(__dirname,"udc-rules.json"),"ut
 function norm(s){
   return String(s||"").toLowerCase().normalize("NFKD")
     .replace(/[’']/g,"'")
-    .replace(/[^a-z0-9=:.()+/\\- ]+/g," ")
+    const normalized = title.toLowerCase().replace(/[^a-z0-9\s:().+\/-]/gi, "");
     .replace(/\s+/g," ").trim();
 }
 function tokens(s){return new Set(norm(s).split(" ").filter(Boolean));}
