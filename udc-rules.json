@@ -1,0 +1,57 @@
+{
+  "edition": "UDC Abridged Practice Rule Layer",
+  "status": "Rule layer only; exact class numbers require the connected authorized schedule/reference data.",
+  "mainClasses": {
+    "0": "Science and knowledge. Organization. Computer science. Information science. Documentation. Librarianship",
+    "1": "Philosophy. Psychology",
+    "2": "Religion. Theology",
+    "3": "Social sciences",
+    "4": "Vacant",
+    "5": "Mathematics. Natural sciences",
+    "6": "Applied sciences. Medicine. Technology",
+    "7": "The arts. Entertainment. Sport",
+    "8": "Linguistics. Literature",
+    "9": "Geography. History"
+  },
+  "connectingSigns": {
+    "+": "Coordination. Addition. Connects non-consecutive UDC numbers.",
+    "/": "Consecutive extension (oblique stroke). Represents a consecutive range/extension when authorized by the schedule.",
+    ":": "Simple relation between subjects.",
+    "::": "Order-fixing.",
+    "[]": "Subgrouping of a compound expression.",
+    "*": "Introduces non-UDC notation.",
+    "A/Z": "Direct alphabetical specification where authorized."
+  },
+  "commonAuxiliaries": {
+    "=...": "Language (Table 1c)",
+    "(0...)": "Form (Table 1d)",
+    "(1/9)": "Place (Table 1e)",
+    "(=...)": "Human ancestry, ethnic grouping and nationality (Table 1f)",
+    "\"...\"": "Time (Table 1g)",
+    "-0...": "General characteristics (Table 1k)",
+    "-02": "Properties",
+    "-03": "Materials",
+    "-04": "Relations, processes and operations",
+    "-05": "Persons and personal characteristics"
+  },
+  "specialAuxiliaryIndicators": [".0", "-", "'"],
+  "cancelled": {
+    "table1i": "Point of view is cancelled in current UDC; former Table 1i numbers must not be generated. Relevant concepts were relocated to -02, -05 and colon combinations."
+  },
+  "decisionRules": [
+    "Never choose a UDC number solely by keyword similarity.",
+    "Use the most specific verified class available in the supplied Abridged/reference dataset.",
+    "Do not add an auxiliary merely because it is possible; add it only when the document content/form and the schedule justify it.",
+    "Use + for coordinated non-consecutive subjects, not as a generic multi-topic separator.",
+    "Use / only for a consecutive extension/range supported by the schedule; do not substitute +.",
+    "Use : for a simple relation; use :: only when order-fixing is required.",
+    "Use [ ] only when subgrouping is required to preserve the intended scope of a compound expression.",
+    "Language, form, place, human ancestry/ethnic grouping/nationality, time and general-characteristic auxiliaries are common auxiliaries and must be validated against the relevant table.",
+    "Special auxiliaries are local to their designated subject area and must never be copied from another class.",
+    "For ambiguous titles, request more information instead of fabricating a number.",
+    "Separate subject from document form. Words such as dictionary, handbook, atlas, bibliography or textbook do not automatically become the main subject.",
+    "For literature, distinguish language/linguistics from literature and literary form from physical/document form.",
+    "For history/geography, distinguish subject, place and time; add place/time only when supported by the title or description.",
+    "Preserve exact punctuation and decimal notation in the final UDC expression."
+  ]
+}
