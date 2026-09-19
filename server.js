@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_MODEL = (process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim();
 const GROQ_MODEL = (process.env.GROQ_MODEL || 'openai/gpt-oss-120b').trim();
+const UDC_RULES = require('./udc-rules.json');
 
 app.use(cors());
 app.use(express.json({limit:'1mb'}));
@@ -23,17 +24,30 @@ const MAIN_CLASSES={
 '9':'Geography. Biography. History'
 };
 
-const SYSTEM=`You are a careful Universal Decimal Classification (UDC) cataloguing assistant.
-Use UDC ONLY, never DDC.
-Do not invent a UDC number. Clearly mark uncertainty.
-Distinguish subject from form, place, language, time and other auxiliaries.
-Use + for coordination, / for consecutive extension, : for relation, :: for order-fixing, [] for grouping only when justified.
-Do not add auxiliaries merely because they are possible.
-If the title is too ambiguous for a defensible number, return MORE_INFO_NEEDED.
-For literature distinguish 81 language/linguistics from 82 literature.
-For history/geography identify the actual geographic or historical subject.
-Return concise cataloguer-style reasoning, not hidden chain-of-thought.
-Return ONLY valid JSON matching the requested fields.`;
+const SYSTEM=`You are a strict Universal Decimal Classification (UDC) cataloguing assistant for an UDC Abridged Practice Tool.
+Use UDC only; never DDC. The connected reference dataset is the source of truth for exact numbers.
+Never invent, autocomplete, or hallucinate a class or auxiliary. If an exact notation cannot be verified from the supplied dataset, return MORE_INFO_NEEDED and explain what must be verified.
+
+CURRENT UDC RULE LAYER:
+${JSON.stringify(UDC_RULES, null, 2)}
+
+CRITICAL OPERATOR RULES:
++ = coordination/addition of non-consecutive numbers.
+/ = consecutive extension/stroke only when the schedule supports a consecutive range.
+: = simple relation.
+:: = order-fixing only.
+[] = subgrouping only when needed.
+* = non-UDC notation.
+A/Z = direct alphabetical specification only where authorized.
+
+COMMON AUXILIARIES:
+=... language; (0...) form; (1/9) place; (=...) human ancestry/ethnic grouping/nationality; "..." time; -0... general characteristics including -02 properties, -03 materials, -04 relations/processes/operations, -05 persons/personal characteristics.
+
+IMPORTANT: current UDC Table 1i Point of view is cancelled. Do not generate old Table 1i point-of-view numbers. If a title contains a point-of-view idea, express it only through a currently valid mechanism when the supplied schedule supports it, such as an applicable -02/-05 or relation.
+
+For every classification: analyze primary subject, secondary facets, document form, language, place, time, general characteristics, special auxiliaries, and relations. Then choose notation and citation order from the applicable schedule.
+
+The final response must be concise cataloguer-style reasoning, not hidden chain-of-thought. Return ONLY valid JSON matching the requested fields.`;
 
 function normalizeResult(r){
   return {
@@ -43,7 +57,9 @@ function normalizeResult(r){
     notation:Array.isArray(r?.notation)?r.notation:[], explanation:r?.explanation||'',
     confidence:r?.confidence||'Low', infoNeeded:r?.infoNeeded||'',
     alternatives:Array.isArray(r?.alternatives)?r.alternatives:[],
-    verificationNote:r?.verificationNote||'Verify the final notation against the authoritative UDC schedules before cataloguing.'
+    verificationNote:r?.verificationNote||'Verify the final notation against the authoritative UDC schedules before cataloguing.',
+    operatorDecision:Array.isArray(r?.operatorDecision)?r.operatorDecision:[],
+    ruleChecks:Array.isArray(r?.ruleChecks)?r.ruleChecks:[]
   };
 }
 
@@ -60,7 +76,9 @@ explanation: string;
 confidence: "High" or "Medium" or "Low";
 infoNeeded: string;
 alternatives: array of objects {"udc":string,"whenToUse":string};
-verificationNote: string.`;
+verificationNote: string;
+operatorDecision: array of objects {"symbol":string,"decision":string,"reason":string};
+ruleChecks: array of objects {"rule":string,"result":"PASS"|"FAIL"|"VERIFY","detail":string}.`;
 }
 
 async function fetchJson(url, options, label){
@@ -122,6 +140,20 @@ app.get('/api/health',(req,res)=>res.json({
 
 app.get('/api/classes',(req,res)=>res.json(MAIN_CLASSES));
 
+app.get('/api/rules',(req,res)=>res.json(UDC_RULES));
+
+app.post('/api/parse',async(req,res)=>{
+  const expression=String(req.body?.expression||'').trim();
+  if(!expression) return res.status(400).json({error:'UDC expression is required.'});
+  const tokens=[];
+  const re=/\[[^\]]+\]|::|[+:\/]|\*|A\/Z|=\([^)]*\)|=\S+|\([^)]*\)|\"[^\"]*\"|-0\S*|-\S+|\.0\S*|\'[^\']*\'|\d+(?:\.\d+)*/g;
+  let m; while((m=re.exec(expression))) tokens.push(m[0]);
+  const symbolMeaning=UDC_RULES.connectingSigns;
+  const detected=tokens.filter(t=>Object.prototype.hasOwnProperty.call(symbolMeaning,t)).map(t=>({symbol:t,meaning:symbolMeaning[t]}));
+  const cancelledPointOfView=/\.00/.test(expression);
+  res.json({expression,tokens,connectingSigns:detected,possibleOldPointOfView:cancelledPointOfView,warning:cancelledPointOfView?'Do not treat .00 as current Table 1i point-of-view notation without authoritative schedule verification.':''});
+});
+
 app.post('/api/classify',async(req,res)=>{
   const {title,author='',keywords='',description=''}=req.body||{};
   if(!title||!String(title).trim()) return res.status(400).json({error:'Book title is required.'});
@@ -134,7 +166,10 @@ Description: ${JSON.stringify(description)}
 Top-level UDC classes for orientation only:
 ${Object.entries(MAIN_CLASSES).map(([k,v])=>`${k} — ${v}`).join('\n')}
 
-Return a defensible classification. If the supplied information is insufficient for a specific number, use MORE_INFO_NEEDED rather than guessing.`;
+Return a defensible classification. Apply the UDC rule layer and explicitly decide whether +, /, :, :: or [ ] is required. If no operator is required, use none. If the title requires a range, only use / when the schedule supports consecutive extension. Check form, language, place, time, general characteristics and special auxiliaries independently. Never generate cancelled Table 1i point-of-view notation. If the supplied information is insufficient for a specific number, use MORE_INFO_NEEDED rather than guessing.
+
+Rule layer available to you:
+${JSON.stringify(UDC_RULES)}`;
   const errors=[];
   if(process.env.GEMINI_API_KEY?.trim()){
     try{return res.json(normalizeResult(await classifyWithGemini(prompt)));}
@@ -172,8 +207,8 @@ $('clear').onclick=()=>{localStorage.removeItem('udcHistory');renderHistory()};
 $('form').onsubmit=async e=>{e.preventDefault();$('go').disabled=true;$('go').textContent='CLASSIFYING…';$('msg').innerHTML='<div class="loading">Connecting to Gemini…</div>';$('result').style.display='none';
 try{const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:$('title').value,author:$('author').value,keywords:$('keywords').value,description:$('description').value})});const d=await r.json().catch(()=>({error:'Server returned invalid JSON.'}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));show(d);saveHistory($('title').value,d.finalUdc);$('msg').innerHTML='<div class="success">Classification received.</div>'}
 catch(err){$('msg').innerHTML='<div class="error"><b>Error:</b> '+esc(err.message)+'</div>'}finally{$('go').disabled=false;$('go').textContent='CLASSIFY WITH UDC'}};
-function show(d){const aux=(d.auxiliaries||[]).map(x=>'<li><b>'+esc(x.notation)+'</b> — '+esc(x.purpose)+'</li>').join(''),notes=(d.notation||[]).map(x=>'<li><b>'+esc(x.symbol)+'</b> — '+esc(x.meaning)+'</li>').join(''),alts=(d.alternatives||[]).map(x=>'<li><b>'+esc(x.udc)+'</b> — '+esc(x.whenToUse)+'</li>').join('');
-$('result').innerHTML='<div class="row"><div><div class="muted small">PROPOSED UDC NUMBER</div><div class="num">'+esc(d.finalUdc||'—')+'</div></div><span class="pill">'+esc(d.confidence)+'</span></div><div class="section"><b>Main class:</b> '+esc(d.mainClass||'—')+'<br><b>Subject:</b> '+esc(d.mainSubject||'—')+(d.subSubject?'<br><b>Sub-subject:</b> '+esc(d.subSubject):'')+'</div><div class="section"><b>Cataloguer explanation</b><p>'+esc(d.explanation||'—')+'</p></div>'+(aux?'<div class="section"><b>Auxiliaries</b><ul>'+aux+'</ul></div>':'')+(notes?'<div class="section"><b>Notation used</b><ul>'+notes+'</ul></div>':'')+(alts?'<div class="section"><b>Possible alternatives</b><ul>'+alts+'</ul></div>':'')+(d.infoNeeded?'<div class="section"><b>Information needed</b><p>'+esc(d.infoNeeded)+'</p></div>':'')+'<div class="section"><b>Verification:</b> '+esc(d.verificationNote)+'</div><div style="margin-top:14px"><button class="secondary" id="copy">Copy UDC</button></div>';
+function show(d){const aux=(d.auxiliaries||[]).map(x=>'<li><b>'+esc(x.notation)+'</b> — '+esc(x.purpose)+'</li>').join(''),notes=(d.notation||[]).map(x=>'<li><b>'+esc(x.symbol)+'</b> — '+esc(x.meaning)+'</li>').join(''),ops=(d.operatorDecision||[]).map(x=>'<li><b>'+esc(x.symbol||'None')+'</b> — '+esc(x.decision)+' — '+esc(x.reason)+'</li>').join(''),checks=(d.ruleChecks||[]).map(x=>'<li><b>'+esc(x.result)+'</b> — '+esc(x.rule)+' — '+esc(x.detail)+'</li>').join(''),alts=(d.alternatives||[]).map(x=>'<li><b>'+esc(x.udc)+'</b> — '+esc(x.whenToUse)+'</li>').join('');
+$('result').innerHTML='<div class="row"><div><div class="muted small">PROPOSED UDC NUMBER</div><div class="num">'+esc(d.finalUdc||'—')+'</div></div><span class="pill">'+esc(d.confidence)+'</span></div><div class="section"><b>Main class:</b> '+esc(d.mainClass||'—')+'<br><b>Subject:</b> '+esc(d.mainSubject||'—')+(d.subSubject?'<br><b>Sub-subject:</b> '+esc(d.subSubject):'')+'</div><div class="section"><b>Cataloguer explanation</b><p>'+esc(d.explanation||'—')+'</p></div>'+(aux?'<div class="section"><b>Auxiliaries</b><ul>'+aux+'</ul></div>':'')+(notes?'<div class="section"><b>Notation used</b><ul>'+notes+'</ul></div>':'')+(ops?'<div class="section"><b>Operator decisions</b><ul>'+ops+'</ul></div>':'')+(checks?'<div class="section"><b>Rule checks</b><ul>'+checks+'</ul></div>':'')+(alts?'<div class="section"><b>Possible alternatives</b><ul>'+alts+'</ul></div>':'')+(d.infoNeeded?'<div class="section"><b>Information needed</b><p>'+esc(d.infoNeeded)+'</p></div>':'')+'<div class="section"><b>Verification:</b> '+esc(d.verificationNote)+'</div><div style="margin-top:14px"><button class="secondary" id="copy">Copy UDC</button></div>';
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(d.finalUdc||'');$('copy').textContent='Copied'}catch(_){$('copy').textContent='Copy failed'}};$('result').style.display='block';$('result').scrollIntoView({behavior:'smooth',block:'start'})}
 renderHistory();
 </script></body></html>`));
