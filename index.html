@@ -3,45 +3,56 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>UDC Ultimate — Final UDC Classifier</title>
+<title>UDC Abridged · Master Fix</title>
 <style>
-:root{--bg:#0b1018;--card:#121a26;--line:#273348;--text:#f4f7fb;--muted:#9aa8bd;--accent:#7c5cff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#080c13,#141b2a);font-family:Arial,sans-serif;color:var(--text)}
-.wrap{max-width:900px;margin:auto;padding:20px}.head,.card{background:rgba(18,26,38,.96);border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:18px;box-shadow:0 15px 50px #0005}
-h1{margin:0 0 5px;font-size:28px}.tag{color:#aeb9cc;letter-spacing:2px;font-size:12px}.inputrow{display:flex;gap:10px;margin-top:22px}
-input{flex:1;background:#060a10;color:white;border:2px solid #33425d;border-radius:16px;padding:18px;font-size:20px;outline:none}
-button{border:0;border-radius:16px;padding:0 25px;background:linear-gradient(135deg,#7c5cff,#2db7ff);color:white;font-size:20px;font-weight:800;cursor:pointer}
-.kicker{font-size:13px;letter-spacing:3px;color:#8e9ab0;font-weight:800}.udc{font-size:52px;font-weight:900;margin:8px 0}.subject{font-size:23px;font-weight:700}.grid{display:grid;grid-template-columns:150px 1fr;gap:13px;border-top:1px solid var(--line);padding-top:16px;margin-top:18px}.label{color:#91a0b7;font-weight:700}.pill{display:inline-block;border:1px solid #40516e;border-radius:999px;padding:7px 11px;margin:3px;background:#182338}.ok{color:#73e09b;font-weight:800}.review{color:#ffc56b;font-weight:800}.small{color:var(--muted);line-height:1.55}@media(max-width:650px){.inputrow{flex-direction:column}button{height:58px}.grid{grid-template-columns:1fr}.udc{font-size:42px}}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#10233d}
+.wrap{max-width:900px;margin:auto;padding:28px 18px}
+header{display:flex;justify-content:space-between;align-items:center;background:white;padding:22px;border-radius:20px;box-shadow:0 8px 30px #0001}
+h1{margin:0;font-size:28px}.sub{color:#708197;margin-top:5px}
+.card{background:white;border-radius:20px;padding:24px;margin-top:20px;box-shadow:0 8px 30px #0001}
+.row{display:flex;gap:12px}.row input{flex:1}
+input{font-size:20px;padding:18px;border:2px solid #d5dfeb;border-radius:16px;box-sizing:border-box}
+button{border:0;border-radius:16px;background:#173354;color:white;padding:0 25px;font-size:17px;font-weight:700}
+.result{border-left:6px solid #173354}.udc{font-size:42px;font-weight:800;margin:12px 0}.pill{display:inline-block;background:#e8f5ea;color:#26733c;padding:8px 13px;border-radius:999px;font-weight:700}
+.label{font-weight:700;color:#607188;margin-top:14px}.value{font-size:19px;margin-top:5px;line-height:1.45}
+.warn{background:#fff5db;color:#795600;padding:12px;border-radius:12px;margin-top:16px}
+@media(max-width:650px){.row{flex-direction:column}.row button{height:58px}.udc{font-size:34px}}
 </style>
 </head>
-<body><main class="wrap">
-<section class="head"><h1>📚 UDC Ultimate</h1><div class="tag">UNIVERSAL DECIMAL CLASSIFICATION · UDC ONLY · NEVER DDC</div>
-<div class="inputrow"><input id="title" placeholder="Enter book title — e.g. Science and Arts"><button onclick="classify()">CLASSIFY</button></div>
-<p class="small">Verified local rules are shown as classified. Unknown titles are marked Review rather than inventing a UDC number.</p></section>
-<section id="out" class="card" style="display:none"></section>
-</main>
+<body>
+<div class="wrap">
+<header><div><h1>📖 UDC Abridged</h1><div class="sub">UDC only · Never DDC · Master Fix</div></div><strong>AI Classifier</strong></header>
+<div class="card">
+<div class="label">ENTER BOOK TITLE</div>
+<div class="row" style="margin-top:10px"><input id="title" placeholder="e.g. Hindi language"><button onclick="go()">CLASSIFY</button></div>
+<div class="sub" style="margin-top:12px">Examples: Science and Arts · Science and Technology · Hindi language · History of India</div>
+</div>
+<div id="out"></div>
+</div>
 <script>
-async function classify(){
- const title=document.getElementById('title').value.trim(); if(!title)return;
- const out=document.getElementById('out'); out.style.display='block'; out.innerHTML='<p>Classifying…</p>';
+async function go(){
+ const title=document.getElementById("title").value.trim();
+ if(!title)return;
+ const out=document.getElementById("out");
+ out.innerHTML='<div class="card">Classifying…</div>';
  try{
-  const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})}).then(x=>x.json());
-  const verified=r.verifiedRule;
-  const pills=(r.aux||[]).map(a=>`<span class="pill">${a.code} — ${a.name}</span>`).join('');
-  out.innerHTML=`<div class="kicker">FINAL UDC CLASSIFICATION</div>
-  <div class="udc">${r.udc||'REVIEW'}</div>
-  <div class="subject">${r.subject||''}</div>
-  <div class="grid">
-   <div class="label">Book Title</div><div>${esc(r.bookTitle)}</div>
-   <div class="label">Main Subject</div><div>${esc(r.mainSubject)}</div>
-   <div class="label">Sub Subject</div><div>${esc(r.subSubject)}</div>
-   <div class="label">Notation</div><div>${esc(r.notationBreakdown||r.explanation)}</div>
-   <div class="label">Auxiliary / symbols</div><div>${pills||'—'}</div>
-   <div class="label">Explanation</div><div>${esc(r.explanation)}</div>
-   <div class="label">Verification</div><div class="${verified?'ok':'review'}">${verified?'✓ CLASSIFIED — UDC RULE MATCH':'⚠ REVIEW — NO VERIFIED LOCAL MATCH'}</div>
-  </div>`;
- }catch(e){out.innerHTML='<div class="review">Classification service error. Check Render logs.</div>'}
+   const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});
+   const d=await r.json();
+   out.innerHTML=`<div class="card result">
+     <div><span class="pill">${d.verifiedRule?'✓ CLASSIFIED':'⚠ REVIEW REQUIRED'}</span></div>
+     <h2>${esc(d.title)}</h2>
+     <div class="label">FINAL UDC NUMBER</div><div class="udc">${esc(d.udc)}</div>
+     <div class="label">MAIN SUBJECT</div><div class="value">${esc(d.subject)}</div>
+     <div class="label">SUB SUBJECT</div><div class="value">${esc(d.subSubject)}</div>
+     <div class="label">NOTATION BREAKDOWN / EXPLANATION</div><div class="value">${esc(d.explanation)}</div>
+     <div class="label">CONFIDENCE</div><div class="value">${esc(d.confidence)}</div>
+     ${d.aux?.length?'<div class="label">AUXILIARY / COMPONENTS</div><div class="value">'+d.aux.map(x=>esc(x.code+' — '+x.name)).join('<br>')+'</div>':''}
+     ${!d.verifiedRule?'<div class="warn">This is intentionally not shown as a verified UDC answer. Check the authoritative UDC source for an exact match.</div>':''}
+   </div>`;
+ }catch(e){out.innerHTML='<div class="card warn">Server error. Check Render deployment logs.</div>'}
 }
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-document.getElementById('title').addEventListener('keydown',e=>{if(e.key==='Enter')classify()});
-</script></body></html>
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById("title").addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+</script>
+</body>
+</html>

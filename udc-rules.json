@@ -1,608 +1,721 @@
 {
+  "meta": {
+    "name": "UDC Final Master Rule Set V4",
+    "mode": "UDC only",
+    "note": "UDC-only local rule engine; exact matches and transparent review fallbacks. Not a copy of the licensed MRF."
+  },
   "exact": [
     {
-      "title": "Science and Arts",
+      "pattern": "science and arts",
       "udc": "5+7",
       "mainClass": "5+7",
-      "subject": "Science and Arts",
-      "subSubject": "Mathematics and natural sciences + Arts",
-      "explanation": "5 = Mathematics and natural sciences; + = coordination of equally important subjects; 7 = Arts.",
-      "breakdown": "5 + 7",
-      "verifiedRule": true
+      "subject": "Mathematics and natural sciences + Arts",
+      "subSubject": "Coordination of equally important subjects",
+      "explanation": "5 = Mathematics and natural sciences; + = coordination of equally important subjects; 7 = Arts."
     },
     {
-      "title": "Science and Technology",
+      "pattern": "science and technology",
       "udc": "5/6",
       "mainClass": "5/6",
-      "subject": "Science and technology",
-      "subSubject": "Mathematics and natural sciences / applied sciences, medicine and technology",
-      "explanation": "5 = Mathematics and natural sciences; / = extension; 6 = Applied sciences, medicine and technology.",
-      "breakdown": "5 / 6",
-      "verifiedRule": true
+      "subject": "Mathematics and natural sciences through applied sciences, medicine and technology",
+      "subSubject": "Science and technology",
+      "explanation": "5/6 = consecutive extension from class 5 (Mathematics and natural sciences) through class 6 (Applied sciences, Medicine and Technology). This is different from +, which coordinates equally important subjects."
     },
     {
-      "title": "History of India",
+      "pattern": "science and technology studies",
+      "udc": "5/6",
+      "mainClass": "5/6",
+      "subject": "Mathematics and natural sciences through applied sciences, medicine and technology",
+      "subSubject": "Science and technology",
+      "explanation": "5/6 expresses a consecutive extension/range covering classes 5 and 6."
+    },
+    {
+      "pattern": "history of india",
       "udc": "94(540)",
       "mainClass": "94",
       "subject": "History of India",
-      "subSubject": "General history — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "94 = General history; (540) = India place auxiliary.",
-      "breakdown": "94 + (540)",
-      "verifiedRule": true
+      "subSubject": "History — India",
+      "explanation": "94 = General history; (540) = India place auxiliary."
     },
     {
-      "title": "Geography of India",
+      "pattern": "geography of india",
       "udc": "91(540)",
       "mainClass": "91",
       "subject": "Geography of India",
       "subSubject": "Geography — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "91 = Geography; (540) = India place auxiliary.",
-      "breakdown": "91 + (540)",
-      "verifiedRule": true
+      "explanation": "91 = Geography; (540) = India place auxiliary."
     },
     {
-      "title": "Indian Constitution",
+      "pattern": "indian constitution",
       "udc": "342(540)",
       "mainClass": "342",
-      "subject": "Constitution of India",
-      "subSubject": "Constitutional law — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "342 = Public law / constitutional law; (540) = India.",
-      "breakdown": "342 + (540)",
-      "verifiedRule": true
+      "subject": "Constitutional law of India",
+      "subSubject": "Constitution — India",
+      "explanation": "342 = Public law / constitutional law; (540) = India place auxiliary."
     },
     {
-      "title": "Economy of India",
+      "pattern": "economy of india",
       "udc": "330(540)",
       "mainClass": "330",
       "subject": "Economy of India",
       "subSubject": "Economics — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "330 = Economics; (540) = India.",
-      "breakdown": "330 + (540)",
-      "verifiedRule": true
+      "explanation": "330 = Economics; (540) = India place auxiliary."
     },
     {
-      "title": "History of Punjab",
+      "pattern": "indian literature",
+      "udc": "821.21(540)",
+      "mainClass": "821.21",
+      "subject": "Indic literature",
+      "subSubject": "Indian literature",
+      "explanation": "821.21 = Indic literatures; (540) = India place auxiliary."
+    },
+    {
+      "pattern": "indian philosophy",
+      "udc": "1(540)",
+      "mainClass": "1",
+      "subject": "Philosophy of India",
+      "subSubject": "Philosophy — India",
+      "explanation": "1 = Philosophy; (540) = India place auxiliary."
+    },
+    {
+      "pattern": "indian art",
+      "udc": "7(540)",
+      "mainClass": "7",
+      "subject": "Art of India",
+      "subSubject": "Arts — India",
+      "explanation": "7 = Arts; (540) = India place auxiliary."
+    },
+    {
+      "pattern": "history of punjab",
       "udc": "94(540.15)",
       "mainClass": "94",
       "subject": "History of Punjab",
-      "subSubject": "General history — Punjab",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540.15)",
-          "name": "Punjab"
-        }
-      ],
-      "explanation": "94 = General history; (540.15) = Punjab place auxiliary.",
-      "breakdown": "94 + (540.15)",
-      "verifiedRule": true
-    },
-    {
-      "title": "Indian Literature",
-      "udc": "821.21(540)",
-      "mainClass": "821.21",
-      "subject": "Indian literature",
-      "subSubject": "Literature in Indian languages — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "821.21 = literature in Indian languages; (540) = India.",
-      "breakdown": "821.21 + (540)",
-      "verifiedRule": true
-    },
-    {
-      "title": "Indian Philosophy",
-      "udc": "1(540)",
-      "mainClass": "1",
-      "subject": "Indian philosophy",
-      "subSubject": "Philosophy — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "1 = Philosophy; (540) = India.",
-      "breakdown": "1 + (540)",
-      "verifiedRule": true
-    },
-    {
-      "title": "Indian Art",
-      "udc": "7(540)",
-      "mainClass": "7",
-      "subject": "Indian art",
-      "subSubject": "Arts — India",
-      "aux": [
-        {
-          "type": "place",
-          "code": "(540)",
-          "name": "India"
-        }
-      ],
-      "explanation": "7 = Arts; (540) = India.",
-      "breakdown": "7 + (540)",
-      "verifiedRule": true
+      "subSubject": "History — Punjab",
+      "explanation": "94 = General history; (540.15) = Punjab place auxiliary."
     }
   ],
   "languages": [
     {
-      "name": "English",
-      "patterns": [
-        "english"
-      ],
-      "aux": "=111",
-      "languageClass": "811.111",
-      "litCode": "821.111",
-      "code": "811.111"
-    },
-    {
-      "name": "Hindi",
       "patterns": [
         "hindi"
       ],
-      "aux": "=214.21",
+      "name": "Hindi",
       "languageClass": "811.214.21",
-      "litCode": "821.214.21",
-      "code": "811.214.21"
+      "litCode": "821.214.21"
     },
     {
-      "name": "Punjabi",
+      "patterns": [
+        "english"
+      ],
+      "name": "English",
+      "languageClass": "811.111",
+      "litCode": "821.111"
+    },
+    {
+      "patterns": [
+        "german"
+      ],
+      "name": "German",
+      "languageClass": "811.112.2",
+      "litCode": "821.112.2"
+    },
+    {
+      "patterns": [
+        "french"
+      ],
+      "name": "French",
+      "languageClass": "811.133.1",
+      "litCode": "821.133.1"
+    },
+    {
+      "patterns": [
+        "spanish"
+      ],
+      "name": "Spanish",
+      "languageClass": "811.134.2",
+      "litCode": "821.134.2"
+    },
+    {
+      "patterns": [
+        "italian"
+      ],
+      "name": "Italian",
+      "languageClass": "811.131.1",
+      "litCode": "821.131.1"
+    },
+    {
       "patterns": [
         "punjabi"
       ],
-      "aux": "=214.27",
-      "languageClass": "811.214.27",
-      "litCode": "821.214.27",
-      "code": "811.214.27"
+      "name": "Punjabi",
+      "languageClass": "811.214.3",
+      "litCode": "821.214.3"
     },
     {
-      "name": "Urdu",
-      "patterns": [
-        "urdu"
-      ],
-      "aux": "=214.22",
-      "languageClass": "811.214.22",
-      "litCode": "821.214.22",
-      "code": "811.214.22"
-    },
-    {
-      "name": "Bengali",
       "patterns": [
         "bengali",
         "bangla"
       ],
-      "aux": "=214.31",
-      "languageClass": "811.214.31",
-      "litCode": "821.214.31",
-      "code": "811.214.31"
+      "name": "Bengali",
+      "languageClass": "811.214.32",
+      "litCode": "821.214.32"
     },
     {
-      "name": "French",
       "patterns": [
-        "french"
+        "sanskrit"
       ],
-      "aux": "=133.1",
-      "languageClass": "811.133.1",
-      "litCode": "821.133.1",
-      "code": "811.133.1"
+      "name": "Sanskrit",
+      "languageClass": "811.21",
+      "litCode": "821.21"
     },
     {
-      "name": "German",
       "patterns": [
-        "german"
+        "urdu"
       ],
-      "aux": "=112.2",
-      "languageClass": "811.112.2",
-      "litCode": "821.112.2",
-      "code": "811.112.2"
+      "name": "Urdu",
+      "languageClass": "811.214",
+      "litCode": "821.214"
+    }
+  ],
+  "forms": [
+    {
+      "patterns": [
+        "dictionary",
+        "lexicon",
+        "glossary"
+      ],
+      "code": "(038)",
+      "name": "Dictionary / lexicon"
+    },
+    {
+      "patterns": [
+        "encyclopedia",
+        "encyclopaedia"
+      ],
+      "code": "(03)",
+      "name": "Encyclopaedia / reference work"
+    },
+    {
+      "patterns": [
+        "handbook",
+        "manual"
+      ],
+      "code": "(035)",
+      "name": "Handbook / manual"
+    },
+    {
+      "patterns": [
+        "textbook"
+      ],
+      "code": "(075)",
+      "name": "Textbook"
+    },
+    {
+      "patterns": [
+        "bibliography"
+      ],
+      "code": "(01)",
+      "name": "Bibliography"
     }
   ],
   "places": [
     {
-      "name": "India",
       "patterns": [
         "india",
         "indian"
       ],
-      "code": "(540)"
+      "code": "(540)",
+      "name": "India"
     },
     {
-      "name": "Punjab",
       "patterns": [
         "punjab"
       ],
-      "code": "(540.15)"
+      "code": "(540.15)",
+      "name": "Punjab"
     },
     {
-      "name": "Pakistan",
-      "patterns": [
-        "pakistan",
-        "pakistani"
-      ],
-      "code": "(549)"
-    },
-    {
-      "name": "United Kingdom",
-      "patterns": [
-        "united kingdom",
-        "britain",
-        "british"
-      ],
-      "code": "(410)"
-    },
-    {
-      "name": "United States",
       "patterns": [
         "united states",
         "usa",
-        "american"
+        "america"
       ],
-      "code": "(73)"
+      "code": "(73)",
+      "name": "United States"
     },
     {
-      "name": "Canada",
-      "patterns": [
-        "canada",
-        "canadian"
-      ],
-      "code": "(71)"
-    }
-  ],
-  "countries": [
-    {
-      "name": "India",
-      "patterns": [
-        "india",
-        "indian"
-      ],
-      "code": "540"
-    },
-    {
-      "name": "Pakistan",
-      "patterns": [
-        "pakistan",
-        "pakistani"
-      ],
-      "code": "549"
-    },
-    {
-      "name": "United Kingdom",
       "patterns": [
         "united kingdom",
         "britain",
-        "british"
+        "england"
       ],
-      "code": "410"
+      "code": "(41)",
+      "name": "United Kingdom"
     },
     {
-      "name": "United States",
       "patterns": [
-        "united states",
-        "usa",
-        "american"
+        "canada"
       ],
-      "code": "73"
+      "code": "(71)",
+      "name": "Canada"
     },
     {
-      "name": "Canada",
       "patterns": [
-        "canada",
-        "canadian"
+        "australia"
       ],
-      "code": "71"
+      "code": "(94)",
+      "name": "Australia"
+    },
+    {
+      "patterns": [
+        "china"
+      ],
+      "code": "(510)",
+      "name": "China"
+    },
+    {
+      "patterns": [
+        "japan"
+      ],
+      "code": "(520)",
+      "name": "Japan"
+    },
+    {
+      "patterns": [
+        "pakistan"
+      ],
+      "code": "(549)",
+      "name": "Pakistan"
     }
   ],
   "subjects": [
     {
-      "udc": "0",
-      "subject": "Science and knowledge",
-      "subSubject": "General works",
       "patterns": [
-        "general knowledge"
+        "mathematics",
+        "math"
       ],
-      "explanation": "0 = Generalities / science and knowledge."
-    },
-    {
-      "udc": "1",
-      "subject": "Philosophy and psychology",
-      "subSubject": "Philosophy",
-      "patterns": [
-        "philosophy",
-        "psychology"
-      ],
-      "explanation": "1 = Philosophy. Psychology."
-    },
-    {
-      "udc": "2",
-      "subject": "Religion and theology",
-      "subSubject": "Religion",
-      "patterns": [
-        "religion",
-        "theology",
-        "christianity",
-        "islam",
-        "hinduism",
-        "sikhism"
-      ],
-      "explanation": "2 = Religion. Theology."
-    },
-    {
-      "udc": "3",
-      "subject": "Social sciences",
-      "subSubject": "Social sciences",
-      "patterns": [
-        "social science",
-        "sociology",
-        "statistics",
-        "politics",
-        "law",
-        "education",
-        "economics"
-      ],
-      "explanation": "3 = Social sciences."
-    },
-    {
       "udc": "51",
       "subject": "Mathematics",
       "subSubject": "Mathematics",
-      "patterns": [
-        "mathematics",
-        "mathematical"
-      ],
       "explanation": "51 = Mathematics."
     },
     {
+      "patterns": [
+        "physics"
+      ],
       "udc": "53",
       "subject": "Physics",
       "subSubject": "Physics",
-      "patterns": [
-        "physics",
-        "physical science"
-      ],
       "explanation": "53 = Physics."
     },
     {
+      "patterns": [
+        "chemistry"
+      ],
       "udc": "54",
       "subject": "Chemistry",
       "subSubject": "Chemistry",
-      "patterns": [
-        "chemistry",
-        "chemical"
-      ],
       "explanation": "54 = Chemistry."
     },
     {
+      "patterns": [
+        "astronomy"
+      ],
+      "udc": "52",
+      "subject": "Astronomy",
+      "subSubject": "Astronomy",
+      "explanation": "52 = Astronomy."
+    },
+    {
+      "patterns": [
+        "geology"
+      ],
       "udc": "55",
-      "subject": "Earth sciences",
-      "subSubject": "Geology / earth sciences",
-      "patterns": [
-        "geology",
-        "earth science",
-        "geophysics"
-      ],
-      "explanation": "55 = Earth sciences. Geology."
+      "subject": "Earth sciences / geology",
+      "subSubject": "Geology",
+      "explanation": "55 = Earth sciences / geology."
     },
     {
-      "udc": "56",
-      "subject": "Palaeontology",
-      "subSubject": "Palaeontology",
       "patterns": [
-        "palaeontology",
-        "paleontology",
-        "fossil"
+        "biology"
       ],
-      "explanation": "56 = Palaeontology."
-    },
-    {
       "udc": "57",
       "subject": "Biological sciences",
       "subSubject": "Biology",
-      "patterns": [
-        "biology",
-        "biological science",
-        "life science"
-      ],
       "explanation": "57 = Biological sciences."
     },
     {
+      "patterns": [
+        "botany"
+      ],
       "udc": "58",
       "subject": "Botany",
       "subSubject": "Botany",
-      "patterns": [
-        "botany",
-        "plants",
-        "plant science"
-      ],
       "explanation": "58 = Botany."
     },
     {
+      "patterns": [
+        "zoology"
+      ],
       "udc": "59",
       "subject": "Zoology",
       "subSubject": "Zoology",
-      "patterns": [
-        "zoology",
-        "animals",
-        "animal science"
-      ],
       "explanation": "59 = Zoology."
     },
     {
-      "udc": "6",
-      "subject": "Applied sciences, medicine and technology",
-      "subSubject": "Technology",
       "patterns": [
         "technology",
-        "engineering",
-        "medicine",
-        "medical",
-        "agriculture",
-        "computer technology"
+        "engineering"
       ],
-      "explanation": "6 = Applied sciences. Medicine. Technology."
+      "udc": "62",
+      "subject": "Engineering and technology in general",
+      "subSubject": "Technology / engineering",
+      "explanation": "62 = Engineering and technology in general."
     },
     {
+      "patterns": [
+        "computer science",
+        "computing",
+        "informatics"
+      ],
+      "udc": "004",
+      "subject": "Computer science and technology",
+      "subSubject": "Computing / informatics",
+      "explanation": "004 = Computer science and technology."
+    },
+    {
+      "patterns": [
+        "medicine",
+        "medical"
+      ],
       "udc": "61",
       "subject": "Medical sciences",
       "subSubject": "Medicine",
-      "patterns": [
-        "medicine",
-        "medical science",
-        "health"
-      ],
       "explanation": "61 = Medical sciences."
     },
     {
-      "udc": "62",
-      "subject": "Engineering and technology",
-      "subSubject": "Engineering",
       "patterns": [
-        "engineering",
-        "mechanical engineering",
-        "electrical engineering",
-        "civil engineering"
+        "agriculture"
       ],
-      "explanation": "62 = Engineering and technology."
-    },
-    {
       "udc": "63",
       "subject": "Agriculture and related sciences",
       "subSubject": "Agriculture",
-      "patterns": [
-        "agriculture",
-        "farming",
-        "crop science"
-      ],
       "explanation": "63 = Agriculture and related sciences."
     },
     {
-      "udc": "64",
-      "subject": "Domestic science",
-      "subSubject": "Home economics",
       "patterns": [
-        "home economics",
-        "domestic science",
-        "household"
+        "management"
       ],
-      "explanation": "64 = Home economics / domestic science."
-    },
-    {
-      "udc": "65",
-      "subject": "Management and communications",
+      "udc": "005",
+      "subject": "Management",
       "subSubject": "Management",
-      "patterns": [
-        "management",
-        "business administration",
-        "communication"
-      ],
-      "explanation": "65 = Management and organization of industry, trade and communications."
+      "explanation": "005 = Management."
     },
     {
-      "udc": "66",
-      "subject": "Chemical technology",
-      "subSubject": "Chemical technology",
       "patterns": [
-        "chemical technology"
+        "education",
+        "teaching",
+        "pedagogy"
       ],
-      "explanation": "66 = Chemical technology."
+      "udc": "37",
+      "subject": "Education",
+      "subSubject": "Education / teaching",
+      "explanation": "37 = Education."
     },
     {
-      "udc": "67",
-      "subject": "Manufacturing and handicrafts",
-      "subSubject": "Manufacturing",
       "patterns": [
-        "manufacturing",
-        "handicraft"
+        "law"
       ],
-      "explanation": "67 = Various industries and handicrafts."
+      "udc": "34",
+      "subject": "Law",
+      "subSubject": "Law",
+      "explanation": "34 = Law."
     },
     {
-      "udc": "68",
-      "subject": "Industries, crafts and trades",
-      "subSubject": "Industry",
       "patterns": [
-        "industry",
-        "industrial technology"
+        "politics",
+        "political science"
       ],
-      "explanation": "68 = Industries, crafts and trades."
+      "udc": "32",
+      "subject": "Politics",
+      "subSubject": "Political science",
+      "explanation": "32 = Politics."
     },
     {
-      "udc": "69",
-      "subject": "Building construction",
-      "subSubject": "Construction",
       "patterns": [
-        "building construction",
-        "construction technology"
+        "economics",
+        "economy"
       ],
-      "explanation": "69 = Building construction."
+      "udc": "33",
+      "subject": "Economics",
+      "subSubject": "Economics",
+      "explanation": "33 = Economics."
     },
     {
-      "udc": "7",
-      "subject": "Arts, recreation and entertainment",
-      "subSubject": "Arts",
       "patterns": [
-        "art",
+        "sociology"
+      ],
+      "udc": "316",
+      "subject": "Sociology",
+      "subSubject": "Sociology",
+      "explanation": "316 = Sociology."
+    },
+    {
+      "patterns": [
+        "psychology"
+      ],
+      "udc": "159.9",
+      "subject": "Psychology",
+      "subSubject": "Psychology",
+      "explanation": "159.9 = Psychology."
+    },
+    {
+      "patterns": [
+        "philosophy"
+      ],
+      "udc": "1",
+      "subject": "Philosophy",
+      "subSubject": "Philosophy",
+      "explanation": "1 = Philosophy."
+    },
+    {
+      "patterns": [
+        "religion"
+      ],
+      "udc": "2",
+      "subject": "Religion and theology",
+      "subSubject": "Religion",
+      "explanation": "2 = Religion and theology."
+    },
+    {
+      "patterns": [
         "arts",
-        "painting",
-        "sculpture",
-        "music",
-        "architecture",
-        "photography",
-        "sport"
+        "art"
       ],
-      "explanation": "7 = Arts. Recreation. Entertainment. Sport."
+      "udc": "7",
+      "subject": "The arts",
+      "subSubject": "Arts",
+      "explanation": "7 = The arts."
     },
     {
-      "udc": "8",
-      "subject": "Language and literature",
-      "subSubject": "Language and literature",
       "patterns": [
-        "literature",
+        "architecture"
+      ],
+      "udc": "72",
+      "subject": "Architecture",
+      "subSubject": "Architecture",
+      "explanation": "72 = Architecture."
+    },
+    {
+      "patterns": [
+        "music"
+      ],
+      "udc": "78",
+      "subject": "Music",
+      "subSubject": "Music",
+      "explanation": "78 = Music."
+    },
+    {
+      "patterns": [
+        "photography"
+      ],
+      "udc": "77",
+      "subject": "Photography and similar processes",
+      "subSubject": "Photography",
+      "explanation": "77 = Photography and similar processes."
+    },
+    {
+      "patterns": [
+        "literature"
+      ],
+      "udc": "82",
+      "subject": "Literature",
+      "subSubject": "Literature",
+      "explanation": "82 = Literature."
+    },
+    {
+      "patterns": [
+        "linguistics",
         "language"
       ],
-      "explanation": "8 = Language. Linguistics. Literature."
+      "udc": "81",
+      "subject": "Linguistics and languages",
+      "subSubject": "Language / linguistics",
+      "explanation": "81 = Linguistics and languages."
     },
     {
-      "udc": "9",
-      "subject": "Geography and history",
-      "subSubject": "History and geography",
       "patterns": [
-        "history",
+        "history"
+      ],
+      "udc": "94",
+      "subject": "General history",
+      "subSubject": "History",
+      "explanation": "94 = General history."
+    },
+    {
+      "patterns": [
         "geography"
       ],
-      "explanation": "9 = Geography. Biography. History."
+      "udc": "91",
+      "subject": "Geography",
+      "subSubject": "Geography",
+      "explanation": "91 = Geography."
+    },
+    {
+      "patterns": [
+        "social sciences"
+      ],
+      "udc": "3",
+      "subject": "Social sciences",
+      "subSubject": "Social sciences",
+      "explanation": "3 = Social sciences."
+    },
+    {
+      "patterns": [
+        "science"
+      ],
+      "udc": "5",
+      "subject": "Mathematics and natural sciences",
+      "subSubject": "Science",
+      "explanation": "5 = Mathematics and natural sciences."
+    }
+  ],
+  "relationWords": [
+    "relation",
+    "relations",
+    "relationship",
+    "relationships",
+    "diplomacy",
+    "diplomatic",
+    "bilateral",
+    "international relations",
+    "foreign relations",
+    "foreign policy",
+    "foreign affairs",
+    "ties between",
+    "conflict between",
+    "cooperation between"
+  ],
+  "medical": [
+    {
+      "patterns": [
+        "heart disease",
+        "heart diseases",
+        "cardiovascular disease",
+        "cardiovascular diseases",
+        "coronary heart disease",
+        "coronary artery disease",
+        "myocardial infarction",
+        "heart attack",
+        "cardiology"
+      ],
+      "udc": "616.1",
+      "mainClass": "616",
+      "subject": "Diseases of the circulatory system / cardiovascular diseases",
+      "subSubject": "Heart and cardiovascular disease",
+      "explanation": "616 = Pathology / clinical medicine; 616.1 = diseases/pathology of the circulatory system and cardiovascular complaints."
+    },
+    {
+      "patterns": [
+        "hypertension",
+        "high blood pressure"
+      ],
+      "udc": "616.1",
+      "mainClass": "616",
+      "subject": "Hypertension / diseases of the circulatory system",
+      "subSubject": "Cardiovascular disease",
+      "explanation": "616.1 = diseases/pathology of the circulatory system; hypertension belongs to cardiovascular pathology."
+    },
+    {
+      "patterns": [
+        "respiratory disease",
+        "respiratory diseases",
+        "lung disease",
+        "lung diseases",
+        "pneumonia",
+        "asthma",
+        "bronchitis"
+      ],
+      "udc": "616.2",
+      "mainClass": "616",
+      "subject": "Diseases of the respiratory system",
+      "subSubject": "Respiratory diseases",
+      "explanation": "616.2 = diseases/pathology of the respiratory system."
+    },
+    {
+      "patterns": [
+        "digestive disease",
+        "digestive diseases",
+        "digestive system disease",
+        "digestive system diseases",
+        "stomach disease",
+        "liver disease",
+        "intestinal disease"
+      ],
+      "udc": "616.3",
+      "mainClass": "616",
+      "subject": "Diseases of the digestive system",
+      "subSubject": "Digestive diseases",
+      "explanation": "616.3 = diseases/pathology of the digestive system and alimentary tract."
+    },
+    {
+      "patterns": [
+        "skin disease",
+        "skin diseases",
+        "dermatology",
+        "eczema",
+        "psoriasis"
+      ],
+      "udc": "616.5",
+      "mainClass": "616",
+      "subject": "Diseases of the skin",
+      "subSubject": "Dermatology",
+      "explanation": "616.5 = diseases of the skin / clinical dermatology."
+    },
+    {
+      "patterns": [
+        "nervous system disease",
+        "nervous system diseases",
+        "neurological disease",
+        "neurological diseases",
+        "neurology",
+        "brain disease",
+        "brain diseases"
+      ],
+      "udc": "616.8",
+      "mainClass": "616",
+      "subject": "Diseases of the nervous system",
+      "subSubject": "Neurology / neuropathology",
+      "explanation": "616.8 = neurology, neuropathology and diseases of the nervous system."
+    },
+    {
+      "patterns": [
+        "infectious disease",
+        "infectious diseases",
+        "communicable disease",
+        "communicable diseases",
+        "contagious disease",
+        "contagious diseases"
+      ],
+      "udc": "616.9",
+      "mainClass": "616",
+      "subject": "Communicable and infectious diseases",
+      "subSubject": "Infectious diseases",
+      "explanation": "616.9 = communicable, infectious and contagious diseases."
+    },
+    {
+      "patterns": [
+        "cancer",
+        "cancers",
+        "malignant neoplasm",
+        "malignant neoplasms",
+        "oncology"
+      ],
+      "udc": "616.9",
+      "mainClass": "616",
+      "subject": "Cancer / malignant neoplasms",
+      "subSubject": "Oncology",
+      "explanation": "Local Summary-level rule: cancer/oncology is placed under 616 pathology/clinical medicine; verify detailed organ-specific notation in the authoritative schedule."
     }
   ]
 }
