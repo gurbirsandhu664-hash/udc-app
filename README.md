@@ -1,23 +1,15 @@
-# UDC Ultimate V10 — Final Corrected
+# UDC Ultimate V12 — Key-Loaded Final
 
-UDC-only title classifier with:
-- 2,700+ stored title-practice entries
-- exact title matching before semantic matching
-- explicit English Drama rule: 821.111-2
-- explicit Hindi Language rule: 811.214.21
-- explicit Science and Technology rule: 5/6
-- explicit Science and Arts rule: 5+7
-- medical-first ordering so Heart Disease cannot be caught as Arts
-- language/literature and literary-form handling
-- place-aware examples such as History of India 94(540)
-- safe fallback instead of inventing a detailed number
+Actual answer-key entries: 2700.
 
-Files:
-- index.html
-- server.js
-- udc-2600-key.json
-- package.json
+V12 loads `udc-2600-key.json` at server startup, refuses to report healthy when fewer than 2700 entries are loaded, checks exact normalized/punctuation-insensitive titles first, and exposes `/health` with the loaded count.
 
-Important:
-This is a title-practice/decision-support tool, not a licensed reproduction of the full UDC MRF.
-The UDC Consortium states that the UDC Master Reference File is the definitive authorised version and that reproduction/distribution of UDC content requires permission/licensing.
+Critical exact rules:
+- English Drama -> 821.111-2
+- Hindi Language -> 811.214.21
+- Science and Technology -> 5/6
+- Science and Arts -> 5+7
+- Heart Disease -> 616.12
+- Library Classification: A Practice Manual -> 025.42
+
+This is a practice classifier, not a reproduction of the licensed complete UDC Master Reference File.
