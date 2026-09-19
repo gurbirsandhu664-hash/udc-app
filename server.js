@@ -53,5 +53,5 @@ app.post("/api/classify",async(req,res)=>{
  }catch(e){console.log("Gemini:",e.message)}}
  return res.json({verified:false,title,message:"No defensible UDC classification was verified. No random UDC number was invented.",providerStatus:"NO VERIFIED RESULT"});
 });
-app.get("*",(req,res)=>res.sendFile(process.cwd()+"/index.html"));
+app.get("/*splat",(req,res)=>res.sendFile(process.cwd()+"/index.html"));
 app.listen(port,()=>console.log("UDC V28 on "+port));
