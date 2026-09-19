@@ -2,59 +2,91 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b14">
-<title>UDC Ultimate V22</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>UDC Ultimate V18</title>
 <style>
-:root{--bg:#070a12;--panel:#101624;--panel2:#0b101b;--line:#263653;--text:#f3f6ff;--muted:#96a4bd;--blue:#63b9ff;--violet:#8467ff;--green:#58df95;--amber:#ffbf55;--red:#ff7888}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100vh;background:radial-gradient(900px 500px at 50% -80px,#1b2141 0%,#080b14 55%,#05070d 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-button,input{font:inherit}.wrap{width:min(960px,100%);margin:auto;padding:18px 14px 70px}.app{overflow:hidden;border:1px solid #243452;border-radius:30px;background:rgba(13,18,30,.94);box-shadow:0 24px 90px rgba(0,0,0,.42)}
-.top{padding:22px 20px 18px;border-bottom:1px solid #202e47;background:linear-gradient(135deg,rgba(124,91,255,.14),rgba(65,189,235,.07) 55%,transparent)}
-.brand{display:flex;align-items:center;gap:14px}.logo{width:58px;height:58px;display:grid;place-items:center;border-radius:18px;background:linear-gradient(135deg,#7b5cff,#55bce8);font-weight:950;font-size:19px;box-shadow:0 10px 30px rgba(100,105,255,.25)}h1{margin:0;font-size:28px;line-height:1.05;letter-spacing:-.6px}.tag{margin-top:6px;color:#a7b3c9;font-size:13px;letter-spacing:.7px}.badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}.badge{padding:7px 10px;border-radius:999px;background:#111a2a;border:1px solid #293b5b;color:#b9c6dc;font-size:11px;font-weight:800;letter-spacing:.5px}.badge.primary{color:#cbbfff;border-color:#5a4aa0;background:#1a1730}.badge.safe{color:#83e6ad;border-color:#245f43}
-.main{padding:20px}.search{display:flex;gap:10px;align-items:stretch}.inputWrap{position:relative;flex:1}.input{width:100%;height:62px;border:2px solid #2c4269;border-radius:20px;background:#050810;color:#fff;padding:0 52px 0 17px;outline:none;font-size:18px;transition:.18s}.input:focus{border-color:#6c7cff;box-shadow:0 0 0 4px rgba(108,124,255,.12)}.clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:38px;height:38px;padding:0;border-radius:12px;border:1px solid #2a3b59;background:#111a2a;color:#aab8ce;min-width:0;display:none;cursor:pointer}.go{height:62px;min-width:154px;border:0;border-radius:20px;background:linear-gradient(135deg,#7658ff,#4dbde7);color:#fff;font-weight:950;font-size:17px;letter-spacing:.3px;cursor:pointer;box-shadow:0 12px 30px rgba(91,102,255,.22);touch-action:manipulation}.go:active{transform:translateY(1px)}.go:disabled{opacity:.6;cursor:wait}
-.chipsTitle{margin:19px 2px 9px;color:#7889a5;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase}.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{border:1px solid #293a58;background:#111927;color:#b7c4da;border-radius:999px;padding:10px 13px;font-size:13px;cursor:pointer;touch-action:manipulation}.chip:active{background:#182238}
-.statusRow{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}.status{color:var(--muted);font-size:13px}.status.ok{color:var(--green)}.status.warn{color:var(--amber)}.status.bad{color:var(--red)}.route{font-size:11px;color:#71819c;white-space:nowrap}
-.result{margin-top:14px}.hero{border:1px solid #34486b;border-radius:25px;background:linear-gradient(160deg,#151a30,#0d1421);padding:21px}.verified{border-color:#7d61ff;box-shadow:0 12px 45px rgba(80,65,160,.14)}.label{font-size:11px;letter-spacing:3px;color:#8b9ab4;font-weight:950}.udc{margin:8px 0 4px;font-size:46px;line-height:1.08;font-weight:950;color:#78a5ff;word-break:break-word}.verify{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;border:1px solid #2c7650;background:#10261b;color:#62e49a;font-size:12px;font-weight:900}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.box{background:#0a101b;border:1px solid #22314b;border-radius:16px;padding:14px}.box b{display:block;color:#7e8ea9;font-size:10px;text-transform:uppercase;letter-spacing:1.8px;margin-bottom:7px}.box div{font-size:15px;line-height:1.5;color:#e4e9f5}.wide{margin-top:10px}.sources{margin-top:14px;padding-top:14px;border-top:1px solid #24324b}.sourcesTitle{color:#7e8ea9;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase}.sources a{display:block;color:#75bfff;text-decoration:none;margin-top:8px;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.empty{border:1px dashed #435270;border-radius:20px;padding:22px;background:#0b111d;color:#aab6ca}.empty strong{color:#ffbd55}.empty .big{font-size:22px;font-weight:950;color:#dbe3f3;margin-bottom:8px}
-.footer{padding:15px 20px 20px;color:#65748d;font-size:11px;text-align:center;border-top:1px solid #1d2a41}.spinner{display:inline-block;width:13px;height:13px;border:2px solid #53627d;border-top-color:#80aaff;border-radius:50%;vertical-align:-2px;margin-right:6px;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:650px){.wrap{padding:0 0 35px}.app{border-radius:0;min-height:100vh;border-left:0;border-right:0}.top{padding:19px 17px 16px}.main{padding:16px}.logo{width:52px;height:52px;border-radius:16px}h1{font-size:24px}.tag{font-size:12px}.search{display:block}.input{height:60px;font-size:17px}.go{width:100%;height:58px;margin-top:9px}.grid{grid-template-columns:1fr}.udc{font-size:38px}.hero{padding:18px}.chip{padding:10px 12px}.statusRow{align-items:flex-start}.route{display:none}}
+*{box-sizing:border-box}body{margin:0;background:#070a12;color:#eef3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:900px;margin:auto;padding:22px 14px 60px}
+.card{background:#111827;border:1px solid #263552;border-radius:26px;padding:22px;box-shadow:0 18px 60px #0005}
+h1{margin:0;font-size:30px}.sub{color:#9eabc4;margin:7px 0 20px}
+.row{display:flex;gap:12px}.input{flex:1;min-width:0;background:#050810;color:white;border:2px solid #2c4269;border-radius:20px;padding:18px;font-size:19px;outline:none}
+button{border:0;border-radius:18px;padding:0 24px;font-weight:800;font-size:17px;color:white;background:linear-gradient(135deg,#7557ff,#45bfe9);cursor:pointer;min-width:150px}
+button:disabled{opacity:.55;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.chip{padding:10px 14px;border-radius:999px;background:#151d2c;border:1px solid #2a3955;color:#b9c5da;cursor:pointer}
+.status{margin-top:17px;color:#9eabc4}.ok{color:#58dc92}.warn{color:#ffbd55}.bad{color:#ff7b88}
+.result{margin-top:18px}.hero{border:2px solid #8b5cf6;border-radius:25px;padding:22px;background:#15182b}
+.label{font-size:12px;letter-spacing:3px;color:#8491aa;font-weight:800}.udc{font-size:44px;font-weight:900;margin:10px 0;color:#76a6ff;word-break:break-word}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}.box{background:#0c1220;border:1px solid #263552;border-radius:17px;padding:15px}.box b{display:block;color:#8795ae;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px}.box div{font-size:16px;line-height:1.45}
+.sources{margin-top:14px}.sources a{display:block;color:#76b9ff;margin:8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{margin-top:18px;padding:24px;border:1px dashed #40506e;border-radius:20px;color:#aeb9cc}
+@media(max-width:650px){.row{flex-direction:column}.row button{height:58px}.grid{grid-template-columns:1fr}.udc{font-size:36px}}
 </style>
 </head>
 <body>
-<div class="wrap"><div class="app">
-<header class="top">
-  <div class="brand"><div class="logo">UDC</div><div><h1>UDC Ultimate</h1><div class="tag">Professional UDC title classifier · verified answers only</div></div></div>
-  <div class="badges"><span class="badge primary">GEMINI PRIMARY</span><span class="badge">2700 LOCAL KEY</span><span class="badge">GOOGLE VERIFICATION</span><span class="badge safe">GROQ FALLBACK</span></div>
-</header>
-<main class="main">
-  <div class="search"><div class="inputWrap"><input id="title" class="input" placeholder="Enter book title…" autocomplete="off" autocapitalize="sentences"><button id="clear" class="clear" type="button" aria-label="Clear">×</button></div><button id="go" class="go" type="button">CLASSIFY</button></div>
-  <div class="chipsTitle">Quick titles</div>
-  <div class="chips">
-    <button class="chip" type="button">History of India</button><button class="chip" type="button">Dictionary of Language and Literature</button><button class="chip" type="button">English Drama</button><button class="chip" type="button">Science and Technology</button><button class="chip" type="button">Bible in Hindi</button><button class="chip" type="button">Indian Constitution</button>
+<div class="wrap">
+  <div class="card">
+    <h1>UDC Ultimate V18</h1>
+    <div class="sub">UDC ONLY · 2,700-title local key · Gemini + Google grounding · Groq fallback</div>
+    <div class="row">
+      <input id="title" class="input" placeholder="Enter Book Title" autocomplete="off">
+      <button id="go">CLASSIFY</button>
+    </div>
+    <div class="chips">
+      <span class="chip">History of India</span>
+      <span class="chip">Dictionary of Language and Literature</span>
+      <span class="chip">English Drama</span>
+      <span class="chip">Science and Technology</span>
+      <span class="chip">Bible in Hindi</span>
+    </div>
+    <div id="status" class="status">Ready.</div>
+    <div id="result"></div>
   </div>
-  <div class="statusRow"><div id="status" class="status">Ready — enter a title.</div><div id="route" class="route"></div></div>
-  <div id="result"></div>
-</main>
-<footer class="footer">UDC ONLY · No DDC substitution · No invented classification number</footer>
-</div></div>
+</div>
 <script>
-const titleEl=document.getElementById('title'),go=document.getElementById('go'),clearBtn=document.getElementById('clear'),statusEl=document.getElementById('status'),routeEl=document.getElementById('route'),result=document.getElementById('result');
+const titleEl=document.getElementById('title'),go=document.getElementById('go'),statusEl=document.getElementById('status'),result=document.getElementById('result');
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{titleEl.value=c.textContent; classify()});
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function setClear(){clearBtn.style.display=titleEl.value?'grid':'none'}
-function setBusy(v){go.disabled=v;go.innerHTML=v?'<span class="spinner"></span>CHECKING':'CLASSIFY'}
 function show(r){
- if(!r||!r.verified||!r.udc){result.innerHTML=`<section class="empty"><div class="big">NOT VERIFIED</div><div>${esc(r?.message||'No verified UDC classification was found.')}</div><br><strong>No UDC number has been invented, guessed or substituted.</strong></section>`;return}
- const src=(r.sources||[]).filter(x=>x&&x.url).map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title||x.url)}</a>`).join('');
- result.innerHTML=`<section class="hero verified"><div class="label">VERIFIED UDC CLASSIFICATION</div><div class="udc">${esc(r.udc)}</div><span class="verify">✓ ${esc(r.verificationLabel||'Verified')}</span><div class="grid"><div class="box"><b>Book Title</b><div>${esc(r.title)}</div></div><div class="box"><b>Confidence</b><div>${esc(r.confidence||'Not stated')}</div></div><div class="box"><b>Main Subject</b><div>${esc(r.mainSubject||'—')}</div></div><div class="box"><b>Sub Subject</b><div>${esc(r.subSubject||'—')}</div></div></div><div class="box wide"><b>Explanation</b><div>${esc(r.explanation||'—')}</div></div>${src?`<div class="sources"><div class="sourcesTitle">Evidence used</div>${src}</div>`:''}</section>`;
+  if(!r || !r.verified || !r.udc){
+    result.innerHTML=`<div class="empty"><b>STATUS: NOT VERIFIED</b><br><br>${esc(r?.message||'No reliable UDC classification was found.')}<br><br><span class="warn">No UDC number has been invented or substituted.</span></div>`;
+    return;
+  }
+  const src=(r.sources||[]).map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title||x.url)}</a>`).join('');
+  result.innerHTML=`
+  <div class="result">
+    <div class="hero">
+      <div class="label">VERIFIED UDC CLASSIFICATION</div>
+      <div class="udc">${esc(r.udc)}</div>
+      <div class="ok">✓ ${esc(r.verificationLabel||'Verified')}</div>
+      <div class="grid">
+        <div class="box"><b>Book Title</b><div>${esc(r.title)}</div></div>
+        <div class="box"><b>Confidence</b><div>${esc(r.confidence||'Not stated')}</div></div>
+        <div class="box"><b>Main Subject</b><div>${esc(r.mainSubject||'—')}</div></div>
+        <div class="box"><b>Sub Subject</b><div>${esc(r.subSubject||'—')}</div></div>
+      </div>
+      <div class="box" style="margin-top:12px"><b>Explanation</b><div>${esc(r.explanation||'—')}</div></div>
+      ${src?`<div class="sources"><b>Evidence used</b>${src}</div>`:''}
+    </div>
+  </div>`;
 }
 async function classify(){
- const title=titleEl.value.trim(); if(!title){titleEl.focus();return}
- setBusy(true);statusEl.className='status';statusEl.innerHTML='<span class="spinner"></span>Checking local UDC key…';routeEl.textContent='';result.innerHTML='';
- try{const res=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});let data={};try{data=await res.json()}catch{};
-   statusEl.textContent=data.providerStatus|| (data.verified?'Verified answer returned.':'No verified answer.');statusEl.className='status '+(data.verified?'ok':'warn');routeEl.textContent=data.provider?String(data.provider).toUpperCase():'';show(data);
- }catch(e){statusEl.textContent='Service unavailable — no answer invented.';statusEl.className='status bad';show({verified:false,message:'The classification service could not be reached. Please try again.'})}
- finally{setBusy(false)}
+  const title=titleEl.value.trim();
+  if(!title)return;
+  go.disabled=true;statusEl.className='status';statusEl.textContent='Checking local UDC key…';result.innerHTML='';
+  try{
+    const res=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});
+    const data=await res.json();
+    statusEl.textContent=data.providerStatus||'Completed.';
+    statusEl.className='status '+(data.verified?'ok':'warn');
+    show(data);
+  }catch(e){
+    statusEl.textContent='Service error — no answer was invented.';
+    statusEl.className='status bad';
+    show({verified:false,message:'The classification service could not be reached.'});
+  }finally{go.disabled=false}
 }
-clearBtn.onclick=()=>{titleEl.value='';setClear();titleEl.focus();result.innerHTML='';statusEl.className='status';statusEl.textContent='Ready — enter a title.';routeEl.textContent=''};
-titleEl.addEventListener('input',setClear);titleEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();classify()}});go.addEventListener('click',classify);document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{titleEl.value=c.textContent;setClear();classify()}));setClear();
+go.onclick=classify;
+titleEl.addEventListener('keydown',e=>{if(e.key==='Enter')classify()});
 </script>
-</body></html>
+</body>
+</html>

@@ -7,14 +7,12 @@ import Groq from "groq-sdk";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json({ limit: "64kb" }));
+app.use(express.json({limit:"64kb"}));
 app.use(express.static(__dirname));
 
 const port = Number(process.env.PORT || 10000);
 const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const groqModel = process.env.GROQ_MODEL || "groq/compound";
-// Google grounding is best-effort. It must NEVER block a normal Gemini answer.
-const useGoogleGrounding = /^(1|true|yes)$/i.test(process.env.GEMINI_GOOGLE_SEARCH || "true");
 
 function keys(primary, plural) {
   return [...new Set(
@@ -24,20 +22,10 @@ function keys(primary, plural) {
       .filter(Boolean)
   )];
 }
-const geminiKeys = () => keys("GEMINI_API_KEY", "GEMINI_API_KEYS");
-const groqKeys = () => keys("GROQ_API_KEY", "GROQ_API_KEYS");
+const geminiKeys = () => keys("GEMINI_API_KEY","GEMINI_API_KEYS");
+const groqKeys = () => keys("GROQ_API_KEY","GROQ_API_KEYS");
 
-// Avoid hammering a key after a 429. NOTE: Gemini quotas are normally per PROJECT,
-// not per API key, so rotating keys from the same project cannot create more quota.
-const geminiCooldown = new Map();
-function isCooling(key) { return (geminiCooldown.get(key) || 0) > Date.now(); }
-function cooldown(key, ms = 65000) { geminiCooldown.set(key, Date.now() + ms); }
-function isQuotaError(e) {
-  const s = `${e?.status || ""} ${e?.code || ""} ${e?.message || e || ""}`.toLowerCase();
-  return /429|resource_exhausted|quota|rate.?limit|too many requests/.test(s);
-}
-
-function normalizeRecord(x, fallbackTitle = "") {
+function normalizeRecord(x, fallbackTitle="") {
   if (!x || typeof x !== "object") return null;
   const title = String(x.title ?? x.bookTitle ?? x.name ?? fallbackTitle).trim();
   const udc = String(x.udc ?? x.number ?? x.classification ?? x.classificationNumber ?? "").trim();
@@ -53,237 +41,187 @@ function normalizeRecord(x, fallbackTitle = "") {
 }
 
 function loadLocal() {
-  const p = path.join(__dirname, "udc-2700-key.json");
+  const p = path.join(__dirname,"udc-2700-key.json");
   if (!fs.existsSync(p)) return [];
   try {
-    const raw = JSON.parse(fs.readFileSync(p, "utf8"));
+    const raw = JSON.parse(fs.readFileSync(p,"utf8"));
     let arr = Array.isArray(raw) ? raw : (raw.records || raw.entries || []);
     if (!Array.isArray(arr) && raw && typeof raw === "object") {
-      arr = Object.entries(raw).map(([k, v]) => typeof v === "object" ? { ...v, title: v.title || k } : { title: k, udc: v });
+      arr = Object.entries(raw).map(([k,v]) => typeof v === "object" ? {...v,title:v.title||k} : {title:k,udc:v});
     }
-    return arr.map(x => normalizeRecord(x)).filter(Boolean);
+    return arr.map(x=>normalizeRecord(x)).filter(Boolean);
   } catch (e) {
-    console.error("UDC key load error:", e.message);
+    console.error("UDC key load error:",e.message);
     return [];
   }
 }
 const local = loadLocal();
 
-function norm(s) { return String(s || "").toLowerCase().replace(/[“”"'`]/g, "").replace(/[^a-z0-9]+/g, " ").trim(); }
-function tokens(s) { return new Set(norm(s).split(/\s+/).filter(w => w.length > 2)); }
-
+function norm(s){return String(s||"").toLowerCase().replace(/[“”"'`]/g,"").replace(/[^a-z0-9]+/g," ").trim();}
 function localMatch(title) {
-  const q = norm(title);
-  if (!q) return null;
-  const exact = local.find(x => norm(x.title) === q);
-  if (exact) return exact;
-  return local.find(x => {
-    const t = norm(x.title);
-    return t && (q.includes(t) || t.includes(q));
-  }) || null;
-}
-
-// Give Gemini a small, relevant slice of the 2700-title key instead of sending the
-// whole database. This improves accuracy while keeping token usage low.
-function candidateRecords(title, limit = 14) {
-  const q = tokens(title);
-  return local
-    .map(r => {
-      const t = tokens(r.title);
-      let score = 0;
-      for (const w of q) if (t.has(w)) score += 3;
-      if (norm(r.title) === norm(title)) score += 100;
-      return { r, score };
-    })
-    .filter(x => x.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(x => x.r);
+  const q=norm(title);
+  if(!q)return null;
+  const exact=local.find(x=>norm(x.title)===q);
+  if(exact)return exact;
+  const compact=q.replace(/\s+/g," ");
+  const contains=local.find(x=>{
+    const t=norm(x.title);
+    return t && (compact.includes(t) || t.includes(compact));
+  });
+  return contains || null;
 }
 
 const SYSTEM = `
-You are the primary UDC book-classification engine.
-STRICT RULE: Universal Decimal Classification (UDC) ONLY. NEVER use Dewey Decimal Classification (DDC).
+You are a strict Universal Decimal Classification (UDC) book-classification verifier.
+UDC ONLY. NEVER use DDC.
 
-Goal: classify the user's BOOK TITLE as accurately as possible using the supplied UDC key candidates and your UDC knowledge.
-1. Understand the complete title/meaning; do not classify from one keyword alone.
-2. Prefer the most specific defensible UDC notation.
-3. Use UDC auxiliaries only when justified: place, language, form, time, viewpoint, common auxiliaries and special auxiliaries.
-4. For literature, distinguish language, literature and literary form.
-5. Never invent a UDC number merely to fill a field.
-6. If a supplied key record directly matches the title/meaning, prefer its UDC notation.
-7. If no direct key record exists, give your best UDC classification only when you can defend the notation from established UDC structure.
-8. Never output 0, -, null, or a made-up placeholder as a UDC number.
-9. Return ONLY valid JSON.
+User gives a book title. Determine a UDC class ONLY when the evidence is sufficient.
+Do not invent a notation. Do not output 0. Do not use a generic placeholder.
+Prefer an exact/near-exact authoritative UDC source found through Google Search.
+Use UDC notation and auxiliaries correctly when the evidence supports them.
+For literary works distinguish language, literature and literary form.
+For language works distinguish the subject from dictionary/grammar/form aspects.
+If you cannot verify a defensible UDC number, return verified=false.
 
-JSON:
+Return ONLY valid JSON:
 {
   "verified": true|false,
   "udc": "string or empty",
   "title": "string",
   "mainSubject": "string",
   "subSubject": "string",
-  "explanation": "brief notation/subject explanation",
+  "explanation": "string",
   "confidence": "High|Medium|Low|Not verified",
-  "verificationLabel": "Gemini UDC analysis",
-  "evidence": "brief reason",
-  "sources": []
+  "verificationLabel": "Google-grounded UDC verification",
+  "evidence": "brief factual evidence",
+  "sources": [{"title":"source title","url":"https://..."}]
 }
 
-Important: 'verified' means the number is supported by a local UDC key record or reliable UDC reasoning. Do not claim Google verification unless Google grounding actually supplied evidence.
+If verified=false, udc MUST be empty and explain why.
+Do not claim a source was consulted unless the returned grounding/search metadata supports it.
 `;
 
 function extractJSON(text) {
-  const s = String(text || "").trim().replace(/^```json\s*/i, "").replace(/```$/, "").trim();
-  try { return JSON.parse(s); } catch {}
-  const a = s.indexOf("{"), b = s.lastIndexOf("}");
-  if (a >= 0 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch {} }
+  const s=String(text||"").trim().replace(/^```json\s*/i,"").replace(/```$/,"").trim();
+  try{return JSON.parse(s)}catch{}
+  const a=s.indexOf("{"), b=s.lastIndexOf("}");
+  if(a>=0 && b>a){try{return JSON.parse(s.slice(a,b+1))}catch{}}
   return null;
 }
 
 function groundingSources(resp) {
-  const out = [];
+  const out=[];
   const chunks = resp?.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-  for (const c of chunks) {
-    const w = c?.web;
-    if (w?.uri) out.push({ title: w.title || w.uri, url: w.uri });
+  for(const c of chunks){
+    const w=c?.web;
+    if(w?.uri) out.push({title:w.title||w.uri,url:w.uri});
   }
-  return [...new Map(out.map(x => [x.url, x])).values()].slice(0, 8);
-}
-
-async function geminiRequest(key, title, grounding) {
-  const ai = new GoogleGenAI({ apiKey: key });
-  const candidates = candidateRecords(title);
-  const keyContext = candidates.length
-    ? `\nLOCAL UDC KEY CANDIDATES (use as authoritative hints; do not alter their notation):\n${JSON.stringify(candidates)}`
-    : "\nNo close local-key candidate was found.";
-  const prompt = `${SYSTEM}\nTITLE: ${title}${keyContext}\nReturn the classification JSON once.`;
-  const config = { temperature: 0.1 };
-  if (grounding) config.tools = [{ googleSearch: {} }];
-  const resp = await ai.models.generateContent({ model: geminiModel, contents: prompt, config });
-  const parsed = extractJSON(resp.text);
-  if (!parsed) throw new Error("Gemini returned invalid JSON");
-  const sources = groundingSources(resp);
-  if (grounding && parsed.verified && parsed.udc && sources.length) {
-    parsed.sources = sources;
-    parsed.verificationLabel = "Gemini + Google Search verification";
-  } else {
-    parsed.sources = sources;
-  }
-  return parsed;
+  return [...new Map(out.map(x=>[x.url,x])).values()].slice(0,8);
 }
 
 async function geminiAttempt(key, title) {
-  // First try normal Gemini: this is the reliable path when Search Grounding quota is exhausted.
-  // Then optionally try Google grounding only if the normal answer was not verified.
-  const plain = await geminiRequest(key, title, false);
-  if (plain?.verified && plain?.udc) return plain;
-  if (useGoogleGrounding) {
-    try {
-      const grounded = await geminiRequest(key, title, true);
-      if (grounded?.verified && grounded?.udc) return grounded;
-      return grounded || plain;
-    } catch (e) {
-      // Grounding quota/network failure must never erase a usable Gemini result.
-      if (!isQuotaError(e)) console.error("Gemini Google grounding:", e.message);
-      return plain;
-    }
-  }
-  return plain;
-}
-
-async function groqAttempt(key, title) {
-  const groq = new Groq({ apiKey: key });
-  const candidates = candidateRecords(title);
-  const prompt = `${SYSTEM}\nTITLE: ${title}\nLOCAL KEY CANDIDATES: ${JSON.stringify(candidates)}\nReturn JSON only. Do not invent a number.`;
-  const r = await groq.chat.completions.create({
-    model: groqModel,
-    messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }],
-    temperature: 0.1
+  const ai = new GoogleGenAI({apiKey:key});
+  const prompt = `${SYSTEM}\nTITLE: ${title}\nSearch the web for reliable UDC evidence. Prefer official UDC/UDC Consortium material or reputable library/cataloguing sources that explicitly show the UDC notation.`;
+  const resp = await ai.models.generateContent({
+    model: geminiModel,
+    contents: prompt,
+    config: { tools: [{ googleSearch: {} }] }
   });
-  const parsed = extractJSON(r?.choices?.[0]?.message?.content);
-  if (!parsed) throw new Error("Groq returned invalid JSON");
-  parsed.sources = Array.isArray(parsed.sources) ? parsed.sources : [];
-  parsed.verificationLabel = parsed.verified ? "Groq UDC fallback" : "Not verified";
+  const parsed=extractJSON(resp.text);
+  if(!parsed) throw new Error("Gemini returned non-JSON");
+  const sources=groundingSources(resp);
+  if(parsed.verified && parsed.udc && sources.length===0){
+    parsed.verified=false;
+    parsed.udc="";
+    parsed.confidence="Not verified";
+    parsed.explanation="The model did not return Google grounding evidence, so no UDC number was accepted.";
+  }
+  parsed.sources=sources;
+  parsed.verificationLabel = parsed.verified ? "Google-grounded UDC verification" : "Not verified";
   return parsed;
 }
 
-function cleanResult(r, title) {
-  if (!r || !r.verified || !r.udc || r.udc === "0" || r.udc === "-") {
-    return { verified: false, title, message: r?.explanation || "No reliable UDC classification was verified.", sources: r?.sources || [] };
+async function groqAttempt(key, title) {
+  const groq=new Groq({apiKey:key});
+  const prompt=`${SYSTEM}\nTITLE: ${title}\nUse web search if available. Return JSON only. If web evidence does not support a specific UDC number, return verified=false.`;
+  const r=await groq.chat.completions.create({
+    model:groqModel,
+    messages:[{role:"system",content:SYSTEM},{role:"user",content:prompt}],
+    temperature:0.1
+  });
+  const msg=r?.choices?.[0]?.message;
+  const parsed=extractJSON(msg?.content);
+  if(!parsed) throw new Error("Groq returned non-JSON");
+  let sources=[];
+  for(const t of (msg?.executed_tools||[])){
+    const o=t?.output;
+    if(typeof o==="string"){
+      const urls=o.match(/https?:\/\/[^\s"'<>]+/g)||[];
+      for(const u of urls.slice(0,8)) sources.push({title:"Groq web evidence",url:u.replace(/[),.;]+$/,"")});
+    }
+  }
+  parsed.sources=[...new Map(sources.map(x=>[x.url,x])).values()].slice(0,8);
+  parsed.verificationLabel=parsed.verified ? "Groq web-search verification" : "Not verified";
+  return parsed;
+}
+
+function cleanResult(r,title) {
+  if(!r || !r.verified || !r.udc || r.udc==="0" || r.udc==="-"){
+    return {verified:false,title,message:r?.explanation||"No reliable UDC classification was found.",sources:r?.sources||[]};
   }
   return {
-    verified: true,
-    title: r.title || title,
-    udc: String(r.udc).trim(),
-    mainSubject: r.mainSubject || "",
-    subSubject: r.subSubject || "",
-    explanation: r.explanation || "",
-    confidence: r.confidence || "Medium",
-    verificationLabel: r.verificationLabel || "Verified",
-    evidence: r.evidence || "",
-    sources: Array.isArray(r.sources) ? r.sources : []
+    verified:true,title:r.title||title,udc:String(r.udc).trim(),
+    mainSubject:r.mainSubject||"",subSubject:r.subSubject||"",
+    explanation:r.explanation||"",confidence:r.confidence||"Medium",
+    verificationLabel:r.verificationLabel||"Verified",sources:r.sources||[]
   };
 }
 
-app.get("/api/health", (req, res) => res.json({
-  ok: true,
-  version: "V22",
-  localKeyRecords: local.length,
-  geminiKeys: geminiKeys().length,
-  groqKeys: groqKeys().length,
-  googleGroundingBestEffort: useGoogleGrounding
+app.get("/api/health",(req,res)=>res.json({
+  ok:true, version:"V18",
+  localKeyRecords:local.length,
+  geminiKeys:geminiKeys().length,
+  groqKeys:groqKeys().length
 }));
 
-app.post("/api/classify", async (req, res) => {
-  const title = String(req.body?.title || "").trim();
-  if (!title) return res.status(400).json({ verified: false, message: "Enter a book title." });
+app.post("/api/classify", async (req,res)=>{
+  const title=String(req.body?.title||"").trim();
+  if(!title) return res.status(400).json({verified:false,message:"Enter a book title."});
 
-  // Exact local key is always first: no API quota is consumed.
-  const hit = localMatch(title);
-  if (hit) return res.json({ ...cleanResult(hit, title), providerStatus: "LOCAL UDC KEY VERIFIED" });
+  const hit=localMatch(title);
+  if(hit) return res.json({...cleanResult(hit,title),providerStatus:"LOCAL KEY VERIFIED"});
 
-  let last = [];
-  let hadGeminiQuota = false;
-
-  // Gemini PRIMARY. 429/quota is swallowed and immediately falls through to Groq.
-  for (const key of geminiKeys()) {
-    if (isCooling(key)) continue;
+  let last=[];
+  for(const key of geminiKeys()){
     try {
-      const r = await geminiAttempt(key, title);
-      if (r?.verified && r?.udc) {
-        return res.json({ ...cleanResult(r, title), providerStatus: r.verificationLabel || "Gemini PRIMARY" });
-      }
+      const r=await geminiAttempt(key,title);
+      if(r?.verified && r?.udc) return res.json({...cleanResult(r,title),providerStatus:"Gemini + Google Search grounding"});
       last.push(r);
-    } catch (e) {
-      if (isQuotaError(e)) { cooldown(key); hadGeminiQuota = true; }
-      else console.error("Gemini:", e.message);
-      last.push({ verified: false, explanation: "Gemini request unavailable" });
+    } catch(e) {
+      console.error("Gemini:",e.message);
+      last.push({verified:false,explanation:e.message});
     }
   }
 
-  // Groq FALLBACK. No Gemini error is shown to the user.
-  for (const key of groqKeys()) {
+  for(const key of groqKeys()){
     try {
-      const r = await groqAttempt(key, title);
-      if (r?.verified && r?.udc) {
-        return res.json({ ...cleanResult(r, title), providerStatus: "Groq FALLBACK" });
-      }
+      const r=await groqAttempt(key,title);
+      if(r?.verified && r?.udc) return res.json({...cleanResult(r,title),providerStatus:"Groq web-search fallback"});
       last.push(r);
-    } catch (e) {
-      console.error("Groq:", e.message);
-      last.push({ verified: false, explanation: "Fallback unavailable" });
+    } catch(e) {
+      console.error("Groq:",e.message);
+      last.push({verified:false,explanation:e.message});
     }
   }
 
   return res.json({
-    verified: false,
-    title,
-    message: "No reliable UDC classification was verified. The app did not invent a UDC number.",
-    providerStatus: hadGeminiQuota ? "NOT VERIFIED — API QUOTA TEMPORARILY UNAVAILABLE" : "NOT VERIFIED",
-    diagnostics: process.env.NODE_ENV === "development" ? last : undefined
+    verified:false,title,
+    message:"No reliable UDC classification was verified. The app did not invent a UDC number.",
+    providerStatus:"NOT VERIFIED",
+    diagnostics: process.env.NODE_ENV==="development" ? last : undefined
   });
 });
 
-app.use((req, res) => res.sendFile(path.join(__dirname, "index.html")));
-app.listen(port, () => console.log(`UDC Ultimate V22 running on port ${port}`));
+app.use((req,res)=>res.sendFile(path.join(__dirname,"index.html")));
+
+app.listen(port,()=>console.log(`UDC Ultimate V18 running on port ${port}`));

@@ -1,8 +1,16 @@
 {
-  "version": "V15-2700-SEMANTIC-CORRECTED",
+  "version": "V24-GEMINI-REVIEW",
   "title_count": 2700,
   "edition_note": "UDC Summary-aligned practice key; not a substitute for the licensed complete UDC MRF.",
   "entries": [
+    {
+      "title": "Education",
+      "udc": "37",
+      "subject": "Education",
+      "subSubject": "Education",
+      "confidence": "High",
+      "explanation": "37 = Education in UDC."
+    },
     {
       "title": "Library Classification: A Practice Manual",
       "udc": "025.42(035)",
