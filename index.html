@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0e14">
+<title>UDC Ultimate · All Auxiliaries · All Symbols</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+  :root{
+    --bg:#07090f;--bg-2:#0d1219;--bg-3:#121a24;--bg-4:#182230;
+    --line:#1a2433;--line-2:#283547;
+    --txt:#eaf0f7;--txt-2:#8b9bb0;--txt-3:#5a6a80;
+    --p1:#a855f7;--p2:#06b6d4;--p3:#22c55e;--p4:#f59e0b;--p5:#ec4899;--p6:#6366f1;
+    --p-glow:rgba(168,85,247,.35);
+    --mono:'SF Mono','SFMono-Regular',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif;
+  }
+  [data-theme="light"]{
+    --bg:#eef1f6;--bg-2:#ffffff;--bg-3:#f5f8fc;--bg-4:#eef3fa;
+    --line:#dde5ef;--line-2:#c5d2e0;
+    --txt:#0a1628;--txt-2:#5a6b80;--txt-3:#8a99ab;
+    --p1:#8b3dfa;--p2:#0a8bc4;--p3:#16a34a;--p4:#c47a0a;--p5:#db2777;--p6:#4f46e5;
+    --p-glow:rgba(139,61,250,.2);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:var(--sans);background:var(--bg);color:var(--txt);
+    min-height:100vh;padding:12px;display:flex;justify-content:center;
+    align-items:flex-start;line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  .shell{
+    width:100%;max-width:920px;background:var(--bg-2);
+    border:1px solid var(--line);border-radius:24px;overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.6);
+    position:relative;
+  }
+  .shell::before{
+    content:'';position:absolute;top:-120px;left:-80px;
+    width:340px;height:340px;
+    background:radial-gradient(circle,var(--p-glow),transparent 70%);
+    pointer-events:none;z-index:0;
+  }
+  header{
+    padding:16px 18px;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;
+    background:var(--bg-3);border-bottom:1px solid var(--line);
+    position:relative;z-index:1;
+  }
+  .logo{display:flex;align-items:center;gap:10px;min-width:0}
+  .logo-mark{
+    width:44px;height:44px;flex-shrink:0;border-radius:13px;
+    background:linear-gradient(135deg,var(--p1),var(--p2));
+    display:grid;place-items:center;font-size:1.15rem;color:#fff;
+    box-shadow:0 0 24px var(--p-glow);font-family:var(--mono);font-weight:800;
+  }
+  .logo-txt h1{font-size:1rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+  .logo-txt p{font-size:.65rem;color:var(--txt-2);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+  .icon-btn{
+    width:38px;height:38px;border-radius:11px;border:1px solid var(--line);
+    background:var(--bg-2);color:var(--txt-2);display:grid;place-items:center;
+    cursor:pointer;font-size:.9rem;transition:.15s;
+  }
+  .icon-btn:active{transform:scale(.92)}
+  .icon-btn:hover{color:var(--p1);border-color:var(--p1)}
+  .content{padding:20px;position:relative;z-index:1}
+  .hero-input{position:relative;margin-bottom:10px}
+  .hero-input input{
+    width:100%;padding:20px 60px 20px 22px;
+    border:2px solid var(--line-2);border-radius:16px;
+    background:var(--bg);color:var(--txt);
+    font-family:var(--sans);font-size:1.05rem;font-weight:500;
+    outline:none;transition:.2s;
+  }
+  .hero-input input:focus{
+    border-color:var(--p1);box-shadow:0 0 0 4px var(--p-glow);
+  }
+  .hero-input input::placeholder{color:var(--txt-3);font-weight:400}
+  .hero-go{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    width:46px;height:46px;border-radius:12px;border:none;
+    background:linear-gradient(135deg,var(--p1),var(--p2));
+    color:#fff;font-size:1.05rem;cursor:pointer;
+    display:grid;place-items:center;transition:.15s;
+    box-shadow:0 6px 20px var(--p-glow);
+  }
+  .hero-go:active{transform:translateY(-50%) scale(.92)}
+  .quick-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+  .qc{
+    padding:8px 14px;border:1px solid var(--line);border-radius:999px;
+    background:var(--bg-3);color:var(--txt-2);
+    font-size:.75rem;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .qc:hover{border-color:var(--p1);color:var(--p1)}
+  .qc:active{transform:scale(.94)}
+  .loading{display:none;text-align:center;padding:40px 20px}
+  .loading.on{display:block}
+  .spinner{
+    width:48px;height:48px;margin:0 auto 16px;
+    border:3px solid var(--line-2);
+    border-top-color:var(--p1);border-right-color:var(--p2);
+    border-radius:50%;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading p{font-size:.85rem;color:var(--txt-2);font-weight:600}
+  .answer{display:none;animation:in .35s ease}
+  .answer.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .ans-head{
+    background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(6,182,212,.08));
+    border:2px solid var(--p1);border-radius:22px;
+    padding:26px 20px;margin-bottom:16px;text-align:center;
+    position:relative;overflow:hidden;
+  }
+  .ans-head::before{
+    content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+    animation:shine 3.5s infinite;
+  }
+  @keyframes shine{to{left:100%}}
+  .ans-head-lbl{
+    font-size:.68rem;color:var(--txt-3);font-weight:800;
+    letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;
+  }
+  .ans-head-num{
+    font-family:var(--mono);font-size:2.2rem;font-weight:800;
+    background:linear-gradient(135deg,var(--p1),var(--p2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;letter-spacing:-.03em;
+    word-break:break-all;line-height:1.15;
+  }
+  .ans-head-sub{font-size:.85rem;color:var(--txt-2);margin-top:10px;font-weight:600}
+  .section{
+    background:var(--bg-3);border:1px solid var(--line);
+    border-radius:16px;padding:18px;margin-bottom:14px;
+  }
+  .section-title{
+    font-size:.7rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;
+    display:flex;align-items:center;gap:7px;
+    padding-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  .section-title i{color:var(--p2)}
+  .section-title.purple i{color:var(--p1)}
+  .section-title.green i{color:var(--p3)}
+  .section-title.orange i{color:var(--p4)}
+  .section-title.pink i{color:var(--p5)}
+  .section-title.indigo i{color:var(--p6)}
+  .nv-line{
+    display:flex;flex-wrap:wrap;align-items:center;gap:4px;
+    font-family:var(--mono);font-size:1.25rem;font-weight:800;
+    padding:16px 14px;background:var(--bg);border-radius:12px;
+    border:1px dashed var(--line-2);min-height:56px;
+  }
+  .nv-token{
+    padding:6px 8px;border-radius:8px;transition:.2s;
+    cursor:default;position:relative;
+  }
+  .nv-token:hover{transform:translateY(-2px)}
+  .nv-token.main{background:rgba(6,182,212,.18);color:var(--p2);border:1px solid var(--p2)}
+  .nv-token.sym{background:rgba(168,85,247,.18);color:var(--p1);border:1px solid var(--p1);padding:6px 10px}
+  .nv-token.place{background:rgba(34,197,94,.18);color:var(--p3);border:1px solid var(--p3)}
+  .nv-token.lang{background:rgba(6,182,212,.18);color:var(--p2);border:1px solid var(--p2)}
+  .nv-token.form{background:rgba(245,158,11,.18);color:var(--p4);border:1px solid var(--p4)}
+  .nv-token.time{background:rgba(236,72,153,.18);color:var(--p5);border:1px solid var(--p5)}
+  .nv-token.view{background:rgba(99,102,241,.18);color:var(--p6);border:1px solid var(--p6)}
+  .nv-token.race{background:rgba(239,68,68,.18);color:#ef4444;border:1px solid #ef4444}
+  .nv-token.mat{background:rgba(20,184,166,.18);color:#14b8a6;border:1px solid #14b8a6}
+  .nv-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .nv-lg{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 11px;border-radius:999px;
+    background:var(--bg);border:1px solid var(--line-2);
+    font-size:.72rem;font-weight:600;color:var(--txt-2);
+  }
+  .nv-lg-dot{width:8px;height:8px;border-radius:50%}
+  .info-row{
+    display:grid;grid-template-columns:130px 1fr;gap:12px;
+    padding:11px 0;border-bottom:1px solid var(--line);
+    font-size:.9rem;align-items:start;
+  }
+  .info-row:last-child{border-bottom:none}
+  .info-lbl{
+    font-size:.7rem;font-weight:700;color:var(--txt-3);
+    text-transform:uppercase;letter-spacing:.06em;padding-top:2px;
+  }
+  .info-val{color:var(--txt);font-weight:500;word-break:break-word}
+  .info-val.mono{font-family:var(--mono);font-weight:700;color:var(--p2)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+  .chip{
+    padding:4px 11px;border-radius:999px;
+    background:var(--bg);border:1px solid var(--line-2);
+    font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--p2);
+  }
+  .chip.kw{font-family:var(--sans);color:var(--txt-2);font-weight:500}
+  .sm-row{
+    display:flex;gap:14px;padding:12px 0;
+    border-bottom:1px solid var(--line);align-items:flex-start;
+  }
+  .sm-row:last-child{border-bottom:none}
+  .sm-sym{
+    flex-shrink:0;font-family:var(--mono);font-size:1rem;
+    font-weight:800;color:var(--p1);min-width:70px;text-align:center;
+    padding:8px 10px;background:var(--bg);border-radius:8px;
+    border:1px solid var(--line-2);word-break:break-all;
+  }
+  .sm-body{flex:1;min-width:0}
+  .sm-name{font-size:.86rem;font-weight:700;color:var(--txt);margin-bottom:3px}
+  .sm-desc{font-size:.76rem;color:var(--txt-2);line-height:1.5;font-weight:500}
+  .sm-badge{
+    display:inline-block;font-size:.6rem;font-weight:800;
+    padding:2px 7px;border-radius:4px;margin-left:6px;
+    letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;
+  }
+  .smb-main{background:rgba(6,182,212,.2);color:var(--p2)}
+  .smb-sym{background:rgba(168,85,247,.2);color:var(--p1)}
+  .smb-place{background:rgba(34,197,94,.2);color:var(--p3)}
+  .smb-lang{background:rgba(6,182,212,.2);color:var(--p2)}
+  .smb-form{background:rgba(245,158,11,.2);color:var(--p4)}
+  .smb-time{background:rgba(236,72,153,.2);color:var(--p5)}
+  .smb-view{background:rgba(99,102,241,.2);color:var(--p6)}
+  .smb-race{background:rgba(239,68,68,.2);color:#ef4444}
+  .smb-mat{background:rgba(20,184,166,.2);color:#14b8a6}
+  .explain-box{
+    background:var(--bg);border-radius:14px;padding:18px;
+    font-family:var(--mono);font-size:.79rem;line-height:1.85;
+    color:var(--txt-2);white-space:pre-wrap;word-break:break-word;
+    border:1px solid var(--line);
+  }
+  .aux-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:8px;
+  }
+  .aux-item{
+    padding:12px 12px;background:var(--bg);
+    border:1px solid var(--line);border-radius:10px;
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .aux-item .code{font-family:var(--mono);font-weight:800;font-size:.92rem;color:var(--p2)}
+  .aux-item .name{font-size:.72rem;color:var(--txt-2);font-weight:500;line-height:1.35}
+  .aux-item.active{
+    border-color:var(--p3);
+    background:linear-gradient(135deg,rgba(34,197,94,.1),transparent);
+  }
+  .aux-item.active .code{color:var(--p3)}
+  .alt-list{display:flex;flex-direction:column;gap:8px}
+  .alt-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 14px;background:var(--bg);
+    border:1px solid var(--line-2);border-radius:10px;
+    cursor:pointer;transition:.15s;
+  }
+  .alt-item:hover{border-color:var(--p1);background:rgba(168,85,247,.08)}
+  .alt-item:active{transform:scale(.98)}
+  .alt-udc{font-family:var(--mono);font-weight:800;color:var(--p2);font-size:.9rem}
+  .alt-name{font-size:.82rem;color:var(--txt-2);font-weight:600;text-align:right;flex:1;margin-left:12px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .act{
+    flex:1;min-width:calc(33.33% - 6px);padding:12px 10px;
+    border-radius:11px;border:1px solid var(--line-2);
+    background:var(--bg);color:var(--txt);
+    font-family:var(--sans);font-size:.75rem;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    gap:6px;transition:.15s;white-space:nowrap;
+  }
+  .act:hover{border-color:var(--p1);color:var(--p1)}
+  .act:active{transform:scale(.96)}
+  .act.primary{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-color:transparent}
+  .act.primary:hover{color:#fff;filter:brightness(1.12)}
+  .toast{
+    position:fixed;bottom:24px;left:50%;
+    transform:translateX(-50%) translateY(120px);
+    background:linear-gradient(135deg,var(--p1),var(--p2));
+    color:#fff;padding:13px 24px;border-radius:999px;
+    font-size:.83rem;font-weight:800;box-shadow:0 10px 30px var(--p-glow);
+    z-index:9999;opacity:0;transition:.3s cubic-bezier(.68,-.55,.27,1.55);
+    pointer-events:none;max-width:90vw;text-align:center;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:520px){
+    body{padding:8px}.shell{border-radius:18px}header{padding:12px 14px}.content{padding:16px}
+    .ans-head-num{font-size:1.55rem}.info-row{grid-template-columns:1fr;gap:3px}
+    .info-lbl{padding-top:0}.hero-input input{padding:17px 56px 17px 18px;font-size:1rem}
+    .hero-go{width:42px;height:42px;right:6px}.act{min-width:calc(50% - 4px);font-size:.72rem}
+    .sm-sym{min-width:55px;font-size:.85rem;padding:6px 8px}.nv-line{font-size:1rem;padding:12px}
+    .nv-token{padding:4px 6px}.aux-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  }
+  @media(max-width:360px){.acts{flex-direction:column}.act{width:100%}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+<div class="logo"><div class="logo-mark">UDC</div><div class="logo-txt"><h1>UDC Ultimate</h1><p>All Auxiliaries · All Symbols</p></div></div>
+<button class="icon-btn" id="themeBtn"><i class="fas fa-moon"></i></button>
+</header>
+<div class="content">
+<div class="hero-input"><input type="text" id="q" placeholder="Type any book title..." autocomplete="off" autocapitalize="words"><button class="hero-go" id="go"><i class="fas fa-arrow-right"></i></button></div>
+<div class="quick-row" id="quickChips"></div>
+<div class="loading" id="loading"><div class="spinner"></div><p>Analyzing all auxiliaries &amp; symbols...</p></div>
+<div class="answer" id="answer">
+<div class="ans-head"><div class="ans-head-lbl">Final UDC Classification</div><div class="ans-head-num" id="ansUdc">—</div><div class="ans-head-sub" id="ansSub">—</div></div>
+<div class="section"><div class="section-title"><i class="fas fa-code"></i> Tokenized Notation — Every Symbol Colored</div><div class="nv-line" id="nvLine">—</div><div class="nv-legend" id="nvLegend"></div></div>
+<div class="section"><div class="section-title purple"><i class="fas fa-info-circle"></i> Book Information</div>
+<div class="info-row"><div class="info-lbl">Book Title</div><div class="info-val" id="ansTitle">—</div></div>
+<div class="info-row"><div class="info-lbl">Subject</div><div class="info-val" id="ansSubject">—</div></div>
+<div class="info-row"><div class="info-lbl">Keywords</div><div class="info-val"><div class="chips" id="ansKw"></div></div></div></div>
+<div class="section"><div class="section-title green"><i class="fas fa-puzzle-piece"></i> Detected Auxiliaries (Green = Active)</div><div class="aux-grid" id="auxGrid"></div></div>
+<div class="section"><div class="section-title orange"><i class="fas fa-sitemap"></i> Symbol-by-Symbol Breakdown</div><div id="symMap"></div></div>
+<div class="section"><div class="section-title indigo"><i class="fas fa-book-open"></i> Full Explanation</div><div class="explain-box" id="ansExplain">—</div></div>
+<div class="section" id="altSection" style="display:none"><div class="section-title pink"><i class="fas fa-shuffle"></i> Alternative Classifications</div><div class="alt-list" id="altList"></div></div>
+<div class="section"><div class="section-title"><i class="fas fa-list"></i> Full UDC Auxiliary Reference</div><div class="aux-grid" id="auxRefGrid"></div></div>
+<div class="acts">
+<button class="act primary" id="aCopy"><i class="fas fa-copy"></i> Copy Answer</button><button class="act" id="aCopyUdc"><i class="fas fa-hashtag"></i> Copy UDC</button><button class="act" id="aShare"><i class="fas fa-share-nodes"></i> Share</button><button class="act" id="aPrint"><i class="fas fa-print"></i> Print</button><button class="act" id="aSave"><i class="far fa-bookmark"></i> Save</button><button class="act" id="aClear"><i class="fas fa-rotate"></i> New</button>
+</div>
+</div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+
+/*
+ UDC TITLE ANSWER KEY — FIXED
+ --------------------------------
+ This rule set is designed for common UDC Abridged-style title questions.
+ It is UDC-only (never DDC).
+
+ IMPORTANT:
+ - A title is classified by meaning, not by blindly concatenating keywords.
+ - Exact title rules take precedence over generic keyword rules.
+ - Language in a title is NOT automatically appended to every subject.
+ - For literature, language determines the 821.x base (e.g. English -> 821.111).
+ - For linguistics, language determines the 811.x base (e.g. English -> 811.111).
+ - International relations use 327; named countries can be expressed with place
+   auxiliaries, and relations between two countries use the colon relation.
+ - Common auxiliaries are applied only when the title clearly expresses them.
+ - Special auxiliaries are not invented outside their authorized schedule area.
+
+ The official UDC Consortium describes UDC as analytico-synthetic and confirms
+ the main classes 0–9, common auxiliaries for language (=...), form (0...),
+ place (1/9), time ("..."), and relation symbols such as +, /, :, :: and [ ].
+ Exact final notation must be checked against the licensed UDC schedule/edition.
+*/
+
+const PLACE = {
+ 'india':{code:'(540)',name:'India'}, 'indian':{code:'(540)',name:'India'},
+ 'punjab':{code:'(540.15)',name:'Punjab'}, 'pakistan':{code:'(549)',name:'Pakistan'},
+ 'bangladesh':{code:'(549.2)',name:'Bangladesh'}, 'nepal':{code:'(541.35)',name:'Nepal'},
+ 'bhutan':{code:'(541.31)',name:'Bhutan'}, 'sri lanka':{code:'(548.7)',name:'Sri Lanka'},
+ 'afghanistan':{code:'(581)',name:'Afghanistan'}, 'china':{code:'(510)',name:'China'},
+ 'japan':{code:'(520)',name:'Japan'}, 'south korea':{code:'(519.5)',name:'South Korea'},
+ 'korea':{code:'(519.5)',name:'Korea'}, 'asia':{code:'(5)',name:'Asia'},
+ 'south asia':{code:'(54)',name:'South Asia'}, 'europe':{code:'(4)',name:'Europe'},
+ 'africa':{code:'(6)',name:'Africa'}, 'north america':{code:'(7)',name:'North America'},
+ 'south america':{code:'(8)',name:'South America'}, 'usa':{code:'(73)',name:'United States'},
+ 'united states':{code:'(73)',name:'United States'}, 'america':{code:'(73)',name:'United States'},
+ 'uk':{code:'(410)',name:'United Kingdom'}, 'united kingdom':{code:'(410)',name:'United Kingdom'},
+ 'britain':{code:'(410)',name:'United Kingdom'}, 'england':{code:'(420)',name:'England'},
+ 'scotland':{code:'(411)',name:'Scotland'}, 'wales':{code:'(411.1)',name:'Wales'},
+ 'russia':{code:'(470)',name:'Russia'}, 'germany':{code:'(430)',name:'Germany'},
+ 'france':{code:'(440)',name:'France'}, 'italy':{code:'(450)',name:'Italy'},
+ 'spain':{code:'(460)',name:'Spain'}, 'australia':{code:'(94)',name:'Australia'},
+ 'canada':{code:'(71)',name:'Canada'}, 'world':{code:'(100)',name:'World'}
+};
+
+const LANG = {
+ 'english':{code:'=111',literature:'821.111',linguistics:'811.111',name:'English'},
+ 'hindi':{code:'=214.21',literature:'821.214.21',linguistics:'811.214.21',name:'Hindi'},
+ 'punjabi':{code:'=214.22',literature:'821.214.22',linguistics:'811.214.22',name:'Punjabi'},
+ 'urdu':{code:'=214.31',literature:'821.214.31',linguistics:'811.214.31',name:'Urdu'},
+ 'bengali':{code:'=214.32',literature:'821.214.32',linguistics:'811.214.32',name:'Bengali'},
+ 'marathi':{code:'=214.34',literature:'821.214.34',linguistics:'811.214.34',name:'Marathi'},
+ 'gujarati':{code:'=214.35',literature:'821.214.35',linguistics:'811.214.35',name:'Gujarati'},
+ 'tamil':{code:'=214.42',literature:'821.214.42',linguistics:'811.214.42',name:'Tamil'},
+ 'telugu':{code:'=214.43',literature:'821.214.43',linguistics:'811.214.43',name:'Telugu'},
+ 'kannada':{code:'=214.44',literature:'821.214.44',linguistics:'811.214.44',name:'Kannada'},
+ 'malayalam':{code:'=214.45',literature:'821.214.45',linguistics:'811.214.45',name:'Malayalam'},
+ 'sanskrit':{code:'=211',literature:'821.211',linguistics:'811.211',name:'Sanskrit'},
+ 'french':{code:'=133.1',literature:'821.133.1',linguistics:'811.133.1',name:'French'},
+ 'german':{code:'=112.2',literature:'821.112.2',linguistics:'811.112.2',name:'German'},
+ 'spanish':{code:'=134.2',literature:'821.134.2',linguistics:'811.134.2',name:'Spanish'},
+ 'italian':{code:'=131.1',literature:'821.131.1',linguistics:'811.131.1',name:'Italian'},
+ 'arabic':{code:'=411',literature:'821.411',linguistics:'811.411',name:'Arabic'},
+ 'persian':{code:'=411.1',literature:'821.411.1',linguistics:'811.411.1',name:'Persian'},
+ 'chinese':{code:'=581',literature:'821.581',linguistics:'811.581',name:'Chinese'},
+ 'japanese':{code:'=521',literature:'821.521',linguistics:'811.521',name:'Japanese'}
+};
+
+const FORM = {
+ 'dictionary':{code:'(038)',name:'Dictionary'}, 'dictionaries':{code:'(038)',name:'Dictionary'},
+ 'encyclopedia':{code:'(031)',name:'Encyclopedia'}, 'encyclopaedia':{code:'(031)',name:'Encyclopedia'},
+ 'handbook':{code:'(035)',name:'Handbook'}, 'manual':{code:'(035)',name:'Manual'},
+ 'textbook':{code:'(075)',name:'Textbook'}, 'text book':{code:'(075)',name:'Textbook'},
+ 'atlas':{code:'(084)',name:'Atlas'}, 'guide':{code:'(036)',name:'Guide'},
+ 'bibliography':{code:'(01)',name:'Bibliography'}, 'catalogue':{code:'(083)',name:'Catalogue'},
+ 'catalog':{code:'(083)',name:'Catalogue'}, 'thesis':{code:'(043)',name:'Thesis'},
+ 'dissertation':{code:'(043)',name:'Thesis'}, 'report':{code:'(047)',name:'Report'},
+ 'directory':{code:'(058)',name:'Directory'}, 'yearbook':{code:'(058)',name:'Yearbook'},
+ 'abstract':{code:'(048)',name:'Abstract'}, 'standards':{code:'(083.7)',name:'Standard'},
+ 'standard':{code:'(083.7)',name:'Standard'}
+};
+
+const TIME = {
+ '19th century':{code:'"18"',name:'19th century'}, '20th century':{code:'"19"',name:'20th century'},
+ '21st century':{code:'"20"',name:'21st century'}, 'ancient':{code:'".../05"',name:'Ancient'},
+ 'medieval':{code:'"05/14"',name:'Medieval'}, 'middle ages':{code:'"05/14"',name:'Medieval'},
+ 'modern':{code:'"15/20"',name:'Modern'}, 'contemporary':{code:'"19/20"',name:'Contemporary'}
+};
+
+/* High-priority exact answer key. */
+const KEY = [
+ ['history of india','94(540)','History of India'],
+ ['indian history','94(540)','History of India'],
+ ['history of punjab','94(540.15)','History of Punjab'],
+ ['history of pakistan','94(549)','History of Pakistan'],
+ ['history of china','94(510)','History of China'],
+ ['history of japan','94(520)','History of Japan'],
+ ['history of united kingdom','94(410)','History of United Kingdom'],
+ ['history of usa','94(73)','History of United States'],
+ ['history of the united states','94(73)','History of United States'],
+ ['geography of india','91(540)','Geography of India'],
+ ['geography of punjab','91(540.15)','Geography of Punjab'],
+ ['geography of pakistan','91(549)','Geography of Pakistan'],
+ ['geography of china','91(510)','Geography of China'],
+ ['geography of japan','91(520)','Geography of Japan'],
+ ['indian constitution','342(540)','Constitutional law of India'],
+ ['constitution of india','342(540)','Constitutional law of India'],
+ ['economy of india','33(540)','Economy of India'],
+ ['economics of india','33(540)','Economics of India'],
+
+ ['international relations','327','International Relations'],
+ ['international relation','327','International Relations'],
+ ['foreign relations','327','Foreign Relations'],
+ ['foreign relation','327','Foreign Relations'],
+ ['foreign policy','327','Foreign Policy'],
+ ['diplomacy','327','Diplomacy'],
+ ['diplomatic relations','327','Diplomatic Relations'],
+ ['international affairs','327','International Affairs'],
+ ['international affair','327','International Affairs'],
+ ['geopolitics','327','International Relations / Geopolitics'],
+ ['global politics','327','International Relations / Global Politics'],
+ ['international politics','327','International Relations / International Politics'],
+ ['international security','327','International Relations / Security'],
+ ['international cooperation','327','International Relations / Cooperation'],
+ ['international organizations','327','International Relations / International Organizations'],
+ ['international organization','327','International Relations / International Organizations'],
+ ['foreign affairs','327','Foreign Affairs'],
+ ['treaty','327','Treaties / International Relations'],
+ ['treaties','327','Treaties / International Relations'],
+ ['alliance','327','International Alliances'],
+ ['alliances','327','International Alliances'],
+ ['united nations','327','United Nations / International Relations'],
+ ['saarc','327','SAARC / International Relations'],
+ ['brics','327','BRICS / International Relations'],
+ ['g20','327','G20 / International Relations'],
+
+ ['india pakistan relations','327(540:549)','India–Pakistan Relations'],
+ ['india pakistan relation','327(540:549)','India–Pakistan Relations'],
+ ['relations between india and pakistan','327(540:549)','India–Pakistan Relations'],
+ ['foreign relations between india and pakistan','327(540:549)','India–Pakistan Relations'],
+ ['foreign relation between india and pakistan','327(540:549)','India–Pakistan Relations'],
+ ['india and pakistan relations','327(540:549)','India–Pakistan Relations'],
+ ['india china relations','327(540:510)','India–China Relations'],
+ ['india china relation','327(540:510)','India–China Relations'],
+ ['relations between india and china','327(540:510)','India–China Relations'],
+ ['india nepal relations','327(540:541.35)','India–Nepal Relations'],
+ ['india bangladesh relations','327(540:549.2)','India–Bangladesh Relations'],
+ ['india sri lanka relations','327(540:548.7)','India–Sri Lanka Relations'],
+ ['india usa relations','327(540:73)','India–United States Relations'],
+ ['india united states relations','327(540:73)','India–United States Relations'],
+ ['india russia relations','327(540:470)','India–Russia Relations'],
+ ['india japan relations','327(540:520)','India–Japan Relations'],
+ ['pakistan china relations','327(549:510)','Pakistan–China Relations'],
+ ['china japan relations','327(510:520)','China–Japan Relations'],
+
+ ['english language','811.111','English Language'],
+ ['hindi language','811.214.21','Hindi Language'],
+ ['punjabi language','811.214.22','Punjabi Language'],
+ ['urdu language','811.214.31','Urdu Language'],
+ ['bengali language','811.214.32','Bengali Language'],
+ ['marathi language','811.214.34','Marathi Language'],
+ ['gujarati language','811.214.35','Gujarati Language'],
+ ['tamil language','811.214.42','Tamil Language'],
+ ['telugu language','811.214.43','Telugu Language'],
+ ['kannada language','811.214.44','Kannada Language'],
+ ['malayalam language','811.214.45','Malayalam Language'],
+ ['sanskrit language','811.211','Sanskrit Language'],
+ ['french language','811.133.1','French Language'],
+ ['german language','811.112.2','German Language'],
+ ['spanish language','811.134.2','Spanish Language'],
+ ['arabic language','811.411','Arabic Language'],
+ ['persian language','811.411.1','Persian Language'],
+ ['chinese language','811.581','Chinese Language'],
+ ['japanese language','811.521','Japanese Language'],
+
+ ['english literature','821.111','English Literature'],
+ ['hindi literature','821.214.21','Hindi Literature'],
+ ['punjabi literature','821.214.22','Punjabi Literature'],
+ ['urdu literature','821.214.31','Urdu Literature'],
+ ['bengali literature','821.214.32','Bengali Literature'],
+ ['marathi literature','821.214.34','Marathi Literature'],
+ ['gujarati literature','821.214.35','Gujarati Literature'],
+ ['tamil literature','821.214.42','Tamil Literature'],
+ ['telugu literature','821.214.43','Telugu Literature'],
+ ['kannada literature','821.214.44','Kannada Literature'],
+ ['malayalam literature','821.214.45','Malayalam Literature'],
+ ['sanskrit literature','821.211','Sanskrit Literature'],
+ ['french literature','821.133.1','French Literature'],
+ ['german literature','821.112.2','German Literature'],
+ ['spanish literature','821.134.2','Spanish Literature'],
+ ['arabic literature','821.411','Arabic Literature'],
+ ['persian literature','821.411.1','Persian Literature'],
+ ['chinese literature','821.581','Chinese Literature'],
+ ['japanese literature','821.521','Japanese Literature'],
+
+ ['english drama','821.111-2','English Drama'],
+ ['english plays','821.111-2','English Drama'],
+ ['english poetry','821.111-1','English Poetry'],
+ ['english fiction','821.111-3','English Fiction'],
+ ['english novel','821.111-3','English Novel'],
+ ['english essay','821.111-4','English Essay'],
+ ['punjabi poetry','821.214.22-1','Punjabi Poetry'],
+ ['punjabi drama','821.214.22-2','Punjabi Drama'],
+ ['punjabi fiction','821.214.22-3','Punjabi Fiction'],
+ ['hindi poetry','821.214.21-1','Hindi Poetry'],
+ ['hindi drama','821.214.21-2','Hindi Drama'],
+ ['hindi fiction','821.214.21-3','Hindi Fiction'],
+ ['sanskrit drama','821.211-2','Sanskrit Drama'],
+ ['sanskrit poetry','821.211-1','Sanskrit Poetry'],
+ ['literature','82','Literature'],
+ ['drama','82-2','Drama / Literature'],
+ ['poetry','82-1','Poetry / Literature'],
+ ['fiction','82-3','Fiction / Literature'],
+ ['novel','82-3','Novel / Fiction'],
+ ['essay','82-4','Essay'],
+ ['short stories','82-32','Short Stories'],
+ ['short story','82-32','Short Story'],
+ ['dictionary of language and literature','80(038)','Dictionary of Language and Literature'],
+ ['dictionary of linguistics','81(038)','Dictionary of Linguistics'],
+ ['dictionary of literature','82(038)','Dictionary of Literature'],
+ ['dictionary of english language','811.111(038)','Dictionary of English Language'],
+ ['english dictionary','811.111(038)','English Dictionary'],
+ ['dictionary of hindi language','811.214.21(038)','Dictionary of Hindi Language'],
+ ['hindi dictionary','811.214.21(038)','Hindi Dictionary'],
+ ['dictionary of punjabi language','811.214.22(038)','Dictionary of Punjabi Language'],
+ ['punjabi dictionary','811.214.22(038)','Punjabi Dictionary'],
+ ['dictionary of urdu language','811.214.31(038)','Dictionary of Urdu Language'],
+ ['urdu dictionary','811.214.31(038)','Urdu Dictionary'],
+ ['dictionary of sanskrit language','811.211(038)','Dictionary of Sanskrit Language'],
+ ['sanskrit dictionary','811.211(038)','Sanskrit Dictionary'],
+
+ ['philosophy','1','Philosophy'],
+ ['indian philosophy','1(540)','Philosophy of India'],
+ ['ethics','17','Ethics'],
+ ['logic','16','Logic'],
+ ['psychology','159.9','Psychology'],
+ ['psychoanalysis','159.9','Psychoanalysis'],
+ ['religion','2','Religion'],
+ ['sikhism','2','Sikhism'],
+ ['hinduism','233','Hinduism'],
+ ['islam','28','Islam'],
+ ['christianity','27','Christianity'],
+ ['buddhism','24','Buddhism'],
+ ['jainism','26','Jainism'],
+
+ ['political science','32','Political Science'],
+ ['politics','32','Politics'],
+ ['government','32','Government'],
+ ['democracy','321','Democracy'],
+ ['elections','324','Elections'],
+ ['election','324','Elections'],
+ ['parliament','328','Parliament'],
+ ['public administration','35','Public Administration'],
+ ['social sciences','3','Social Sciences'],
+ ['sociology','316','Sociology'],
+ ['society','316','Society'],
+ ['anthropology','39','Anthropology / Ethnography'],
+ ['ethnography','39','Ethnography'],
+ ['folklore','398','Folklore'],
+ ['demography','314','Demography'],
+ ['population','314','Population Studies'],
+
+ ['law','34','Law'],
+ ['jurisprudence','34','Jurisprudence'],
+ ['criminal law','343','Criminal Law'],
+ ['civil law','347','Civil Law'],
+ ['international law','341','International Law'],
+ ['human rights','342','Human Rights'],
+ ['constitutional law','342','Constitutional Law'],
+
+ ['economics','33','Economics'],
+ ['economy','33','Economy'],
+ ['trade','339','Trade'],
+ ['international trade','339.5','International Trade'],
+ ['finance','336','Finance'],
+ ['banking','336','Banking'],
+ ['accounting','657','Accounting'],
+
+ ['education','37','Education'],
+ ['teaching','37','Teaching'],
+ ['pedagogy','37','Pedagogy'],
+ ['higher education','378','Higher Education'],
+ ['educational psychology','37.015.3','Educational Psychology'],
+
+ ['mathematics','51','Mathematics'],
+ ['algebra','512','Algebra'],
+ ['geometry','514','Geometry'],
+ ['calculus','517','Calculus'],
+ ['statistics','519.2','Statistics'],
+ ['astronomy','52','Astronomy'],
+ ['physics','53','Physics'],
+ ['chemistry','54','Chemistry'],
+ ['geology','55','Geology'],
+ ['biology','57','Biology'],
+ ['botany','58','Botany'],
+ ['zoology','59','Zoology'],
+ ['ecology','574','Ecology'],
+ ['environmental science','504','Environmental Science'],
+ ['environment','504','Environment'],
+
+ ['computer science','004','Computer Science'],
+ ['computer programming','004.42','Computer Programming'],
+ ['programming','004.42','Programming'],
+ ['artificial intelligence','004.8','Artificial Intelligence'],
+ ['machine learning','004.8','Machine Learning'],
+ ['software','004','Software'],
+ ['information technology','004','Information Technology'],
+
+ ['medicine','61','Medicine'],
+ ['medical science','61','Medical Sciences'],
+ ['health','61','Health'],
+ ['anatomy','611','Anatomy'],
+ ['physiology','612','Physiology'],
+ ['surgery','617','Surgery'],
+ ['nursing','614.253','Nursing'],
+ ['ayurveda','615.89','Ayurveda'],
+ ['stroke','616.831','Stroke'],
+ ['stroke rehabilitation','616.831','Stroke Rehabilitation'],
+ ['treatment of stroke','616.831','Treatment of Stroke'],
+ ['prevention of stroke','616.831','Prevention of Stroke'],
+
+ ['agriculture','63','Agriculture'],
+ ['farming','63','Farming'],
+ ['crop production','633','Crop Production'],
+ ['crops','633','Crops'],
+ ['horticulture','635','Horticulture'],
+ ['forestry','630','Forestry'],
+ ['animal husbandry','636','Animal Husbandry'],
+ ['fisheries','639','Fisheries'],
+
+ ['engineering','62','Engineering'],
+ ['technology','62','Technology'],
+ ['mechanical engineering','621','Mechanical Engineering'],
+ ['electrical engineering','621.3','Electrical Engineering'],
+ ['electronics','621.38','Electronics'],
+ ['civil engineering','624','Civil Engineering'],
+ ['architecture','72','Architecture'],
+
+ ['business management','65','Business Management'],
+ ['management','65','Management'],
+ ['business','65','Business'],
+ ['marketing','658.8','Marketing'],
+ ['human resource management','658.3','Human Resource Management'],
+ ['entrepreneurship','658.1','Entrepreneurship'],
+
+ ['art','7','The Arts'],
+ ['painting','75','Painting'],
+ ['sculpture','73','Sculpture'],
+ ['music','78','Music'],
+ ['dance','793.3','Dance'],
+ ['cinema','791','Cinema'],
+ ['film','791','Film'],
+ ['theatre','792','Theatre'],
+ ['drama performance','792','Dramatic Performance'],
+ ['photography','77','Photography'],
+
+ ['sports','796','Sports'],
+ ['sport','796','Sport'],
+ ['cricket','796.358','Cricket'],
+ ['football','796.332','Football'],
+ ['hockey','796.355','Hockey'],
+ ['olympics','796.032','Olympic Games'],
+ ['yoga','796','Yoga'],
+
+ ['library science','02','Library Science'],
+ ['librarianship','02','Librarianship'],
+ ['cataloguing','025.3','Cataloguing'],
+ ['cataloging','025.3','Cataloguing'],
+ ['classification','025.4','Library Classification'],
+ ['journalism','070','Journalism'],
+ ['mass communication','316.77','Mass Communication'],
+ ['media','316.77','Mass Communication / Media'],
+ ['communication','316.77','Communication'],
+ ['tourism','338.48','Tourism'],
+ ['military science','355','Military Science'],
+ ['military','355','Military Science'],
+ ['war','355.01','War'],
+ ['biography','92','Biography'],
+ ['autobiography','92','Autobiography'],
+ ['memoir','92','Memoir']
+];
+
+/* More exact titles frequently used in UDC examinations. */
+const KEYMAP = new Map(KEY.map(x=>[norm(x[0]),{udc:x[1],subject:x[2]}]));
+
+/* Order matters: specific phrases first. */
+const SUBJECT_RULES = [
+ ['international relations','327','International Relations','ir'],
+ ['foreign relations','327','Foreign Relations','ir'],
+ ['foreign policy','327','Foreign Policy','ir'],
+ ['diplomatic relations','327','Diplomatic Relations','ir'],
+ ['diplomacy','327','Diplomacy','ir'],
+ ['geopolitics','327','International Relations / Geopolitics','ir'],
+ ['international trade','339.5','International Trade','economics'],
+ ['international law','341','International Law','law'],
+ ['human rights','342','Human Rights','law'],
+ ['public administration','35','Public Administration','politics'],
+ ['higher education','378','Higher Education','education'],
+ ['educational psychology','37.015.3','Educational Psychology','education'],
+ ['artificial intelligence','004.8','Artificial Intelligence','computing'],
+ ['machine learning','004.8','Machine Learning','computing'],
+ ['computer programming','004.42','Computer Programming','computing'],
+ ['mechanical engineering','621','Mechanical Engineering','engineering'],
+ ['electrical engineering','621.3','Electrical Engineering','engineering'],
+ ['civil engineering','624','Civil Engineering','engineering'],
+ ['english drama','821.111-2','English Drama','literature'],
+ ['english poetry','821.111-1','English Poetry','literature'],
+ ['english fiction','821.111-3','English Fiction','literature'],
+ ['english literature','821.111','English Literature','literature'],
+ ['punjabi poetry','821.214.22-1','Punjabi Poetry','literature'],
+ ['punjabi drama','821.214.22-2','Punjabi Drama','literature'],
+ ['punjabi fiction','821.214.22-3','Punjabi Fiction','literature'],
+ ['punjabi literature','821.214.22','Punjabi Literature','literature'],
+ ['hindi literature','821.214.21','Hindi Literature','literature'],
+ ['sanskrit literature','821.211','Sanskrit Literature','literature'],
+ ['dictionary of language and literature','80(038)','Dictionary of Language and Literature','language_lit'],
+ ['dictionary of english language','811.111(038)','Dictionary of English Language','language'],
+ ['dictionary of punjabi language','811.214.22(038)','Dictionary of Punjabi Language','language'],
+ ['dictionary of hindi language','811.214.21(038)','Dictionary of Hindi Language','language'],
+ ['history of india','94(540)','History of India','history'],
+ ['history of punjab','94(540.15)','History of Punjab','history'],
+ ['geography of india','91(540)','Geography of India','geography'],
+ ['geography of punjab','91(540.15)','Geography of Punjab','geography'],
+ ['indian constitution','342(540)','Constitutional Law of India','law'],
+ ['constitution of india','342(540)','Constitutional Law of India','law'],
+ ['economy of india','33(540)','Economy of India','economics']
+];
+
+const CLASS_DESC = {
+ '0':['Science and Knowledge','General works'],
+ '004':['Computer science and technology','Computing and data processing'],
+ '02':['Library and information science','Librarianship'],
+ '070':['Newspapers and journalism','The press and journalism'],
+ '1':['Philosophy','Philosophy'],
+ '159.9':['Psychology','Human psychology'],
+ '2':['Religion','Religion and theology'],
+ '3':['Social sciences','Social sciences'],
+ '314':['Demography','Population studies'],
+ '316':['Sociology','Society'],
+ '316.77':['Communication','Mass communication'],
+ '32':['Political science','Politics and government'],
+ '327':['International relations','Relations between nations, diplomacy and foreign policy'],
+ '33':['Economics','Economic science'],
+ '34':['Law','Legal science'],
+ '35':['Public administration','Government administration'],
+ '37':['Education','Education and teaching'],
+ '39':['Ethnography','Customs and ethnography'],
+ '5':['Mathematics and natural sciences','Natural sciences'],
+ '51':['Mathematics','Mathematics'],
+ '52':['Astronomy','Astronomy'],
+ '53':['Physics','Physics'],
+ '54':['Chemistry','Chemistry'],
+ '55':['Earth sciences','Geology and related sciences'],
+ '57':['Biology','Biological sciences'],
+ '58':['Botany','Plant sciences'],
+ '59':['Zoology','Animal sciences'],
+ '61':['Medicine','Medical sciences'],
+ '62':['Engineering and technology','Engineering'],
+ '63':['Agriculture','Agriculture'],
+ '65':['Management','Business administration'],
+ '7':['The arts','Fine arts and related subjects'],
+ '72':['Architecture','Architecture'],
+ '75':['Painting','Painting'],
+ '77':['Photography','Photography'],
+ '78':['Music','Music'],
+ '791':['Cinema','Motion pictures'],
+ '792':['Theatre','Dramatic performance'],
+ '793.3':['Dance','Dance'],
+ '796':['Sport','Sport'],
+ '8':['Language and literature','Language and literature'],
+ '80':['General linguistics and literature','Philology'],
+ '81':['Linguistics and languages','Language studies'],
+ '82':['Literature','Literature'],
+ '91':['Geography','Geography and travel'],
+ '92':['Biography','Biographical studies'],
+ '94':['History','General history']
+};
+
+function norm(s){
+ return (s||'').toLowerCase().trim()
+   .replace(/[“”‘’]/g,'"').replace(/[–—−]/g,'-')
+   .replace(/\s+/g,' ');
+}
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function has(lower,phrase){return lower.includes(phrase);}
+function detectPlace(lower){
+ const hits=[];
+ const keys=Object.keys(PLACE).sort((a,b)=>b.length-a.length);
+ const seen=new Set();
+ for(const k of keys) if(lower.includes(k)&&!seen.has(PLACE[k].code)){seen.add(PLACE[k].code);hits.push(PLACE[k]);}
+ return hits;
+}
+function detectLang(lower){
+ const keys=Object.keys(LANG).sort((a,b)=>b.length-a.length);
+ for(const k of keys) if(lower.includes(k)) return LANG[k];
+ return null;
+}
+function detectForm(lower){
+ const keys=Object.keys(FORM).sort((a,b)=>b.length-a.length);
+ for(const k of keys) if(lower.includes(k)) return FORM[k];
+ return null;
+}
+function detectTime(lower){
+ const keys=Object.keys(TIME).sort((a,b)=>b.length-a.length);
+ for(const k of keys) if(lower.includes(k)) return TIME[k];
+ return null;
+}
+function subjectMatch(lower){
+ for(const r of SUBJECT_RULES) if(lower.includes(r[0])) return {cls:r[1],name:r[2],cat:r[3],key:r[0]};
+ return null;
+}
+function findKey(lower){
+ let best=null;
+ for(const [k,v] of KEYMAP){
+   if(lower===k || lower.includes(k)){
+     if(!best || k.length>best.k.length) best={k,v};
+   }
+ }
+ return best?best.v:null;
+}
+
+/* Build only title-safe common auxiliaries. Never attach =language to a
+   linguistics/literature class when the language has already been encoded
+   in the base 811.x/821.x number. */
+
+/* FINAL FRONTEND UDC OVERRIDES
+   These run before the broad keyword rules so compound subjects cannot
+   be reduced to a single broad class such as 7.
+*/
+const FINAL_UDC_OVERRIDES = [
+  {
+    test: t => /^(science\s*(and|\+)\s*arts|science\s+arts)$/.test(t),
+    r: {
+      udc:'5+7',
+      subject:'Science and Arts',
+      subSubject:'Mathematics and Natural Sciences + The Arts',
+      explanation:'5 = Mathematics and Natural Sciences; + = coordination; 7 = The Arts. The title contains two coordinated subjects.',
+      keywords:['science','arts'],
+      aux:[
+        {type:'subject',code:'5',name:'Mathematics and Natural Sciences'},
+        {type:'coordination',code:'+',name:'Coordination'},
+        {type:'subject',code:'7',name:'The Arts'}
+      ],
+      symbolExplains:[
+        {sym:'5',name:'Mathematics and Natural Sciences',desc:'UDC main class 5.'},
+        {sym:'+',name:'Coordination',desc:'Coordinates two equally important subjects.'},
+        {sym:'7',name:'The Arts',desc:'UDC main class 7.'}
+      ]
+    }
+  },
+  {
+    test: t => /^(international\s+relations|international\s+relationship|foreign\s+relations?|foreign\s+affairs?)$/.test(t),
+    r: {
+      udc:'327',
+      subject:'International relations',
+      subSubject:'Foreign relations',
+      explanation:'327 = International relations. The title is a general work on international/foreign relations.',
+      keywords:['international relations'],
+      aux:[],
+      symbolExplains:[{sym:'327',name:'International relations',desc:'UDC class for international relations.'}]
+    }
+  },
+  {
+    test: t => /^(foreign\s+relation|foreign\s+relations?)\s+between\s+india\s+and\s+pakistan$/.test(t) ||
+              /^india\s+and\s+pakistan\s+(foreign\s+relations?|relations?)$/.test(t) ||
+              /^relations?\s+between\s+india\s+and\s+pakistan$/.test(t),
+    r: {
+      udc:'327(540:549)',
+      subject:'India–Pakistan international relations',
+      subSubject:'Foreign relations',
+      explanation:'327 = international relations; (540) = India; (549) = Pakistan; : expresses the relation between the two places.',
+      keywords:['India','Pakistan','foreign relations'],
+      aux:[
+        {type:'place',code:'(540)',name:'India'},
+        {type:'relation',code:':',name:'Relation'},
+        {type:'place',code:'(549)',name:'Pakistan'}
+      ],
+      symbolExplains:[
+        {sym:'327',name:'International relations',desc:'UDC class 327.'},
+        {sym:'(540)',name:'India',desc:'Place auxiliary for India.'},
+        {sym:':',name:'Relation',desc:'Relates the two place auxiliaries.'},
+        {sym:'(549)',name:'Pakistan',desc:'Place auxiliary for Pakistan.'}
+      ]
+    }
+  }
+];
+
+function classify(rawTitle){
+ const title=(rawTitle||'').trim();
+ if(!title) return defaultResult();
+ const lower=norm(title);
+
+ /* 1. Exact answer key has absolute priority. */
+ const exact=findKey(lower);
+ if(exact){
+   return makeResult(title,exact.udc,exact.subject,'exact',lower);
+ }
+
+ /* 2. Country-to-country international relations. */
+ const irPair=[
+   ['india','pakistan'],['india','china'],['india','nepal'],['india','bangladesh'],
+   ['india','sri lanka'],['india','usa'],['india','united states'],['india','russia'],
+   ['india','japan'],['pakistan','china'],['china','japan']
+ ];
+ const isIR=has(lower,'international relation')||has(lower,'foreign relation')||
+            has(lower,'diplomatic relation')||has(lower,'foreign policy')||
+            has(lower,'foreign affair')||has(lower,'international affair')||
+            has(lower,'diplomacy')||has(lower,'geopolitic');
+ if(isIR){
+   const places=detectPlace(lower);
+   if(places.length>=2){
+     return makeComplex(title,'327('+places[0].code.replace(/[()]/g,'')+':'+places[1].code.replace(/[()]/g,'')+')',
+       'International Relations between '+places[0].name+' and '+places[1].name,'relation',lower,
+       [{type:'relation',code:':',name:'Simple relation',desc:'Colon links the two countries inside the place auxiliary.'},
+        {type:'place',code:places[0].code,name:places[0].name,desc:'First country/place'},
+        {type:'place',code:places[1].code,name:places[1].name,desc:'Second country/place'}]);
+   }
+   if(places.length===1){
+     return makeComplex(title,'327'+places[0].code,'International Relations / Foreign Policy of '+places[0].name,'place',lower,
+       [{type:'place',code:places[0].code,name:places[0].name,desc:'Place auxiliary'}]);
+   }
+   return makeResult(title,'327','International Relations','ir',lower);
+ }
+
+ /* 3. Language + literature. */
+ const lang=detectLang(lower);
+ const literaryWord=/\b(literature|literary|poetry|poem|drama|play|plays|fiction|novel|novels|essay|essays)\b/.test(lower);
+ const languageWord=/\b(language|linguistics|linguistic|grammar|phonetics|syntax|semantics|morphology)\b/.test(lower);
+ if(lang && literaryWord){
+   let base=lang.literature;
+   if(has(lower,'poetry')||has(lower,'poem')) base+='-1';
+   else if(has(lower,'drama')||has(lower,'play')||has(lower,'plays')) base+='-2';
+   else if(has(lower,'fiction')||has(lower,'novel')||has(lower,'novels')) base+='-3';
+   else if(has(lower,'essay')||has(lower,'essays')) base+='-4';
+   const form=detectForm(lower);
+   if(form && (has(lower,'dictionary')||has(lower,'encyclopedia'))) base+=form.code;
+   return makeResult(title,base,lang.name+' Literature','language_literature',lower);
+ }
+ if(lang && languageWord){
+   return makeResult(title,lang.linguistics,lang.name+' Language','language',lower);
+ }
+
+ /* 4. Generic subject matching. */
+ const m=subjectMatch(lower);
+ if(m){
+   let udc=m.cls, subject=m.name;
+   const places=detectPlace(lower);
+   const form=detectForm(lower);
+   const time=detectTime(lower);
+   const aux=[];
+
+   /* Geography/history/politics/economics/law/etc. can safely take a clear place. */
+   if(places.length===1 && !/literature|language|linguistic/.test(lower)){
+     if(['94','91','32','327','33','34','35','37','1','2','3','316','39','5','6','7','72','78','791','792','796'].some(x=>m.cls===x)){
+       udc+=places[0].code;
+       aux.push({type:'place',code:places[0].code,name:places[0].name,desc:'Place auxiliary'});
+     }
+   }
+
+   if(time && (m.cls==='94'||m.cls==='91'||m.cls==='32'||m.cls==='33'||m.cls==='327')){
+     udc+=time.code;
+     aux.push({type:'time',code:time.code,name:time.name,desc:'Common auxiliary of time'});
+   }
+
+   if(form){
+     udc+=form.code;
+     aux.push({type:'form',code:form.code,name:form.name,desc:'Common auxiliary of form'});
+   }
+   return makeComplex(title,udc,subject,m.cat,lower,aux);
+ }
+
+ /* 5. Generic language title even without the exact "language" word. */
+ if(lang){
+   return makeResult(title,lang.linguistics,lang.name+' Language','language',lower);
+ }
+
+ return makeResult(title,'0','General Works','fallback',lower);
+}
+
+function makeResult(title,udc,subject,kind,lower,extraAux){
+ const aux=extraAux||[];
+ if(!extraAux){
+   const places=detectPlace(lower),form=detectForm(lower),time=detectTime(lower);
+   if(kind==='exact'){
+     if(udc.includes('(')&&udc.includes(':')){ /* already encoded */ }
+     else if(udc==='94'&&places.length===1) {udc+=places[0].code;aux.push({type:'place',code:places[0].code,name:places[0].name,desc:'Place auxiliary'});}
+   }
+ }
+ return finalize(title,udc,subject,aux,kind);
+}
+function makeComplex(title,udc,subject,kind,lower,aux){return finalize(title,udc,subject,aux,kind);}
+function finalize(title,udc,subject,aux,kind){
+ const base=udc.match(/^[0-9]+(?:\.[0-9]+)*/)?.[0]||udc;
+ const desc=CLASS_DESC[base]||CLASS_DESC[udc]||['UDC class','UDC subject'];
+ const symbolExplains=[
+   {sym:base,name:desc[0],desc:desc[1],badge:'MAIN',badgeClass:'smb-main'}
+ ];
+ aux.forEach(a=>{
+   if(a.type==='relation') symbolExplains.push({sym:':',name:'Simple relation',desc:a.desc,badge:'SYMBOL',badgeClass:'smb-sym'});
+   else if(a.type==='place') symbolExplains.push({sym:a.code,name:a.name+' (Place)',desc:a.desc,badge:'PLACE',badgeClass:'smb-place'});
+   else if(a.type==='time') symbolExplains.push({sym:a.code,name:a.name+' (Time)',desc:a.desc,badge:'TIME',badgeClass:'smb-time'});
+   else if(a.type==='form') symbolExplains.push({sym:a.code,name:a.name+' (Form)',desc:a.desc,badge:'FORM',badgeClass:'smb-form'});
+ });
+ return {
+   title,subject,udc,baseClass:base,aux,
+   keywords:buildKeywords(title,subject,udc),
+   explanation:buildExplain(title,subject,udc,aux,kind),
+   symbolExplains,
+   alternatives:[],
+   kind
+ };
+}
+function buildKeywords(title,subject,udc){
+ const stop=new Set(['the','a','an','of','in','on','and','or','for','to','with','by','from','between','is','are','was','were']);
+ const words=norm(title).split(/\s+/).filter(w=>w.length>2&&!stop.has(w));
+ return Array.from(new Set([subject.toLowerCase(),...words])).slice(0,10);
+}
+function buildExplain(title,subject,udc,aux,kind){
+ const p=[];
+ p.push('▎ SUBJECT ANALYSIS');
+ p.push('Title: "'+title+'"');
+ p.push('Primary subject: '+subject);
+ p.push('');
+ p.push('▎ UDC NOTATION');
+ p.push('Final UDC number: '+udc);
+ if(aux.length){
+   p.push('');
+   p.push('▎ AUXILIARIES / RELATIONS');
+   aux.forEach(a=>p.push('  '+a.code+'  →  '+a.name+' — '+a.desc));
+ }
+ p.push('');
+ p.push('▎ RULE USED');
+ if(kind==='relation') p.push('327 = International relations; two named countries are linked with the simple relation colon inside the place auxiliary.');
+ else if(kind==='language_literature') p.push('Language of literature is represented by the 821.x literature base; literary form is added with the appropriate -1/-2/-3/-4 subdivision.');
+ else if(kind==='language') p.push('Language/linguistics uses the 811.x schedule; the language code is built into the 811.x number and is not appended as a second = auxiliary.');
+ else if(kind==='exact') p.push('Exact title-answer key matched before generic keyword inference.');
+ else p.push('The title was interpreted by subject, then applicable common auxiliaries were considered.');
+ p.push('');
+ p.push('▎ IMPORTANT');
+ p.push('UDC is analytico-synthetic. Symbols and auxiliaries must follow the relevant UDC schedule and edition. Special auxiliaries are only valid in the subject areas where the schedule authorizes them.');
+ return p.join('\n');
+}
+function defaultResult(){return finalize('General Works','0','General Works',[],'fallback');}
+
+/* Rendering */
+const state={current:null,saved:[]};
+function load(){try{state.saved=JSON.parse(localStorage.getItem('udcu_saved')||'[]')}catch(e){state.saved=[]}}
+function persist(){try{localStorage.setItem('udcu_saved',JSON.stringify(state.saved))}catch(e){}}
+const $=s=>document.querySelector(s);
+function toast(msg){const t=$('#toast');if(!t)return;t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200);}
+function copy(text,msg){if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>toast(msg||'Copied')).catch(()=>toast('Copy failed'));else toast('Copy not available');}
+
+function renderNotationVisual(r){
+ const line=$('#nvLine'),legend=$('#nvLegend'); if(!line||!legend)return;
+ const tokens=[];
+ const base=r.baseClass||r.udc;
+ tokens.push(`<span class="nv-token main">${esc(base)}</span>`);
+ const rel=r.aux.find(a=>a.type==='relation');
+ if(rel){
+   const places=r.aux.filter(a=>a.type==='place');
+   if(places.length>=2){
+     tokens.push(`<span class="nv-token sym">(</span>`);
+     tokens.push(`<span class="nv-token place">${esc(places[0].code.replace(/[()]/g,''))}</span>`);
+     tokens.push(`<span class="nv-token sym">:</span>`);
+     tokens.push(`<span class="nv-token place">${esc(places[1].code.replace(/[()]/g,''))}</span>`);
+     tokens.push(`<span class="nv-token sym">)</span>`);
+   }
+ }else{
+   r.aux.filter(a=>a.type==='place').forEach(a=>{
+     tokens.push(`<span class="nv-token sym">(</span><span class="nv-token place">${esc(a.code.replace(/[()]/g,''))}</span><span class="nv-token sym">)</span>`);
+   });
+ }
+ r.aux.filter(a=>a.type==='form').forEach(a=>{
+   tokens.push(`<span class="nv-token sym">(</span><span class="nv-token form">${esc(a.code.replace(/[()]/g,''))}</span><span class="nv-token sym">)</span>`);
+ });
+ r.aux.filter(a=>a.type==='time').forEach(a=>{
+   tokens.push(`<span class="nv-token sym">"</span><span class="nv-token time">${esc(a.code.replace(/"/g,''))}</span><span class="nv-token sym">"</span>`);
+ });
+ line.innerHTML=tokens.join('');
+ legend.innerHTML=r.aux.map(a=>`<span class="nv-lg"><span class="nv-lg-dot" style="background:var(--p2)"></span>${esc(a.name)}</span>`).join('');
+}
+function renderSymbolMap(rows){const box=$('#symMap');if(box)box.innerHTML=rows.map(r=>`<div class="sm-row"><div class="sm-sym">${esc(r.sym)}</div><div class="sm-body"><div class="sm-name">${esc(r.name)}<span class="sm-badge ${r.badgeClass}">${esc(r.badge)}</span></div><div class="sm-desc">${esc(r.desc)}</div></div></div>`).join('');}
+function renderAuxGrid(){
+ const box=$('#auxGrid');if(!box)return;
+ const items=[{key:'place',name:'Place ( )',code:'( )'},{key:'language',name:'Language =',code:'='},{key:'form',name:'Form (0)',code:'(0)'},{key:'time',name:'Time " "',code:'" "'},{key:'relation',name:'Relation :',code:':'},{key:'coordination',name:'Coordination +',code:'+'},{key:'extension',name:'Extension /',code:'/'},{key:'fixed',name:'Order-fixing ::',code:'::'},{key:'subgroup',name:'Subgrouping [ ]',code:'[ ]'}];
+ const detected=(state.current?.aux||[]).map(a=>a.type);
+ box.innerHTML=items.map(i=>`<div class="aux-item ${detected.includes(i.key)?'active':''}"><div class="code">${esc(i.code)}</div><div class="name">${esc(i.name)}${detected.includes(i.key)?' ✓':''}</div></div>`).join('');
+}
+function renderAuxRef(){
+ const box=$('#auxRefGrid');if(!box)return;
+ const all=[{code:'+',name:'Coordination / addition'},{code:'/',name:'Consecutive extension'},{code:':',name:'Simple relation'},{code:'::',name:'Order-fixing'},{code:'[ ]',name:'Subgrouping'},{code:'*',name:'Non-UDC notation'},{code:'A/Z',name:'Alphabetical specification'},{code:'=...',name:'Language auxiliary'},{code:'(0...)',name:'Form auxiliary'},{code:'(1/9)',name:'Place auxiliary'},{code:'(=...)',name:'Ethnic/nationality auxiliary'},{code:'"..."',name:'Time auxiliary'},{code:'-02',name:'Properties'},{code:'-03',name:'Materials'},{code:'-04',name:'Relations/processes/operations'},{code:'-05',name:'Persons/personal characteristics'}];
+ box.innerHTML=all.map(a=>`<div class="aux-item"><div class="code">${esc(a.code)}</div><div class="name">${esc(a.name)}</div></div>`).join('');
+}
+function renderAnswer(r){
+ $('#ansUdc').textContent=r.udc;$('#ansSub').textContent=r.subject;$('#ansTitle').textContent=r.title;$('#ansSubject').textContent=r.subject;$('#ansExplain').textContent=r.explanation;
+ renderNotationVisual(r);renderSymbolMap(r.symbolExplains);renderAuxGrid();
+ const kw=$('#ansKw');kw.innerHTML='';r.keywords.forEach(k=>{const s=document.createElement('span');s.className='chip kw';s.textContent=k;kw.appendChild(s)});
+ const sec=$('#altSection');if(sec)sec.style.display='none';updateSaveBtn();
+}
+function updateSaveBtn(){if(!state.current)return;const b=$('#aSave');if(!b)return;const yes=state.saved.some(x=>x.title===state.current.title&&x.udc===state.current.udc);b.innerHTML=yes?'🔖 Saved':'Save';}
+function runClassify(){
+ const t=$('#q').value.trim();if(!t){toast('Enter a book title');return}
+ $('#answer').classList.remove('on');$('#loading').classList.add('on');
+ setTimeout(()=>{state.current=classify(t);renderAnswer(state.current);$('#loading').classList.remove('on');$('#answer').classList.add('on')},120);
+}
+function buildFullText(r){
+ const L=['━━━━━━━━━━━━━━━━━━━━━━━━━━━','UDC TITLE ANSWER KEY','━━━━━━━━━━━━━━━━━━━━━━━━━━━','','BOOK TITLE: '+r.title,'SUBJECT: '+r.subject,'FINAL UDC NUMBER: '+r.udc,'','SYMBOL-BY-SYMBOL BREAKDOWN'];
+ r.symbolExplains.forEach(s=>{L.push('  '+s.sym+'  →  '+s.name);L.push('         '+s.desc)});
+ L.push('','EXPLANATION',r.explanation,'','━━━━━━━━━━━━━━━━━━━━━━━━━━━');return L.join('\n');
+}
+$('#go').addEventListener('click',runClassify);
+$('#q').addEventListener('keypress',e=>{if(e.key==='Enter')runClassify()});
+$('#aCopy').addEventListener('click',()=>state.current&&copy(buildFullText(state.current),'Full answer copied'));
+$('#aCopyUdc').addEventListener('click',()=>state.current&&copy(state.current.udc,'UDC copied'));
+$('#aShare').addEventListener('click',()=>{if(!state.current)return;const text=buildFullText(state.current);if(navigator.share)navigator.share({title:'UDC: '+state.current.title,text}).catch(()=>{});else copy(text,'Copied');});
+$('#aPrint').addEventListener('click',()=>window.print());
+$('#aSave').addEventListener('click',()=>{if(!state.current)return;const r=state.current,idx=state.saved.findIndex(x=>x.title===r.title&&x.udc===r.udc);if(idx>=0)state.saved.splice(idx,1);else state.saved.unshift({...r,id:Date.now()});persist();updateSaveBtn();toast(idx>=0?'Removed':'Saved')});
+$('#aClear').addEventListener('click',()=>{$('#q').value='';$('#answer').classList.remove('on');$('#q').focus()});
+$('#themeBtn').addEventListener('click',()=>{const light=document.documentElement.getAttribute('data-theme')==='light';if(light){document.documentElement.removeAttribute('data-theme');$('#themeBtn').innerHTML='<i class="fas fa-moon"></i>';localStorage.setItem('udcu_theme','dark')}else{document.documentElement.setAttribute('data-theme','light');$('#themeBtn').innerHTML='<i class="fas fa-sun"></i>';localStorage.setItem('udcu_theme','light')}});
+function initTheme(){if(localStorage.getItem('udcu_theme')==='light'){document.documentElement.setAttribute('data-theme','light');$('#themeBtn').innerHTML='<i class="fas fa-sun"></i>'}}
+function init(){load();initTheme();renderAuxRef();$('#q').focus()}
+init();
+})();
+</script>
+</body>
+</html>
