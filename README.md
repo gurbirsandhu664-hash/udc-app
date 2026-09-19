@@ -28,3 +28,13 @@ Do not put API keys in `index.html` or commit `.env`.
 ## Important UDC note
 
 The local JSON is a supplied/local answer key, not a substitute for the licensed complete UDC schedule. AI results are accepted only when web grounding evidence is returned. UDC Consortium documentation describes UDC as hierarchical and analytico-synthetic, with common auxiliaries and relation signs such as `+`, `/`, `:`, `::`, language, form, place and time auxiliaries.
+
+
+## V24.2 behavior
+- Gemini owns every AI final answer.
+- Groq is research-only and its classification is never displayed as final.
+- Gemini tries configured models and all configured keys.
+- Google Search grounding is used for Gemini primary verification.
+- If Gemini needs Groq web research, the research packet is passed back to Gemini for final adjudication.
+- No 0/placeholder UDC is emitted.
+- A few core exact anchors (including Education = 37) are available locally when present in the app key.

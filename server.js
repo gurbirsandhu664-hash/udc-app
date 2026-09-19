@@ -11,7 +11,7 @@ app.use(express.json({limit:"64kb"}));
 app.use(express.static(__dirname));
 
 const port = Number(process.env.PORT || 10000);
-const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const geminiModels = [...new Set((process.env.GEMINI_MODELS || process.env.GEMINI_MODEL || "gemini-2.5-flash,gemini-2.5-flash-lite").split(",").map(x=>x.trim()).filter(Boolean))];
 const groqModel = process.env.GROQ_MODEL || "groq/compound";
 
 function keys(primary, plural) {
@@ -63,8 +63,15 @@ function norm(s){
   return String(s||"").toLowerCase().normalize("NFKD")
     .replace(/[“”"'`]/g,"").replace(/[^a-z0-9]+/g," ").trim();
 }
+const CORE_UDC = [
+  {title:"Education", udc:"37", mainSubject:"Education", subSubject:"", explanation:"37 — Education. Core UDC class for education."},
+  {title:"History of India", udc:"94(540)", mainSubject:"History of India", subSubject:"India", explanation:"94 — History + (540) — India."},
+  {title:"Geography of India", udc:"91(540)", mainSubject:"Geography of India", subSubject:"India", explanation:"91 — Geography + (540) — India."}
+].map(x=>({...x,confidence:"High",verified:true}));
+
 function localMatch(title) {
   const q=norm(title); if(!q)return null;
+  const core=CORE_UDC.find(x=>norm(x.title)===q); if(core)return core;
   const exact=local.find(x=>norm(x.title)===q); if(exact)return exact;
   // Only accept a contains match when it is clearly more specific than the query.
   const matches=local.filter(x=>{const t=norm(x.title);return t && (q.includes(t)||t.includes(q));});
@@ -148,26 +155,49 @@ function isQuotaError(e) {
 function validAiResult(r, sources) {
   if(!r || r.verified!==true) return false;
   if(!String(r.udc||"").trim() || ["0","-","—"].includes(String(r.udc).trim())) return false;
-  // Gemini must have grounding. Groq compound must have web evidence.
+  // Gemini final can be supported either by its own Google grounding or by
+  // the Groq research packet that is fed to Gemini for final adjudication.
+  // The final answer is still always Gemini-owned.
   if(!sources.length) return false;
   return true;
 }
 
-async function geminiAttempt(key, title) {
-  const ai = new GoogleGenAI({apiKey:key});
-  const prompt = `${SYSTEM}\nTITLE: ${title}\nUse Google Search grounding. Search specifically for UDC evidence and prefer official UDC Consortium material or reputable library/classification sources. Return JSON only.`;
-  const resp = await ai.models.generateContent({
-    model: geminiModel,
-    contents: prompt,
-    config: { tools: [{ googleSearch: {} }] }
-  });
-  const parsed=extractJSON(resp.text);
-  if(!parsed) throw new Error("Gemini returned non-JSON");
-  const sources=groundingSources(resp);
-  if(!validAiResult(parsed,sources)) {
-    return {...parsed,verified:false,udc:"",sources,confidence:"Not verified"};
+async function geminiAttempt(key, title, options={}) {
+  let lastErr;
+  for (const model of geminiModels) {
+    try {
+      const ai = new GoogleGenAI({apiKey:key});
+      const grounding = options.google !== false;
+      const prompt = `${SYSTEM}\nTITLE: ${title}\n${grounding ? "Use Google Search grounding. Search specifically for UDC evidence and prefer official UDC Consortium material or reputable library/classification sources." : "Use the supplied research evidence to make the final UDC decision. Do not mention or expose the research provider as the final authority."}\nReturn JSON only.`;
+      const config = grounding ? {tools:[{googleSearch:{}}]} : {};
+      const resp = await ai.models.generateContent({model, contents:prompt, config});
+      const parsed=extractJSON(resp.text);
+      if(!parsed) throw new Error("Gemini returned non-JSON");
+      const sources=groundingSources(resp);
+      if(!validAiResult(parsed,sources)) {
+        return {...parsed,verified:false,udc:"",sources,confidence:"Not verified"};
+      }
+      return {...parsed,verified:true,udc:String(parsed.udc).trim(),sources};
+    } catch(e) { lastErr=e; if(!isQuotaError(e)) throw e; }
   }
-  return {...parsed,verified:true,udc:String(parsed.udc).trim(),sources};
+  throw lastErr || new Error("Gemini unavailable");
+}
+
+async function geminiFinalFromResearch(key, title, research) {
+  let lastErr;
+  for (const model of geminiModels) {
+    try {
+      const ai = new GoogleGenAI({apiKey:key});
+      const reviewPrompt = `${SYSTEM}\nTITLE: ${title}\n\nSECONDARY WEB RESEARCH (NOT THE FINAL AUTHORITY):\n${JSON.stringify(research)}\n\nGemini MUST make the FINAL UDC decision. Do not output a Groq classification as the final answer. Independently assess the evidence. Return JSON only.`;
+      const resp=await ai.models.generateContent({model,contents:reviewPrompt});
+      const parsed=extractJSON(resp.text);
+      if(!parsed) throw new Error("Gemini returned non-JSON");
+      const sources = research.sources || [];
+      if(validAiResult(parsed,sources)) return {...parsed,verified:true,udc:String(parsed.udc).trim(),sources};
+      return {...parsed,verified:false,udc:"",sources,confidence:"Not verified"};
+    } catch(e) { lastErr=e; if(!isQuotaError(e)) throw e; }
+  }
+  throw lastErr || new Error("Gemini final unavailable");
 }
 
 async function groqAttempt(key, title) {
@@ -202,7 +232,7 @@ function cleanResult(r,title,provider) {
 }
 
 app.get("/api/health",(req,res)=>res.json({
-  ok:true,version:"V24.1",localKeyRecords:local.length,localKeyFile:localState.file,
+  ok:true,version:"V24.2",localKeyRecords:local.length,localKeyFile:localState.file,
   geminiKeys:geminiKeys().length,groqKeys:groqKeys().length,
   googleGrounding:"via Gemini Google Search tool"
 }));
@@ -220,7 +250,7 @@ app.post("/api/classify", async (req,res)=>{
   // 2) Gemini primary, with every configured Gemini key tried.
   for(const key of geminiKeys()) {
     try {
-      const r=await geminiAttempt(key,title);
+      const r=await geminiAttempt(key,title,{google:true});
       if(r?.verified && r?.udc) return res.json(cleanResult(r,title,"gemini"));
       geminiFailed=true;
     } catch(e) {
@@ -247,17 +277,12 @@ app.post("/api/classify", async (req,res)=>{
   if(groqResearch) {
     for(const key of geminiKeys()) {
       try {
-        const ai = new GoogleGenAI({apiKey:key});
-        const reviewPrompt = `${SYSTEM}\nTITLE: ${title}\n\nA secondary research service found this candidate. It is NOT authoritative and MUST NOT be accepted blindly:\n${JSON.stringify({udc:groqResearch.udc, evidence:groqResearch.evidence, sources:groqResearch.sources})}\n\nUse Google Search grounding yourself. Independently verify the candidate against authoritative/reputable UDC evidence. Gemini MUST make the final decision. If verified, return JSON only using the required format.`;
-        const resp=await ai.models.generateContent({
-          model:geminiModel, contents:reviewPrompt,
-          config:{tools:[{googleSearch:{}}]}
+        const r = await geminiFinalFromResearch(key,title,{
+          udc:groqResearch.udc,
+          evidence:groqResearch.evidence,
+          sources:groqResearch.sources
         });
-        const parsed=extractJSON(resp.text);
-        const sources=groundingSources(resp);
-        if(validAiResult(parsed,sources)) {
-          return res.json(cleanResult({...parsed,sources},title,"gemini"));
-        }
+        if(r?.verified && r?.udc) return res.json(cleanResult(r,title,"gemini"));
       } catch(e) {
         geminiQuota ||= isQuotaError(e);
         console.error("Gemini final review:",e.message);
@@ -269,9 +294,7 @@ app.post("/api/classify", async (req,res)=>{
   //    raw provider quota text to the browser.
   return res.json({
     verified:false,title,
-    message: geminiQuota
-      ? "Gemini could not complete final verification because of quota/rate limits. Groq was used only for research and was not shown as the final answer. No UDC number was invented."
-      : "Gemini could not independently verify a reliable UDC classification. Groq research was not used as a final answer. No UDC number was invented.",
+    message: "Gemini final answer is not available for this title right now. No UDC number was invented.",
     providerStatus:"VERIFICATION REQUIRED",
     verificationLabel:"GEMINI FINAL VERIFICATION REQUIRED",
     sources:[]
@@ -279,4 +302,4 @@ app.post("/api/classify", async (req,res)=>{
 });
 
 app.use((req,res)=>res.sendFile(path.join(__dirname,"index.html")));
-app.listen(port,()=>console.log(`UDC Ultimate V24.1 running on port ${port}`));
+app.listen(port,()=>console.log(`UDC Ultimate V24.2 running on port ${port}`));
