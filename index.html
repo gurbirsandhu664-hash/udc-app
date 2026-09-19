@@ -1,92 +1,29 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="theme-color" content="#0b1020">
-<title>UDC Ultimate V18</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#080c16"><title>UDC Ultimate V24.1</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#070a12;color:#eef3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:900px;margin:auto;padding:22px 14px 60px}
-.card{background:#111827;border:1px solid #263552;border-radius:26px;padding:22px;box-shadow:0 18px 60px #0005}
-h1{margin:0;font-size:30px}.sub{color:#9eabc4;margin:7px 0 20px}
-.row{display:flex;gap:12px}.input{flex:1;min-width:0;background:#050810;color:white;border:2px solid #2c4269;border-radius:20px;padding:18px;font-size:19px;outline:none}
-button{border:0;border-radius:18px;padding:0 24px;font-weight:800;font-size:17px;color:white;background:linear-gradient(135deg,#7557ff,#45bfe9);cursor:pointer;min-width:150px}
-button:disabled{opacity:.55;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.chip{padding:10px 14px;border-radius:999px;background:#151d2c;border:1px solid #2a3955;color:#b9c5da;cursor:pointer}
-.status{margin-top:17px;color:#9eabc4}.ok{color:#58dc92}.warn{color:#ffbd55}.bad{color:#ff7b88}
-.result{margin-top:18px}.hero{border:2px solid #8b5cf6;border-radius:25px;padding:22px;background:#15182b}
-.label{font-size:12px;letter-spacing:3px;color:#8491aa;font-weight:800}.udc{font-size:44px;font-weight:900;margin:10px 0;color:#76a6ff;word-break:break-word}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}.box{background:#0c1220;border:1px solid #263552;border-radius:17px;padding:15px}.box b{display:block;color:#8795ae;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px}.box div{font-size:16px;line-height:1.45}
-.sources{margin-top:14px}.sources a{display:block;color:#76b9ff;margin:8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.empty{margin-top:18px;padding:24px;border:1px dashed #40506e;border-radius:20px;color:#aeb9cc}
-@media(max-width:650px){.row{flex-direction:column}.row button{height:58px}.grid{grid-template-columns:1fr}.udc{font-size:36px}}
+:root{--bg:#060914;--card:#101827;--card2:#0b111d;--line:#263754;--txt:#edf3ff;--muted:#9aa9c2;--blue:#74a2ff;--green:#57dc91;--amber:#ffbd55;--red:#ff7b88;--p:#7d5cff;--c:#49bde7}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#17203b 0,transparent 35%),var(--bg);color:var(--txt);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}.wrap{max-width:920px;margin:auto;padding:20px 14px 60px}.card{background:rgba(16,24,39,.96);border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:0 25px 70px #0008}header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.brand{display:flex;gap:13px;align-items:center}.logo{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,var(--p),var(--c));display:grid;place-items:center;font-weight:900;font-size:16px}.title h1{margin:0;font-size:30px}.title p{margin:5px 0 0;color:var(--muted)}.version{padding:8px 12px;border:1px solid #355078;border-radius:999px;color:#b9c8df;font-size:12px;font-weight:800}.inputRow{display:flex;gap:12px}.input{flex:1;min-width:0;background:#050912;color:#fff;border:2px solid #30466f;border-radius:21px;padding:18px 20px;font-size:18px;outline:none}.input:focus{border-color:#6b82ff;box-shadow:0 0 0 4px #6b82ff20}.go{width:150px;border:0;border-radius:21px;background:linear-gradient(135deg,var(--p),var(--c));color:#fff;font-size:17px;font-weight:900;cursor:pointer}.go:disabled{opacity:.6;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.chip{border:1px solid #30425f;background:#131c2c;color:#b9c7dd;border-radius:999px;padding:10px 14px;cursor:pointer}.status{margin-top:17px;color:var(--muted);font-size:14px}.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}.result{margin-top:18px}.hero{border:2px solid var(--p);border-radius:26px;background:linear-gradient(145deg,#171b31,#101a29);padding:22px}.eyebrow{font-size:12px;letter-spacing:3px;font-weight:900;color:#8795ae}.udc{font-size:48px;font-weight:950;color:var(--blue);margin:8px 0 3px;overflow-wrap:anywhere}.provider{display:inline-block;padding:7px 12px;border-radius:999px;background:#10281d;border:1px solid #37865b;color:var(--green);font-weight:800;font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.box{background:var(--card2);border:1px solid #263754;border-radius:18px;padding:15px}.box b{display:block;font-size:11px;letter-spacing:1.7px;color:#8795ae;margin-bottom:7px}.box div{font-size:16px;line-height:1.5}.sources{margin-top:15px}.sources b{font-size:12px;letter-spacing:1.5px;color:#8795ae}.sources a{display:block;color:#79baff;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty{margin-top:18px;border:1px dashed #52637e;border-radius:22px;padding:22px;color:#b6c1d4;background:#0d1421}.empty strong{color:var(--amber)}.foot{margin-top:17px;text-align:center;color:#73829a;font-size:12px;line-height:1.5}@media(max-width:650px){.inputRow{flex-direction:column}.go{width:100%;height:58px}.grid{grid-template-columns:1fr}.title h1{font-size:25px}.udc{font-size:38px}.version{display:none}}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <h1>UDC Ultimate V18</h1>
-    <div class="sub">UDC ONLY · 2,700-title local key · Gemini + Google grounding · Groq fallback</div>
-    <div class="row">
-      <input id="title" class="input" placeholder="Enter Book Title" autocomplete="off">
-      <button id="go">CLASSIFY</button>
-    </div>
-    <div class="chips">
-      <span class="chip">History of India</span>
-      <span class="chip">Dictionary of Language and Literature</span>
-      <span class="chip">English Drama</span>
-      <span class="chip">Science and Technology</span>
-      <span class="chip">Bible in Hindi</span>
-    </div>
-    <div id="status" class="status">Ready.</div>
-    <div id="result"></div>
-  </div>
-</div>
+<body><main class="wrap"><section class="card">
+<header><div class="brand"><div class="logo">UDC</div><div class="title"><h1>UDC Ultimate V24.1</h1><p>Gemini Primary · Google Grounding · Groq Fallback</p></div></div><div class="version">V24 FINAL</div></header>
+<div class="inputRow"><input id="title" class="input" placeholder="Enter Book Title" autocomplete="off"><button id="go" class="go">CLASSIFY</button></div>
+<div class="chips"><button class="chip">History of India</button><button class="chip">Education</button><button class="chip">Dictionary of Language and Literature</button><button class="chip">English Drama</button><button class="chip">Science and Technology</button><button class="chip">Bible in Hindi</button></div>
+<div id="status" class="status">Ready · local UDC key → Gemini + Google → Groq fallback</div><div id="result"></div>
+<div class="foot">UDC ONLY · Never DDC · No guessed number · No “0” fallback · unresolved titles stay clearly unverified</div>
+</section></main>
 <script>
 const titleEl=document.getElementById('title'),go=document.getElementById('go'),statusEl=document.getElementById('status'),result=document.getElementById('result');
-document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{titleEl.value=c.textContent; classify()});
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function show(r){
-  if(!r || !r.verified || !r.udc){
-    result.innerHTML=`<div class="empty"><b>STATUS: NOT VERIFIED</b><br><br>${esc(r?.message||'No reliable UDC classification was found.')}<br><br><span class="warn">No UDC number has been invented or substituted.</span></div>`;
-    return;
-  }
-  const src=(r.sources||[]).map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title||x.url)}</a>`).join('');
-  result.innerHTML=`
-  <div class="result">
-    <div class="hero">
-      <div class="label">VERIFIED UDC CLASSIFICATION</div>
-      <div class="udc">${esc(r.udc)}</div>
-      <div class="ok">✓ ${esc(r.verificationLabel||'Verified')}</div>
-      <div class="grid">
-        <div class="box"><b>Book Title</b><div>${esc(r.title)}</div></div>
-        <div class="box"><b>Confidence</b><div>${esc(r.confidence||'Not stated')}</div></div>
-        <div class="box"><b>Main Subject</b><div>${esc(r.mainSubject||'—')}</div></div>
-        <div class="box"><b>Sub Subject</b><div>${esc(r.subSubject||'—')}</div></div>
-      </div>
-      <div class="box" style="margin-top:12px"><b>Explanation</b><div>${esc(r.explanation||'—')}</div></div>
-      ${src?`<div class="sources"><b>Evidence used</b>${src}</div>`:''}
-    </div>
-  </div>`;
+function render(r){
+ if(!r||!r.verified||!r.udc){result.innerHTML=`<div class="empty"><strong>VERIFICATION REQUIRED</strong><br><br>${esc(r?.message||'No reliable UDC classification was verified.')}<br><br>No UDC number has been invented, substituted, or shown as <b>0</b>.</div>`;return;}
+ const src=(r.sources||[]).map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title||x.url)}</a>`).join('');
+ result.innerHTML=`<div class="result"><div class="hero"><div class="eyebrow">VERIFIED UDC CLASSIFICATION</div><div class="udc">${esc(r.udc)}</div><span class="provider">${esc(r.verificationLabel||'Verified')}</span><div class="grid"><div class="box"><b>BOOK TITLE</b><div>${esc(r.title)}</div></div><div class="box"><b>CONFIDENCE</b><div>${esc(r.confidence||'Not stated')}</div></div><div class="box"><b>MAIN SUBJECT</b><div>${esc(r.mainSubject||'—')}</div></div><div class="box"><b>SUB SUBJECT</b><div>${esc(r.subSubject||'—')}</div></div></div><div class="box" style="margin-top:12px"><b>EXPLANATION</b><div>${esc(r.explanation||'—')}</div></div>${src?`<div class="sources"><b>EVIDENCE SOURCES</b>${src}</div>`:''}</div></div>`;
 }
-async function classify(){
-  const title=titleEl.value.trim();
-  if(!title)return;
-  go.disabled=true;statusEl.className='status';statusEl.textContent='Checking local UDC key…';result.innerHTML='';
-  try{
-    const res=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});
-    const data=await res.json();
-    statusEl.textContent=data.providerStatus||'Completed.';
-    statusEl.className='status '+(data.verified?'ok':'warn');
-    show(data);
-  }catch(e){
-    statusEl.textContent='Service error — no answer was invented.';
-    statusEl.className='status bad';
-    show({verified:false,message:'The classification service could not be reached.'});
-  }finally{go.disabled=false}
-}
-go.onclick=classify;
-titleEl.addEventListener('keydown',e=>{if(e.key==='Enter')classify()});
-</script>
-</body>
-</html>
+async function classify(){const title=titleEl.value.trim();if(!title){statusEl.textContent='Enter a book title';statusEl.className='status warn';return}go.disabled=true;result.innerHTML='';statusEl.className='status';statusEl.textContent='Checking local UDC key…';
+ try{const res=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});const r=await res.json();statusEl.textContent=r.providerStatus||'Completed';statusEl.className='status '+(r.verified?'ok':'warn');render(r)}catch(e){statusEl.textContent='Service unavailable · no answer invented';statusEl.className='status bad';render({verified:false,message:'The classification service could not be reached.'})}finally{go.disabled=false}}
+go.onclick=classify;titleEl.addEventListener('keydown',e=>{if(e.key==='Enter')classify()});document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{titleEl.value=c.textContent;classify()});
+</script></body></html>

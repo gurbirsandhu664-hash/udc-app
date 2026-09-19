@@ -1,17 +1,9 @@
 {
-  "name": "udc-ultimate-v18",
-  "version": "18.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "@google/genai": "^1.17.0",
-    "express": "^5.1.0",
-    "groq-sdk": "^0.33.0"
-  }
+  "name":"udc-ultimate-v24",
+  "version":"24.0.0",
+  "private":true,
+  "type":"module",
+  "scripts":{"start":"node server.js"},
+  "engines":{"node":">=20"},
+  "dependencies":{"@google/genai":"^1.17.0","express":"^5.1.0","groq-sdk":"^0.33.0"}
 }
