@@ -21,12 +21,17 @@ try {
   if(!Array.isArray(key.entries) || key.entries.length < 2700) throw new Error('UDC answer key must contain at least 2700 entries');
 } catch(e){ keyError=e; }
 
+const CORR_FILE = path.join(ROOT, 'udc-corrections.json');
+let corrections = {};
+try { if (fs.existsSync(CORR_FILE)) corrections = JSON.parse(fs.readFileSync(CORR_FILE,'utf8')) || {}; } catch(e) { corrections = {}; }
+
 const EXACT=new Map();
 if(!keyError) for(const e of key.entries){
   if(!e || !e.title || e.udc==null) continue;
   EXACT.set(norm(e.title),e);
   EXACT.set(compact(e.title),e);
 }
+for (const [k,e] of Object.entries(corrections)) { if (e && e.title && e.udc) { EXACT.set(norm(k),e); EXACT.set(compact(k),e); } }
 
 const PLACE={
   india:'(540)', pakistan:'(549)', punjab:'(540.15)', china:'(510)', japan:'(520)',
@@ -174,6 +179,16 @@ function classify(raw){
   return make(title,'0','General works','No specific subject indicator detected','Low','No sufficiently specific subject indicator was detected. 0 is used only as a genuine UDC general-works fallback; no fabricated specific number is claimed.','fallback');
 }
 
+function assistantAnswer(question,title,udc){
+  const t=String(title||'').trim(); const q=norm(question||'');
+  if(!t) return 'Please enter a book title first. I can then explain the current UDC classification and help you review it.';
+  const r=classify(t);
+  if(/\b(save|add|correct|wrong|change)\b/.test(q) && /\b(key|answer|udc)\b/.test(q)) return `I can help review it, but a correction should only be saved when the UDC number is verified from your UDC source. Current result for “${t}” is ${r.udc}. Enter the verified number in the correction field and use SAVE CORRECTION TO KEY.`;
+  if(/\bwhy\b|explain|correct|reason|how/.test(q)) return `For “${t}”, the current result is ${r.udc} — ${r.mainSubject||'UDC subject'}. ${r.explanation||''} Source: ${r.source||'rule'}. If your UDC schedule gives a different number, tell me that verified number and it can be saved as a title-specific correction.`;
+  if(/\b(number|class|classification|udc)\b/.test(q)) return `The current classification for “${t}” is ${r.udc} — ${r.mainSubject||'UDC subject'} (${r.confidence||'Medium'} confidence). ${r.explanation||''}`;
+  return `I’m ready to discuss “${t}”. Current UDC: ${r.udc} — ${r.mainSubject||'UDC subject'}. Ask “why?” for the notation explanation, or provide a verified UDC number if you want to review/correct the key.`;
+}
+
 function json(res,status,obj){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Access-Control-Allow-Origin':'*'});res.end(JSON.stringify(obj));}
 function send(res,status,type,data){res.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store'});res.end(data);}
 function readBody(req){return new Promise((resolve,reject)=>{let d='';req.on('data',c=>{d+=c;if(d.length>1024*1024) reject(new Error('Request too large'));});req.on('end',()=>resolve(d));req.on('error',reject);});}
@@ -181,8 +196,23 @@ function readBody(req){return new Promise((resolve,reject)=>{let d='';req.on('da
 const server=http.createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
-    if(req.method==='GET' && (url.pathname==='/health'||url.pathname==='/api/health')) return json(res,200,{ok:!keyError,service:'UDC Ultimate Classifier',version:'V15.1-2700-FINAL',keyLoaded:!keyError,titleCount:key.entries?.length||0});
+    if(req.method==='GET' && (url.pathname==='/health'||url.pathname==='/api/health')) return json(res,200,{ok:!keyError,service:'UDC Ultimate Classifier',version:'V16.1-2700-ASSISTANT-REVIEW',keyLoaded:!keyError,titleCount:key.entries?.length||0});
     if(req.method==='GET' && url.pathname==='/api/key-info') return json(res,200,{ok:!keyError,titleCount:key.entries?.length||0,version:key.version||'unknown',edition:key.edition_note||'UDC practice key'});
+    if(req.method==='GET' && url.pathname==='/api/corrections') return json(res,200,{ok:true,count:Object.keys(corrections).length,corrections:Object.values(corrections)});
+    if(req.method==='POST' && url.pathname==='/api/corrections'){
+      const body=await readBody(req); let p={}; try{p=JSON.parse(body||'{}')}catch{}
+      const title=String(p.title||'').trim(), udc=String(p.udc||'').trim();
+      if(!title || !udc) return json(res,400,{ok:false,error:'Title and UDC number are required'});
+      const item={title,udc,subject:String(p.subject||'UDC subject'),subSubject:String(p.subSubject||''),confidence:'High',explanation:String(p.explanation||'Manually verified correction.'),source:'user-correction',verifiedRule:true};
+      corrections[norm(title)]=item;
+      try { fs.writeFileSync(CORR_FILE, JSON.stringify(corrections,null,2)); } catch(e) { return json(res,500,{ok:false,error:'Could not save correction: '+e.message}); }
+      EXACT.set(norm(title),item); EXACT.set(compact(title),item);
+      return json(res,200,{ok:true,item,count:Object.keys(corrections).length,note:'Saved to local correction store. On Render free instances, filesystem changes may not survive a restart/redeploy.'});
+    }
+    if(req.method==='POST' && url.pathname==='/api/assistant'){
+      const body=await readBody(req); let p={}; try{p=JSON.parse(body||'{}')}catch{}
+      return json(res,200,{ok:true,answer:assistantAnswer(p.question||'',p.title||p.bookTitle||'',p.udc||'')});
+    }
     if(req.method==='POST' && (url.pathname==='/api/classify'||url.pathname==='/classify')){
       const body=await readBody(req); let p={}; try{p=JSON.parse(body||'{}')}catch{}
       return json(res,200,classify(p.title||p.bookTitle||p.query||''));
@@ -191,4 +221,4 @@ const server=http.createServer(async(req,res)=>{
     return send(res,404,'text/plain; charset=utf-8','Not found');
   }catch(e){console.error(e);json(res,500,{ok:false,error:e.message});}
 });
-server.listen(PORT,'0.0.0.0',()=>console.log(`UDC V15.1-2700-FINAL listening on ${PORT} | key=${key.entries?.length||0}`));
+server.listen(PORT,'0.0.0.0',()=>console.log(`UDC V16.1-2700-ASSISTANT-REVIEW listening on ${PORT} | key=${key.entries?.length||0}`));

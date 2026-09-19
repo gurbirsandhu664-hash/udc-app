@@ -1,7 +1,16 @@
-# UDC Ultimate V15 — 2700 Semantic Corrected
+# UDC Ultimate V16
 
-UDC-only practice classifier. The 2700-title key is loaded first for exact-title answers, with semantic fallback rules for titles outside the key.
+UDC-only practice classifier with 2700-title key, semantic fallback, and UDC Review Chat.
 
-Key corrections include Indian Constitution = 342(540), Indian Art = 7(540), Indian Literature = 821.21(540), and Dictionary of Language and Literature = 80(038).
+## New in V16
+- Editable title input.
+- Review Chat for discussing a title and current classification.
+- Manual verified correction form.
+- Corrections are checked before the main 2700-title key.
+- `/api/corrections` stores corrections in `udc-corrections.json`.
 
-The public UDC Summary contains around 2,600 selected classes from a scheme of more than 70,000 entries; this project is a practice classifier and does not reproduce the complete licensed UDC Master Reference File.
+## Important
+The correction file is local to the running server. Render free instances can lose local filesystem changes after restart/redeploy. For permanent corrections, commit the correction JSON to the repository or connect a persistent database.
+
+## Run
+`npm start`
