@@ -1,257 +1,180 @@
 {
-  "edition": "UDC Abridged Practice Rule Layer",
-  "status": "Rule layer only; exact class numbers require the connected authorized schedule/reference data.",
-  "mainClasses": {
-    "0": "Science and knowledge. Organization. Computer science. Information science. Documentation. Librarianship",
-    "1": "Philosophy. Psychology",
-    "2": "Religion. Theology",
-    "3": "Social sciences",
-    "4": "Vacant",
-    "5": "Mathematics. Natural sciences",
-    "6": "Applied sciences. Medicine. Technology",
-    "7": "The arts. Entertainment. Sport",
-    "8": "Linguistics. Literature",
-    "9": "Geography. History"
+  "version": "UDC Abridged-oriented local rule set 2026-09",
+  "countries": {
+    "india":{"code":"(540)","name":"India"},
+    "pakistan":{"code":"(549)","name":"Pakistan"},
+    "china":{"code":"(510)","name":"China"},
+    "japan":{"code":"(520)","name":"Japan"},
+    "nepal":{"code":"(541.35)","name":"Nepal"},
+    "bhutan":{"code":"(541.31)","name":"Bhutan"},
+    "bangladesh":{"code":"(549.2)","name":"Bangladesh"},
+    "sri lanka":{"code":"(548.7)","name":"Sri Lanka"},
+    "afghanistan":{"code":"(581)","name":"Afghanistan"},
+    "united states":{"code":"(73)","name":"United States"},
+    "usa":{"code":"(73)","name":"United States"},
+    "russia":{"code":"(47)","name":"Russia"},
+    "united kingdom":{"code":"(41)","name":"United Kingdom"},
+    "uk":{"code":"(41)","name":"United Kingdom"},
+    "france":{"code":"(44)","name":"France"},
+    "germany":{"code":"(43)","name":"Germany"},
+    "italy":{"code":"(45)","name":"Italy"},
+    "canada":{"code":"(71)","name":"Canada"},
+    "australia":{"code":"(94)","name":"Australia"}
   },
-  "connectingSigns": {
-    "+": "Coordination. Addition. Connects non-consecutive UDC numbers.",
-    "/": "Consecutive extension (oblique stroke). Represents a consecutive range/extension when authorized by the schedule.",
-    ":": "Simple relation between subjects.",
-    "::": "Order-fixing.",
-    "[]": "Subgrouping of a compound expression.",
-    "*": "Introduces non-UDC notation.",
-    "A/Z": "Direct alphabetical specification where authorized."
-  },
-  "commonAuxiliaries": {
-    "=...": "Language (Table 1c)",
-    "(0...)": "Form (Table 1d)",
-    "(1/9)": "Place (Table 1e)",
-    "(=...)": "Human ancestry, ethnic grouping and nationality (Table 1f)",
-    "\"...\"": "Time (Table 1g)",
-    "-0...": "General characteristics (Table 1k)",
-    "-02": "Properties",
-    "-03": "Materials",
-    "-04": "Relations, processes and operations",
-    "-05": "Persons and personal characteristics"
-  },
-  "specialAuxiliaryIndicators": [
-    ".0",
-    "-",
-    "'"
+  "languages": [
+    {"pattern":"english","name":"English","code":"=111","languageClass":"811.111","litCode":"821.111"},
+    {"pattern":"hindi","name":"Hindi","code":"=214.21","languageClass":"811.214.21","litCode":"821.214.21"},
+    {"pattern":"punjabi","name":"Punjabi","code":"=214.22","languageClass":"811.214.22","litCode":"821.214.22"},
+    {"pattern":"urdu","name":"Urdu","code":"=214.31","languageClass":"811.214.31","litCode":"821.214.31"},
+    {"pattern":"bengali","name":"Bengali","code":"=214.32","languageClass":"811.214.32","litCode":"821.214.32"},
+    {"pattern":"marathi","name":"Marathi","code":"=214.34","languageClass":"811.214.34","litCode":"821.214.34"},
+    {"pattern":"gujarati","name":"Gujarati","code":"=214.35","languageClass":"811.214.35","litCode":"821.214.35"},
+    {"pattern":"tamil","name":"Tamil","code":"=214.42","languageClass":"811.214.42","litCode":"821.214.42"},
+    {"pattern":"telugu","name":"Telugu","code":"=214.43","languageClass":"811.214.43","litCode":"821.214.43"},
+    {"pattern":"kannada","name":"Kannada","code":"=214.44","languageClass":"811.214.44","litCode":"821.214.44"},
+    {"pattern":"malayalam","name":"Malayalam","code":"=214.45","languageClass":"811.214.45","litCode":"821.214.45"},
+    {"pattern":"sanskrit","name":"Sanskrit","code":"=211","languageClass":"811.211","litCode":"821.211"},
+    {"pattern":"french","name":"French","code":"=133.1","languageClass":"811.133.1","litCode":"821.133.1"},
+    {"pattern":"german","name":"German","code":"=112.2","languageClass":"811.112.2","litCode":"821.112.2"},
+    {"pattern":"spanish","name":"Spanish","code":"=134.2","languageClass":"811.134.2","litCode":"821.134.2"},
+    {"pattern":"arabic","name":"Arabic","code":"=411","languageClass":"811.411","litCode":"821.411"},
+    {"pattern":"persian","name":"Persian","code":"=411.1","languageClass":"811.411.1","litCode":"821.411.1"},
+    {"pattern":"chinese","name":"Chinese","code":"=581","languageClass":"811.581","litCode":"821.581"},
+    {"pattern":"japanese","name":"Japanese","code":"=521","languageClass":"811.521","litCode":"821.521"}
   ],
-  "cancelled": {
-    "table1i": "Point of view is cancelled in current UDC; former Table 1i numbers must not be generated. Relevant concepts were relocated to -02, -05 and colon combinations."
-  },
-  "decisionRules": [
-    "Never choose a UDC number solely by keyword similarity.",
-    "Use the most specific verified class available in the supplied Abridged/reference dataset.",
-    "Do not add an auxiliary merely because it is possible; add it only when the document content/form and the schedule justify it.",
-    "Use + for coordinated non-consecutive subjects, not as a generic multi-topic separator.",
-    "Use / only for a consecutive extension/range supported by the schedule; do not substitute +.",
-    "Use : for a simple relation; use :: only when order-fixing is required.",
-    "Use [ ] only when subgrouping is required to preserve the intended scope of a compound expression.",
-    "Language, form, place, human ancestry/ethnic grouping/nationality, time and general-characteristic auxiliaries are common auxiliaries and must be validated against the relevant table.",
-    "Special auxiliaries are local to their designated subject area and must never be copied from another class.",
-    "For ambiguous titles, request more information instead of fabricating a number.",
-    "Separate subject from document form. Words such as dictionary, handbook, atlas, bibliography or textbook do not automatically become the main subject.",
-    "For literature, distinguish language/linguistics from literature and literary form from physical/document form.",
-    "For history/geography, distinguish subject, place and time; add place/time only when supported by the title or description.",
-    "Preserve exact punctuation and decimal notation in the final UDC expression."
+  "forms": [
+    {"pattern":"dictionary","code":"(038)","name":"Dictionary"},
+    {"pattern":"lexicon","code":"(038)","name":"Dictionary / lexicon"},
+    {"pattern":"glossary","code":"(038)","name":"Glossary"},
+    {"pattern":"encyclopedia","code":"(03)","name":"Encyclopaedia / reference work"},
+    {"pattern":"encyclopaedia","code":"(03)","name":"Encyclopaedia / reference work"},
+    {"pattern":"handbook","code":"(035)","name":"Handbook"},
+    {"pattern":"manual","code":"(035)","name":"Manual"},
+    {"pattern":"textbook","code":"(075)","name":"Textbook"},
+    {"pattern":"guide","code":"(036)","name":"Guide"},
+    {"pattern":"bibliography","code":"(01)","name":"Bibliography"},
+    {"pattern":"catalogue","code":"(083)","name":"Catalogue"},
+    {"pattern":"catalog","code":"(083)","name":"Catalogue"},
+    {"pattern":"thesis","code":"(043)","name":"Thesis"},
+    {"pattern":"report","code":"(047)","name":"Report"},
+    {"pattern":"atlas","code":"(084)","name":"Atlas"},
+    {"pattern":"directory","code":"(058)","name":"Directory"},
+    {"pattern":"yearbook","code":"(058)","name":"Yearbook"}
   ],
-  "answerKey": {
-    "english drama": {
-      "finalUdc": "821.111-2",
-      "mainSubject": "English drama",
-      "reason": "821.111 English literature + -2 drama; do not add a document-form auxiliary merely because the title is a literary work."
-    },
-    "english poetry": {
-      "finalUdc": "821.111-1",
-      "mainSubject": "English poetry",
-      "reason": "821.111 English literature + -1 poetry."
-    },
-    "english fiction": {
-      "finalUdc": "821.111-3",
-      "mainSubject": "English fiction",
-      "reason": "821.111 English literature + -3 fiction."
-    },
-    "dictionary of language and literature": {
-      "finalUdc": "8(038)",
-      "mainSubject": "Linguistics and literature",
-      "reason": "8 is the broad class for linguistics/literature; (038) is the dictionary form auxiliary. This is a broad practice classification; verify if the work is restricted to language or literature."
-    },
-    "handbook of science and technology": {
-      "finalUdc": "5/6(035)",
-      "mainSubject": "Science and technology",
-      "reason": "5 and 6 are consecutive main classes, so / is used for the consecutive extension; (035) is handbook form."
-    },
-    "science and arts": {
-      "finalUdc": "[5+7]",
-      "mainSubject": "Science and arts",
-      "reason": "5 and 7 are non-consecutive coordinated subjects; + is the coordination sign. Square brackets preserve the grouped compound where needed."
-    },
-    "history of india": {
-      "finalUdc": "94(540)",
-      "mainSubject": "History of India",
-      "reason": "94 history + (540) India place auxiliary."
-    },
-    "geography of india": {
-      "finalUdc": "91(540)",
-      "mainSubject": "Geography of India",
-      "reason": "91 geography + (540) India place auxiliary."
-    },
-    "indian constitution": {
-      "finalUdc": "342(540)",
-      "mainSubject": "Constitutional law of India",
-      "reason": "342 constitutional law + (540) India place auxiliary."
-    },
-    "indian philosophy": {
-      "finalUdc": "1(540)",
-      "mainSubject": "Indian philosophy",
-      "reason": "1 philosophy + (540) India place auxiliary."
-    },
-    "indian art": {
-      "finalUdc": "7(540)",
-      "mainSubject": "Art in India",
-      "reason": "7 arts + (540) India place auxiliary."
-    },
-    "punjabi literature": {
-      "finalUdc": "821.214.22",
-      "mainSubject": "Punjabi literature",
-      "reason": "Literature in Punjabi; language-specific literature notation."
-    },
-    "punjabi poetry": {
-      "finalUdc": "821.214.22-1",
-      "mainSubject": "Punjabi poetry",
-      "reason": "Punjabi literature + -1 poetry."
-    },
-    "punjabi drama": {
-      "finalUdc": "821.214.22-2",
-      "mainSubject": "Punjabi drama",
-      "reason": "Punjabi literature + -2 drama."
-    },
-    "computer science": {
-      "finalUdc": "004",
-      "mainSubject": "Computer science",
-      "reason": "004 computer science."
-    },
-    "computer programming": {
-      "finalUdc": "004.42",
-      "mainSubject": "Computer programming",
-      "reason": "004.42 programming."
-    },
-    "mathematics": {
-      "finalUdc": "51",
-      "mainSubject": "Mathematics",
-      "reason": "51 mathematics."
-    },
-    "physics": {
-      "finalUdc": "53",
-      "mainSubject": "Physics",
-      "reason": "53 physics."
-    },
-    "chemistry": {
-      "finalUdc": "54",
-      "mainSubject": "Chemistry",
-      "reason": "54 chemistry."
-    },
-    "biology": {
-      "finalUdc": "57",
-      "mainSubject": "Biology",
-      "reason": "57 biological sciences."
-    },
-    "medicine": {
-      "finalUdc": "61",
-      "mainSubject": "Medicine",
-      "reason": "61 medical sciences."
-    },
-    "engineering": {
-      "finalUdc": "62",
-      "mainSubject": "Engineering",
-      "reason": "62 engineering."
-    },
-    "agriculture": {
-      "finalUdc": "63",
-      "mainSubject": "Agriculture",
-      "reason": "63 agriculture."
-    },
-    "library science": {
-      "finalUdc": "02",
-      "mainSubject": "Library science",
-      "reason": "02 librarianship/library science."
-    },
-    "cataloguing": {
-      "finalUdc": "025.3",
-      "mainSubject": "Cataloguing",
-      "reason": "025.3 cataloguing."
-    },
-    "classification": {
-      "finalUdc": "025.4",
-      "mainSubject": "Classification",
-      "reason": "025.4 classification."
-    },
-    "journalism": {
-      "finalUdc": "070",
-      "mainSubject": "Journalism",
-      "reason": "070 journalism and press."
-    },
-    "philosophy": {
-      "finalUdc": "1",
-      "mainSubject": "Philosophy",
-      "reason": "1 philosophy."
-    },
-    "religion": {
-      "finalUdc": "2",
-      "mainSubject": "Religion",
-      "reason": "2 religion/theology."
-    },
-    "political science": {
-      "finalUdc": "32",
-      "mainSubject": "Political science",
-      "reason": "32 politics."
-    },
-    "economics": {
-      "finalUdc": "33",
-      "mainSubject": "Economics",
-      "reason": "33 economics."
-    },
-    "law": {
-      "finalUdc": "34",
-      "mainSubject": "Law",
-      "reason": "34 law."
-    },
-    "education": {
-      "finalUdc": "37",
-      "mainSubject": "Education",
-      "reason": "37 education."
-    },
-    "literature": {
-      "finalUdc": "82",
-      "mainSubject": "Literature",
-      "reason": "82 literature."
-    },
-    "linguistics": {
-      "finalUdc": "81",
-      "mainSubject": "Linguistics",
-      "reason": "81 linguistics."
-    },
-    "geography": {
-      "finalUdc": "91",
-      "mainSubject": "Geography",
-      "reason": "91 geography."
-    },
-    "history": {
-      "finalUdc": "94",
-      "mainSubject": "History",
-      "reason": "94 general history."
-    }
-  },
-  "answerKeyPolicy": [
-    "Exact answer-key matches must be returned deterministically before AI inference.",
-    "Do not label an answer VERIFIED unless it is actually present in the answer key or an authorized reference dataset.",
-    "For titles involving two subjects, choose + only for non-consecutive coordination; choose / only for a consecutive extension supported by the schedule.",
-    "Do not use + merely because a title contains the word and.",
-    "Do not add (0...) unless the title identifies a document form.",
-    "Dictionary uses (038); handbook/manual uses (035) in the supplied practice reference.",
-    "Never generate cancelled Table 1i point-of-view notation as current notation."
+  "places": [
+    {"pattern":"punjab","code":"(540.15)","name":"Punjab"},
+    {"pattern":"india","code":"(540)","name":"India"},
+    {"pattern":"pakistan","code":"(549)","name":"Pakistan"},
+    {"pattern":"china","code":"(510)","name":"China"},
+    {"pattern":"japan","code":"(520)","name":"Japan"},
+    {"pattern":"bangladesh","code":"(549.2)","name":"Bangladesh"},
+    {"pattern":"nepal","code":"(541.35)","name":"Nepal"}
+  ],
+  "exact": [
+    {"pattern":"history of india","udc":"94(540)","mainClass":"94","subject":"History of India","subSubject":"History","aux":[{"type":"place","code":"(540)","name":"India"}],"explanation":"94 = history; (540) = India."},
+    {"pattern":"indian history","udc":"94(540)","mainClass":"94","subject":"History of India","subSubject":"History","explanation":"94 = history; (540) = India."},
+    {"pattern":"history of punjab","udc":"94(540.15)","mainClass":"94","subject":"History of Punjab","subSubject":"History","explanation":"94 = history; (540.15) = Punjab."},
+    {"pattern":"geography of india","udc":"91(540)","mainClass":"91","subject":"Geography of India","subSubject":"Geography","explanation":"91 = geography; (540) = India."},
+    {"pattern":"geography of punjab","udc":"91(540.15)","mainClass":"91","subject":"Geography of Punjab","subSubject":"Geography","explanation":"91 = geography; (540.15) = Punjab."},
+    {"pattern":"indian constitution","udc":"342(540)","mainClass":"342","subject":"Constitutional law of India","subSubject":"Constitution","explanation":"342 = constitutional law; (540) = India."},
+    {"pattern":"constitution of india","udc":"342(540)","mainClass":"342","subject":"Constitutional law of India","subSubject":"Constitution","explanation":"342 = constitutional law; (540) = India."},
+    {"pattern":"economy of india","udc":"33(540)","mainClass":"33","subject":"Economy of India","subSubject":"Economics","explanation":"33 = economics; (540) = India."},
+    {"pattern":"economics of india","udc":"33(540)","mainClass":"33","subject":"Economics of India","subSubject":"Economics","explanation":"33 = economics; (540) = India."},
+    {"pattern":"international relations","udc":"327","mainClass":"327","subject":"International Relations","subSubject":"International / foreign relations","explanation":"327 = international and foreign affairs, relations, policy and diplomacy."},
+    {"pattern":"international relation","udc":"327","mainClass":"327","subject":"International Relations","subSubject":"International / foreign relations","explanation":"327 = international and foreign affairs, relations, policy and diplomacy."},
+    {"pattern":"foreign relations","udc":"327","mainClass":"327","subject":"Foreign Relations","subSubject":"International relations","explanation":"327 = international / foreign relations."},
+    {"pattern":"foreign relation","udc":"327","mainClass":"327","subject":"Foreign Relations","subSubject":"International relations","explanation":"327 = international / foreign relations."},
+    {"pattern":"foreign policy","udc":"327","mainClass":"327","subject":"Foreign Policy","subSubject":"International relations","explanation":"327 covers international/foreign affairs and foreign policy."},
+    {"pattern":"diplomacy","udc":"327","mainClass":"327","subject":"Diplomacy","subSubject":"International relations","explanation":"327 = international/foreign affairs and diplomacy."},
+    {"pattern":"geopolitics","udc":"327","mainClass":"327","subject":"Geopolitics","subSubject":"International relations","explanation":"327 is used for international/foreign affairs; exact geopolitical subdivisions should be checked in the authoritative schedule."},
+    {"pattern":"international law","udc":"341","mainClass":"341","subject":"International Law","subSubject":"Law between nations","explanation":"341 = international law."},
+    {"pattern":"political science","udc":"32","mainClass":"32","subject":"Political Science","subSubject":"Politics","explanation":"32 = political science and politics."},
+    {"pattern":"democracy","udc":"321","mainClass":"321","subject":"Democracy","subSubject":"Forms of government","explanation":"321 = forms of government; democracy is a major subdivision."},
+    {"pattern":"philosophy","udc":"1","mainClass":"1","subject":"Philosophy","subSubject":"Philosophy","explanation":"1 = philosophy."},
+    {"pattern":"psychology","udc":"159.9","mainClass":"159.9","subject":"Psychology","subSubject":"Psychology","explanation":"159.9 = psychology."},
+    {"pattern":"sociology","udc":"316","mainClass":"316","subject":"Sociology","subSubject":"Society","explanation":"316 = sociology / society."},
+    {"pattern":"economics","udc":"33","mainClass":"33","subject":"Economics","subSubject":"Economic science","explanation":"33 = economics."},
+    {"pattern":"mathematics","udc":"51","mainClass":"51","subject":"Mathematics","subSubject":"Mathematics","explanation":"51 = mathematics."},
+    {"pattern":"physics","udc":"53","mainClass":"53","subject":"Physics","subSubject":"Physics","explanation":"53 = physics."},
+    {"pattern":"chemistry","udc":"54","mainClass":"54","subject":"Chemistry","subSubject":"Chemistry","explanation":"54 = chemistry."},
+    {"pattern":"biology","udc":"57","mainClass":"57","subject":"Biology","subSubject":"Biology","explanation":"57 = biological sciences."},
+    {"pattern":"botany","udc":"58","mainClass":"58","subject":"Botany","subSubject":"Plant sciences","explanation":"58 = botany."},
+    {"pattern":"zoology","udc":"59","mainClass":"59","subject":"Zoology","subSubject":"Animal sciences","explanation":"59 = zoology."},
+    {"pattern":"astronomy","udc":"52","mainClass":"52","subject":"Astronomy","subSubject":"Astronomy","explanation":"52 = astronomy."},
+    {"pattern":"geology","udc":"55","mainClass":"55","subject":"Geology","subSubject":"Earth sciences","explanation":"55 = earth sciences / geology."},
+    {"pattern":"computer science","udc":"004","mainClass":"004","subject":"Computer Science","subSubject":"Computing and data processing","explanation":"004 = computer science and technology."},
+    {"pattern":"artificial intelligence","udc":"004.8","mainClass":"004","subject":"Artificial Intelligence","subSubject":"Computer science","explanation":"004.8 = artificial intelligence area within computer science."},
+    {"pattern":"machine learning","udc":"004.8","mainClass":"004","subject":"Machine Learning","subSubject":"Artificial intelligence / computing","explanation":"004.8 = artificial intelligence/computing area; verify the exact detailed subdivision in the licensed schedule."},
+    {"pattern":"programming","udc":"004.42","mainClass":"004","subject":"Computer Programming","subSubject":"Programming","explanation":"004.42 = computer programming."},
+    {"pattern":"medicine","udc":"61","mainClass":"61","subject":"Medicine","subSubject":"Medical sciences","explanation":"61 = medical sciences."},
+    {"pattern":"agriculture","udc":"63","mainClass":"63","subject":"Agriculture","subSubject":"Agriculture","explanation":"63 = agriculture."},
+    {"pattern":"engineering","udc":"62","mainClass":"62","subject":"Engineering","subSubject":"Engineering","explanation":"62 = engineering and technology in general."},
+    {"pattern":"mechanical engineering","udc":"621","mainClass":"62","subject":"Mechanical Engineering","subSubject":"Mechanical technology","explanation":"621 = mechanical engineering/technology."},
+    {"pattern":"electrical engineering","udc":"621.3","mainClass":"62","subject":"Electrical Engineering","subSubject":"Electrical technology","explanation":"621.3 = electrical engineering."},
+    {"pattern":"civil engineering","udc":"624","mainClass":"62","subject":"Civil Engineering","subSubject":"Civil engineering","explanation":"624 = civil engineering."},
+    {"pattern":"architecture","udc":"72","mainClass":"72","subject":"Architecture","subSubject":"Architecture","explanation":"72 = architecture."},
+    {"pattern":"painting","udc":"75","mainClass":"75","subject":"Painting","subSubject":"Fine arts","explanation":"75 = painting."},
+    {"pattern":"sculpture","udc":"73","mainClass":"73","subject":"Sculpture","subSubject":"Fine arts","explanation":"73 = sculpture."},
+    {"pattern":"music","udc":"78","mainClass":"78","subject":"Music","subSubject":"Music","explanation":"78 = music."},
+    {"pattern":"cinema","udc":"791","mainClass":"791","subject":"Cinema","subSubject":"Motion pictures","explanation":"791 = cinema / motion pictures."},
+    {"pattern":"theatre","udc":"792","mainClass":"792","subject":"Theatre","subSubject":"Theatre","explanation":"792 = theatre."},
+    {"pattern":"theater","udc":"792","mainClass":"792","subject":"Theatre","subSubject":"Theatre","explanation":"792 = theatre."},
+    {"pattern":"sports","udc":"796","mainClass":"796","subject":"Sports","subSubject":"Sport","explanation":"796 = sport."},
+    {"pattern":"cricket","udc":"796.358","mainClass":"796","subject":"Cricket","subSubject":"Sport","explanation":"796.358 = cricket."},
+    {"pattern":"library science","udc":"02","mainClass":"02","subject":"Library Science","subSubject":"Librarianship","explanation":"02 = library and information science/librarianship."},
+    {"pattern":"cataloguing","udc":"025.3","mainClass":"02","subject":"Cataloguing","subSubject":"Library technical processes","explanation":"025.3 = cataloguing."},
+    {"pattern":"classification","udc":"025.4","mainClass":"02","subject":"Classification","subSubject":"Library classification","explanation":"025.4 = classification in librarianship."},
+    {"pattern":"journalism","udc":"070","mainClass":"07","subject":"Journalism","subSubject":"Press and journalism","explanation":"070 = newspapers, journalism and related press activity."},
+    {"pattern":"tourism","udc":"338.48","mainClass":"33","subject":"Tourism","subSubject":"Tourism economics","explanation":"338.48 = tourism as an economic activity."},
+    {"pattern":"military science","udc":"355","mainClass":"35","subject":"Military Science","subSubject":"Military affairs","explanation":"355 = military science and affairs."}
+  ],
+  "subjects": [
+    {"pattern":"algebra","udc":"512","subject":"Algebra","explanation":"512 = algebra."},
+    {"pattern":"geometry","udc":"514","subject":"Geometry","explanation":"514 = geometry."},
+    {"pattern":"calculus","udc":"517","subject":"Calculus","explanation":"517 = calculus."},
+    {"pattern":"statistics","udc":"519.2","subject":"Statistics","explanation":"519.2 = probability and statistics area."},
+    {"pattern":"ecology","udc":"574","subject":"Ecology","explanation":"574 = ecology."},
+    {"pattern":"environmental science","udc":"504","subject":"Environmental Science","explanation":"504 = environmental science and environmental protection."},
+    {"pattern":"education","udc":"37","subject":"Education","explanation":"37 = education and teaching."},
+    {"pattern":"teaching","udc":"37","subject":"Teaching","explanation":"37 = education and teaching."},
+    {"pattern":"pedagogy","udc":"37","subject":"Pedagogy","explanation":"37 = education and teaching."},
+    {"pattern":"higher education","udc":"378","subject":"Higher Education","explanation":"378 = higher education / universities."},
+    {"pattern":"educational psychology","udc":"37.015.3","subject":"Educational Psychology","explanation":"37.015.3 = educational psychology."},
+    {"pattern":"ethics","udc":"17","subject":"Ethics","explanation":"17 = moral philosophy / ethics."},
+    {"pattern":"logic","udc":"16","subject":"Logic","explanation":"16 = logic."},
+    {"pattern":"religion","udc":"2","subject":"Religion","explanation":"2 = religion and theology."},
+    {"pattern":"hinduism","udc":"233","subject":"Hinduism","explanation":"233 = Hinduism."},
+    {"pattern":"buddhism","udc":"24","subject":"Buddhism","explanation":"24 = Buddhism."},
+    {"pattern":"jainism","udc":"26","subject":"Jainism","explanation":"26 = Jainism."},
+    {"pattern":"christianity","udc":"27","subject":"Christianity","explanation":"27 = Christianity."},
+    {"pattern":"islam","udc":"28","subject":"Islam","explanation":"28 = Islam."},
+    {"pattern":"demography","udc":"314","subject":"Demography","explanation":"314 = demography and population."},
+    {"pattern":"population","udc":"314","subject":"Population","explanation":"314 = demography and population."},
+    {"pattern":"anthropology","udc":"39","subject":"Anthropology / Ethnography","explanation":"39 = ethnography, folklore and related cultural anthropology."},
+    {"pattern":"folklore","udc":"398","subject":"Folklore","explanation":"398 = folklore."},
+    {"pattern":"trade","udc":"339","subject":"Trade","explanation":"339 = trade."},
+    {"pattern":"finance","udc":"336","subject":"Finance","explanation":"336 = public finance / financial subjects."},
+    {"pattern":"banking","udc":"336","subject":"Banking","explanation":"336 = finance; exact banking subdivision should be checked in the detailed schedule."},
+    {"pattern":"accounting","udc":"657","subject":"Accounting","explanation":"657 = accounting."},
+    {"pattern":"management","udc":"65","subject":"Management","explanation":"65 = management and organization."},
+    {"pattern":"marketing","udc":"658.8","subject":"Marketing","explanation":"658.8 = marketing."},
+    {"pattern":"entrepreneurship","udc":"658.1","subject":"Entrepreneurship","explanation":"658.1 = entrepreneurship / enterprise organization."},
+    {"pattern":"law","udc":"34","subject":"Law","explanation":"34 = law."},
+    {"pattern":"criminal law","udc":"343","subject":"Criminal Law","explanation":"343 = criminal law."},
+    {"pattern":"civil law","udc":"347","subject":"Civil Law","explanation":"347 = civil law."},
+    {"pattern":"human rights","udc":"342","subject":"Human Rights","explanation":"342 = constitutional/public law area including fundamental rights; exact detailed subdivision should be checked."},
+    {"pattern":"public administration","udc":"35","subject":"Public Administration","explanation":"35 = public administration."},
+    {"pattern":"elections","udc":"324","subject":"Elections","explanation":"324 = elections and electoral process."},
+    {"pattern":"parliament","udc":"328","subject":"Parliamentary bodies","explanation":"328 = parliaments and legislative assemblies."},
+    {"pattern":"political parties","udc":"329","subject":"Political Parties","explanation":"329 = political parties and party systems."},
+    {"pattern":"socialism","udc":"321","subject":"Socialism / political doctrine","explanation":"Political doctrine; verify the detailed UDC subdivision in the authoritative schedule."},
+    {"pattern":"photography","udc":"77","subject":"Photography","explanation":"77 = photography and photographic processes."},
+    {"pattern":"dance","udc":"793.3","subject":"Dance","explanation":"793.3 = dance."},
+    {"pattern":"biography","udc":"92","subject":"Biography","explanation":"92 = biography."},
+    {"pattern":"autobiography","udc":"92","subject":"Autobiography","explanation":"92 = biography; autobiographical works are treated in the biographical area according to the schedule."},
+    {"pattern":"forestry","udc":"630","subject":"Forestry","explanation":"630 = forestry."},
+    {"pattern":"farming","udc":"631.5","subject":"Farming","explanation":"631.5 = farming / agricultural production."},
+    {"pattern":"horticulture","udc":"635","subject":"Horticulture","explanation":"635 = horticulture."},
+    {"pattern":"animal husbandry","udc":"636","subject":"Animal Husbandry","explanation":"636 = animal husbandry."}
   ]
 }
