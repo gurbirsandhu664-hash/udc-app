@@ -1,0 +1,83 @@
+[
+  {
+    "title": "History of India",
+    "udc": "94(540)",
+    "main_subject": "History of India",
+    "sub_subject": "India",
+    "explanation": "94 History + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Geography of India",
+    "udc": "91(540)",
+    "main_subject": "Geography of India",
+    "sub_subject": "India",
+    "explanation": "91 Geography + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Indian Constitution",
+    "udc": "342(540)",
+    "main_subject": "Constitutional law of India",
+    "sub_subject": "India",
+    "explanation": "342 Constitutional law + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Economy of India",
+    "udc": "330(540)",
+    "main_subject": "Economy of India",
+    "sub_subject": "India",
+    "explanation": "330 Economics + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "History of Punjab",
+    "udc": "94(540.15)",
+    "main_subject": "History of Punjab",
+    "sub_subject": "Punjab",
+    "explanation": "94 History + (540.15) Punjab",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Indian Literature",
+    "udc": "821.21(540)",
+    "main_subject": "Indian literature",
+    "sub_subject": "Literature of India",
+    "explanation": "821.21 Indian literature + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Indian Philosophy",
+    "udc": "1(540)",
+    "main_subject": "Philosophy of India",
+    "sub_subject": "India",
+    "explanation": "1 Philosophy + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Indian Art",
+    "udc": "7(540)",
+    "main_subject": "Art of India",
+    "sub_subject": "India",
+    "explanation": "7 Arts + (540) India",
+    "verified": true,
+    "source": "seed reference"
+  },
+  {
+    "title": "Education",
+    "udc": "37",
+    "main_subject": "Education",
+    "sub_subject": "",
+    "explanation": "37 Education",
+    "verified": true,
+    "source": "seed reference"
+  }
+]

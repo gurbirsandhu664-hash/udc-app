@@ -1,13 +1,20 @@
 {
-  "name": "udc-search-engine-v30-stable",
-  "version": "30.0.0",
+  "name": "udc-oneclick-v33",
+  "version": "33.0.0",
   "private": true,
-  "type": "module",
-  "scripts": {"start": "node server.js"},
-  "engines": {"node": ">=20"},
+  "description": "One-click UDC classifier: exact supplied-data match first, Gemini + Google Search grounding for final classification, Groq research-only.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
-    "express": "^5.1.0",
-    "@google/genai": "^1.17.0",
-    "groq-sdk": "^0.33.0"
+    "@google/genai": "^1.16.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^2.0.0"
   }
 }

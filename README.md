@@ -1,44 +1,31 @@
-# UDC Search Engine V30 STABLE
+# UDC One-Click V33
 
-A production-oriented UDC title classifier/search engine.
-
-## Final-answer architecture
-- **Gemini is the ONLY final classifier.**
-- **Groq is research-only** and is never displayed as the final classification.
-- Gemini uses **Google Search grounding** to find current web evidence.
-- Optional Google Programmable Search evidence can be added with `GOOGLE_CSE_KEY` + `GOOGLE_CSE_ID`.
-- Gemini keys and models rotate automatically after quota/rate-limit/model/network failures.
-- No 2700-title local key is bundled.
-- No DDC, no `0`, no random placeholder number.
-- If Gemini cannot verify a defensible classification, the UI shows a clean verification status.
+## What it does
+- One-click title classification.
+- Exact verified supplied-dataset match is used first.
+- Otherwise Gemini is the ONLY AI allowed to produce the final UDC result.
+- Gemini uses Google Search grounding when available.
+- Multiple Gemini models can be tried in sequence.
+- Groq is optional research-only support and is never displayed as the final classification.
+- No guessed `0`, no fabricated UDC number.
+- If a defensible result cannot be verified, the UI clearly says verification is required.
+- Supports import of a legally obtained/licensed UDC dataset in JSON, CSV, or simple TXT format.
 
 ## Render
-Build command:
-`npm install`
+Build command: `npm install`
+Start command: `npm start`
 
-Start command:
-`npm start`
+Set environment variables in Render:
+- GEMINI_API_KEY = your Google AI Studio/Gemini API key
+- GEMINI_MODELS = working Gemini model names, comma-separated
+- GROQ_API_KEY = optional
+- GROQ_MODEL = optional
+- PORT = 10000
 
-## Environment variables
-Required:
-`GEMINI_KEYS=key1,key2`
+## Important
+The bundled seed file is only a small starter reference set. It is NOT a 70,000-class official UDC file.
+Do not copy or bypass a copyrighted/licensed UDC MRF. Import only a dataset you are legally entitled to use.
 
-Optional aliases:
-`GEMINI_KEY=...`
-`GOOGLE_AI_STUDIO_KEY=...`
-
-Recommended model rotation for this release:
-`GEMINI_MODELS=gemini-3.8-flash,gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite`
-
-Research only:
-`GROQ_KEYS=key1,key2`
-`GROQ_MODEL=groq/compound`
-
-Optional separate Google Programmable Search:
-`GOOGLE_CSE_KEY=...`
-`GOOGLE_CSE_ID=...`
-
-## Important UDC data note
-UDC Summary is an official abridged selection of about 2,600 classes. The complete UDC scheme contains 70,000+ entries. A public app should not claim that an AI can guarantee an exact classification for every arbitrary title without authoritative schedule evidence or a licensed/current full dataset.
-
-The classifier therefore uses evidence + hierarchy + permitted UDC synthesis and refuses to fabricate a number when verification fails.
+## Expected behavior
+For a title such as "Education", a supplied verified direct match can return 37.
+For an unknown/random title, the engine attempts Gemini + Google Search grounding. If evidence is insufficient, it returns a clean verification status rather than inventing a number.
