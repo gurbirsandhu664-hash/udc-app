@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
+// Serve the UDC web app from the same Render Web Service.
+app.use(express.static(__dirname));
+
 const rules = JSON.parse(fs.readFileSync(path.join(__dirname, 'udc-rules.json'), 'utf8'));
 
 function norm(s) {
@@ -103,6 +106,7 @@ function classify(rawTitle) {
 }
 
 app.get('/health',(req,res)=>res.json({ok:true,service:'UDC Classifier',version:'fixed-title-rules-2026-09'}));
+app.get('/',(req,res)=>res.sendFile(path.join(__dirname,'index.html')));
 app.post('/api/classify',(req,res)=>{ try { const title=req.body?.title ?? req.body?.bookTitle ?? req.body?.query ?? ''; return res.json(classify(title)); } catch(e) { return res.status(500).json({error:'Classification failed',message:e.message}); }});
 app.post('/classify',(req,res)=>{ try { const title=req.body?.title ?? req.body?.bookTitle ?? req.body?.query ?? ''; return res.json(classify(title)); } catch(e) { return res.status(500).json({error:'Classification failed',message:e.message}); }});
 
