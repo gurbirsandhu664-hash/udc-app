@@ -1,13 +1,13 @@
 {
-  "name": "udc-ultimate-v19",
-  "version": "19.0.0",
+  "name": "udc-ultimate-v20",
+  "version": "20.0.0",
   "private": true,
-  "description": "UDC-only classifier with local practice key and Gemini Google Search grounding",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {}
+  "description": "UDC-only classifier with local title key, Gemini primary and Groq fallback",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
 }
