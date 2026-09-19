@@ -1,582 +1,185 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
-
-// Serve the UDC web app from the same Render Web Service.
+app.use(express.json({limit:'1mb'}));
 app.use(express.static(__dirname));
 
-const rules = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'udc-rules.json'), 'utf8')
-);
-
-function norm(s) {
-  return String(s || '')
+function norm(s){
+  return String(s||'')
     .toLowerCase()
     .normalize('NFKD')
-    .replace(/[’']/g, "'")
-    .replace(/[^a-z0-9=:.()\-+\/\" ]+/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/[’']/g,"'")
+    .replace(/[^a-z0-9=:.()\-+\/" ]+/g,' ')
+    .replace(/\s+/g,' ')
     .trim();
 }
+const has=(t,p)=>t.includes(p);
 
-function has(t, p) {
-  return t.includes(p);
-}
-
-function firstMatch(t, arr) {
-  return Array.isArray(arr) ? arr.find(x => has(t, x.pattern)) : undefined;
-}
-
-function result(title, r, confidence = 'High') {
+function result(title, r, confidence='High'){
   return {
     title,
-    bookTitle: title,
-    udc: r.udc,
-    finalUdcNumber: r.udc,
-    proposedUdcNumber: r.udc,
-    mainClass: r.mainClass || String(r.udc || '').split(/[.(=\"\-+/:]/)[0],
-    subject: r.subject || '',
-    mainSubject: r.subject || '',
-    subSubject: r.subSubject || '',
-    confidence: r.confidence || confidence,
-    explanation: r.explanation || `UDC ${r.udc}: ${r.subject || ''}.`,
-    cataloguerExplanation:
-      r.cataloguerExplanation ||
-      r.explanation ||
-      `UDC ${r.udc}: ${r.subject || ''}.`,
-    alternatives: r.alternatives || [],
-    aux: r.aux || [],
-    verifiedRule: r.verifiedRule !== false,
-    source: r.source || 'local UDC rule set'
+    bookTitle:title,
+    udc:r.udc,
+    finalUdcNumber:r.udc,
+    proposedUdcNumber:r.udc,
+    mainClass:r.mainClass || String(r.udc||'').split(/[.(=\"\-+/:]/)[0],
+    subject:r.subject||'',
+    mainSubject:r.subject||'',
+    subSubject:r.subSubject||'',
+    confidence:r.confidence||confidence,
+    explanation:r.explanation||`UDC ${r.udc}: ${r.subject||''}.`,
+    cataloguerExplanation:r.cataloguerExplanation||r.explanation||`UDC ${r.udc}: ${r.subject||''}.`,
+    alternatives:r.alternatives||[],
+    aux:r.aux||[],
+    verifiedRule:r.verifiedRule!==false,
+    source:r.source||'local UDC rule set'
   };
 }
 
-function classify(rawTitle) {
-  const title = String(rawTitle || '').trim();
-  const t = norm(title);
+const exact = new Map([
+  ['history of india',['94(540)','History of India','94 History + (540) India','94 = General history; (540) = India.']],
+  ['indian history',['94(540)','Indian History','94 History + (540) India','94 = General history; (540) = India.']],
+  ['geography of india',['91(540)','Geography of India','91 Geography + (540) India','91 = Geography; (540) = India.']],
+  ['indian constitution',['342(540)','Indian Constitution','342 Constitutional law + (540) India','342 = Constitutional law; (540) = India.']],
+  ['economy of india',['330(540)','Economy of India','330 Economics + (540) India','330 = Economics; (540) = India.']],
+  ['history of punjab',['94(540.15)','History of Punjab','94 History + (540.15) Punjab','94 = General history; (540.15) = Punjab.']],
+  ['sikh history',['94(540.15)','Sikh History','94 History + (540.15) Punjab','94 = General history; (540.15) = Punjab.']],
+  ['indian literature',['821.21(540)','Indian Literature','821.21 Indic literature + (540) India','821.21 = Indic literature; (540) = India.']],
+  ['indian philosophy',['1(540)','Indian Philosophy','1 Philosophy + (540) India','1 = Philosophy; (540) = India.']],
+  ['indian art',['7(540)','Indian Art','7 Arts + (540) India','7 = The Arts; (540) = India.']],
+  ['science and arts',['5+7','Science and Arts','5 Mathematics and Natural Sciences + 7 The Arts','5 = Mathematics and Natural Sciences; + = coordination; 7 = The Arts.']],
+  ['science arts',['5+7','Science and Arts','5 Mathematics and Natural Sciences + 7 The Arts','5 = Mathematics and Natural Sciences; + = coordination; 7 = The Arts.']],
+  ['science + arts',['5+7','Science and Arts','5 Mathematics and Natural Sciences + 7 The Arts','5 = Mathematics and Natural Sciences; + = coordination; 7 = The Arts.']],
+  ['science and technology',['5+6','Science and Technology','5 Mathematics and Natural Sciences + 6 Applied Sciences, Medicine and Technology','5 = Mathematics and Natural Sciences; + = coordination; 6 = Applied Sciences, Medicine and Technology.']],
+  ['arts and humanities',['7+9','Arts and Humanities','7 The Arts + 9 Geography, Biography and History','7 = The Arts; + = coordination; 9 = Geography, Biography and History.']]
+]);
 
-  if (!t) {
-    return result(
-      '',
-      {
-        udc: '0',
-        subject: 'Science and knowledge',
-        subSubject: 'General works',
-        explanation: '0 — Science and knowledge.'
-      },
-      'Low'
-    );
+const subjects = [
+  [/computer science|computing|programming|software|hardware|internet|database|cyber|artificial intelligence|machine learning/,'004','Computer Science'],
+  [/mathematics|math|algebra|geometry|calculus|statistics/,'51','Mathematics'],
+  [/physics/,'53','Physics'],
+  [/chemistry|chemical/,'54','Chemistry'],
+  [/biology|botany|zoology|ecology/,'57','Biological Sciences'],
+  [/medicine|medical|health|nursing|surgery|pharmacology|anatomy|physiology/,'61','Medicine / Medical Sciences'],
+  [/agriculture|farming|crop|horticulture|forestry|fisher/,'63','Agriculture'],
+  [/engineering|technology|mechanical|electrical|electronics|construction/,'62','Engineering / Technology'],
+  [/architecture/,'72','Architecture'],
+  [/library|librarian|catalog|classification/,'02','Library Science'],
+  [/journalism|newspaper/,'070','Journalism'],
+  [/media|mass communication|communication/,'316.77','Mass Communication / Media'],
+  [/music/,'78','Music'],
+  [/cinema|film|movie|motion picture/,'791','Cinema / Motion Pictures'],
+  [/theatre|theater/,'792','Theatre'],
+  [/sport|cricket|football|hockey|olympic/,'796','Sports'],
+  [/law|legal|jurisprudence|criminal law|civil law/,'34','Law'],
+  [/constitution|constitutional/,'342','Constitutional Law'],
+  [/politic|government|democracy|election|parliament/,'32','Politics / Political Science'],
+  [/econom|finance|banking|trade|commerce/,'33','Economics'],
+  [/business|management|marketing|entrepreneurship/,'65','Business / Management'],
+  [/education|teaching|pedagogy|curriculum|school|university/,'37','Education'],
+  [/psycholog|psychoanalysis/,'159.9','Psychology'],
+  [/philosoph|ethics|logic|metaphysics/,'1','Philosophy'],
+  [/religion|religious|theology|sikhism|islam|hindu|christian|buddh|jain/,'2','Religion / Theology'],
+  [/history|historical|heritage/,'94','General History'],
+  [/geograph|atlas/,'91','Geography'],
+  [/biography|autobiography|memoir/,'92','Biography']
+];
+
+const languages = [
+  [/english/,'English','811.111','821.111'],
+  [/hindi/,'Hindi','811.214.21','821.214.21'],
+  [/punjabi/,'Punjabi','811.214.22','821.214.22'],
+  [/urdu/,'Urdu','811.214.31','821.214.31'],
+  [/bengali/,'Bengali','811.214.32','821.214.32'],
+  [/tamil/,'Tamil','811.214.42','821.214.42'],
+  [/sanskrit/,'Sanskrit','811.211','821.211']
+];
+
+function classify(raw){
+  const title=String(raw||'').trim(), t=norm(title);
+  if(!t) return result('',{udc:'0',subject:'Science and knowledge',subSubject:'General works',explanation:'0 = Science and knowledge.'},'Low');
+
+  // Compound subjects MUST be checked before single-subject matches.
+  if(/^(science\s*(and|\+)\s*arts|science\s+arts)$/.test(t))
+    return result(title,{udc:'5+7',mainClass:'5+7',subject:'Science and Arts',subSubject:'Mathematics and Natural Sciences + The Arts',
+      aux:[{type:'subject',code:'5',name:'Mathematics and Natural Sciences'},{type:'coordination',code:'+',name:'Coordination'},{type:'subject',code:'7',name:'The Arts'}],
+      explanation:'5 = Mathematics and Natural Sciences; + = coordination of equally important subjects; 7 = The Arts.'});
+
+  if(/^(science\s*(and|\+)\s*technology|science\s+technology)$/.test(t))
+    return result(title,{udc:'5+6',mainClass:'5+6',subject:'Science and Technology',subSubject:'Mathematics and Natural Sciences + Applied Sciences, Medicine and Technology',
+      aux:[{type:'subject',code:'5',name:'Mathematics and Natural Sciences'},{type:'coordination',code:'+',name:'Coordination'},{type:'subject',code:'6',name:'Applied Sciences, Medicine and Technology'}],
+      explanation:'5 = Mathematics and Natural Sciences; + = coordination; 6 = Applied Sciences, Medicine and Technology.'});
+
+  if(/^(arts\s*(and|\+)\s*humanities|arts\s+humanities)$/.test(t))
+    return result(title,{udc:'7+9',mainClass:'7+9',subject:'Arts and Humanities',subSubject:'The Arts + Geography, Biography and History',
+      aux:[{type:'subject',code:'7',name:'The Arts'},{type:'coordination',code:'+',name:'Coordination'},{type:'subject',code:'9',name:'Geography, Biography and History'}],
+      explanation:'7 = The Arts; + = coordination; 9 = Geography, Biography and History.'});
+
+  if(exact.has(t)){
+    const [udc,subject,breakdown,explanation]=exact.get(t);
+    return result(title,{udc,mainClass:udc,subject,subSubject:subject,breakdown,explanation});
   }
 
-  /*
-   * 1) EXACT COMPOUND / COORDINATED SUBJECT RULES
-   *
-   * These must run BEFORE the generic exact-answer-key lookup.
-   * Otherwise a broad single-subject rule such as "arts" can incorrectly
-   * capture a title containing two coordinated subjects.
-   *
-   * UDC "+" is the coordination sign for two or more equally important
-   * subjects.
-   */
-
-  // Science + Arts
-  if (
-    t === 'science and arts' ||
-    t === 'science arts' ||
-    t === 'science + arts'
-  ) {
-    return result(title, {
-      udc: '5+7',
-      mainClass: '5+7',
-      subject: 'Science and Arts',
-      subSubject: 'Mathematics and Natural Sciences + The Arts',
-      aux: [
-        {
-          type: 'subject',
-          code: '5',
-          name: 'Mathematics and Natural Sciences'
-        },
-        {
-          type: 'relation',
-          code: '+',
-          name: 'Coordination'
-        },
-        {
-          type: 'subject',
-          code: '7',
-          name: 'The Arts'
-        }
-      ],
-      explanation:
-        '5 = Mathematics and Natural Sciences; + = coordination of equally important subjects; 7 = The Arts. The title presents Science and Arts as two coordinated subjects.'
-    });
+  // Literature/language rules before generic keyword rules.
+  for(const [re,name,langClass,litClass] of languages){
+    if(!re.test(t)) continue;
+    if(has(t,'dictionary')||has(t,'lexicon')||has(t,'glossary'))
+      return result(title,{udc:`${langClass}(038)`,mainClass:'81',subject:`${name} language — dictionary / lexicon`,subSubject:'Dictionary',
+        aux:[{type:'language',code:langClass,name},{type:'form',code:'(038)',name:'Dictionary'}],
+        explanation:`${langClass} = ${name} language; (038) = dictionary/form auxiliary.`},'Medium');
+    if(has(t,'drama')||has(t,'play'))
+      return result(title,{udc:`${litClass}-2`,mainClass:'821',subject:`${name} literature — drama`,subSubject:'Drama',
+        aux:[{type:'language',code:litClass,name},{type:'literary-form',code:'-2',name:'Drama'}],
+        explanation:`${litClass} = ${name} literature; -2 = drama literary form.`});
+    if(has(t,'poetry')||has(t,'poem'))
+      return result(title,{udc:`${litClass}-1`,mainClass:'821',subject:`${name} literature — poetry`,subSubject:'Poetry',
+        aux:[{type:'language',code:litClass,name},{type:'literary-form',code:'-1',name:'Poetry'}],
+        explanation:`${litClass} = ${name} literature; -1 = poetry literary form.`});
+    if(has(t,'fiction')||has(t,'novel')||has(t,'short story')||has(t,'short stories'))
+      return result(title,{udc:`${litClass}-3`,mainClass:'821',subject:`${name} literature — fiction`,subSubject:'Fiction',
+        aux:[{type:'language',code:litClass,name},{type:'literary-form',code:'-3',name:'Fiction'}],
+        explanation:`${litClass} = ${name} literature; -3 = fiction literary form.`});
+    if(has(t,'literature'))
+      return result(title,{udc:litClass,mainClass:'821',subject:`${name} Literature`,subSubject:'Literature',
+        aux:[{type:'language',code:litClass,name}],explanation:`${litClass} = literature in ${name}.`});
+    if(has(t,'grammar'))
+      return result(title,{udc:langClass,mainClass:'811',subject:`${name} language — grammar`,subSubject:'Grammar',
+        aux:[{type:'language',code:langClass,name}],explanation:`${langClass} = ${name} language; grammar subdivision should be checked against the licensed UDC schedule.`},'Medium');
   }
 
-  // Science + Technology
-  if (
-    t === 'science and technology' ||
-    t === 'science technology' ||
-    t === 'science + technology'
-  ) {
-    return result(title, {
-      udc: '5+6',
-      mainClass: '5+6',
-      subject: 'Science and Technology',
-      subSubject: 'Mathematics and Natural Sciences + Applied Sciences, Medicine and Technology',
-      aux: [
-        {
-          type: 'subject',
-          code: '5',
-          name: 'Mathematics and Natural Sciences'
-        },
-        {
-          type: 'relation',
-          code: '+',
-          name: 'Coordination'
-        },
-        {
-          type: 'subject',
-          code: '6',
-          name: 'Applied Sciences, Medicine and Technology'
-        }
-      ],
-      explanation:
-        '5 = Mathematics and Natural Sciences; + = coordination; 6 = Applied Sciences, Medicine and Technology.'
-    });
-  }
-
-  // Arts + Humanities
-  if (
-    t === 'arts and humanities' ||
-    t === 'arts humanities' ||
-    t === 'arts + humanities'
-  ) {
-    return result(title, {
-      udc: '7+9',
-      mainClass: '7+9',
-      subject: 'Arts and Humanities',
-      subSubject: 'The Arts + Geography, Biography and History',
-      aux: [
-        { type: 'subject', code: '7', name: 'The Arts' },
-        { type: 'relation', code: '+', name: 'Coordination' },
-        {
-          type: 'subject',
-          code: '9',
-          name: 'Geography, Biography and History'
-        }
-      ],
-      explanation:
-        '7 = The Arts; + = coordination; 9 = Geography, Biography and History.'
-    });
-  }
-
-  /*
-   * 2) HIGH-PRIORITY INTERNATIONAL RELATIONS BETWEEN NAMED COUNTRIES.
-   */
-  const countries = rules.countries || {};
-  const found = Object.entries(countries).filter(([k]) => has(t, k));
-
-  const relationWords = [
-    'relation',
-    'relations',
-    'relationship',
-    'relationships',
-    'foreign relation',
-    'foreign relations',
-    'diplomatic',
-    'diplomacy',
-    'bilateral',
-    'international relation',
-    'international relations',
-    'foreign policy',
-    'foreign affairs',
-    'cooperation',
-    'conflict',
-    'ties between'
-  ];
-
-  if (found.length >= 2 && relationWords.some(w => has(t, w))) {
-    const a = found[0][1];
-    const b = found[1][1];
-    const udc = `327(${a.code}:${b.code})`;
-
-    return result(title, {
-      udc,
-      mainClass: '327',
-      subject: `${a.name}–${b.name} international relations`,
-      subSubject: 'Foreign / international relations',
-      aux: [
-        { type: 'place', code: a.code, name: a.name },
-        { type: 'relation', code: ':', name: 'Relation' },
-        { type: 'place', code: b.code, name: b.name }
-      ],
-      explanation:
-        `327 = international/foreign relations; ${a.code} = ${a.name}; ` +
-        `${b.code} = ${b.name}; : expresses the relation between the two places.`
-    });
-  }
-
-  /*
-   * 3) EXACT TITLE RULES FROM THE SUPPLIED LOCAL ANSWER KEY.
-   *
-   * These remain high priority for titles that have an explicit exact rule,
-   * but they no longer override the compound rules above.
-   */
-  const exactRules = Array.isArray(rules.exact) ? rules.exact : [];
-  const exact = exactRules.find(x => t === norm(x.pattern));
-
-  if (exact) {
-    return result(title, exact, exact.confidence || 'High');
-  }
-
-  /*
-   * 4) LANGUAGE / LITERATURE.
-   *
-   * Literary form is detected before generic language so that
-   * "English drama", "English poetry", etc. are not reduced to a
-   * generic language class.
-   */
-  const languages = Array.isArray(rules.languages) ? rules.languages : [];
-  const lang = firstMatch(t, languages);
-
-  if (lang) {
-    // Language dictionary / lexicon / glossary
-    if (
-      has(t, 'dictionary') ||
-      has(t, 'lexicon') ||
-      has(t, 'glossary')
-    ) {
-      const base = lang.languageClass || lang.code;
-
-      return result(title, {
-        udc: `${base}(038)`,
-        mainClass: '8',
-        subject: `${lang.name} language — dictionary / lexicon`,
-        subSubject: 'Dictionary',
-        aux: [
-          {
-            type: 'language',
-            code: lang.code,
-            name: lang.name
-          },
-          {
-            type: 'form',
-            code: '(038)',
-            name: 'Dictionary'
-          }
-        ],
-        explanation:
-          `${base} = ${lang.name} language; (038) = dictionary/form auxiliary.`
-      });
+  // Form auxiliaries are added after the subject.
+  let matched=null;
+  for(const item of subjects){ if(item[0].test(t)){matched=item;break;} }
+  if(matched){
+    let [re,udc,subject]=matched;
+    const aux=[]; let final=udc; let explanation=`${udc} = ${subject}.`;
+    if(has(t,'dictionary')||has(t,'lexicon')||has(t,'glossary')){
+      final+='(038)'; aux.push({type:'form',code:'(038)',name:'Dictionary'});
+      explanation+=' (038) = dictionary/form auxiliary.';
+    } else if(has(t,'encyclopedia')||has(t,'encyclopaedia')){
+      final+='(03)'; aux.push({type:'form',code:'(03)',name:'Encyclopaedia / reference work'});
+      explanation+=' (03) = encyclopaedia/reference work form.';
+    } else if(has(t,'handbook')||has(t,'manual')){
+      final+='(035)'; aux.push({type:'form',code:'(035)',name:'Handbook / manual'});
+      explanation+=' (035) = handbook/manual form.';
+    } else if(has(t,'textbook')){
+      final+='(075)'; aux.push({type:'form',code:'(075)',name:'Textbook'});
+      explanation+=' (075) = textbook form.';
     }
-
-    // Grammar
-    if (has(t, 'grammar')) {
-      return result(
-        title,
-        {
-          udc: `${lang.languageClass || lang.code}5`,
-          mainClass: '8',
-          subject: `${lang.name} grammar`,
-          subSubject: 'Grammar',
-          explanation:
-            `Language class for ${lang.name}, with the grammar subdivision. ` +
-            'Verify the exact subdivision against the licensed UDC schedule.'
-        },
-        'Medium'
-      );
-    }
-
-    // Phonetics / phonology
-    if (has(t, 'phonetics') || has(t, 'phonology')) {
-      return result(
-        title,
-        {
-          udc: `${lang.languageClass || lang.code}1`,
-          mainClass: '8',
-          subject: `${lang.name} phonetics / phonology`,
-          subSubject: 'Phonetics / phonology',
-          explanation:
-            `Language class for ${lang.name}, with the linguistic subdivision.`
-        },
-        'Medium'
-      );
-    }
-
-    // Literature and literary forms
-    if (
-      has(t, 'literature') ||
-      has(t, 'poetry') ||
-      has(t, 'poem') ||
-      has(t, 'drama') ||
-      has(t, 'play') ||
-      has(t, 'fiction') ||
-      has(t, 'novel') ||
-      has(t, 'short stories') ||
-      has(t, 'short story')
-    ) {
-      let form = '';
-
-      if (has(t, 'drama') || has(t, 'play')) {
-        form = '-2';
-      } else if (has(t, 'poetry') || has(t, 'poem')) {
-        form = '-1';
-      } else if (
-        has(t, 'fiction') ||
-        has(t, 'novel') ||
-        has(t, 'short stor')
-      ) {
-        form = '-3';
-      }
-
-      const udc = `${lang.litCode || lang.code}${form}`;
-
-      return result(title, {
-        udc,
-        mainClass: '821',
-        subject:
-          `${lang.name} literature` +
-          (form === '-2'
-            ? ' — drama'
-            : form === '-1'
-              ? ' — poetry'
-              : form === '-3'
-                ? ' — fiction'
-                : ''),
-        subSubject:
-          form === '-2'
-            ? 'Drama'
-            : form === '-1'
-              ? 'Poetry'
-              : form === '-3'
-                ? 'Fiction'
-                : 'Literature',
-        aux: [
-          {
-            type: 'language',
-            code: lang.code,
-            name: lang.name
-          }
-        ],
-        explanation:
-          `${lang.litCode || lang.code} = literature in ${lang.name}; ` +
-          `${form || 'general literature'} identifies the literary form.`
-      });
-    }
-
-    // Generic language / linguistics
-    if (
-      has(t, 'language') ||
-      has(t, 'linguistics') ||
-      has(t, 'philology')
-    ) {
-      return result(
-        title,
-        {
-          udc: lang.languageClass || lang.code,
-          mainClass: '81',
-          subject: `${lang.name} language`,
-          subSubject: 'Language / linguistics',
-          aux: [
-            {
-              type: 'language',
-              code: lang.code,
-              name: lang.name
-            }
-          ],
-          explanation:
-            `Language class for ${lang.name}. The language auxiliary identifies ` +
-            'the language of a work; the linguistic subject itself belongs in ' +
-            '81/811 according to the schedule.'
-        },
-        'Medium'
-      );
-    }
+    return result(title,{udc:final,mainClass:udc,subject,subSubject:subject,aux,explanation});
   }
 
-  /*
-   * 5) GENERIC SUBJECT + FORM.
-   *
-   * Subject is selected first. Form auxiliaries are then appended.
-   */
-  const forms = Array.isArray(rules.forms) ? rules.forms : [];
-  const subjects = Array.isArray(rules.subjects) ? rules.subjects : [];
-
-  const form = firstMatch(t, forms);
-  const subjectRule = firstMatch(t, subjects);
-
-  if (subjectRule) {
-    let udc = subjectRule.udc;
-    const aux = [];
-    let explanation = subjectRule.explanation || '';
-
-    if (
-      has(t, 'dictionary') ||
-      has(t, 'lexicon') ||
-      has(t, 'glossary')
-    ) {
-      udc += '(038)';
-      aux.push({
-        type: 'form',
-        code: '(038)',
-        name: 'Dictionary'
-      });
-    } else if (
-      has(t, 'encyclopedia') ||
-      has(t, 'encyclopaedia')
-    ) {
-      udc += '(03)';
-      aux.push({
-        type: 'form',
-        code: '(03)',
-        name: 'Encyclopaedia / reference work'
-      });
-    } else if (has(t, 'handbook') || has(t, 'manual')) {
-      udc += '(035)';
-      aux.push({
-        type: 'form',
-        code: '(035)',
-        name: 'Handbook / manual'
-      });
-    } else if (has(t, 'textbook')) {
-      udc += '(075)';
-      aux.push({
-        type: 'form',
-        code: '(075)',
-        name: 'Textbook'
-      });
-    }
-
-    const places = Array.isArray(rules.places) ? rules.places : [];
-    const place = firstMatch(t, places);
-
-    if (
-      place &&
-      !/relation|relations|foreign|diplomatic/.test(t)
-    ) {
-      udc += place.code;
-      aux.push({
-        type: 'place',
-        code: place.code,
-        name: place.name
-      });
-    }
-
-    if (aux.length) {
-      explanation +=
-        ` Form/place auxiliaries detected: ${aux
-          .map(a => a.code)
-          .join(' ')}.`;
-    }
-
-    return result(title, {
-      udc,
-      mainClass: subjectRule.udc,
-      subject: subjectRule.subject,
-      subSubject: subjectRule.subSubject || '',
-      aux,
-      explanation
-    });
-  }
-
-  /*
-   * 6) FORM-ONLY FALLBACK.
-   */
-  if (form) {
-    return result(
-      title,
-      {
-        udc: `0${form.code}`,
-        mainClass: '0',
-        subject: 'General work',
-        subSubject: form.name,
-        aux: [
-          {
-            type: 'form',
-            code: form.code,
-            name: form.name
-          }
-        ],
-        explanation:
-          `${form.code} = ${form.name} form auxiliary. The subject must ` +
-          'determine the main UDC class before the form auxiliary is added.'
-      },
-      'Low'
-    );
-  }
-
-  /*
-   * 7) GENERAL FALLBACK.
-   */
-  return result(
-    title,
-    {
-      udc: '0',
-      mainClass: '0',
-      subject: 'Science and knowledge',
-      subSubject: 'General works',
-      explanation:
-        'No sufficiently specific local rule matched the title. ' +
-        '0 is the general class for science and knowledge; verify the ' +
-        'authoritative UDC schedule for exact cataloguing.'
-    },
-    'Low'
-  );
+  return result(title,{udc:'0',mainClass:'0',subject:'Science and knowledge',subSubject:'General / interdisciplinary',
+    explanation:'No sufficiently specific local rule matched this title. Use the authoritative/licensed UDC schedule for exact cataloguing.'},'Low');
 }
 
-app.get('/health', (req, res) =>
-  res.json({
-    ok: true,
-    service: 'UDC Classifier',
-    version: 'final-fixed-2026-09'
-  })
-);
+app.get('/health',(req,res)=>res.json({ok:true,service:'UDC Classifier',version:'final-fixed-2026-09-19'}));
+app.get('/',(req,res)=>res.sendFile(path.join(__dirname,'index.html')));
+app.post('/api/classify',(req,res)=>{try{return res.json(classify(req.body?.title??req.body?.bookTitle??req.body?.query??''));}catch(e){return res.status(500).json({error:'Classification failed',message:e.message});}});
+app.post('/classify',(req,res)=>{try{return res.json(classify(req.body?.title??req.body?.bookTitle??req.body?.query??''));}catch(e){return res.status(500).json({error:'Classification failed',message:e.message});}});
 
-app.get('/', (req, res) =>
-  res.sendFile(path.join(__dirname, 'index.html'))
-);
-
-app.post('/api/classify', (req, res) => {
-  try {
-    const title =
-      req.body?.title ??
-      req.body?.bookTitle ??
-      req.body?.query ??
-      '';
-
-    return res.json(classify(title));
-  } catch (e) {
-    return res.status(500).json({
-      error: 'Classification failed',
-      message: e.message
-    });
-  }
-});
-
-app.post('/classify', (req, res) => {
-  try {
-    const title =
-      req.body?.title ??
-      req.body?.bookTitle ??
-      req.body?.query ??
-      '';
-
-    return res.json(classify(title));
-  } catch (e) {
-    return res.status(500).json({
-      error: 'Classification failed',
-      message: e.message
-    });
-  }
-});
-
-const PORT = process.env.PORT || 10000;
-
-app.listen(PORT, () =>
-  console.log(`UDC classifier listening on ${PORT}`)
-);
+const PORT=process.env.PORT||10000;
+app.listen(PORT,()=>console.log(`UDC classifier listening on ${PORT}`));
