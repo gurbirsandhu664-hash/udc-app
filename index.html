@@ -1,22 +1,86 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220"><title>UDC Ultimate V16 — 2700 + Review Chat</title><style>
-body{margin:0;background:#070b13;color:#eef5ff;font:16px system-ui;padding:14px}.wrap{max-width:980px;margin:auto}.card{background:#101827;border:1px solid #26364f;border-radius:22px;padding:20px;box-shadow:0 20px 60px #0008;margin-bottom:14px}.brand{display:flex;gap:14px;align-items:center}.logo{width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:grid;place-items:center;font-weight:900}.muted{color:#91a2ba}.search{display:flex;gap:10px;margin-top:20px}.search input,.chat input,.chat textarea{box-sizing:border-box;width:100%;padding:16px;border-radius:14px;border:2px solid #26364f;background:#070c15;color:#fff;font-size:1rem}.search input{flex:1}.btn{border:0;border-radius:14px;padding:14px 20px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:white;font-weight:800;cursor:pointer}.btn:disabled{opacity:.55}.chips{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.chip{padding:7px 10px;border:1px solid #26364f;border-radius:999px;color:#a9b7ca;cursor:pointer;font-size:.78rem}.out{display:none}.out.show{display:block}.final{text-align:center;border:2px solid #8b5cf6;border-radius:20px;padding:24px;background:#8b5cf622}.udc{font:900 2.4rem ui-monospace,monospace;color:#67e8f9;margin:10px;word-break:break-word}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.box{background:#0c1320;border:1px solid #26364f;border-radius:15px;padding:15px}.box h3{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#91a2ba;margin:0 0 8px}.explain{white-space:pre-wrap;line-height:1.65;color:#bdc9d9}.good{color:#86efac}.warn{color:#fcd34d}.chatlog{min-height:100px;max-height:360px;overflow:auto;background:#080e18;border:1px solid #26364f;border-radius:16px;padding:12px}.msg{padding:11px 13px;border-radius:13px;margin:8px 0;white-space:pre-wrap}.bot{background:#172237}.user{background:#24304a;margin-left:12%}.chatrow{display:grid;grid-template-columns:1fr 150px;gap:9px;margin-top:10px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.small{font-size:.78rem}.notice{padding:10px;border-radius:12px;background:#2a2411;color:#fcd34d;margin-top:10px}@media(max-width:650px){body{padding:8px}.search,.chatrow{display:flex;flex-direction:column}.search .btn{width:100%}.grid,.formgrid{grid-template-columns:1fr}.udc{font-size:1.8rem}}
-</style></head><body><div class="wrap">
-<div class="card"><div class="brand"><div class="logo">UDC</div><div><h1 style="margin:0">UDC Ultimate V16</h1><div class="muted">2700-title key · exact + context · UDC Review Chat</div></div></div>
-<div class="search"><input id="q" type="text" name="bookTitle" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" inputmode="text" enterkeyhint="go" aria-label="Enter book title" placeholder="Enter any book title…"><button id="go" class="btn" type="button">CLASSIFY</button></div>
-<div class="chips"><span class="chip" data-t="Heart Disease">Heart Disease</span><span class="chip" data-t="Science and Arts">Science and Arts</span><span class="chip" data-t="Science and Technology">Science and Technology</span><span class="chip" data-t="Hindi Language">Hindi Language</span><span class="chip" data-t="English Drama">English Drama</span><span class="chip" data-t="Library Classification: A Practice Manual">Library Classification</span><span class="chip" data-t="History of India">History of India</span></div><div id="status" class="muted">Checking answer key…</div></div>
-<div id="out" class="card out"><div class="final"><div class="muted">FINAL UDC CLASSIFICATION</div><div id="udc" class="udc">—</div><div id="subject">—</div></div><div class="grid"><div class="box"><h3>Book Title</h3><div id="title">—</div></div><div class="box"><h3>Main Subject</h3><div id="main">—</div></div><div class="box"><h3>Sub Subject</h3><div id="sub">—</div></div><div class="box"><h3>Confidence / Source</h3><div id="conf">—</div></div></div><div class="box" style="margin-top:12px"><h3>Notation Breakdown</h3><div id="break">—</div></div><div class="box" style="margin-top:12px"><h3>Explanation</h3><div id="exp" class="explain">—</div></div></div>
-<div class="card chat"><h2 style="margin-top:0">💬 UDC Review Chat</h2><div class="muted small">Discuss a title, compare the current answer, and save a verified correction to the correction key.</div><div id="chatlog" class="chatlog"><div class="msg bot">Send me a title and I’ll show the current UDC classification. If you have a verified UDC number, enter it below and save it as a correction.</div></div><div class="chatrow"><input id="chatq" placeholder="e.g. Why is Heart Disease not class 7?"><button id="chatgo" class="btn">Discuss</button></div><div class="formgrid"><input id="ctitle" placeholder="Title to correct"><input id="cudc" placeholder="Verified UDC number"><input id="csubj" placeholder="Main subject"><input id="csub" placeholder="Sub subject"><textarea id="cexp" rows="2" placeholder="Why this UDC is correct / source note"></textarea><button id="save" class="btn">SAVE CORRECTION TO KEY</button></div><div id="saveStatus" class="small"></div><div class="notice">Important: saved corrections are written to the running server’s local file. On Render free instances, local filesystem changes can disappear after a restart or redeploy. For permanent corrections, export/commit the correction file to your repository.</div></div>
-</div><script>
-const $=x=>document.getElementById(x);let count=0,busy=false,last=null;
-function render(r){last=r;$('udc').textContent=r.udc;$('subject').textContent=r.mainSubject||'';$('title').textContent=r.title;$('main').textContent=r.mainSubject||'';$('sub').textContent=r.subSubject||'';$('conf').innerHTML=(r.confidence||'Medium')+' · '+(r.verifiedRule?'<span class="good">Matched key/rule</span>':'<span class="warn">Broader rule — verify schedule</span>');$('break').textContent=(r.udc||'').split('').join(' ');$('exp').textContent=r.explanation||'';$('out').classList.add('show');$('ctitle').value=r.title||'';$('cudc').value=r.udc==='0'?'':(r.udc||'');$('csubj').value=r.mainSubject||'';$('csub').value=r.subSubject||'';$('cexp').value='';}
-async function classify(t){if(!t)return;busy=true;$('go').disabled=true;$('status').textContent='Classifying…';try{let r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t})}).then(x=>x.json());render(r);$('status').textContent='Ready · '+count+' titles loaded';return r}catch(e){$('status').textContent='Server error — please try again'}finally{busy=false;$('go').disabled=false;$('q').focus()}}
-$('go').onclick=()=>classify($('q').value.trim());$('q').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();classify($('q').value.trim())}};document.querySelectorAll('.chip').forEach(x=>x.onclick=()=>{$('q').value=x.dataset.t;classify(x.dataset.t)});
-function add(who,text){let d=document.createElement('div');d.className='msg '+who;d.textContent=text;$('chatlog').appendChild(d);$('chatlog').scrollTop=$('chatlog').scrollHeight}
-$('chatgo').onclick=async()=>{let q=$('chatq').value.trim();if(!q)return;add('user',q);$('chatq').value='';let r=await classify(q);if(r)add('bot',`Current result: ${r.udc} — ${r.mainSubject}.
-Source: ${r.source}.
-
-If this is not correct, enter the verified UDC number in “Verified UDC number” and save the correction.`)};
-$('chatq').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('chatgo').click()}};
-$('save').onclick=async()=>{let data={title:$('ctitle').value.trim(),udc:$('cudc').value.trim(),subject:$('csubj').value.trim(),subSubject:$('csub').value.trim(),explanation:$('cexp').value.trim()};if(!data.title||!data.udc){$('saveStatus').textContent='Enter both title and verified UDC number.';return}$('save').disabled=true;try{let r=await fetch('/api/corrections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(x=>x.json());$('saveStatus').textContent=r.ok?'✓ Correction saved. Re-classify this title to use it.':'Error: '+r.error;if(r.ok)add('bot',`Saved correction: ${data.title} → ${data.udc}. This title will be checked before the main 2700-title key.`)}catch(e){$('saveStatus').textContent='Server error while saving.'}finally{$('save').disabled=false}};
-fetch('/api/key-info').then(x=>x.json()).then(x=>{count=x.titleCount||0;$('status').textContent=(x.ok?'Ready · ':'Key error · ')+count+' titles loaded'}).catch(()=>{});
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UDC Ultimate V17 — Google Verify</title>
+<style>
+:root{--bg:#08101d;--card:#111c2d;--line:#263956;--text:#eef4ff;--muted:#9eacc2;--accent:#62a7ff;--good:#39d98a;--warn:#ffca58}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#07101c,#10162a);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+main{max-width:980px;margin:auto;padding:28px 16px 60px}.hero,.card{background:rgba(17,28,45,.94);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 18px 55px #0005}.hero{margin-bottom:18px}
+h1{margin:0 0 7px;font-size:clamp(28px,6vw,48px)}h2{margin:0 0 15px}.sub{color:var(--muted)}
+.row{display:flex;gap:10px;margin-top:20px}.row input{flex:1;min-width:0;padding:18px;border-radius:16px;border:2px solid var(--line);background:#060b14;color:white;font-size:18px}.btn{border:0;border-radius:16px;padding:0 25px;background:linear-gradient(100deg,#7658f4,#4fb9dc);color:white;font-weight:800;font-size:16px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}.chip{padding:9px 13px;border:1px solid var(--line);border-radius:999px;color:#c5d2e7;background:#0c1524;cursor:pointer}
+.status{margin-top:14px;color:var(--muted);font-size:14px}.status b{color:var(--good)}
+.card{margin-top:18px}.num{font-size:50px;font-weight:900;margin:7px 0}.label{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em}.source{display:inline-block;margin-top:12px;padding:7px 10px;border-radius:9px;background:#173a2b;color:#8ff0bb}
+.google{margin-top:18px}.result{padding:15px 0;border-top:1px solid var(--line)}a{color:#78b9ff}.warning{padding:12px;border-radius:12px;background:#3a2e14;color:#ffd777;margin-bottom:12px}
+.small{font-size:13px;color:var(--muted)}button:disabled{opacity:.55}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+  <h1>UDC Ultimate V17</h1>
+  <div class="sub">UDC ONLY · 2,700-title local key · Google discovery/verification fallback</div>
+  <div class="row">
+    <input id="title" autocomplete="off" placeholder="Enter any book title…" />
+    <button class="btn" id="go">CLASSIFY</button>
+  </div>
+  <div class="chips">
+    <button class="chip">Heart Disease</button>
+    <button class="chip">Science and Arts</button>
+    <button class="chip">Science and Technology</button>
+    <button class="chip">Hindi Language</button>
+    <button class="chip">English Drama</button>
+    <button class="chip">Library Classification</button>
+    <button class="chip">History of India</button>
+  </div>
+  <div class="status" id="status">Checking service…</div>
+</section>
+<div id="out"></div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const input=$("#title"), out=$("#out"), status=$("#status");
+document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{input.value=b.textContent; classify()});
+async function init(){
+ try{
+  const r=await fetch("/api/status"), d=await r.json();
+  status.innerHTML=`<b>Ready</b> · ${d.localTitles.toLocaleString()} local key records · Google fallback ${d.googleConfigured?"CONNECTED":"not configured"}`;
+ }catch{status.textContent="Service status unavailable";}
+}
+async function classify(){
+ const title=input.value.trim(); if(!title){input.focus();return}
+ out.innerHTML='<section class="card"><h2>Searching UDC…</h2><div class="small">Checking local key first, then Google if configured.</div></section>';
+ $("#go").disabled=true;
+ try{
+  const r=await fetch("/api/classify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title})});
+  const d=await r.json(); render(d);
+ }catch(e){out.innerHTML=`<section class="card"><h2>Error</h2><div>${esc(e.message)}</div></section>`}
+ $("#go").disabled=false;
+}
+function render(d){
+ if(d.result){
+  const x=d.result, num=x.udc||x.notation||x.number||"";
+  out.innerHTML=`<section class="card">
+   <div class="label">Local UDC key match</div><div class="num">${esc(num||"—")}</div>
+   <h2>${esc(x.subject||x.mainSubject||x.title||d.title)}</h2>
+   <div>${esc(x.explanation||x.breakdown||"Verified local practice-key entry.")}</div>
+   <div class="source">Source: ${esc(x.source)}</div>
+  </section>`;
+  return;
+ }
+ const g=d.google||{};
+ let html=`<section class="card google"><div class="label">Google UDC discovery</div><h2>${esc(d.title)}</h2>`;
+ if(g.warning) html+=`<div class="warning">${esc(g.warning)}</div>`;
+ if(g.error) html+=`<div>${esc(g.error)}</div>`;
+ if(g.directUrl) html+=`<p><a href="${esc(g.directUrl)}" target="_blank" rel="noopener">Open Google search</a></p>`;
+ if(g.items?.length) g.items.forEach(x=>html+=`<div class="result"><b>${esc(x.title)}</b><div class="small">${esc(x.displayLink||"")}</div><p>${esc(x.snippet||"")}</p><a href="${esc(x.link)}" target="_blank" rel="noopener">Open source</a></div>`);
+ if(!g.items?.length && !g.directUrl && !g.error) html+=`<div class="small">No Google results returned.</div>`;
+ html+=`</section>`; out.innerHTML=html;
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+$("#go").onclick=classify; input.addEventListener("keydown",e=>{if(e.key==="Enter")classify()}); init();
+</script>
+</body>
+</html>
