@@ -1,227 +1,138 @@
 import express from "express";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { GoogleGenAI } from "@google/genai";
+import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
-app.use(express.json({limit:"1mb"}));
+app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname));
-
 const PORT = process.env.PORT || 10000;
-const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
-const GROQ_KEY = process.env.GROQ_API_KEY || "";
 
-const GEMINI_MODELS = [
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || [
   process.env.GEMINI_MODEL || "gemini-3.8-flash",
   "gemini-3.7-flash",
   "gemini-3.6-flash",
-  "gemini-2.5-pro",
-  "gemini-2.5-flash"
-];
+  "gemini-3.5-flash",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro"
+].filter(Boolean).join(",")).split(",").map(s => s.trim()).filter(Boolean);
+const GROQ_MODELS = (process.env.GROQ_MODELS || [
+  process.env.GROQ_MODEL || "groq/compound",
+  "llama-3.3-70b-versatile"
+].filter(Boolean).join(",")).split(",").map(s => s.trim()).filter(Boolean);
 
-const schema = {
-  type: "object",
-  properties: {
-    title: {type:"string"},
-    udc_number: {type:"string"},
-    main_subject: {type:"string"},
-    sub_subject: {type:"string"},
-    explanation: {type:"string"},
-    breakdown: {type:"string"},
-    confidence: {type:"string"},
-    evidence_summary: {type:"string"},
-    sources: {type:"array", items:{type:"string"}}
-  },
-  required:["title","udc_number","main_subject","sub_subject","explanation","breakdown","confidence","evidence_summary","sources"]
-};
+let starter = [];
+try { starter = JSON.parse(fs.readFileSync(path.join(__dirname, "seed-udc.json"), "utf8")); } catch (_) {}
 
-const systemInstruction = `
-You are the UDC classification engine for a professional library classifier.
-Use UNIVERSAL DECIMAL CLASSIFICATION (UDC), NOT Dewey Decimal Classification.
-The target is the UDC Abridged Edition where the requested subject is covered.
-Interpret the whole title semantically. Do not classify from one keyword only.
-
-Workflow:
-1) Search the web when Google Search grounding is available.
-2) Prefer authoritative UDC-related evidence and reputable library/catalogue records.
-3) Reconstruct notation using UDC hierarchy and standard auxiliaries only when supported.
-4) Consider common auxiliaries, place auxiliaries, language auxiliaries, form auxiliaries,
-   time auxiliaries, point-of-view auxiliaries, relation/extension signs, colon, plus,
-   slash, brackets and other UDC syntax when genuinely applicable.
-5) Do NOT use DDC numbers.
-6) Give one best final UDC number. Never output "0", blank, null, or "unknown".
-7) If an exact official UDC Abridged entry cannot be verified online, still give the
-   most defensible UDC candidate based on UDC structure, but clearly lower confidence
-   and explain that it is a reasoned classification rather than an official catalogue match.
-8) Never invent a fake citation. Sources must be real URLs returned/known from the search.
-9) Keep the final number concise and valid UDC notation.
-10) For literature, distinguish language/literature class and literary form where title
-    supports it. For a translation, use language auxiliaries only when justified.
-Return JSON only matching the schema.
-`;
-
-function cleanJson(text) {
-  if (!text) throw new Error("Empty model response");
-  let s = text.trim().replace(/^```json\s*/i,"").replace(/^```\s*/,"").replace(/```$/,"").trim();
-  const first = s.indexOf("{"), last = s.lastIndexOf("}");
-  if (first >= 0 && last > first) s = s.slice(first,last+1);
-  return JSON.parse(s);
-}
-
-function normalizeResult(r, title, meta={}) {
-  const out = {
-    title: r?.title || title,
-    udc_number: String(r?.udc_number || "").trim(),
-    main_subject: r?.main_subject || "Subject classification",
-    sub_subject: r?.sub_subject || "General",
-    explanation: r?.explanation || "Classified from the title using UDC principles.",
-    breakdown: r?.breakdown || "",
-    confidence: r?.confidence || "Model assessed",
-    evidence_summary: r?.evidence_summary || "",
-    sources: Array.isArray(r?.sources) ? r.sources.filter(Boolean).slice(0,8) : [],
-    engine: meta.engine || "Gemini",
-    model: meta.model || "",
-    grounded: !!meta.grounded
-  };
-  // Never let a malformed model response become a fake zero.
-  if (!out.udc_number || out.udc_number === "0" || out.udc_number.toLowerCase()==="null") {
-    throw new Error("Model returned no usable UDC notation");
-  }
-  return out;
-}
-
-async function geminiInteraction(ai, model, title, grounded=true) {
-  const input = `${systemInstruction}
-
-BOOK TITLE:
-${title}
-
-Return the single best UDC classification. The user needs an answer, not a refusal.`;
-
-  const opts = {
-    model,
-    input,
-    system_instruction: systemInstruction,
-    response_format: {type:"text", mime_type:"application/json", schema},
-    generation_config: {max_output_tokens:1200}
-  };
-  if (grounded) opts.tools = [{type:"google_search"}];
-
-  const interaction = await ai.interactions.create(opts);
-  if (interaction.status && ["failed","cancelled"].includes(interaction.status))
-    throw new Error(`Gemini interaction ${interaction.status}`);
-  return {data: cleanJson(interaction.output_text), grounded};
-}
-
-async function geminiLegacy(ai, model, title, grounded=true) {
-  const config = {
-    responseMimeType:"application/json",
-    responseSchema:schema,
-    systemInstruction
-  };
-  if (grounded) config.tools = [{googleSearch:{}}];
-  const response = await ai.models.generateContent({
-    model,
-    contents: `${systemInstruction}\n\nBOOK TITLE:\n${title}`,
-    config
-  });
-  return {data: cleanJson(response.text), grounded};
-}
-
-async function callGemini(title) {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY is not configured");
-  const ai = new GoogleGenAI({apiKey:GEMINI_KEY});
-  const errors = [];
-
-  // Primary: current Interactions API + Google Search grounding.
-  for (const model of GEMINI_MODELS) {
-    try {
-      const x = await geminiInteraction(ai, model, title, true);
-      return normalizeResult(x.data,title,{engine:"Gemini + Google Search",model,grounded:true});
-    } catch(e) { errors.push(`${model}/search: ${e.message}`); }
-  }
-
-  // Fallback: current Interactions API without search.
-  for (const model of GEMINI_MODELS) {
-    try {
-      const x = await geminiInteraction(ai, model, title, false);
-      return normalizeResult(x.data,title,{engine:"Gemini fallback",model,grounded:false});
-    } catch(e) { errors.push(`${model}/no-search: ${e.message}`); }
-  }
-
-  // Compatibility fallback for transient Interactions API failures.
-  for (const model of GEMINI_MODELS) {
-    try {
-      const x = await geminiLegacy(ai, model, title, true);
-      return normalizeResult(x.data,title,{engine:"Gemini legacy + Google Search",model,grounded:true});
-    } catch(e) { errors.push(`${model}/legacy-search: ${e.message}`); }
-  }
-
-  for (const model of GEMINI_MODELS) {
-    try {
-      const x = await geminiLegacy(ai, model, title, false);
-      return normalizeResult(x.data,title,{engine:"Gemini legacy fallback",model,grounded:false});
-    } catch(e) { errors.push(`${model}/legacy: ${e.message}`); }
-  }
-
-  throw new Error(errors.slice(-6).join(" | "));
-}
-
-async function callGroq(title) {
-  if (!GROQ_KEY) throw new Error("GROQ_API_KEY is not configured");
-  const prompt = `Research this book title for Universal Decimal Classification (UDC), not DDC:
-"${title}"
-Find likely UDC notation, authoritative/reputable web evidence, and explain the relevant UDC hierarchy.
-Do not invent sources. This is research support for a separate final classifier.`;
-  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},
-    body:JSON.stringify({
-      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-      messages:[{role:"system",content:"You are a UDC research assistant. UDC only, never DDC."},{role:"user",content:prompt}],
-      temperature:0.1,
-      max_tokens:1200
-    })
-  });
-  if (!r.ok) throw new Error(`Groq HTTP ${r.status}`);
-  const j = await r.json();
-  return j?.choices?.[0]?.message?.content || "";
-}
-
-app.get("/", (_req,res)=>res.sendFile(path.join(__dirname,"index.html")));
-app.get("/api/health", (_req,res)=>res.json({
-  ok:true, version:"V38", gemini:!!GEMINI_KEY, groq:!!GROQ_KEY,
-  models:GEMINI_MODELS
+app.get("/", (_req,res) => res.sendFile(path.join(__dirname,"index.html")));
+app.get("/api/health", (_req,res) => res.json({
+  ok:true,
+  geminiConfigured:Boolean(process.env.GEMINI_API_KEY),
+  groqConfigured:Boolean(process.env.GROQ_API_KEY),
+  geminiModels:GEMINI_MODELS,
+  groqModels:GROQ_MODELS,
+  version:"39.0.0"
 }));
 
-app.post("/api/classify", async (req,res)=>{
-  const title = String(req.body?.title || "").trim();
-  if (!title) return res.status(400).json({error:"Enter a book title."});
+function compactStarter(){return starter.slice(0,120).map(x=>({title:x.title,udc:x.udc,subject:x.subject,breakdown:x.breakdown,explanation:x.explanation}));}
+function cleanJson(text){
+  if(!text) return null;
+  const t=text.replace(/```json/gi,"").replace(/```/g,"").trim();
+  try{return JSON.parse(t);}catch(_){ }
+  const m=t.match(/\{[\s\S]*\}/); if(!m)return null;
+  try{return JSON.parse(m[0]);}catch(_){return null;}
+}
+function normalize(obj,title,engine,model,verified=false){
+  const r=obj&&typeof obj==="object"?obj:{};
+  return {
+    bookTitle:r.bookTitle||title,
+    finalUdcNumber:String(r.finalUdcNumber||r.udc||"").trim(),
+    mainSubject:r.mainSubject||"",
+    subSubject:r.subSubject||"",
+    shortExplanation:r.shortExplanation||r.explanation||"",
+    breakdown:r.breakdown||"",
+    confidence:r.confidence||"Best effort",
+    verificationStatus:r.verificationStatus||((r.finalUdcNumber||r.udc)?(verified?"VERIFIED":"UNVERIFIED"):"UNVERIFIED"),
+    sources:Array.isArray(r.sources)?r.sources.slice(0,10):[],
+    searchedQueries:Array.isArray(r.searchedQueries)?r.searchedQueries.slice(0,10):[],
+    engine, model
+  };
+}
 
-  let research = "";
-  let groqStatus = "not configured";
-  if (GROQ_KEY) {
-    try { research = await callGroq(title); groqStatus="available"; }
-    catch(e) { groqStatus="fallback unavailable"; }
-  }
+const SYSTEM = `You are a production Universal Decimal Classification (UDC) classifier.
+UDC ONLY. NEVER use DDC. The user gives a book title and expects the most appropriate UDC Abridged Edition classification.
+Do real semantic classification, not keyword matching.
+Use the official UDC hierarchy and notation conventions where evidence supports them. Consider main class, subdivisions, common/special auxiliaries, language, place, time, form, point of view and relation signs when actually justified.
+Important: the word “and” does NOT automatically mean colon. Use +, :, / or other UDC notation only when the UDC construction is justified.
+Do not invent a number. Do not output 0. Do not copy proprietary MRF data.
+When web grounding is available, use it to verify UDC notation. Distinguish UDC from DDC in all evidence.
+If exact title evidence is unavailable, classify from the title's clear subject using UDC hierarchy and state that it is an expert best-effort classification rather than pretending it was verified.
+Return ONLY valid JSON with exactly these fields:
+bookTitle, finalUdcNumber, mainSubject, subSubject, shortExplanation, breakdown, confidence, verificationStatus, sources, searchedQueries.
+verificationStatus must be VERIFIED only when the number is actually supported by evidence; otherwise BEST_EFFORT or UNVERIFIED.
+sources is an array of objects {title,url}; searchedQueries is an array of strings.`;
 
-  try {
-    // Add Groq research as non-authoritative context to Gemini.
-    const old = globalThis.__unused;
-    const result = await callGemini(title);
-    result.groq = groqStatus;
-    result.research_used = !!research;
-    // We intentionally do not splice unverified Groq output into the final result.
-    return res.json(result);
-  } catch(e) {
-    return res.status(502).json({
-      error:"All configured Gemini classification paths failed.",
-      detail:e.message,
-      groq:groqStatus,
-      hint:"Check GEMINI_API_KEY in Render Environment Variables and redeploy."
-    });
+function promptFor(title,research="",allowBestEffort=true){return SYSTEM+`\n\nBook title: ${title}\n\nStarter records are hints only; never treat them as authoritative:\n${JSON.stringify(compactStarter())}\n\nResearch notes (non-authoritative):\n${research.slice(0,7000)}\n\n${allowBestEffort?"If verification is unavailable but the subject is clear, provide the most defensible UDC classification as BEST_EFFORT instead of returning an empty answer.":"If you cannot verify, leave finalUdcNumber empty."}`;}
+
+async function gemini(title,model,useSearch=true,research=""){
+  if(!process.env.GEMINI_API_KEY) throw new Error("GEMINI_KEY_MISSING");
+  const body={contents:[{role:"user",parts:[{text:promptFor(title,research,true)}]}],generationConfig:{temperature:0.05,maxOutputTokens:2200,responseMimeType:"application/json"}};
+  if(useSearch) body.tools=[{google_search:{}}];
+  const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),40000);
+  try{
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{
+      method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":process.env.GEMINI_API_KEY},body:JSON.stringify(body),signal:controller.signal});
+    const raw=await resp.text(); let data=null; try{data=JSON.parse(raw);}catch(_){ }
+    if(!resp.ok){const e=new Error(data?.error?.message||`Gemini HTTP ${resp.status}`); e.status=resp.status; throw e;}
+    const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("")||"";
+    const parsed=cleanJson(text); if(!parsed) throw new Error("GEMINI_INVALID_JSON");
+    const chunks=data?.candidates?.[0]?.groundingMetadata?.groundingChunks||[];
+    const grounded=chunks.map(c=>c.web).filter(Boolean).map(w=>({title:w.title||"Google source",url:w.uri})).filter(x=>x.url);
+    const r=normalize(parsed,title,"Gemini",model,useSearch&&grounded.length>0);
+    if(!r.sources.length)r.sources=grounded.slice(0,10);
+    if(!r.searchedQueries.length)r.searchedQueries=data?.candidates?.[0]?.groundingMetadata?.webSearchQueries||[];
+    return r;
+  } finally {clearTimeout(timer);}
+}
+
+async function groq(title,research=""){if(!process.env.GROQ_API_KEY)throw new Error("GROQ_KEY_MISSING");
+  let last=null;
+  for(const model of GROQ_MODELS){
+    const body={model,messages:[{role:"system",content:SYSTEM+"\nYou are the fallback classifier. Give the most defensible UDC Abridged classification from your knowledge. Never use DDC. Mark verificationStatus BEST_EFFORT unless you have explicit evidence."},{role:"user",content:`Book title: ${title}\nResearch notes:\n${research.slice(0,5000)}`}],temperature:0.05,max_completion_tokens:1800,response_format:{type:"json_object"}};
+    try{const c=new AbortController();const timer=setTimeout(()=>c.abort(),25000);const resp=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${process.env.GROQ_API_KEY}`},body:JSON.stringify(body),signal:c.signal});clearTimeout(timer);const raw=await resp.text();let d=null;try{d=JSON.parse(raw)}catch(_){};if(!resp.ok){last=new Error(d?.error?.message||`Groq HTTP ${resp.status}`);continue;}const p=cleanJson(d?.choices?.[0]?.message?.content||"");if(p)return normalize(p,title,"Groq",model,false);}catch(e){last=e;}
   }
+  throw last||new Error("GROQ_FAILED");
+}
+
+async function classify(title){
+  const errors=[];
+  let research="";
+  // Gemini is attempted model-by-model. Search-grounded call first, then the same model without search.
+  for(const model of GEMINI_MODELS){
+    for(const grounded of [true,false]){
+      try{
+        const r=await gemini(title,model,grounded,research);
+        if(r.finalUdcNumber)return {result:r,route:`Gemini ${model}${grounded?" + Google Search":" (no search)"}`,fallback:false,errors};
+      }catch(e){errors.push(`${model}${grounded?"+search":""}: ${e.message}`);}
+    }
+  }
+  // Groq keeps the app usable when Gemini quota is exhausted. It is clearly labelled as fallback.
+  try{const r=await groq(title,research);if(r.finalUdcNumber)return {result:r,route:`Groq fallback (${r.model})`,fallback:true,errors};}catch(e){errors.push(`Groq: ${e.message}`);}
+  // Last local exact-match safety net.
+  const hit=starter.find(x=>String(x.title||"").trim().toLowerCase()===title.toLowerCase());
+  if(hit)return {result:normalize(hit,title,"Local exact-match","seed-udc",true),route:"Local exact match",fallback:true,errors};
+  const err=new Error("ALL_ENGINES_EXHAUSTED");err.details=errors.slice(-8);throw err;
+}
+
+app.post("/api/classify",async(req,res)=>{
+  const title=String(req.body?.title||"").trim();
+  if(!title)return res.status(400).json({ok:false,error:"TITLE_REQUIRED",message:"Enter a book title."});
+  try{const out=await classify(title);res.json({ok:true,...out});}
+  catch(e){res.status(200).json({ok:false,error:"ALL_ENGINES_EXHAUSTED",message:"All configured AI routes are temporarily unavailable. Check API quota/billing or add another API key.",details:e.details||[]});}
 });
-
-app.listen(PORT,()=>console.log(`UDC One-Click V38 listening on ${PORT}`));
+app.use((req,res)=>{if(req.method==="GET"&&!req.path.startsWith("/api/"))return res.sendFile(path.join(__dirname,"index.html"));res.status(404).json({ok:false,error:"NOT_FOUND"});});
+app.listen(PORT,()=>console.log(`UDC One-Click V39 running on ${PORT}`));

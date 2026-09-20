@@ -1,27 +1,19 @@
-# UDC One-Click V38
+# UDC One-Click V39 — White Stable / Quota-Resilient
+
+This build fixes the recurring Gemini 429/404 failure pattern shown in the supplied screenshot. It does not bypass provider quotas; instead it uses a controlled fallback chain.
+
+## Route order
+1. Gemini + Google Search grounding across configured models
+2. Same Gemini models without Search grounding if Search quota/tooling fails
+3. Groq fallback when Gemini quota is exhausted
+4. Local exact-match seed only as a last safety net
+
+The final result is labelled with the engine/route used. No DDC and no copied proprietary MRF data are included.
 
 ## Render
-Build command:
-`npm install`
+Build: `npm install`
+Start: `npm start`
 
-Start command:
-`npm start`
+Set `GEMINI_API_KEY`. Set `GROQ_API_KEY` for the fallback. You can override the model chains with `GEMINI_MODELS` and `GROQ_MODELS`.
 
-Environment variables:
-- `GEMINI_API_KEY` = Google AI Studio/Gemini API key
-- `GROQ_API_KEY` = Groq key (optional research support)
-- `GEMINI_MODEL` = optional override
-
-## What V38 changes
-- White professional UI
-- `/` route fixed
-- Gemini Interactions API as primary path
-- Google Search grounding on primary attempts
-- Automatic Gemini model fallback
-- Automatic no-search fallback
-- Legacy Generate Content compatibility fallback
-- Groq is research support, not the final classifier
-- Structured JSON response
-- No local 2700-title key and no copied licensed MRF/UDC database
-
-Important: web grounding improves evidence, but it cannot guarantee an official UDC Abridged match for every title without licensed UDC reference data.
+Important: API quotas are controlled by Google/Groq and cannot be permanently bypassed by application code. This version prevents one exhausted model from killing the whole request.
