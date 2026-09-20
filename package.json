@@ -1,9 +1,8 @@
 {
-  "name": "udc-oneclick-v36",
-  "version": "36.0.0",
+  "name": "udc-oneclick-v39",
+  "version": "39.0.0",
   "private": true,
-  "description": "One-click UDC evidence search: Gemini final classification with Google Search grounding, Groq research-only.",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
@@ -11,10 +10,9 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@google/genai": "^1.16.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "multer": "^2.0.0"
+    "@google/genai": "^1.18.0",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "groq-sdk": "^0.33.0"
   }
 }
