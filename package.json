@@ -1,0 +1,9 @@
+{
+  "name":"udc-precision-google",
+  "version":"51.0.0",
+  "private":true,
+  "description":"Google-grounded UDC classification workstation",
+  "main":"server.js",
+  "scripts":{"start":"node server.js"},
+  "engines":{"node":">=18"}
+}
