@@ -1,21 +1,17 @@
-UDC One-Click V41
+# UDC One-Click V44 ULTRA
 
-Render:
-Build: npm install
-Start: npm start
+- UDC-only classifier; never DDC.
+- Deterministic high-value rules run before AI to prevent recurring semantic drift.
+- UDC Summary-first design with notation audit and explicit evidence levels.
+- Gemini + Google Search grounding when configured.
+- Groq fallback when configured.
+- Offline semantic fallback when providers fail or hit quota.
+- Special protection against false `004` Computer classifications.
+- Handles subject, process, relation, literary form, place patterns and selected UDC symbols.
+- Does not bundle the licensed UDC MRF.
 
-Environment:
-GEMINI_API_KEY = Google AI Studio/Gemini API key
-GEMINI_MODEL = optional model override
+## Authority
+The public UDC Summary is maintained by the UDC Consortium and is a selection of about 2,600 classes from the wider scheme. Follow the UDC Summary licence/attribution terms when using it.
 
-V41 changes:
-- semantic guard against false 004 classifications
-- strict UDC-only prompt
-- Google Search grounded attempts
-- no-search Gemini fallback
-- multi-model fallback
-- structured JSON
-- white UI
-- no copied licensed UDC MRF data
-
-UDC is an analytico-synthetic system; exact official classification for every title requires access to the relevant licensed/current UDC schedules.
+## Render
+Set `GEMINI_API_KEY` and optionally `GROQ_API_KEY`. Start with `npm start`.

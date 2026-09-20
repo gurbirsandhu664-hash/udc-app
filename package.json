@@ -1,15 +1,1 @@
-{
-  "name": "udc-oneclick-v41",
-  "version": "41.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {
-    "express": "^4.21.2"
-  }
-}
+{"name":"udc-one-click-v44-ultra","version":"44.0.0","type":"module","scripts":{"start":"node server.js"},"dependencies":{"express":"^4.21.2"}}
