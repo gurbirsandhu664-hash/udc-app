@@ -1,4 +1,4 @@
-# UDC One-Click V39 — White Stable / Quota-Resilient
+# UDC One-Click V40 — White Stable / Quota-Resilient
 
 This build fixes the recurring Gemini 429/404 failure pattern shown in the supplied screenshot. It does not bypass provider quotas; instead it uses a controlled fallback chain.
 
@@ -17,3 +17,6 @@ Start: `npm start`
 Set `GEMINI_API_KEY`. Set `GROQ_API_KEY` for the fallback. You can override the model chains with `GEMINI_MODELS` and `GROQ_MODELS`.
 
 Important: API quotas are controlled by Google/Groq and cannot be permanently bypassed by application code. This version prevents one exhausted model from killing the whole request.
+
+
+V40 semantic guard: UDC 004 is rejected when the title does not actually indicate computing/computer science/IT/ICT/software/data processing. Generic “technology” wording alone cannot trigger 004.

@@ -35,7 +35,7 @@ app.get("/api/health", (_req,res) => res.json({
   groqConfigured:Boolean(process.env.GROQ_API_KEY),
   geminiModels:GEMINI_MODELS,
   groqModels:GROQ_MODELS,
-  version:"39.0.0"
+  version:"40.0.0"
 }));
 
 function compactStarter(){return starter.slice(0,120).map(x=>({title:x.title,udc:x.udc,subject:x.subject,breakdown:x.breakdown,explanation:x.explanation}));}
@@ -66,6 +66,8 @@ function normalize(obj,title,engine,model,verified=false){
 const SYSTEM = `You are a production Universal Decimal Classification (UDC) classifier.
 UDC ONLY. NEVER use DDC. The user gives a book title and expects the most appropriate UDC Abridged Edition classification.
 Do real semantic classification, not keyword matching.
+Critical guard: 004 means Computer science and technology. Do NOT use 004 merely because a title contains the generic word “technology”. Use 004 only when the work is actually about computing, computer science, computer technology, information technology, ICT, software, data processing, or a clearly equivalent computing subject. If “technology” refers to technology education, educational technology, science-and-technology teaching, or technology in a non-computing sense, do not force 004.
+Critical guard: do not turn every “and” into “:” or “+”; identify the actual relationship and the principal subject first.
 Use the official UDC hierarchy and notation conventions where evidence supports them. Consider main class, subdivisions, common/special auxiliaries, language, place, time, form, point of view and relation signs when actually justified.
 Important: the word “and” does NOT automatically mean colon. Use +, :, / or other UDC notation only when the UDC construction is justified.
 Do not invent a number. Do not output 0. Do not copy proprietary MRF data.
@@ -108,6 +110,16 @@ async function groq(title,research=""){if(!process.env.GROQ_API_KEY)throw new Er
   throw last||new Error("GROQ_FAILED");
 }
 
+function semanticallyInvalid(result,title){
+  const t=String(title||"").toLowerCase();
+  const n=String(result?.finalUdcNumber||"").trim();
+  const computerWords=/(\bcomputer(s)?\b|computing|computer science|information technology|\bit\b|ict|software|programming|data processing|informatics|digital technology)/i;
+  // 004 is specifically computer science/technology; reject hallucinated 004 when the title does not actually concern computing.
+  if(/(^|[:+\/])004(\b|[(:])/i.test(n) && !computerWords.test(t)) return true;
+  if(/\b004\b/i.test(n) && !computerWords.test(t)) return true;
+  return false;
+}
+
 async function classify(title){
   const errors=[];
   let research="";
@@ -116,12 +128,15 @@ async function classify(title){
     for(const grounded of [true,false]){
       try{
         const r=await gemini(title,model,grounded,research);
-        if(r.finalUdcNumber)return {result:r,route:`Gemini ${model}${grounded?" + Google Search":" (no search)"}`,fallback:false,errors};
+        if(r.finalUdcNumber){
+          if(semanticallyInvalid(r,title)){ errors.push(`${model}${grounded?"+search":""}: semantic guard rejected 004 for non-computing title`); continue; }
+          return {result:r,route:`Gemini ${model}${grounded?" + Google Search":" (no search)"}`,fallback:false,errors};
+        }
       }catch(e){errors.push(`${model}${grounded?"+search":""}: ${e.message}`);}
     }
   }
   // Groq keeps the app usable when Gemini quota is exhausted. It is clearly labelled as fallback.
-  try{const r=await groq(title,research);if(r.finalUdcNumber)return {result:r,route:`Groq fallback (${r.model})`,fallback:true,errors};}catch(e){errors.push(`Groq: ${e.message}`);}
+  try{const r=await groq(title,research);if(r.finalUdcNumber){ if(semanticallyInvalid(r,title)){ errors.push(`Groq: semantic guard rejected 004 for non-computing title`); } else return {result:r,route:`Groq fallback (${r.model})`,fallback:true,errors}; }}catch(e){errors.push(`Groq: ${e.message}`);}
   // Last local exact-match safety net.
   const hit=starter.find(x=>String(x.title||"").trim().toLowerCase()===title.toLowerCase());
   if(hit)return {result:normalize(hit,title,"Local exact-match","seed-udc",true),route:"Local exact match",fallback:true,errors};
