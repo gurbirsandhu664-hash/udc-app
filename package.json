@@ -1,1 +1,12 @@
-{"name":"udc-one-click-v45-ultra","version":"45.0.0","type":"module","scripts":{"start":"node server.js"},"dependencies":{"express":"^4.21.2"}}
+{
+  "name": "udc-ai-classifier-v48-gemini-search",
+  "version": "48.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "express": "^4.21.2"
+  }
+}

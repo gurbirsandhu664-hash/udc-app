@@ -1,22 +1,37 @@
-UDC AI CLASSIFIER v48 FIX
-=========================
+UDC AI CLASSIFIER v48.1 — GEMINI SEARCH FIX
+=============================================
 
-Replace ONLY these three files in the existing web project:
+WHY THE OLD VERSION FAILED
+The screenshot shows the frontend falling back to "Not resolved" because the backend did not return a usable UDC result. A better frontend alone cannot solve a missing/broken AI endpoint.
+
+THIS BUILD FIXES THE ARCHITECTURE
+- index.html calls /api/classify.
+- server.js calls Gemini from the server, so the API key is NOT exposed to users.
+- Gemini Search grounding is enabled.
+- The prompt forces UDC-only classification and forbids DDC substitution.
+- JSON and error handling are explicit.
+- /api/health is available for Render testing.
+- Existing local seed/reference data remains only as a practice/browser dataset.
+- Unknown titles are marked REQUIRES VERIFICATION instead of getting a made-up official number.
+
+FILES
 1. index.html
-2. udc-reference.json
-3. README.txt
+2. server.js
+3. package.json
+4. .env.example
+5. udc-reference.json
+6. README.txt
 
-What was fixed:
-- The old build could silently fall back to the tiny local seed database when the backend response was not JSON.
-- This build tries /api/classify, /classify, and /api/udc/classify.
-- It accepts both JSON and plain-text/Markdown backend answers and extracts a UDC number when the backend returns one.
-- Requests have a timeout so the button does not remain stuck.
-- Exact/near local matches are used only when sufficiently supported.
-- Unknown titles do NOT receive an invented “official” UDC number.
-- UDC-only guard remains.
-- History, Browse, Practice and mobile UI remain functional.
+RENDER
+Set:
+Build Command: npm install
+Start Command: npm start
+Environment Variable:
+GEMINI_API_KEY = your Gemini API key
 
-IMPORTANT:
-The included udc-reference.json is a limited seed dataset, NOT a complete UDC Abridged Edition and NOT 72,000 official classes. For authoritative classification, connect the existing secure AI backend to an authorized/licensed UDC reference dataset.
+OPTIONAL:
+GEMINI_MODEL=gemini-2.5-flash
 
-If your existing Render service already has one of the supported POST endpoints, the frontend will use it automatically. No API key is placed in index.html.
+IMPORTANT
+Do NOT put GEMINI_API_KEY inside index.html or GitHub.
+The UDC Consortium says UDC has 72,000 subdivisions and is maintained/distributed through the Consortium and licensed publishers. This package does not reproduce a proprietary complete UDC table. For authoritative production classification, use authorized/licensed UDC reference material.
