@@ -1,10 +1,17 @@
-UDC One-Click V46 MAX
+# UDC Precision V52 — Google Quota-Safe
 
-Replace only index.html, server.js, package.json. Do not deploy seed-udc.json; this build does not require it.
+- No jury / voting.
+- Google Gemini primary + model fallback.
+- Quota-safe: stops retrying an exhausted project and can rotate to independent Google project keys.
+- Verification pass is OFF by default to avoid wasting quota; set `UDC_VERIFY_PASS=true` only when desired.
+- Never exposes raw 429/quota errors to the browser.
+- Does not invent a UDC number when Google cannot verify one.
+- Seed JSON is not required.
 
-Required environment: GEMINI_API_KEY and/or GROQ_API_KEY.
-Optional model overrides: GEMINI_MODEL, GEMINI_PRO_MODEL, GROQ_MODEL.
+Environment:
+- GEMINI_API_KEY (required)
+- GEMINI_API_KEY_2 ... GEMINI_API_KEY_5 (optional; use keys from independent Google projects for real quota separation)
+- MAX_MODELS_PER_REQUEST=2 (optional)
+- UDC_VERIFY_PASS=false (recommended for quota safety)
 
-Architecture: UDC Summary-first deterministic rules, Gemini 3.8 Flash + Gemini 3.1 Pro Search-grounded first wave, Groq Compound/GPT-OSS/Qwen failover, retry, independent jury corroboration, no broad fallback classmark, UDC-only guard.
-
-Gemini model IDs verified against Google AI documentation on 2026-09-20. Groq model IDs verified against Groq documentation.
+Important: Gemini quotas are applied at the project level, not simply per API key. Multiple keys from the same project do not create extra quota.
