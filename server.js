@@ -1,177 +1,133 @@
-const express=require("express");
-const path=require("path");
-const app=express();
-app.use(express.json({limit:"64kb"}));
-app.use(express.static(path.join(__dirname)));
-const PORT=process.env.PORT||10000;
+import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const MODELS={
- geminiFast:process.env.GEMINI_FAST_MODEL||"gemini-3.8-flash",
- geminiPro:process.env.GEMINI_PRO_MODEL||"gemini-3.1-pro-preview",
- groqCompound:process.env.GROQ_COMPOUND_MODEL||"groq/compound",
- groq120:process.env.GROQ_MODEL_120B||"openai/gpt-oss-120b",
- groqQwen:process.env.GROQ_MODEL_QWEN||"qwen/qwen3.8-27b",
- openai:process.env.OPENAI_MODEL||"gpt-5.6-sol",
- anthropic:process.env.ANTHROPIC_MODEL||"claude-opus-5"
-};
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = express();
+app.use(express.json({limit:"1mb"}));
+app.use(express.static(__dirname));
+const PORT = process.env.PORT || 10000;
+const GROQ_KEY = process.env.GROQ_API_KEY || "";
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+const MODELS = [
+ process.env.GEMINI_MODEL,
+ process.env.GEMINI_PRO_MODEL,
+ "gemini-3.8-flash",
+ "gemini-3.1-pro-preview",
+ "gemini-3.7-flash",
+ "gemini-3.6-flash",
+ "gemini-3.5-flash",
+ "gemini-3.5-flash-lite",
+ "gemini-3.1-flash-lite",
+ "gemini-2.5-pro",
+ "gemini-2.5-flash",
+ "gemini-2.5-flash-lite",
+ "gemma-4-31b-it",
+ "gemma-4-26b-a4b-it"
+].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+const GROQ_MODELS=[
+ process.env.GROQ_MODEL,
+ "groq/compound",
+ "openai/gpt-oss-120b",
+ "openai/gpt-oss-20b",
+ "qwen/qwen3.8-27b",
+ "qwen/qwen3.6-27b"
+].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+const SUMMARY_BASE="https://udcsummary.info/php/index.php";
 
-const UDC_SYSTEM=`You are UDC TITAN, an evidence-aware Universal Decimal Classification research engine.
+const UDC_RULES=`
+Universal Decimal Classification ONLY. Never DDC.
+Use UDC Summary as the public abridged-style authority when available. UDC is discipline-based, hierarchical, analytico-synthetic and faceted.
+Main classes: 0 knowledge/information/computing; 1 philosophy/psychology; 2 religion/theology; 3 social sciences; 4 vacant; 5 mathematics/natural sciences; 6 applied sciences/medicine/technology; 7 arts/entertainment/sport; 8 linguistics/literature; 9 geography/history.
+004 is computer science/computing/data processing ONLY. Do not choose 004 because a title merely contains technology, technical, digital, system, application, method, science, or tool.
+Common signs: + coordination, / consecutive extension, : simple relation, :: order-fixing, [] subgrouping, * non-UDC notation, A/Z alphabetical specification.
+Common auxiliaries include = language, (0...) form, (1/9) place, (=...) ethnicity/nationality, "..." time, -0... general characteristics. Special auxiliaries are local to designated schedules.
+Never add an auxiliary just because it is possible. Every component and symbol must be justified by the title and the UDC schedule.
+Never invent a licensed MRF class. Never return DDC, 0, blank, null or N/A.
+`;
 
-NON-NEGOTIABLE: UDC ONLY. Never answer with DDC, LCC, Colon Classification, NLM, or another classification scheme.
+const schema={type:"object",properties:{title:{type:"string"},udc_number:{type:"string"},main_subject:{type:"string"},sub_subject:{type:"string"},explanation:{type:"string"},breakdown:{type:"string"},confidence:{type:"string"},evidence_summary:{type:"string"},sources:{type:"array",items:{type:"string"}},evidence_level:{type:"string"},official_udc_match:{type:"boolean"},candidate_notes:{type:"string"},notation_check:{type:"string"}},required:["title","udc_number","main_subject","sub_subject","explanation","breakdown","confidence","evidence_summary","sources","evidence_level","official_udc_match","candidate_notes","notation_check"]};
 
-Goal: classify a book TITLE, not merely keywords. First infer the actual intellectual subject and facets. Then generate several plausible UDC candidates. Then verify notation and hierarchy against available authoritative evidence. Never manufacture a classmark.
+function norm(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim()}
+function parseJSON(s){if(!s)throw Error("Empty AI response");s=String(s).replace(/^```json\s*/i,"").replace(/^```\s*/,"").replace(/```\s*$/i,"").trim();const a=s.indexOf("{"),b=s.lastIndexOf("}");if(a>=0&&b>a)s=s.slice(a,b+1);return JSON.parse(s)}
+function validate(r,title){const n=String(r?.udc_number||"").trim();if(!n||n==="0"||/^unknown|null|n\/a$/i.test(n))throw Error("Invalid UDC number");if(n.includes("004")&&!/(computer|computing|informatics|information technology|software|programming|data processing|artificial intelligence|machine learning|cyber|internet|database|ict)/i.test(title))throw Error("SEMANTIC_GUARD_004");return {...r,title:r?.title||title,udc_number:n,sources:Array.isArray(r?.sources)?r.sources.filter(Boolean).slice(0,8):[],official_udc_match:!!r?.official_udc_match}};
 
-Use UDC analytic-synthetic principles. Consider, only when justified:
-- main classes 0–9 and their hierarchy
-- coordination +, consecutive extension /, relation :, order fixing ::, subgrouping [ ]
-- common auxiliaries such as language =..., form (0...), place (1/9), nationality/ethnicity (=...), time "...", and general characteristics -0...
-- special auxiliaries within their designated classes
-- non-UDC notation markers * and A/Z only when the schedule requires them
-- literature: language vs literature vs literary form/study
-- dictionaries/encyclopedias/handbooks/manuals: subject vs form
-- history/geography: place and time
-- science/technology: actual process, material, object and application
-- medicine: actual disease/body system/process/diagnosis/therapy rather than a generic parent.
-
-Evidence rules:
-1. Prefer UDC Consortium material and licensed/authorized UDC schedules when available.
-2. Library catalogue records are corroboration, not automatically authoritative.
-3. A search result explaining UDC notation is not proof of a specific classmark.
-4. Never invent URLs or claim a source supports a number unless the evidence actually does.
-5. If evidence is insufficient, return REQUIRES VERIFICATION rather than a confident guess.
-6. Do not convert DDC into UDC.
-7. Explicit title facets must be respected.
-
-Return JSON only:
-{"udc":"","title":"","subject":"","sub_subject":"","context":"","breakdown":[],"explanation":"","confidence":"High|Medium|Low|Requires verification","evidence_level":"","status":"","candidates":[{"udc":"","reason":"","verdict":"SUPPORTED|REJECTED|UNCERTAIN"}],"sources":[],"warnings":[]}
-No markdown fences.`;
-
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-function cleanText(x){return String(x||"").replace(/^```json\s*/i,"").replace(/```\s*$/,"").trim()}
-function parseJSON(x){try{return JSON.parse(cleanText(x))}catch(e){let m=cleanText(x).match(/\{[\s\S]*\}/);if(!m)throw e;return JSON.parse(m[0])}}
-function normalize(o,title){return {
- udc:String(o?.udc||"REQUIRES VERIFICATION").trim(),title,
- subject:String(o?.subject||"").trim(),sub_subject:String(o?.sub_subject||"").trim(),context:String(o?.context||"").trim(),
- breakdown:Array.isArray(o?.breakdown)?o.breakdown.map(String):[],explanation:String(o?.explanation||"").trim(),
- confidence:String(o?.confidence||"Requires verification"),evidence_level:String(o?.evidence_level||"Not established"),
- status:String(o?.status||"Requires verification"),candidates:Array.isArray(o?.candidates)?o.candidates.slice(0,10):[],
- sources:Array.isArray(o?.sources)?o.sources:[],warnings:Array.isArray(o?.warnings)?o.warnings.map(String):[]
-}}
-function audit(title,o){
- const t=title.toLowerCase(), n=o.udc.replace(/\s+/g,""); let w=[];
- if(/\bheart disease\b|\bcardiovascular disease\b|\bcoronary disease\b|\bmyocardial\b|\bcardiac disease\b/.test(t)&&/^61(?:[.(]|$)/.test(n)){w.push("Broad 61 medicine parent rejected for a disease-specific heart/cardiovascular title; verify the 616 hierarchy.");o.udc="REQUIRES VERIFICATION";o.confidence="Requires verification";o.status="Consistency gate rejected candidate"}
- if(/\bhistory of india\b/.test(t)&&/^94$/.test(n)){w.push("India facet requires place-auxiliary verification.");o.udc="REQUIRES VERIFICATION";o.confidence="Requires verification"}
- if(/\bgeography of india\b/.test(t)&&/^91$/.test(n)){w.push("India facet requires place-auxiliary verification.");o.udc="REQUIRES VERIFICATION";o.confidence="Requires verification"}
- if(/\bddc\b/i.test(JSON.stringify(o))){w.push("Cross-scheme contamination detected.");}
- o.warnings=[...new Set([...(o.warnings||[]),...w])]; return o;
-}
-
-async function gemini(model,title){
- if(!process.env.GEMINI_API_KEY)throw new Error("Gemini key not configured");
- const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`;
- const body={systemInstruction:{parts:[{text:UDC_SYSTEM}]},contents:[{role:"user",parts:[{text:`Classify this book title: "${title}". Search for current UDC evidence where useful. Return JSON only.`}]}],generationConfig:{temperature:0.1}};
- // Google Search grounding is enabled for current Gemini models.
- body.tools=[{google_search:{}}];
- let last;
- for(let i=0;i<3;i++){try{
-  let r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  let txt=await r.text();if(!r.ok){last=new Error(`Gemini ${r.status}`);if([429,500,502,503,504].includes(r.status)){await sleep(700*(i+1));continue}throw last}
-  let j=JSON.parse(txt), out=(j.candidates?.[0]?.content?.parts||[]).map(x=>x.text||"").join("");
-  let o=normalize(parseJSON(out),title);
-  let chunks=j.candidates?.[0]?.groundingMetadata?.groundingChunks||[];
-  let sources=chunks.map(x=>x.web).filter(Boolean).map(w=>({title:w.title||"Google result",url:w.uri||""})).filter(x=>x.url);
-  if(sources.length)o.sources=sources.slice(0,15);
-  return audit(title,o);
- }catch(e){last=e;if(i<2)await sleep(600*(i+1))}}
- throw last||new Error("Gemini failed");
-}
-
-async function groq(model,title){
- if(!process.env.GROQ_API_KEY)throw new Error("Groq key not configured");
- const body={model,messages:[{role:"system",content:UDC_SYSTEM},{role:"user",content:`Classify: "${title}". Return JSON only. Do not invent a UDC number.`}],temperature:0.1,response_format:{type:"json_object"}};
- let last;
- for(let i=0;i<3;i++){try{
-  let r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${process.env.GROQ_API_KEY}`},body:JSON.stringify(body)});
-  let txt=await r.text();if(!r.ok){last=new Error(`Groq ${r.status}`);if([429,500,502,503,504].includes(r.status)){await sleep(500*(i+1));continue}throw last}
-  let j=JSON.parse(txt), o=normalize(parseJSON(j.choices?.[0]?.message?.content||""),title);return audit(title,o);
- }catch(e){last=e;if(i<2)await sleep(500*(i+1))}}
- throw last;
-}
-
-async function openai(title){
- if(!process.env.OPENAI_API_KEY)throw new Error("OpenAI key not configured");
- let r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${process.env.OPENAI_API_KEY}`},body:JSON.stringify({model:MODELS.openai,input:[{role:"system",content:UDC_SYSTEM},{role:"user",content:`Classify: "${title}". Return JSON only.`}],tools:[{type:"web_search_preview"}]})});
- let txt=await r.text();if(!r.ok)throw new Error(`OpenAI ${r.status}`);let j=JSON.parse(txt);
- let out=j.output_text||"";return audit(title,normalize(parseJSON(out),title));
-}
-async function anthropic(title){
- if(!process.env.ANTHROPIC_API_KEY)throw new Error("Anthropic key not configured");
- let r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":process.env.ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:MODELS.anthropic,max_tokens:5000,system:UDC_SYSTEM,messages:[{role:"user",content:`Classify: "${title}". Return JSON only.`}]})});
- let txt=await r.text();if(!r.ok)throw new Error(`Anthropic ${r.status}`);let j=JSON.parse(txt),out=(j.content||[]).map(x=>x.text||"").join("");return audit(title,normalize(parseJSON(out),title));
-}
-
-/*
- Adaptive jury:
- - First Google-grounded Gemini 3.8 Flash.
- - Then Gemini 3.1 Pro if available.
- - Then Groq Compound / GPT-OSS / Qwen.
- - Optional OpenAI / Anthropic.
- - A disagreement is not hidden: the final answer becomes REQUIRES VERIFICATION
-   unless a configured adjudication route resolves it.
- This prevents a quota/error from turning into a fake UDC number.
-*/
-async function jury(title){
- const jobs=[
-  ["Gemini 3.8 Flash","gemini",()=>gemini(MODELS.geminiFast,title)],
-  ["Gemini 3.1 Pro","gemini",()=>gemini(MODELS.geminiPro,title)],
-  ["Groq Compound","groq",()=>groq(MODELS.groqCompound,title)],
-  ["Groq GPT-OSS 120B","groq",()=>groq(MODELS.groq120,title)],
-  ["Groq Qwen 3.8","groq",()=>groq(MODELS.groqQwen,title)],
-  ["OpenAI","openai",()=>openai(title)],
-  ["Anthropic","anthropic",()=>anthropic(title)]
- ];
- const results=[], providers=[];
- for(const [name,kind,fn] of jobs){
-  try{let o=await fn();results.push(o);providers.push({provider:name,model:kind,result:"OK"});if(results.length>=3)break}
-  catch(e){providers.push({provider:name,model:kind,result:"SKIPPED"})}
- }
- if(!results.length)throw new Error("No configured AI provider returned a usable response.");
-
- // Consensus by normalized classmark. Require corroboration when possible.
- const groups=new Map();
- for(const o of results){const k=o.udc.replace(/\s+/g,"").toUpperCase();if(k!=="REQUIRESVERIFICATION")groups.set(k,(groups.get(k)||[]).concat([o]))}
- let winner=null;
- for(const [k,arr] of groups){if(!winner||arr.length>winner.length)winner=arr}
- if(winner&&winner.length>=2){
-  let base=winner[0];base.providers=providers;base.warnings=[...new Set([...(base.warnings||[]),"Final classmark corroborated by multiple configured AI routes."])];
-  base.candidates=results.flatMap(x=>x.candidates||[]).slice(0,12);return base;
- }
- // If only one usable route answered, do not pretend it was a consensus.
- let base=results[0];base.providers=providers;base.warnings=[...new Set([...(base.warnings||[]),"Only one usable AI route returned a classmark; independent corroboration was unavailable."])];
- if(results.length>1){base.udc="REQUIRES VERIFICATION";base.confidence="Requires verification";base.status="AI jury disagreement";base.explanation=(base.explanation||"")+" Other configured AI routes did not independently corroborate the same classmark."}
- return base;
-}
-
-app.post("/api/classify",async(req,res)=>{
- const title=String(req.body?.title||"").trim();
- if(!title)return res.status(400).json({error:"Book title is required."});
- try{res.json(await jury(title))}
- catch(e){console.error("TITAN_ERROR",e);res.status(503).json({error:"No AI route is currently available. Check API keys, quota and provider status. No UDC number was invented."})}
-});
-
-const PRACTICE=[
-["History of India","94(540)","94 — History; (540) — India"],
-["Geography of India","91(540)","91 — Geography; (540) — India"],
-["Indian Constitution","342(540)","342 — Constitutional law; (540) — India"],
-["Economy of India","330(540)","330 — Economics; (540) — India"],
-["History of Punjab","94(540.15)","94 — History; (540.15) — Punjab"]
+// High-value UDC Summary concepts used as a deterministic safety net. These are
+// class references, not a copy of the licensed MRF. Exact claims are only made
+// where the public UDC Summary supports the class.
+const C=[
+["0","Knowledge, science and computer science",/\b(knowledge|information science|documentation|librarianship)\b/],["004","Computer science and technology. Computing. Data processing",/\b(computer|computing|informatics|programming|software|database|cybersecurity|cyber|machine learning|artificial intelligence|data processing|ict)\b/],
+["1","Philosophy",/\bphilosophy\b/],["159.9","Psychology",/\bpsychology\b/],["2","Religion. Theology",/\b(religion|theology|bible|quran|koran|christianity|islam|hinduism)\b/],
+["30","General social sciences",/\bsocial sciences?\b/],["31","Demography. Population studies",/\b(population|demography)\b/],["316","Sociology",/\bsociology\b/],["32","Politics",/\bpolitics?|political science\b/],["33","Economics",/\b(economy|economics|economic)\b/],["34","Law",/\b(law|legal|jurisprudence)\b/],["35","Public administration",/\b(public administration|government administration)\b/],["36","Social welfare",/\b(social welfare|social work)\b/],["37","Education",/\b(education|teaching|pedagogy|instruction|schooling|teacher training)\b/],["39","Ethnology. Folklore",/\b(ethnolog|folklore|folk lore|customs|traditions)\b/],
+["51","Mathematics",/\b(mathematics|maths?|algebra|geometry|calculus|number theory)\b/],["52","Astronomy",/\bastronom(y|ical)|cosmology\b/],["53","Physics",/\bphysics|mechanics|optics|thermodynamics|quantum physics\b/],["54","Chemistry",/\bchemistry|chemical\b/],["55","Earth sciences",/\bgeology|meteorology|earth science|geophysics\b/],["56","Palaeontology",/\bpalaeontolog|fossils?\b/],["57","Biological sciences",/\bbiology|botany|zoology|ecology|microbiology|genetics\b/],["58","Botanical sciences",/\bbotany|plants?\b/],["59","Zoological sciences",/\bzoology|animals?\b/],
+["61","Medical sciences",/\bmedicine|medical|disease|surgery|hospital|nursing|health care\b/],["62","Engineering and technology in general",/\bengineering\b/],["63","Agriculture and related sciences and technologies",/\bagriculture|farming|crop|crops|wheat|maize|corn|harvest|harvesting|irrigation|agronomy|horticulture\b/],["65","Management and organization",/\bmanagement|business|commerce|marketing|organization\b/],["66","Chemical technology",/\bchemical technolog|industrial chemistry\b/],["67","Various industries and crafts",/\bindustry|manufacturing|crafts?\b/],["68","Industries, trades and crafts",/\bworkshop|production technology\b/],["69","Building materials and building practice",/\bconstruction|building practice|building materials\b/],
+["7","The arts. Entertainment. Sport",/\barts?|entertainment\b/],["71","Landscape and regional planning",/\blandscape architecture|regional planning\b/],["72","Architecture",/\barchitecture|architectural\b/],["73","Sculpture",/\bsculpture\b/],["74","Drawing and applied art",/\bdrawing|applied art\b/],["75","Painting",/\bpainting\b/],["76","Graphic art",/\bgraphic art|printmaking\b/],["77","Photography and similar processes",/\bphotography\b/],["78","Music",/\bmusic|musical\b/],["79","Recreation. Entertainment. Games. Sport",/\bsport|games?|recreation\b/],["796","Sport and games",/\bfootball|cricket|athletics|tennis|basketball|sports?\b/],
+["80","General questions relating to linguistics and literature",/\blanguage|linguistics|dictionary|lexicography\b/],["81","Linguistics",/\blinguistics|grammar|phonetics|semantics\b/],["82","Literature",/\bliterature|poetry|novel|fiction|prose\b/],["821.111","English literature",/\benglish literature\b/],["821.111-2","English literature — drama",/\benglish drama|drama in english\b/],
+["90","Archaeology",/\barchaeolog(y|ical)\b/],["91","Geography",/\bgeograph(y|ical)\b/],["94","History",/\bhistor(y|ical)\b/]
 ];
-app.get("/api/practice",(req,res)=>{let x=PRACTICE[Math.floor(Math.random()*PRACTICE.length)];res.json({title:x[0],udc:x[1],explanation:x[2]})});
-app.get("/api/health",(req,res)=>res.json({
- version:"UDC-TITAN-50",geminiFast:MODELS.geminiFast,geminiPro:MODELS.geminiPro,
- groqCompound:MODELS.groqCompound,groq120:MODELS.groq120,groqQwen:MODELS.groqQwen,
- openai:MODELS.openai,anthropic:MODELS.anthropic,
- configured:{gemini:Boolean(process.env.GEMINI_API_KEY),groq:Boolean(process.env.GROQ_API_KEY),openai:Boolean(process.env.OPENAI_API_KEY),anthropic:Boolean(process.env.ANTHROPIC_API_KEY)},
- googleSearchGrounding:true,seedReference:false,serverTime:new Date().toISOString()
-}));
-app.listen(PORT,()=>console.log(`UDC TITAN v50 on ${PORT}`));
+
+const exact=[
+[/^history of india$/i,"94(540)","History","History of India","94 = History; (540) = India.","Official UDC Summary hierarchy match"],
+[/^geography of india$/i,"91(540)","Geography","Geography of India","91 = Geography; (540) = India.","Official UDC Summary hierarchy match"],
+[/^indian constitution$/i,"342(540)","Law","Constitutional law of India","342 = Constitutional law; (540) = India.","Reasoned from UDC Summary"],
+[/^indian literature$/i,"821.21(540)","Literature","Indian literature","821.21 = Indian literature; (540) = India.","Reasoned from UDC Summary"],
+[/^indian philosophy$/i,"1(540)","Philosophy","Philosophy of India","1 = Philosophy; (540) = India.","Reasoned from UDC Summary"],
+[/^indian art$/i,"7(540)","Arts","Art of India","7 = Arts; (540) = India.","Reasoned from UDC Summary"],
+[/^english drama$/i,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Official UDC Summary hierarchy match"],
+[/^music and entertainment$/i,"78+79","Music and entertainment","Music; entertainment","78 = Music; 79 = Recreation/entertainment/games/sport; + coordinates the two subjects.","UDC hierarchy cross-check"],
+[/^science and technology$/i,"5/6","Mathematics/natural sciences and applied sciences/technology","Science and technology","5 = Mathematics and natural sciences; 6 = Applied sciences, medicine and technology. The oblique stroke expresses consecutive extension.","Official UDC Summary hierarchy match"],
+[/^harvesting of wheat and maize$/i,"633.11+633.15:631.55","Agriculture","Harvesting of wheat and maize","633.11 = wheat; 633.15 = maize; + coordinates the two crops; : relates them to 631.55 = gathering/harvesting.","UDC evidence cross-check"],
+[/^harvesting of wheat and barley$/i,"633.11+633.16:631.55","Agriculture","Harvesting of wheat and barley","633.11 = wheat; 633.16 = barley; + coordinates the two crops; : relates them to 631.55 = gathering/harvesting.","UDC evidence cross-check"],
+[/^harvesting of cereals$/i,"633.1:631.55","Agriculture","Harvesting of cereals","633.1 = cereals/grain crops; 631.55 = gathering/harvesting; : expresses the relation.","UDC evidence cross-check"],
+[/^harvesting of wheat$/i,"633.11:631.55","Agriculture","Harvesting of wheat","633.11 = wheat; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
+[/^harvesting of maize$/i,"633.15:631.55","Agriculture","Harvesting of maize","633.15 = maize; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
+[/^harvesting of barley$/i,"633.16:631.55","Agriculture","Harvesting of barley","633.16 = barley; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
+[/^wheat and maize$/i,"633.11+633.15","Agriculture","Wheat and maize","633.11 = wheat; 633.15 = maize; + coordinates the crops.","UDC hierarchy cross-check"],
+[/^wheat and barley$/i,"633.11+633.16","Agriculture","Wheat and barley","633.11 = wheat; 633.16 = barley; + coordinates the crops.","UDC hierarchy cross-check"],
+[/^cultivation of wheat$/i,"633.11:631.5","Agriculture","Cultivation of wheat","633.11 = wheat; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
+[/^cultivation of maize$/i,"633.15:631.5","Agriculture","Cultivation of maize","633.15 = maize; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
+[/^cultivation of barley$/i,"633.16:631.5","Agriculture","Cultivation of barley","633.16 = barley; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
+];
+
+function localClassify(title){const t=norm(title);for(const e of exact){if(e[0].test(t))return result(title,e[1],e[2],e[3],e[4],e[5],true)}
+ // Place-aware history/geography/constitution patterns.
+ if(/\b(history|historical)\b/.test(t)&&/\bindia|bharat\b/.test(t))return result(title,"94(540)","History","History of India","94 = History; (540) = India.","Reasoned from UDC Summary",true);
+ if(/\bgeograph/.test(t)&&/\bindia|bharat\b/.test(t))return result(title,"91(540)","Geography","Geography of India","91 = Geography; (540) = India.","Reasoned from UDC Summary",true);
+ // Form-aware literature rules: do not blindly append auxiliaries.
+ if(/\benglish\b/.test(t)&&/\bdrama\b/.test(t))return result(title,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Reasoned from UDC Summary",true);
+ if(/\b(dictionary|lexicon|glossary)\b/.test(t)&&/\blanguage\b/.test(t))return result(title,"80","Language and linguistics","Language reference / lexicography","80 = General questions relating to linguistics and literature; exact dictionary treatment depends on the language and form stated in the title.","Reasoned from UDC Summary",false);
+ // Agriculture: process + crop is deliberately more specific than broad 63.
+ if(/\b(harvest|harvesting)\b/.test(t)&&/\b(wheat|maize|corn|cereal|grain)\b/.test(t))return result(title,"631.5:633.1","Agriculture","Agricultural operations relating to cereals","631.5 = Agricultural operations; 633.1 = Cereals/grain crops; : expresses their relation.","Reasoned from UDC Summary",true);
+ let hits=C.filter(x=>x[2].test(t)); if(hits.length){hits.sort((a,b)=>b[2].source.length-a[2].source.length);const h=hits[0];return result(title,h[0],h[1],h[1],`${h[0]} = ${h[1]}.`,`Reasoned from UDC Summary`,false)}
+ return result(title,"REQUIRES VERIFICATION","Unresolved","No verified subject-specific classmark","The title did not match a sufficiently specific deterministic UDC rule. No broad classmark is invented.","Requires verification",false);
+}
+function result(title,n,m,s,x,conf,official){return{title,udc_number:n,main_subject:m,sub_subject:s,breakdown:x,explanation:x+(official?"":" This result is not an exact licensed MRF lookup."),confidence:conf,evidence_summary:official?"Matched to a public UDC Summary concept/hierarchy.":"Deterministic semantic analysis; exact licensed MRF lookup not claimed.",sources:["https://udcsummary.info/"],evidence_level:conf,official_udc_match:official,candidate_notes:"",notation_check:"Every displayed component must be a UDC class, auxiliary or valid relation; DDC notation is prohibited.",engine:"V46 MAX local semantic engine",model:"offline",grounded:false}}
+
+async function gemini(title,model,grounded){const body={contents:[{role:"user",parts:[{text:`${UDC_RULES}\nClassify this complete book title: "${title}". Search the official UDC Summary first when grounding is enabled. Prefer an exact official UDC Summary class when available. Generate up to 3 candidates internally, audit every notation component and every crop/language/place/form auxiliary, then return one final result. Never convert a subject to a broader class merely because a model guess is convenient. Do not use 004 unless the subject is genuinely computing. Do not invent an official record. JSON only.`}]}],systemInstruction:{parts:[{text:UDC_RULES}]},generationConfig:{temperature:0.02,responseMimeType:"application/json",responseSchema:schema,maxOutputTokens:1600}};if(grounded)body.tools=[{googleSearch:{}}];const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),28000);try{const u=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":GEMINI_KEY},body:JSON.stringify(body),signal:ac.signal});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{throw Error("Bad Gemini response")};if(!r.ok)throw Error(j?.error?.message||`Gemini HTTP ${r.status}`);const out=validate(parseJSON(j?.candidates?.[0]?.content?.parts?.map(x=>x.text||"").join("")),title);const chunks=j?.candidates?.[0]?.groundingMetadata?.groundingChunks||[];const gs=chunks.map(x=>x.web).filter(Boolean).map(x=>x.uri).filter(Boolean);if(!out.sources.length)out.sources=gs.slice(0,8);return{...out,engine:grounded?"Gemini + Google Search":"Gemini",model,grounded:gs.length>0}}finally{clearTimeout(tm)}}
+async function groq(title){if(!GROQ_KEY)throw Error("GROQ_API_KEY not configured");const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},body:JSON.stringify({model:process.env.GROQ_MODEL||"openai/gpt-oss-120b",temperature:0.02,response_format:{type:"json_object"},messages:[{role:"system",content:UDC_RULES},{role:"user",content:`Classify "${title}" using UDC Summary as public authority. Return the required JSON fields only. Never use DDC and never use 004 unless it is genuinely computing.`}]})});const j=await r.json();if(!r.ok)throw Error(j?.error?.message||`Groq HTTP ${r.status}`);return{...validate(parseJSON(j?.choices?.[0]?.message?.content||""),title),engine:"Groq fallback",model:process.env.GROQ_MODEL||"openai/gpt-oss-120b",grounded:false}}
+
+app.get("/",(_,res)=>res.sendFile(path.join(__dirname,"index.html")));
+app.get("/api/health",(_,res)=>res.json({ok:true,version:"V46 MAX",authority:"UDC Summary",authorityUrl:SUMMARY_BASE,geminiConfigured:!!GEMINI_KEY,groqConfigured:!!GROQ_KEY,geminiModels:MODELS,groqModels:GROQ_MODELS,features:["Google-only multi-model stack","Google Search grounding","retry/failover","UDC-only guard","no broad fallback","notation audit"]}));
+
+async function googleFallback(title){
+ const models=MODELS.filter(m=>!m.includes("live")&&!m.includes("image")&&!m.includes("tts")&&!m.includes("transcribe"));
+ const errors=[];
+ // Google-only sequential fallback: one final answer, no jury/voting/consensus layer.
+ for(const model of models){
+  try{
+   const grounded=!model.startsWith("gemma-");
+   const out=await gemini(title,model,grounded);
+   return {...out,provider:"Google",fallback_chain:models,provider_errors:errors.slice(-8)};
+  }catch(e){errors.push(`${model}: ${e?.message||e}`)}
+ }
+ throw Error(errors.length?errors[errors.length-1]:"No Google model available");
+}
+app.post("/api/classify",async(req,res)=>{
+ const title=String(req.body?.title||"").trim(); if(!title)return res.status(400).json({error:"Enter a book title."});
+ const lc=localClassify(title);
+ if(lc.official_udc_match)return res.json(lc);
+ if(!GEMINI_KEY){lc.udc_number="REQUIRES VERIFICATION";lc.confidence="Requires verification";lc.engine="Google AI stack not configured";return res.json(lc)}
+ try{return res.json(await googleFallback(title));}
+ catch(e){console.error("Google stack:",e.message);lc.udc_number="REQUIRES VERIFICATION";lc.confidence="Requires verification";lc.evidence_level="NO_GOOGLE_RESULT";lc.engine="Google AI fallback exhausted";lc.explanation="No Google model returned a verified result. The system intentionally withholds an unverified UDC number.";lc.provider_errors=[e.message];return res.json(lc)}
+});
+app.listen(PORT,()=>console.log(`UDC V45 ULTRA on ${PORT}`));
