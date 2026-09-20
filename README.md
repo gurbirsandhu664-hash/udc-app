@@ -1,22 +1,21 @@
-# UDC One-Click V40 — White Stable / Quota-Resilient
+UDC One-Click V41
 
-This build fixes the recurring Gemini 429/404 failure pattern shown in the supplied screenshot. It does not bypass provider quotas; instead it uses a controlled fallback chain.
+Render:
+Build: npm install
+Start: npm start
 
-## Route order
-1. Gemini + Google Search grounding across configured models
-2. Same Gemini models without Search grounding if Search quota/tooling fails
-3. Groq fallback when Gemini quota is exhausted
-4. Local exact-match seed only as a last safety net
+Environment:
+GEMINI_API_KEY = Google AI Studio/Gemini API key
+GEMINI_MODEL = optional model override
 
-The final result is labelled with the engine/route used. No DDC and no copied proprietary MRF data are included.
+V41 changes:
+- semantic guard against false 004 classifications
+- strict UDC-only prompt
+- Google Search grounded attempts
+- no-search Gemini fallback
+- multi-model fallback
+- structured JSON
+- white UI
+- no copied licensed UDC MRF data
 
-## Render
-Build: `npm install`
-Start: `npm start`
-
-Set `GEMINI_API_KEY`. Set `GROQ_API_KEY` for the fallback. You can override the model chains with `GEMINI_MODELS` and `GROQ_MODELS`.
-
-Important: API quotas are controlled by Google/Groq and cannot be permanently bypassed by application code. This version prevents one exhausted model from killing the whole request.
-
-
-V40 semantic guard: UDC 004 is rejected when the title does not actually indicate computing/computer science/IT/ICT/software/data processing. Generic “technology” wording alone cannot trigger 004.
+UDC is an analytico-synthetic system; exact official classification for every title requires access to the relevant licensed/current UDC schedules.
