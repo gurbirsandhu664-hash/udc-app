@@ -1,52 +1,40 @@
-# UDC One-Click V48 ULTRA — Gemini Search
+# UDC TITAN — Gemini Search Ultimate
 
-This is the advanced, seed-free successor to the supplied V45 ULTRA project.
-
-## What changed
-
-- No `seed-udc.json`.
-- Gemini 3.8 Flash is the default stable model, with model fallbacks.
-- Google Search grounding is enabled server-side.
-- Candidate-generation + notation-audit workflow.
-- UDC-only guard; DDC is explicitly prohibited.
-- Deterministic high-value UDC rules for repeatability.
-- Groq fallback remains optional.
-- `/api/health` shows provider configuration.
-- API keys stay server-side.
-- Mobile-first premium interface.
-- History and practice are client-side.
-- Exact MRF-level claims are not fabricated when evidence is missing.
-
-Google's Gemini documentation currently lists Gemini 3.8 Flash as a stable model and documents Google Search grounding for current Gemini models. The UDC Consortium/UDC Summary should be treated as the UDC reference layer; this project does not reproduce the licensed MRF.
+This build removes the local UDC seed/reference dependency from the classifier.
 
 ## Render
-
-Build Command:
+Build:
 `npm install`
 
-Start Command:
+Start:
 `npm start`
 
-Required Render Environment Variable:
+Environment:
 `GEMINI_API_KEY=...`
 
 Optional:
-`GEMINI_MODEL=gemini-3.8-flash`
-`GEMINI_FALLBACK_MODEL=gemini-3.7-flash`
-`GROQ_API_KEY=...`
-`GROQ_MODEL=openai/gpt-oss-120b`
+`GEMINI_MODEL=gemini-3.1-pro-preview`
 
-## Files
+## Architecture
+Browser -> /api/classify -> Gemini high-reasoning model + Google Search grounding -> JSON parsing -> UDC consistency audit -> browser.
 
-- `index.html`
-- `server.js`
-- `package.json`
-- `.env.example`
-- `README.md`
-- `VERSION.txt`
-
-No seed JSON is included.
+The API key is server-side only.
 
 ## Important
+Google Search grounding is used as evidence retrieval, not as a substitute for an authoritative licensed UDC schedule. The application must not claim that a web source supports a classmark unless the source actually supports it.
 
-Search grounding improves evidence and freshness but does not turn a search result into an official UDC MRF record automatically. For authoritative production cataloguing, use authorized/licensed UDC data and verify the exact schedule entry.
+The complete UDC schedules are proprietary/licensed material. This package intentionally does not ship a copied 72,000-class UDC database.
+
+## Replace
+Use:
+- index.html
+- server.js
+- package.json
+
+Delete old:
+- seed-udc.json
+- udc-reference.json
+- udc-reference.example.json
+- old duplicate classifier HTML/JS files
+
+Keep your Render environment variable `GEMINI_API_KEY`.

@@ -1,82 +1,88 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050b14"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>UDC One-Click V48 ULTRA</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050912">
+<title>UDC TITAN · Gemini Search Intelligence</title>
 <style>
-:root{--bg:#050b14;--p:#0a1524;--p2:#0e1d30;--line:#284665;--text:#f5f8ff;--muted:#9eb1c8;--a:#69aaff;--good:#52d8a0;--warn:#ffd166;--bad:#ff8290}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(1000px 520px at 50% -120px,#1c467a55,transparent),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:1180px;margin:auto;padding:12px 14px 60px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}.brand{display:flex;gap:10px;align-items:center}.logo{width:46px;height:46px;border:1px solid var(--line);border-radius:14px;background:var(--p2);display:grid;place-items:center;color:var(--a);font-weight:950}.brand b{display:block}.brand span{font-size:11px;color:var(--muted)}.health{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:7px 10px;color:var(--good)}
-.hero{text-align:center;padding:26px 0 18px}.pill{display:inline-block;border:1px solid #315a87;border-radius:999px;padding:7px 12px;color:var(--a);font-size:11px;font-weight:900;letter-spacing:.08em}.hero h1{font-size:clamp(38px,8vw,72px);line-height:.98;letter-spacing:-2px;margin:15px 0 11px}.hero p{max-width:850px;margin:auto;color:var(--muted);line-height:1.55}
-.tabs{display:flex;gap:8px;overflow:auto;position:sticky;top:0;z-index:9;padding:6px 0 12px;background:linear-gradient(var(--bg) 78%,transparent)}button,input,textarea{font:inherit}.tab,.btn,.chip{border:1px solid var(--line);background:var(--p);color:var(--text);border-radius:13px;padding:11px 14px;font-weight:800;cursor:pointer;white-space:nowrap}.tab.active,.btn.primary{background:var(--a);border-color:var(--a);color:#06101a}.panel{background:linear-gradient(180deg,#0d1b2d,#091421);border:1px solid var(--line);border-radius:22px;padding:17px;margin:11px 0;box-shadow:0 18px 55px #0005}.panel h2{margin:0 0 5px}.muted{color:var(--muted)}
-textarea,input{width:100%;background:#06111e;color:var(--text);border:1px solid #2d4d70;border-radius:17px;padding:16px;outline:0}textarea{min-height:155px;resize:vertical;font-size:19px;line-height:1.45}input{padding:13px}textarea:focus,input:focus{border-color:var(--a);box-shadow:0 0 0 3px #69aaff18}.chips,.actions,.badges,.break{display:flex;flex-wrap:wrap;gap:8px}.chips{margin-top:11px}.chip{padding:8px 11px;border-radius:999px;color:#bfd0e4;font-size:13px}.actions{margin-top:12px}.loader{display:none;color:var(--a);margin:13px 0}.loader.show{display:block}.hidden{display:none!important}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px}.box{background:#0d1e32;border:1px solid var(--line);border-radius:14px;padding:12px}.box small{display:block;color:var(--muted);margin-bottom:5px}.result{border-left:4px solid var(--good)}.number{font-size:clamp(33px,8vw,54px);font-weight:950;color:var(--good);margin:3px 0 14px;overflow-wrap:anywhere}.token{background:#12273f;border:1px solid #2c4c6c;padding:8px 10px;border-radius:10px}.badge{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:6px 8px;color:#bfd0e3;background:#0c1b2c}.notice{padding:12px;border-radius:13px;border:1px solid #5b4a1b;background:#28210f;color:#f5d979;line-height:1.5;font-size:13px}.error{border-color:#6a303b;background:#28121a;color:#ffb2bc}.source{padding:10px;border:1px solid var(--line);border-radius:11px;background:#0a192a;margin:7px 0;word-break:break-word}.source a{color:var(--a)}.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;background:var(--p2);border:1px solid var(--line);border-radius:13px}.list{display:grid;gap:8px;margin-top:11px}code{color:var(--good);font-weight:900}footer{text-align:center;color:#71859d;font-size:12px;padding:22px 0}
-@media(max-width:600px){.health{display:none}.panel{padding:14px;border-radius:18px}.hero{padding-top:18px}textarea{min-height:135px;font-size:17px}.grid{grid-template-columns:1fr}}
+:root{--bg:#050912;--card:#0b1524;--card2:#0f1d30;--line:#294866;--txt:#f7faff;--muted:#9db1c9;--blue:#67aaff;--green:#4ee0a2;--gold:#ffd36b;--red:#ff8290}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(900px 450px at 50% -180px,#23578e66,transparent),var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+.wrap{max-width:1200px;margin:auto;padding:14px 14px 55px}.head{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;align-items:center;gap:11px}.logo{width:47px;height:47px;border-radius:15px;border:1px solid #356087;background:#0c1c30;display:grid;place-items:center;color:var(--blue);font-weight:950}.brand b{display:block}.brand small{display:block;color:var(--muted);margin-top:2px}.status{border:1px solid #28604e;color:var(--green);border-radius:99px;padding:7px 10px;font-size:12px}
+.hero{text-align:center;padding:24px 0 17px}.badge{display:inline-block;border:1px solid #38648e;border-radius:99px;color:var(--blue);padding:7px 12px;font-size:12px;font-weight:900;letter-spacing:.3px}.hero h1{font-size:clamp(38px,8vw,70px);line-height:.98;letter-spacing:-2.5px;margin:14px 0 10px}.hero p{max-width:900px;margin:auto;color:var(--muted);line-height:1.55}
+nav{display:flex;gap:8px;overflow:auto;position:sticky;top:0;z-index:9;padding:5px 0 12px;background:linear-gradient(var(--bg) 76%,transparent)}nav button,.btn,.chip{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:14px;padding:11px 14px;font-weight:850;cursor:pointer;white-space:nowrap}nav button.active,.primary{background:var(--blue);border-color:var(--blue);color:#06111c}
+.panel{background:linear-gradient(180deg,#0d1b2d,#091522);border:1px solid var(--line);border-radius:22px;padding:17px;margin:10px 0;box-shadow:0 20px 70px #0007}.panel h2{margin:0 0 5px}.muted{color:var(--muted)}
+textarea,input{width:100%;background:#06101c;border:1px solid #2b4c6e;color:var(--txt);border-radius:17px;padding:15px;outline:none}textarea{min-height:155px;resize:vertical;font-size:18px;line-height:1.45}input{font-size:16px}textarea:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #67aaff18}
+.chips,.actions,.tokens{display:flex;flex-wrap:wrap;gap:8px}.chips{margin-top:10px}.chip{font-size:13px;padding:8px 11px;border-radius:99px;color:#c3d3e6}.actions{margin-top:12px}.loading{display:none;color:var(--blue);padding:12px 0}.loading.on{display:block}.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px}.box{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:12px}.box small{display:block;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}.result{border-left:4px solid var(--green)}.number{font-size:clamp(35px,9vw,62px);font-weight:950;color:var(--green);letter-spacing:-1px;overflow-wrap:anywhere;margin:2px 0 15px}.token{background:#12283f;border:1px solid #2d4e70;padding:8px 10px;border-radius:10px}.notice{padding:12px;border-radius:13px;border:1px solid #5c4b1b;background:#29210e;color:#f1d67d;line-height:1.5}.ok{border-color:#28604e;background:#0c251e;color:#a8f1d5}.error{border-color:#713440;background:#2a1219;color:#ffb7c0}.source{background:#0a1828;border:1px solid var(--line);border-radius:11px;padding:10px;margin:7px 0;word-break:break-word}.candidate{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px;background:#0d1e32;border:1px solid var(--line);border-radius:12px;margin:7px 0}.candidate code{color:var(--green);font-weight:900}.item{display:flex;justify-content:space-between;gap:10px;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px}.list{display:grid;gap:8px;margin-top:10px}footer{text-align:center;color:#6f839c;font-size:12px;padding:22px}
+@media(max-width:600px){.status{display:none}.panel{padding:14px;border-radius:18px}.hero{padding-top:17px}.hero h1{letter-spacing:-1.8px}textarea{min-height:135px;font-size:17px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<main class="wrap">
-<header class="top"><div class="brand"><div class="logo">UDC</div><div><b>UDC One-Click</b><span>V48 ULTRA · Gemini Search Engine</span></div></div><div class="health" id="health">● Checking…</div></header>
-<section class="hero"><span class="pill">UDC ABRIDGED • V48 ULTRA</span><h1>UDC Classification Engine</h1><p>One title → semantic analysis → UDC candidate construction → Google Search grounding → notation audit → evidence-ranked answer.</p></section>
-<nav class="tabs"><button class="tab active" onclick="tab('classify',this)">Classify</button><button class="tab" onclick="tab('practice',this)">Practice</button><button class="tab" onclick="tab('history',this)">History</button><button class="tab" onclick="tab('about',this)">Engine</button></nav>
+<div class="wrap">
+<header class="head"><div class="brand"><div class="logo">UDC</div><div><b>UDC TITAN</b><small>Gemini Search Intelligence · Ultimate</small></div></div><div id="status" class="status">● READY</div></header>
+<section class="hero"><span class="badge">UDC • GEMINI 3.1 PRO • GOOGLE SEARCH</span><h1>UDC Classification Intelligence</h1><p>Meaning analysis → UDC candidate generation → Google Search evidence → notation audit → consistency gate. No seed database required.</p></section>
+<nav><button class="active" onclick="showTab('classify',this)">Classify</button><button onclick="showTab('practice',this)">Practice</button><button onclick="showTab('history',this)">History</button><button onclick="showTab('engine',this)">Engine</button></nav>
 
 <section id="classify">
 <div class="panel">
-<h2>Enter Book Title</h2><p class="muted">Complete title is best. Gemini Search is used on the server; your API key never appears in this page.</p>
-<textarea id="title" placeholder="e.g. Harvesting of Wheat and Maize"></textarea>
+<h2>Enter Book Title</h2><p class="muted">Full title, subtitle, language or place information improves classification.</p>
+<textarea id="title" placeholder="e.g. Diagnosis of Heart Disease"></textarea>
 <div class="chips">
-<button class="chip" onclick="fill('Harvesting of Wheat and Maize')">Harvesting of Wheat and Maize</button>
 <button class="chip" onclick="fill('History of India')">History of India</button>
 <button class="chip" onclick="fill('Geography of India')">Geography of India</button>
 <button class="chip" onclick="fill('English Drama')">English Drama</button>
 <button class="chip" onclick="fill('Dictionary of Language and Literature')">Dictionary of Language and Literature</button>
-<button class="chip" onclick="fill('Science and Technology')">Science and Technology</button>
+<button class="chip" onclick="fill('Diagnosis of Heart Disease')">Diagnosis of Heart Disease</button>
+<button class="chip" onclick="fill('Alloy of Copper and Zinc')">Alloy of Copper and Zinc</button>
 </div>
-<div class="actions"><button class="btn primary" id="go" onclick="classify()">⚡ CLASSIFY + VERIFY</button><button class="btn" onclick="clearAll()">Clear</button></div>
-<div id="loader" class="loader">Searching UDC evidence and auditing notation…</div><div id="err"></div><div id="result"></div>
+<div class="actions"><button class="btn primary" onclick="classify()">⚡ DEEP CLASSIFY + VERIFY</button><button class="btn" onclick="clearIt()">Clear</button></div>
+<div id="loading" class="loading">Gemini is reasoning and searching Google for UDC evidence…</div>
+<div id="result"></div>
 </div>
-<div class="panel"><h2>What makes V48 ULTRA different</h2><div class="grid">
-<div class="box"><small>SEMANTIC LAYER</small><b>Title meaning</b><br><span class="muted">Subject, object, process, language, form, place and time.</span></div>
-<div class="box"><small>SEARCH LAYER</small><b>Google Search grounding</b><br><span class="muted">Fresh web evidence can be attached to the answer.</span></div>
-<div class="box"><small>UDC LAYER</small><b>Notation audit</b><br><span class="muted">Auxiliaries and + / : / / etc. are checked before display.</span></div>
-<div class="box"><small>FAILSAFE</small><b>No fake exactness</b><br><span class="muted">Unsupported MRF-level claims are marked for verification.</span></div>
+<div class="panel"><h2>What makes TITAN different</h2><div class="grid">
+<div class="box"><small>Semantic</small><b>Title-first reasoning</b><br><span class="muted">Understands the concept before notation.</span></div>
+<div class="box"><small>UDC</small><b>Analytico-synthetic</b><br><span class="muted">Main classes, auxiliaries and linking signs.</span></div>
+<div class="box"><small>Search</small><b>Google grounding</b><br><span class="muted">Fresh web evidence can be inspected.</span></div>
+<div class="box"><small>Audit</small><b>Candidate challenge</b><br><span class="muted">Plausible-looking numbers are checked before display.</span></div>
 </div></div>
 </section>
 
-<section id="practice" class="hidden"><div class="panel"><h2>Practice Lab</h2><p class="muted">Practice from built-in deterministic examples — no seed JSON file is used.</p><div id="pq"></div><input id="pa" placeholder="Enter UDC number"><div class="actions"><button class="btn primary" onclick="checkPractice()">Check</button><button class="btn" onclick="newPractice()">New Question</button></div><div id="pr"></div></div></section>
-<section id="history" class="hidden"><div class="panel"><h2>Classification History</h2><div id="hl" class="list"></div><button class="btn" onclick="localStorage.removeItem('udc48_history');renderHistory()">Clear History</button></div></section>
-<section id="about" class="hidden"><div class="panel"><h2>Engine Architecture</h2><div class="grid">
-<div class="box"><small>ENGINE</small><b>V48 ULTRA</b><br><span class="muted">Deterministic rules + Gemini + Search + Groq fallback.</span></div>
-<div class="box"><small>DEFAULT MODEL</small><b>Gemini 3.8 Flash</b><br><span class="muted">Stable production model configured server-side.</span></div>
-<div class="box"><small>AUTHORITY</small><b>UDC Summary / UDC Consortium</b><br><span class="muted">Search evidence is ranked; licensed MRF remains the authoritative full schedule.</span></div>
-<div class="box"><small>SECURITY</small><b>Server-side keys</b><br><span class="muted">No Gemini/Groq secret is embedded in index.html.</span></div>
-</div><div class="notice">This application does not bundle or reproduce a proprietary complete UDC MRF. It uses an evidence-first engine and can use authorized UDC data when available.</div></div></section>
-<footer>UDC One-Click V48 ULTRA · Gemini 3.8 + Google Search grounding · UDC only</footer>
-</main>
+<section id="practice" class="hidden"><div class="panel"><h2>Practice Lab</h2><p class="muted">Questions are generated by the server; there is no local UDC seed database.</p><div id="pq" class="box">Tap “New Question”.</div><input id="pa" placeholder="Enter UDC classmark" style="margin-top:10px"><div class="actions"><button class="btn primary" onclick="practiceCheck()">Check</button><button class="btn" onclick="newQuestion()">New Question</button></div><div id="pres"></div></div></section>
+
+<section id="history" class="hidden"><div class="panel"><h2>Classification History</h2><div id="hist" class="list"></div><button class="btn" onclick="localStorage.removeItem('udc_titan_history');renderHistory()">Clear history</button></div></section>
+
+<section id="engine" class="hidden"><div class="panel"><h2>Engine Diagnostics</h2><p class="muted">Verify the Render server, selected Gemini model and Search grounding.</p><button class="btn primary" onclick="health()">Run diagnostics</button><pre id="hout" style="white-space:pre-wrap;color:#aac1d8"></pre></div></section>
+<footer>UDC TITAN · Server-side Gemini · Google Search grounding · API key never exposed to browser</footer>
+</div>
+
 <script>
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
-function tab(id,b){document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='history')renderHistory();if(id==='practice')newPractice()}
-function fill(t){$('title').value=t;classify()}
-function setBusy(v){$('go').disabled=v;$('go').textContent=v?'🔎 SEARCHING + VERIFYING…':'⚡ CLASSIFY + VERIFY';$('loader').classList.toggle('show',v)}
-async function classify(){const title=$('title').value.trim();if(!title){$('err').innerHTML='<div class="notice error">Enter a book title first.</div>';return}setBusy(true);$('err').innerHTML='';$('result').innerHTML='';
-try{const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Classification service failed');render(j);saveHistory(j)}
-catch(e){$('err').innerHTML='<div class="notice error"><b>Classifier error</b><br>'+esc(e.message)+'</div>'}finally{setBusy(false)}}
-function render(r){const src=(r.sources||[]).map(s=>`<div class="source"><b>${esc(s.title||'Source')}</b><br>${esc(s.support||'')}<br>${s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a>`:''}</div>`).join('');
-$('result').innerHTML=`<div class="panel result"><div class="badges"><span class="badge">${esc(r.engine||'UDC engine')}</span><span class="badge">${esc(r.confidence||'Requires verification')}</span><span class="badge">${r.grounded?'Google Search grounded':'No web grounding'}</span></div><small class="muted">FINAL UDC NUMBER</small><div class="number">${esc(r.udc_number||'REQUIRES VERIFICATION')}</div>
-<div class="grid"><div class="box"><small>BOOK TITLE</small><b>${esc(r.title)}</b></div><div class="box"><small>MAIN SUBJECT</small><b>${esc(r.main_subject||'—')}</b></div><div class="box"><small>SUB SUBJECT</small><b>${esc(r.sub_subject||'—')}</b></div><div class="box"><small>CONTEXT</small><b>${esc(r.context||'—')}</b></div><div class="box"><small>EVIDENCE LEVEL</small><b>${esc(r.evidence_level||'—')}</b></div><div class="box"><small>EXACT MATCH CLAIM</small><b>${r.official_udc_match?'Supported':'Not claimed'}</b></div></div>
-<h3>UDC Notation Breakdown</h3><div class="break">${(r.breakdown||[]).map(x=>`<span class="token">${esc(x)}</span>`).join('')||'<span class="muted">No breakdown.</span>'}</div>
-<h3>Explanation</h3><p class="muted">${esc(r.explanation||'—')}</p><h3>Notation Audit</h3><p class="muted">${esc(r.notation_check||'—')}</p><h3>Candidate Notes</h3><p class="muted">${esc(r.candidate_notes||'—')}</p>${src?'<h3>Evidence Sources</h3>'+src:''}
-<div class="actions"><button class="btn" onclick="navigator.clipboard?.writeText(${JSON.stringify(r.udc_number||'')})">Copy UDC</button><button class="btn" onclick="window.print()">Print</button></div></div>`}
-function saveHistory(r){let a=JSON.parse(localStorage.getItem('udc48_history')||'[]');a.unshift({title:r.title,udc:r.udc_number,confidence:r.confidence,time:new Date().toLocaleString()});localStorage.setItem('udc48_history',JSON.stringify(a.slice(0,100)))}
-function renderHistory(){let a=JSON.parse(localStorage.getItem('udc48_history')||'[]');$('hl').innerHTML=a.length?a.map(x=>`<div class="item"><div><b>${esc(x.title)}</b><div class="muted">${esc(x.time)} · ${esc(x.confidence)}</div></div><code>${esc(x.udc)}</code></div>`).join(''):'<p class="muted">No classifications yet.</p>'}
-const practiceData=[
-['History of India','94(540)'],['Geography of India','91(540)'],['Indian Constitution','342(540)'],['Economy of India','330(540)'],['History of Punjab','94(540.15)'],['Indian Philosophy','1(540)'],['Indian Art','7(540)'],['English Drama','821.111-2'],['Harvesting of Wheat and Maize','633.11+633.15:631.55'],['Harvesting of Wheat','633.11:631.55']
-];let pq=null;
-function newPractice(){pq=practiceData[Math.floor(Math.random()*practiceData.length)];$('pq').innerHTML=`<div class="panel"><small class="muted">CLASSIFY THIS TITLE</small><h2>${esc(pq[0])}</h2></div>`;$('pa').value='';$('pr').innerHTML=''}
-function checkPractice(){if(!pq)newPractice();let ok=$('pa').value.trim()===pq[1];$('pr').innerHTML=`<div class="panel ${ok?'result':''}"><b>${ok?'✓ Correct':'Reference answer'}</b><div class="number">${esc(pq[1])}</div></div>`}
-async function health(){try{const r=await fetch('/api/health');const j=await r.json();$('health').textContent=j.geminiConfigured?'● Gemini Ready':'● API Key Missing'}catch{$('health').textContent='● Server Offline'}}
-renderHistory();newPractice();health();
+const $=x=>document.getElementById(x);
+const esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+function showTab(id,b){document.querySelectorAll('section').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='history')renderHistory()}
+function fill(x){$('title').value=x;classify()} function clearIt(){$('title').value='';$('result').innerHTML=''}
+function busy(v){$('loading').classList.toggle('on',v);$('status').textContent=v?'● SEARCHING':'● READY'}
+async function classify(){const title=$('title').value.trim();if(!title){$('result').innerHTML='<div class="notice error">Enter a book title first.</div>';return}busy(true);$('result').innerHTML='';
+try{const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});const d=await r.json();if(!r.ok)throw Error(d.error||'Classification failed');render(d);save(d)}catch(e){$('result').innerHTML='<div class="notice error"><b>Classification service error</b><br>'+esc(e.message)+'</div>'}finally{busy(false)}}
+function render(d){
+ const sources=(d.sources||[]).map(s=>'<div class="source">🔎 <b>'+esc(s.title||'Web source')+'</b><br><span class="muted">'+esc(s.url||'')+'</span></div>').join('');
+ const breakdown=(d.breakdown||[]).map(x=>'<span class="token">'+esc(x)+'</span>').join('');
+ const cand=(d.candidates||[]).map(x=>'<div class="candidate"><span><b>'+esc(x.udc||'')+'</b><br><small class="muted">'+esc(x.reason||'')+'</small></span><code>'+esc(x.verdict||'')+'</code></div>').join('');
+ $('result').innerHTML='<div class="panel result"><small class="muted">BEST SUPPORTED UDC CLASSMARK</small><div class="number">'+esc(d.udc||'REQUIRES VERIFICATION')+'</div>'+
+ '<div class="grid">'+[['Book Title',d.title],['Main Subject',d.subject],['Sub Subject',d.sub_subject],['Context',d.context],['Confidence',d.confidence],['Evidence',d.evidence_level],['Verification',d.status]].map(a=>'<div class="box"><small>'+esc(a[0])+'</small><b>'+esc(a[1]||'—')+'</b></div>').join('')+'</div>'+
+ '<h3>Notation Breakdown</h3><div class="tokens">'+(breakdown||'<span class="muted">Not supplied.</span>')+'</div>'+
+ '<h3>Why this classmark?</h3><p class="muted">'+esc(d.explanation||'—')+'</p>'+
+ (cand?'<h3>Candidate Audit</h3>'+cand:'')+
+ (sources?'<h3>Google Grounding Sources</h3>'+sources:'')+
+ (d.warnings?.length?'<div class="notice" style="margin-top:10px"><b>Notes</b><br>'+d.warnings.map(esc).join('<br>')+'</div>':'')+
+ '</div>';
+}
+function save(d){let a=JSON.parse(localStorage.getItem('udc_titan_history')||'[]');a.unshift({title:d.title,udc:d.udc,time:new Date().toLocaleString()});localStorage.setItem('udc_titan_history',JSON.stringify(a.slice(0,150)))}
+function renderHistory(){let a=JSON.parse(localStorage.getItem('udc_titan_history')||'[]');$('hist').innerHTML=a.length?a.map(x=>'<div class="item"><span><b>'+esc(x.title)+'</b><br><small class="muted">'+esc(x.time)+'</small></span><code>'+esc(x.udc)+'</code></div>').join(''):'<span class="muted">No classifications yet.</span>'}
+async function health(){try{const r=await fetch('/api/health');$('hout').textContent=JSON.stringify(await r.json(),null,2)}catch(e){$('hout').textContent=e.message}}
+let q=null;
+async function newQuestion(){try{let r=await fetch('/api/practice');q=await r.json();$('pq').innerHTML='<small class="muted">CLASSIFY THIS TITLE</small><h2>'+esc(q.title)+'</h2>';$('pa').value='';$('pres').innerHTML=''}catch(e){$('pres').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
+function practiceCheck(){if(!q)return;$('pres').innerHTML='<div class="notice ok">Reference classmark: <b>'+esc(q.udc)+'</b><br>'+esc(q.explanation||'')+'</div>'}
+renderHistory();
 </script>
-</body>
-</html>
+</body></html>
