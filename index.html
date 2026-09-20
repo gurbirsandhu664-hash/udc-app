@@ -1,88 +1,61 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050912">
-<title>UDC TITAN · Gemini Search Intelligence</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050912"><title>UDC TITAN v50 · AI Jury</title>
 <style>
-:root{--bg:#050912;--card:#0b1524;--card2:#0f1d30;--line:#294866;--txt:#f7faff;--muted:#9db1c9;--blue:#67aaff;--green:#4ee0a2;--gold:#ffd36b;--red:#ff8290}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(900px 450px at 50% -180px,#23578e66,transparent),var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
-.wrap{max-width:1200px;margin:auto;padding:14px 14px 55px}.head{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;align-items:center;gap:11px}.logo{width:47px;height:47px;border-radius:15px;border:1px solid #356087;background:#0c1c30;display:grid;place-items:center;color:var(--blue);font-weight:950}.brand b{display:block}.brand small{display:block;color:var(--muted);margin-top:2px}.status{border:1px solid #28604e;color:var(--green);border-radius:99px;padding:7px 10px;font-size:12px}
-.hero{text-align:center;padding:24px 0 17px}.badge{display:inline-block;border:1px solid #38648e;border-radius:99px;color:var(--blue);padding:7px 12px;font-size:12px;font-weight:900;letter-spacing:.3px}.hero h1{font-size:clamp(38px,8vw,70px);line-height:.98;letter-spacing:-2.5px;margin:14px 0 10px}.hero p{max-width:900px;margin:auto;color:var(--muted);line-height:1.55}
-nav{display:flex;gap:8px;overflow:auto;position:sticky;top:0;z-index:9;padding:5px 0 12px;background:linear-gradient(var(--bg) 76%,transparent)}nav button,.btn,.chip{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:14px;padding:11px 14px;font-weight:850;cursor:pointer;white-space:nowrap}nav button.active,.primary{background:var(--blue);border-color:var(--blue);color:#06111c}
-.panel{background:linear-gradient(180deg,#0d1b2d,#091522);border:1px solid var(--line);border-radius:22px;padding:17px;margin:10px 0;box-shadow:0 20px 70px #0007}.panel h2{margin:0 0 5px}.muted{color:var(--muted)}
-textarea,input{width:100%;background:#06101c;border:1px solid #2b4c6e;color:var(--txt);border-radius:17px;padding:15px;outline:none}textarea{min-height:155px;resize:vertical;font-size:18px;line-height:1.45}input{font-size:16px}textarea:focus,input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #67aaff18}
-.chips,.actions,.tokens{display:flex;flex-wrap:wrap;gap:8px}.chips{margin-top:10px}.chip{font-size:13px;padding:8px 11px;border-radius:99px;color:#c3d3e6}.actions{margin-top:12px}.loading{display:none;color:var(--blue);padding:12px 0}.loading.on{display:block}.hidden{display:none!important}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px}.box{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:12px}.box small{display:block;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}.result{border-left:4px solid var(--green)}.number{font-size:clamp(35px,9vw,62px);font-weight:950;color:var(--green);letter-spacing:-1px;overflow-wrap:anywhere;margin:2px 0 15px}.token{background:#12283f;border:1px solid #2d4e70;padding:8px 10px;border-radius:10px}.notice{padding:12px;border-radius:13px;border:1px solid #5c4b1b;background:#29210e;color:#f1d67d;line-height:1.5}.ok{border-color:#28604e;background:#0c251e;color:#a8f1d5}.error{border-color:#713440;background:#2a1219;color:#ffb7c0}.source{background:#0a1828;border:1px solid var(--line);border-radius:11px;padding:10px;margin:7px 0;word-break:break-word}.candidate{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px;background:#0d1e32;border:1px solid var(--line);border-radius:12px;margin:7px 0}.candidate code{color:var(--green);font-weight:900}.item{display:flex;justify-content:space-between;gap:10px;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px}.list{display:grid;gap:8px;margin-top:10px}footer{text-align:center;color:#6f839c;font-size:12px;padding:22px}
-@media(max-width:600px){.status{display:none}.panel{padding:14px;border-radius:18px}.hero{padding-top:17px}.hero h1{letter-spacing:-1.8px}textarea{min-height:135px;font-size:17px}.grid{grid-template-columns:1fr}}
+:root{--bg:#050912;--c:#0b1626;--c2:#0f1e31;--l:#294b6c;--t:#f6f9ff;--m:#9db2ca;--b:#69abff;--g:#50e0a4;--y:#ffd56f;--r:#ff8b98}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 50% -170px,#24679c66,transparent),var(--bg);color:var(--t);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:12px 14px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand{display:flex;gap:10px;align-items:center}.mark{width:46px;height:46px;border:1px solid #37628b;border-radius:15px;display:grid;place-items:center;color:var(--b);font-weight:950;background:#0a192b}.brand b{display:block}.brand small{color:var(--m)}.state{border:1px solid #2a6855;color:var(--g);padding:7px 10px;border-radius:99px;font-size:12px;font-weight:800}
+.hero{text-align:center;padding:23px 0 14px}.badge{display:inline-block;border:1px solid #38648e;border-radius:99px;padding:7px 12px;color:var(--b);font-size:12px;font-weight:900}.hero h1{font-size:clamp(38px,8vw,68px);line-height:.98;letter-spacing:-2.7px;margin:13px 0 10px}.hero p{color:var(--m);line-height:1.55;max-width:900px;margin:auto}
+nav{display:flex;gap:8px;overflow:auto;position:sticky;top:0;z-index:10;padding:5px 0 12px;background:linear-gradient(var(--bg) 75%,transparent)}button{font:inherit}nav button,.btn,.chip{cursor:pointer;border:1px solid var(--l);background:var(--c);color:var(--t);border-radius:14px;padding:11px 14px;font-weight:850;white-space:nowrap}nav button.active,.primary{background:var(--b);color:#06111d;border-color:var(--b)}
+.panel{background:linear-gradient(180deg,#0d1b2d,#091522);border:1px solid var(--l);border-radius:22px;padding:17px;margin:10px 0;box-shadow:0 18px 65px #0007}.panel h2{margin:0 0 5px}.muted{color:var(--m)}
+textarea,input{width:100%;background:#06101c;color:var(--t);border:1px solid #2d4e70;border-radius:17px;padding:15px;outline:none}textarea{min-height:150px;resize:vertical;font-size:18px;line-height:1.45}input{font-size:16px}textarea:focus,input:focus{border-color:var(--b);box-shadow:0 0 0 3px #69abff18}
+.chips,.actions,.tokens{display:flex;flex-wrap:wrap;gap:8px}.chips{margin-top:10px}.chip{border-radius:99px;padding:8px 11px;color:#c6d6e8;font-size:13px}.actions{margin-top:12px}.hidden{display:none!important}.loading{display:none;color:var(--b);padding:12px 0}.loading.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}.box{background:var(--c2);border:1px solid var(--l);border-radius:15px;padding:12px}.box small{display:block;color:var(--m);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}.box b{overflow-wrap:anywhere}.result{border-left:4px solid var(--g)}.number{font-size:clamp(35px,9vw,64px);font-weight:950;color:var(--g);letter-spacing:-1px;overflow-wrap:anywhere;margin:2px 0 14px}.token{background:#122a42;border:1px solid #315575;border-radius:10px;padding:8px 10px}.notice{padding:12px;border-radius:13px;border:1px solid #654e19;background:#29200c;color:#f0d57c;line-height:1.5}.ok{border-color:#2a6653;background:#0b251e;color:#b0f3dc}.bad{border-color:#713544;background:#29131a;color:#ffb8c1}.source{background:#091827;border:1px solid var(--l);border-radius:11px;padding:10px;margin:7px 0;word-break:break-word}.cand{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#0c1d31;border:1px solid var(--l);border-radius:12px;padding:10px;margin:7px 0}.cand code{color:var(--g);font-weight:900}.pill{display:inline-block;border:1px solid var(--l);border-radius:99px;padding:5px 8px;font-size:11px;color:#c3d3e6;margin:2px}.list{display:grid;gap:8px;margin-top:10px}.item{display:flex;justify-content:space-between;gap:10px;background:var(--c2);border:1px solid var(--l);border-radius:13px;padding:12px}.item code{color:var(--g);font-weight:900}pre{white-space:pre-wrap;color:#aac1d8}footer{text-align:center;color:#6f839c;font-size:12px;padding:22px}
+@media(max-width:600px){.state{display:none}.panel{padding:14px;border-radius:18px}.hero h1{letter-spacing:-1.9px}textarea{min-height:135px;font-size:17px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
-<div class="wrap">
-<header class="head"><div class="brand"><div class="logo">UDC</div><div><b>UDC TITAN</b><small>Gemini Search Intelligence · Ultimate</small></div></div><div id="status" class="status">● READY</div></header>
-<section class="hero"><span class="badge">UDC • GEMINI 3.1 PRO • GOOGLE SEARCH</span><h1>UDC Classification Intelligence</h1><p>Meaning analysis → UDC candidate generation → Google Search evidence → notation audit → consistency gate. No seed database required.</p></section>
-<nav><button class="active" onclick="showTab('classify',this)">Classify</button><button onclick="showTab('practice',this)">Practice</button><button onclick="showTab('history',this)">History</button><button onclick="showTab('engine',this)">Engine</button></nav>
-
-<section id="classify">
-<div class="panel">
-<h2>Enter Book Title</h2><p class="muted">Full title, subtitle, language or place information improves classification.</p>
+<body><div class="wrap">
+<header class="top"><div class="brand"><div class="mark">UDC</div><div><b>UDC TITAN v50</b><small>AI Jury · Search Grounding · Failover</small></div></div><div id="state" class="state">● READY</div></header>
+<section class="hero"><span class="badge">GEMINI 3.8 FLASH + GEMINI PRO + GROQ + AI JURY</span><h1>UDC Classification Intelligence</h1><p>Semantic analysis → independent candidate generation → evidence retrieval → notation audit → consensus/adjudication. UDC only.</p></section>
+<nav><button class="active" onclick="tab('classify',this)">Classify</button><button onclick="tab('practice',this)">Practice</button><button onclick="tab('history',this)">History</button><button onclick="tab('engine',this)">Engine</button></nav>
+<section id="classify"><div class="panel">
+<h2>Enter Book Title</h2><p class="muted">Use the complete title/subtitle where possible.</p>
 <textarea id="title" placeholder="e.g. Diagnosis of Heart Disease"></textarea>
 <div class="chips">
-<button class="chip" onclick="fill('History of India')">History of India</button>
-<button class="chip" onclick="fill('Geography of India')">Geography of India</button>
-<button class="chip" onclick="fill('English Drama')">English Drama</button>
-<button class="chip" onclick="fill('Dictionary of Language and Literature')">Dictionary of Language and Literature</button>
-<button class="chip" onclick="fill('Diagnosis of Heart Disease')">Diagnosis of Heart Disease</button>
-<button class="chip" onclick="fill('Alloy of Copper and Zinc')">Alloy of Copper and Zinc</button>
+<button class="chip" onclick="fill('History of India')">History of India</button><button class="chip" onclick="fill('Geography of India')">Geography of India</button>
+<button class="chip" onclick="fill('English Drama')">English Drama</button><button class="chip" onclick="fill('Dictionary of Language and Literature')">Dictionary of Language and Literature</button>
+<button class="chip" onclick="fill('Diagnosis of Heart Disease')">Diagnosis of Heart Disease</button><button class="chip" onclick="fill('Alloy of Copper and Zinc')">Alloy of Copper and Zinc</button>
+</div><div class="actions"><button class="btn primary" onclick="classify()">⚡ TITAN DEEP CLASSIFY</button><button class="btn" onclick="clearIt()">Clear</button></div>
+<div id="loading" class="loading">Running AI jury + Google evidence checks…</div><div id="result"></div>
+</div></section>
+<section id="practice" class="hidden"><div class="panel"><h2>Practice Lab</h2><p class="muted">Practice data is separate from the classifier. It is not used as a reference database.</p><div id="pq" class="box">Tap New Question.</div><input id="pa" placeholder="Your UDC classmark" style="margin-top:10px"><div class="actions"><button class="btn primary" onclick="practiceCheck()">Check</button><button class="btn" onclick="newQuestion()">New Question</button></div><div id="pres"></div></div></section>
+<section id="history" class="hidden"><div class="panel"><h2>History</h2><div id="hist" class="list"></div><button class="btn" onclick="localStorage.removeItem('udc50');renderHistory()">Clear</button></div></section>
+<section id="engine" class="hidden"><div class="panel"><h2>Engine Control Center</h2><p class="muted">See which providers are configured. Missing/limited providers are skipped automatically.</p><button class="btn primary" onclick="health()">Run diagnostics</button><pre id="hout"></pre></div></section>
+<footer>UDC TITAN v50 · API keys remain server-side · No copied UDC seed database shipped</footer>
 </div>
-<div class="actions"><button class="btn primary" onclick="classify()">⚡ DEEP CLASSIFY + VERIFY</button><button class="btn" onclick="clearIt()">Clear</button></div>
-<div id="loading" class="loading">Gemini is reasoning and searching Google for UDC evidence…</div>
-<div id="result"></div>
-</div>
-<div class="panel"><h2>What makes TITAN different</h2><div class="grid">
-<div class="box"><small>Semantic</small><b>Title-first reasoning</b><br><span class="muted">Understands the concept before notation.</span></div>
-<div class="box"><small>UDC</small><b>Analytico-synthetic</b><br><span class="muted">Main classes, auxiliaries and linking signs.</span></div>
-<div class="box"><small>Search</small><b>Google grounding</b><br><span class="muted">Fresh web evidence can be inspected.</span></div>
-<div class="box"><small>Audit</small><b>Candidate challenge</b><br><span class="muted">Plausible-looking numbers are checked before display.</span></div>
-</div></div>
-</section>
-
-<section id="practice" class="hidden"><div class="panel"><h2>Practice Lab</h2><p class="muted">Questions are generated by the server; there is no local UDC seed database.</p><div id="pq" class="box">Tap “New Question”.</div><input id="pa" placeholder="Enter UDC classmark" style="margin-top:10px"><div class="actions"><button class="btn primary" onclick="practiceCheck()">Check</button><button class="btn" onclick="newQuestion()">New Question</button></div><div id="pres"></div></div></section>
-
-<section id="history" class="hidden"><div class="panel"><h2>Classification History</h2><div id="hist" class="list"></div><button class="btn" onclick="localStorage.removeItem('udc_titan_history');renderHistory()">Clear history</button></div></section>
-
-<section id="engine" class="hidden"><div class="panel"><h2>Engine Diagnostics</h2><p class="muted">Verify the Render server, selected Gemini model and Search grounding.</p><button class="btn primary" onclick="health()">Run diagnostics</button><pre id="hout" style="white-space:pre-wrap;color:#aac1d8"></pre></div></section>
-<footer>UDC TITAN · Server-side Gemini · Google Search grounding · API key never exposed to browser</footer>
-</div>
-
 <script>
-const $=x=>document.getElementById(x);
-const esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
-function showTab(id,b){document.querySelectorAll('section').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='history')renderHistory()}
-function fill(x){$('title').value=x;classify()} function clearIt(){$('title').value='';$('result').innerHTML=''}
-function busy(v){$('loading').classList.toggle('on',v);$('status').textContent=v?'● SEARCHING':'● READY'}
-async function classify(){const title=$('title').value.trim();if(!title){$('result').innerHTML='<div class="notice error">Enter a book title first.</div>';return}busy(true);$('result').innerHTML='';
-try{const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});const d=await r.json();if(!r.ok)throw Error(d.error||'Classification failed');render(d);save(d)}catch(e){$('result').innerHTML='<div class="notice error"><b>Classification service error</b><br>'+esc(e.message)+'</div>'}finally{busy(false)}}
-function render(d){
- const sources=(d.sources||[]).map(s=>'<div class="source">🔎 <b>'+esc(s.title||'Web source')+'</b><br><span class="muted">'+esc(s.url||'')+'</span></div>').join('');
- const breakdown=(d.breakdown||[]).map(x=>'<span class="token">'+esc(x)+'</span>').join('');
- const cand=(d.candidates||[]).map(x=>'<div class="candidate"><span><b>'+esc(x.udc||'')+'</b><br><small class="muted">'+esc(x.reason||'')+'</small></span><code>'+esc(x.verdict||'')+'</code></div>').join('');
- $('result').innerHTML='<div class="panel result"><small class="muted">BEST SUPPORTED UDC CLASSMARK</small><div class="number">'+esc(d.udc||'REQUIRES VERIFICATION')+'</div>'+
- '<div class="grid">'+[['Book Title',d.title],['Main Subject',d.subject],['Sub Subject',d.sub_subject],['Context',d.context],['Confidence',d.confidence],['Evidence',d.evidence_level],['Verification',d.status]].map(a=>'<div class="box"><small>'+esc(a[0])+'</small><b>'+esc(a[1]||'—')+'</b></div>').join('')+'</div>'+
- '<h3>Notation Breakdown</h3><div class="tokens">'+(breakdown||'<span class="muted">Not supplied.</span>')+'</div>'+
- '<h3>Why this classmark?</h3><p class="muted">'+esc(d.explanation||'—')+'</p>'+
- (cand?'<h3>Candidate Audit</h3>'+cand:'')+
- (sources?'<h3>Google Grounding Sources</h3>'+sources:'')+
- (d.warnings?.length?'<div class="notice" style="margin-top:10px"><b>Notes</b><br>'+d.warnings.map(esc).join('<br>')+'</div>':'')+
- '</div>';
-}
-function save(d){let a=JSON.parse(localStorage.getItem('udc_titan_history')||'[]');a.unshift({title:d.title,udc:d.udc,time:new Date().toLocaleString()});localStorage.setItem('udc_titan_history',JSON.stringify(a.slice(0,150)))}
-function renderHistory(){let a=JSON.parse(localStorage.getItem('udc_titan_history')||'[]');$('hist').innerHTML=a.length?a.map(x=>'<div class="item"><span><b>'+esc(x.title)+'</b><br><small class="muted">'+esc(x.time)+'</small></span><code>'+esc(x.udc)+'</code></div>').join(''):'<span class="muted">No classifications yet.</span>'}
-async function health(){try{const r=await fetch('/api/health');$('hout').textContent=JSON.stringify(await r.json(),null,2)}catch(e){$('hout').textContent=e.message}}
-let q=null;
-async function newQuestion(){try{let r=await fetch('/api/practice');q=await r.json();$('pq').innerHTML='<small class="muted">CLASSIFY THIS TITLE</small><h2>'+esc(q.title)+'</h2>';$('pa').value='';$('pres').innerHTML=''}catch(e){$('pres').innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
-function practiceCheck(){if(!q)return;$('pres').innerHTML='<div class="notice ok">Reference classmark: <b>'+esc(q.udc)+'</b><br>'+esc(q.explanation||'')+'</div>'}
+const $=id=>document.getElementById(id), esc=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+function tab(id,b){document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='history')renderHistory()}
+function fill(x){$('title').value=x;classify()}function clearIt(){$('title').value='';$('result').innerHTML=''}
+function busy(v){$('loading').classList.toggle('on',v);$('state').textContent=v?'● AI JURY':'● READY'}
+async function classify(){let title=$('title').value.trim();if(!title){$('result').innerHTML='<div class="notice bad">Enter a book title first.</div>';return}busy(true);$('result').innerHTML='';
+try{let r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});let d=await r.json();if(!r.ok)throw Error(d.error||'Service unavailable');render(d);save(d)}
+catch(e){$('result').innerHTML='<div class="notice bad"><b>All configured AI routes were unavailable.</b><br>'+esc(e.message)+'<br><small>The app did not invent a UDC number.</small></div>'}finally{busy(false)}}
+function render(d){let src=(d.sources||[]).map(s=>'<div class="source">🔎 <b>'+esc(s.title||'Evidence source')+'</b><br><span class="muted">'+esc(s.url||'')+'</span></div>').join('');
+let br=(d.breakdown||[]).map(x=>'<span class="token">'+esc(x)+'</span>').join('');
+let ca=(d.candidates||[]).map(x=>'<div class="cand"><span><b>'+esc(x.udc||'')+'</b><br><small class="muted">'+esc(x.reason||'')+'</small></span><code>'+esc(x.verdict||'')+'</code></div>').join('');
+let prov=(d.providers||[]).map(x=>'<span class="pill">'+esc(x.provider)+' · '+esc(x.model)+' · '+esc(x.result)+'</span>').join('');
+$('result').innerHTML='<div class="panel result"><small class="muted">FINAL SUPPORTED UDC CLASSMARK</small><div class="number">'+esc(d.udc||'REQUIRES VERIFICATION')+'</div>'+
+'<div class="grid">'+[['Book Title',d.title],['Main Subject',d.subject],['Sub Subject',d.sub_subject],['Context',d.context],['Confidence',d.confidence],['Evidence',d.evidence_level],['Verification',d.status]].map(a=>'<div class="box"><small>'+esc(a[0])+'</small><b>'+esc(a[1]||'—')+'</b></div>').join('')+'</div>'+
+'<h3>Notation Breakdown</h3><div class="tokens">'+(br||'<span class="muted">Not supplied.</span>')+'</div><h3>Explanation</h3><p class="muted">'+esc(d.explanation||'—')+'</p>'+
+(ca?'<h3>Candidate Audit</h3>'+ca:'')+(prov?'<h3>AI Jury</h3>'+prov:'')+(src?'<h3>Google / Web Evidence</h3>'+src:'')+
+(d.warnings?.length?'<div class="notice" style="margin-top:10px"><b>Verification notes</b><br>'+d.warnings.map(esc).join('<br>')+'</div>':'')+'</div>'}
+function save(d){let a=JSON.parse(localStorage.getItem('udc50')||'[]');a.unshift({title:d.title,udc:d.udc,time:new Date().toLocaleString()});localStorage.setItem('udc50',JSON.stringify(a.slice(0,200)))}
+function renderHistory(){let a=JSON.parse(localStorage.getItem('udc50')||'[]');$('hist').innerHTML=a.length?a.map(x=>'<div class="item"><span><b>'+esc(x.title)+'</b><br><small class="muted">'+esc(x.time)+'</small></span><code>'+esc(x.udc)+'</code></div>').join(''):'<span class="muted">No classifications yet.</span>'}
+async function health(){try{let r=await fetch('/api/health');$('hout').textContent=JSON.stringify(await r.json(),null,2)}catch(e){$('hout').textContent=e.message}}
+let q=null;async function newQuestion(){try{q=await (await fetch('/api/practice')).json();$('pq').innerHTML='<small class="muted">CLASSIFY THIS TITLE</small><h2>'+esc(q.title)+'</h2>';$('pa').value='';$('pres').innerHTML=''}catch(e){$('pres').innerHTML='<div class="notice bad">'+esc(e.message)+'</div>'}}
+function practiceCheck(){if(q)$('pres').innerHTML='<div class="notice ok">Reference answer: <b>'+esc(q.udc)+'</b><br>'+esc(q.explanation||'')+'</div>'}
 renderHistory();
-</script>
-</body></html>
+</script></body></html>

@@ -1,1 +1,1 @@
-UDC TITAN 48.2 — Gemini 3.1 Pro + Google Search Grounding + UDC Audit Gate
+UDC TITAN v50.0 — multi-provider AI jury + Google Search grounding + UDC audit

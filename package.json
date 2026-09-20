@@ -1,6 +1,6 @@
 {
-  "name": "udc-titan-gemini-ultimate",
-  "version": "48.2.0",
+  "name": "udc-titan-v50",
+  "version": "50.0.0",
   "private": true,
   "scripts": {
     "start": "node server.js"
@@ -9,7 +9,6 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@google/genai": "^1.0.0",
     "express": "^4.21.2"
   }
 }
