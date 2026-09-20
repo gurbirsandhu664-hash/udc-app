@@ -1,38 +1,21 @@
-# UDC One-Click V36 — Stable
+# UDC One-Click V37 — resilient Gemini classifier
 
-This is a clean replacement for the `Cannot GET /` problem.
+### What changed
+- Removed the fragile requirement that Gemini Search + JSON structured output succeed in one request.
+- Tries Google Search grounding first, then automatically retries Gemini without Search.
+- Tries multiple Gemini models if a model is unavailable to the API key.
+- Groq remains research-only and can never become the final answer.
+- Keeps `/` routing so Render does not show `Cannot GET /`.
+- Never returns `0` as a guessed UDC number.
+- Final result is clearly marked VERIFIED only when Google grounding evidence was actually returned; otherwise AI_CLASSIFICATION/UNVERIFIED is used.
 
-## Files
-- `index.html` — web UI
-- `server.js` — Express server + Gemini final classifier + optional Groq research
-- `package.json` — Render start configuration
-- `seed-udc.json` — small starter reference set
-- `.env.example` — environment variables
+### Render
+Build: `npm install`
+Start: `npm start`
 
-## Render
-Create a Web Service from this folder/repository.
+Set `GEMINI_API_KEY` in Render Environment Variables.
+Optional: `GROQ_API_KEY`.
 
-Build Command:
-`npm install`
+Do not put API keys in GitHub.
 
-Start Command:
-`npm start`
-
-Environment variables:
-- `GEMINI_API_KEY` = your Google AI Studio/Gemini API key
-- `GEMINI_MODEL` = `gemini-3.8-flash` (or another model available to your key)
-- `GROQ_API_KEY` = your Groq key (optional)
-- `GROQ_MODEL` = `groq/compound` (optional)
-- `PORT` is normally supplied by Render; the server defaults to 10000.
-
-Important:
-- Put real API keys in Render Environment Variables, not in GitHub.
-- Groq is never used as the final answer in this version.
-- Gemini uses Google Search grounding for web evidence.
-- If Gemini cannot verify a defensible UDC number, the app does not invent one.
-- This does not contain or reproduce the proprietary MRF/UDC database. A licensed UDC Abridged data file can be integrated separately.
-
-## Local test
-`npm install`
-`npm start`
-Then open `http://localhost:10000/`.
+A truly exhaustive, authoritative UDC Abridged classifier still requires licensed UDC reference data. Web grounding + Gemini improves coverage but cannot guarantee a correct classification for every possible title.
