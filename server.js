@@ -140,8 +140,9 @@ async function groqResearch(title){
 }
 
 async function geminiFinal(title, hits, research){
-  if(!process.env.GEMINI_API_KEY) throw new Error("GEMINI_KEY_MISSING");
-  const models=(process.env.GEMINI_MODELS||"gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash")
+  const keys=String(process.env.GEMINI_API_KEYS||process.env.GEMINI_API_KEY||"").split(",").map(x=>x.trim()).filter(Boolean);
+  if(!keys.length) throw new Error("GEMINI_KEY_MISSING");
+  const models=(process.env.GEMINI_MODELS||"gemini-2.5-pro,gemini-2.5-flash,gemini-2.0-flash")
     .split(",").map(x=>x.trim()).filter(Boolean);
 
   const local = hits.length ? hits.map((r,i)=>
@@ -160,12 +161,16 @@ ${research || "None"}
 
 RULES:
 - UDC ONLY. Never DDC.
-- First assess whether a supplied verified record is genuinely an exact/direct match. Do not force a match.
-- If no direct match, determine the subject from the whole title and use UDC hierarchy/notation.
+- Treat supplied verified records as strong evidence, but the FINAL answer must still be produced by Gemini.
+- If a supplied record is an exact/direct semantic match, use its UDC notation unless authoritative evidence contradicts it.
+- If no direct match exists, determine the subject from the whole title and search for the closest UDC hierarchy/class.
+- Do not confuse DDC numbers with UDC numbers.
+- For titles involving language, literature, religion, geography, history, education, science, technology, or form, check the relevant UDC notation and justified auxiliaries.
 - Apply auxiliaries only when justified: place, language, form, time, relation, etc.
 - Preserve UDC punctuation and notation.
-- Use Google Search grounding to verify the classification against authoritative/credible UDC evidence where possible.
-- Prefer UDC Consortium material and authoritative library cataloguing/reference sources.
+- Use Google Search grounding aggressively: search the exact title and several UDC-focused variants when needed.
+- Prefer UDC Consortium material and authoritative library cataloguing/reference sources, then national/university library catalogues and other credible UDC references.
+- When search evidence gives conflicting numbers, resolve the conflict using the UDC hierarchy and source quality; do not average or guess.
 - Do not invent a number, do not output 0, and do not use a placeholder.
 - If the evidence is not defensible, return status "unverified" with an empty udc_number.
 - Return JSON only using the requested schema.
@@ -173,9 +178,10 @@ RULES:
 `;
 
   let last;
-  for(const model of models){
-    try{
-      const ai=new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
+  for(const key of keys){
+    for(const model of models){
+      try{
+      const ai=new GoogleGenAI({apiKey:key});
       const resp=await ai.models.generateContent({
         model,
         contents:prompt,
@@ -193,17 +199,18 @@ RULES:
         const gi=groundingInfo(resp); return {...data,model,citations:gi.citations,searchQueries:gi.queries,grounded:gi.hasGrounding};
       }
       last=new Error("INVALID_GEMINI_RESULT");
-    }catch(e){
-      last=e;
-      console.error("Gemini model failed:",model,e.message);
+      }catch(e){
+        last=e;
+        console.error("Gemini model failed:",model,e.message);
+      }
     }
   }
   throw last || new Error("GEMINI_UNAVAILABLE");
 }
 
 app.get("/health",(req,res)=>res.json({
-  ok:true,version:"V33 ONE-CLICK",
-  geminiConfigured:!!process.env.GEMINI_API_KEY,
+  ok:true,version:"V36 MASTER SEARCH",
+  geminiConfigured:!!(process.env.GEMINI_API_KEY||process.env.GEMINI_API_KEYS),
   groqConfigured:!!process.env.GROQ_API_KEY,
   licensedDatasetLoaded:meta.licensed,
   importedClassCount:meta.count,
@@ -211,9 +218,10 @@ app.get("/health",(req,res)=>res.json({
 }));
 
 app.get("/api/status",(req,res)=>res.json({
-  version:"V33 ONE-CLICK",
+  version:"V36 MASTER SEARCH",
   finalProvider:"Gemini",
   googleSearchGrounding:true,
+  finalAnswerNeverGroq:true,
   groqRole:"research-only",
   licensedDatasetLoaded:meta.licensed,
   importedClassCount:meta.count,
@@ -228,17 +236,6 @@ app.post("/api/classify",async(req,res)=>{
   if(!title) return res.status(400).json({error:"Enter a book title."});
 
   const hits=localSearch(title,10);
-  const exact=hits.find(x=>x.score===1 && x.verified===true);
-  if(exact){
-    return res.json({
-      status:"classified",final:true,provider:"Local verified direct match",
-      title,udc_number:exact.udc,main_subject:exact.main_subject,
-      sub_subject:exact.sub_subject,explanation:exact.explanation,
-      confidence:"High",citations:[],searchQueries:[],grounded:false,model:"local-direct-match",
-      note:"Exact/direct match from supplied verified dataset."
-    });
-  }
-
   const research=await groqResearch(title);
   try{
     const g=await geminiFinal(title,hits,research);
@@ -282,4 +279,4 @@ app.post("/api/import-mrf",upload.single("file"),(req,res)=>{
   }
 });
 
-app.listen(PORT,()=>console.log(`UDC One-Click V33 listening on ${PORT}`));
+app.listen(PORT,()=>console.log(`UDC Master Search V36 listening on ${PORT}`));

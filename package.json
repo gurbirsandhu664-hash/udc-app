@@ -1,8 +1,8 @@
 {
-  "name": "udc-oneclick-v33",
-  "version": "33.0.0",
+  "name": "udc-oneclick-v36",
+  "version": "36.0.0",
   "private": true,
-  "description": "One-click UDC classifier: exact supplied-data match first, Gemini + Google Search grounding for final classification, Groq research-only.",
+  "description": "One-click UDC evidence search: Gemini final classification with Google Search grounding, Groq research-only.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
