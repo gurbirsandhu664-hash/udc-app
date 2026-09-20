@@ -1,29 +1,38 @@
-# UDC One-Click V39 — Live Evidence Search Engine
+# UDC One-Click V36 — Stable
 
-## What changed
-- Gemini is the FINAL classifier.
-- Gemini can use Google Search grounding for live web evidence.
-- Groq is optional and research-only; its output is passed to Gemini and is never shown as the final UDC answer.
-- No 2,700-title local key and no fake 70,000-class database.
-- Random/complex titles are processed instead of requiring a local title match.
-- Multiple Gemini models can be attempted automatically.
-- The UI shows evidence, sources, confidence, and whether the result was grounded.
-- The server keeps API keys off the browser.
+This is a clean replacement for the `Cannot GET /` problem.
 
-## Setup
-1. Install Node.js 18+.
-2. Copy `.env.example` to `.env`.
-3. Put your Google AI Studio/Gemini key in `GEMINI_API_KEY`.
-4. Optionally put your Groq key in `GROQ_API_KEY`.
-5. Run:
-   npm install
-   npm start
-6. Open http://localhost:10000
+## Files
+- `index.html` — web UI
+- `server.js` — Express server + Gemini final classifier + optional Groq research
+- `package.json` — Render start configuration
+- `seed-udc.json` — small starter reference set
+- `.env.example` — environment variables
 
 ## Render
-Build Command: `npm install`
-Start Command: `npm start`
-Add the environment variables in Render → Environment.
+Create a Web Service from this folder/repository.
+
+Build Command:
+`npm install`
+
+Start Command:
+`npm start`
+
+Environment variables:
+- `GEMINI_API_KEY` = your Google AI Studio/Gemini API key
+- `GEMINI_MODEL` = `gemini-3.8-flash` (or another model available to your key)
+- `GROQ_API_KEY` = your Groq key (optional)
+- `GROQ_MODEL` = `groq/compound` (optional)
+- `PORT` is normally supplied by Render; the server defaults to 10000.
 
 Important:
-This app is designed to search and reason over publicly available evidence. It does not contain or reproduce a proprietary UDC Master Reference File. For exact Abridged Edition authority, use an authorized/licensed UDC reference when available.
+- Put real API keys in Render Environment Variables, not in GitHub.
+- Groq is never used as the final answer in this version.
+- Gemini uses Google Search grounding for web evidence.
+- If Gemini cannot verify a defensible UDC number, the app does not invent one.
+- This does not contain or reproduce the proprietary MRF/UDC database. A licensed UDC Abridged data file can be integrated separately.
+
+## Local test
+`npm install`
+`npm start`
+Then open `http://localhost:10000/`.

@@ -2,84 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="theme-color" content="#090d18">
-<title>UDC One-Click V39</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>UDC One-Click V36 — Stable</title>
 <style>
-:root{--bg:#070a12;--card:#101727;--line:#263b64;--text:#eef3ff;--muted:#9eacc9;--a:#765cff;--b:#43b8e8;--ok:#56e39f;--warn:#ffc45b}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#17204a 0,#070a12 42%);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif}
-main{max-width:920px;margin:auto;padding:28px 18px 70px}.hero,.result,.status{background:rgba(16,23,39,.92);border:1px solid var(--line);border-radius:28px;box-shadow:0 20px 60px #0007}.hero{padding:28px}
-h1{font-size:clamp(38px,8vw,68px);line-height:.95;margin:0 0 14px;font-weight:850}h1 span{display:block;color:#8c76ff}.sub{font-size:19px;line-height:1.45;color:var(--muted)}
-textarea{width:100%;min-height:125px;resize:vertical;background:#050913;color:var(--text);border:2px solid #304b7c;border-radius:22px;padding:22px;font-size:22px;outline:none;margin-top:22px}
-button{width:100%;border:0;border-radius:20px;padding:20px;margin-top:14px;font-size:21px;font-weight:800;color:white;background:linear-gradient(100deg,var(--a),var(--b));cursor:pointer}
-.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.chip{width:auto;margin:0;padding:11px 15px;border:1px solid #30466f;background:#121b2e;font-size:15px}
-.status{margin-top:18px;padding:18px;color:var(--muted);font-size:14px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:8px}
-.result{margin-top:20px;padding:24px}.badge{display:inline-block;border:1px solid #2d8d67;background:#0e2b24;color:var(--ok);padding:8px 13px;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:1px}.badge.warn{border-color:#8a6829;background:#2d2310;color:var(--warn)}
-.udc{font-size:64px;font-weight:900;letter-spacing:2px;color:#87a8ff;margin:14px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.box{background:#080d17;border:1px solid #253757;border-radius:18px;padding:16px}.label{font-size:11px;letter-spacing:2px;color:#8494b4;font-weight:800;margin-bottom:8px}.value{font-size:18px;line-height:1.45}.wide{grid-column:1/-1}.sources a{color:#83baff;text-decoration:none}.sources div{margin:9px 0;padding-bottom:9px;border-bottom:1px solid #1b2943}
-.small{font-size:13px;color:#71809d;margin-top:18px;line-height:1.5}
-@media(max-width:650px){main{padding:14px 10px 50px}.hero,.result,.status{border-radius:22px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}.udc{font-size:48px}}
+:root{--bg:#070b14;--card:#111827;--line:#2c4168;--text:#f4f7ff;--muted:#9baaca;--a:#6d5dfc;--b:#45b8e8;--ok:#45d995;--warn:#ffca5b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#17224b 0,#070b14 42%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.wrap{max-width:900px;margin:auto;padding:28px 16px 60px}.hero{padding:26px 4px 20px}.kicker{letter-spacing:.18em;color:#8e9bc0;font-weight:800;font-size:12px}.title{font-size:clamp(38px,8vw,76px);line-height:.95;margin:10px 0;font-weight:900}.v{color:#8d78ff}.sub{color:var(--muted);font-size:18px;line-height:1.5}.card{background:rgba(17,24,39,.92);border:1px solid var(--line);border-radius:28px;padding:22px;box-shadow:0 18px 60px rgba(0,0,0,.25)}textarea{width:100%;min-height:130px;resize:vertical;border:2px solid #324b7a;border-radius:20px;background:#050914;color:#fff;padding:18px;font-size:20px;outline:none}button{width:100%;border:0;border-radius:18px;padding:18px;margin-top:14px;color:white;font-size:20px;font-weight:900;background:linear-gradient(100deg,var(--a),var(--b));cursor:pointer}button:disabled{opacity:.55}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.chip{border:1px solid #33496f;background:#131d32;color:#cbd5ef;border-radius:999px;padding:10px 14px;cursor:pointer}.status{margin-top:18px}.result{margin-top:18px;display:none}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.box{background:#0b1220;border:1px solid #263b60;border-radius:16px;padding:15px}.label{font-size:11px;letter-spacing:.16em;color:#8798bd;font-weight:900}.value{font-size:17px;margin-top:7px;line-height:1.45}.udc{font-size:34px;font-weight:900;color:#7ee3ff;word-break:break-word}.sources a{color:#8ddcff;display:block;margin-top:8px;word-break:break-all}.error{border-color:#755c27}.badge{display:inline-block;padding:8px 12px;border-radius:999px;background:#173b30;color:#70efb1;font-weight:900;font-size:12px;letter-spacing:.08em}.foot{color:#71809f;font-size:13px;line-height:1.6;margin-top:18px}@media(max-width:650px){.grid{grid-template-columns:1fr}.card{padding:16px}}
 </style>
 </head>
 <body>
-<main>
-<section class="hero">
-  <h1>UDC One-Click <span>V39</span></h1>
-  <div class="sub">UDC ONLY · Gemini FINAL · Google Search grounding · Groq research-only · No local title key</div>
-  <textarea id="title" placeholder="Enter any book title… e.g. Foreign relations between India and China"></textarea>
-  <button id="go">⚡ CLASSIFY IN ONE CLICK</button>
-  <div class="chips">
-    <button class="chip" data-t="History of India">History of India</button>
-    <button class="chip" data-t="Education">Education</button>
-    <button class="chip" data-t="English Drama">English Drama</button>
-    <button class="chip" data-t="Bible in Hindi">Bible in Hindi</button>
-    <button class="chip" data-t="Dictionary of Language and Literature">Dictionary of Language and Literature</button>
-    <button class="chip" data-t="Foreign relations between India and China">Foreign relations between India and China</button>
+<div class="wrap">
+  <div class="hero">
+    <div class="kicker">UNIVERSAL DECIMAL CLASSIFICATION</div>
+    <div class="title">UDC One-Click <span class="v">V36</span></div>
+    <div class="sub">Gemini FINAL · Google Search grounding · Groq research-only · UDC ONLY · stable /api routing</div>
   </div>
-</section>
-<div class="status" id="status"><span class="dot"></span>Ready — Gemini is the final classifier.</div>
-<section id="out"></section>
-<p class="small">For exact Abridged Edition authority, the engine must have access to an authorized/licensed UDC reference where the required notation is proprietary. Web grounding improves evidence retrieval but cannot turn the public web into a complete 70,000-class official database.</p>
-</main>
+  <div class="card">
+    <textarea id="title" placeholder="Enter any book title…">History of India</textarea>
+    <button id="go" onclick="classify()">⚡ CLASSIFY IN ONE CLICK</button>
+    <div class="chips">
+      <span class="chip" onclick="setT('History of India')">History of India</span>
+      <span class="chip" onclick="setT('Education')">Education</span>
+      <span class="chip" onclick="setT('English Drama')">English Drama</span>
+      <span class="chip" onclick="setT('Bible in Hindi')">Bible in Hindi</span>
+      <span class="chip" onclick="setT('Dictionary of Language and Literature')">Dictionary of Language and Literature</span>
+      <span class="chip" onclick="setT('Science and Technology')">Science and Technology</span>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="result" class="result"></div>
+    <div class="foot">The final number is returned only by Gemini. If Gemini cannot verify a defensible UDC number, the app shows an unverified status instead of inventing a number. For highest authority, load your licensed UDC Abridged reference data when available.</div>
+  </div>
+</div>
 <script>
-const $=s=>document.querySelector(s);
-const titleEl=$("#title"), go=$("#go"), status=$("#status"), out=$("#out");
-document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{titleEl.value=b.dataset.t; classify()});
-go.onclick=classify;
+function setT(t){document.getElementById('title').value=t}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function classify(){
-  const title=titleEl.value.trim();
-  if(!title){status.textContent="Enter a book title first.";return}
-  go.disabled=true;go.textContent="SEARCHING UDC EVIDENCE…";out.innerHTML="";
-  status.innerHTML='<span class="dot"></span>Searching web evidence → Gemini analysis → UDC verification…';
-  try{
-    const r=await fetch("/api/classify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title})});
-    const data=await r.json();
-    if(!r.ok) throw new Error(data.error||"Request failed");
-    render(data);
-    status.innerHTML='<span class="dot"></span>Completed — Gemini FINAL · Google grounding '+(data.engine.googleGrounding?"ON":"not returned");
-  }catch(e){
-    status.textContent="ERROR: "+e.message;
-  }finally{go.disabled=false;go.textContent="⚡ CLASSIFY IN ONE CLICK"}
-}
-function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function render(d){
- const x=d.result||{};
- const verified=x.verification==="Verified"||x.verification==="Supported";
- out.innerHTML=`<section class="result">
-   <span class="badge ${verified?"":"warn"}">${esc(x.verification||"UNVERIFIED")} · GEMINI FINAL</span>
-   <div class="udc">${esc(x.udcNumber||"—")}</div>
+ const title=document.getElementById('title').value.trim(), btn=document.getElementById('go');
+ if(!title){document.getElementById('status').innerHTML='<div class="box error">Enter a book title.</div>';return}
+ btn.disabled=true; btn.textContent='SEARCHING UDC…'; document.getElementById('result').style.display='none';
+ document.getElementById('status').innerHTML='<div class="box">Searching Google-grounded UDC evidence and asking Gemini for the final classification…</div>';
+ try{
+  const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});
+  const data=await r.json();
+  if(!data.ok){document.getElementById('status').innerHTML='<div class="box error"><span class="badge">VERIFICATION REQUIRED</span><div class="value">'+esc(data.message||data.error)+'</div></div>';return}
+  const x=data.result||{};
+  let src=(x.sources||[]).map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title||s.url)}</a>`).join('');
+  document.getElementById('status').innerHTML='<div class="box"><span class="badge">GEMINI FINAL</span><div class="value">Google grounding: ON · Groq research: '+(data.researchUsed?'used':'not needed')+'</div></div>';
+  document.getElementById('result').innerHTML=`
    <div class="grid">
-    <div class="box"><div class="label">BOOK TITLE</div><div class="value">${esc(x.title)}</div></div>
-    <div class="box"><div class="label">CONFIDENCE</div><div class="value">${esc(x.confidence)}</div></div>
+    <div class="box" style="grid-column:1/-1"><div class="label">FINAL UDC NUMBER</div><div class="udc">${esc(x.finalUdcNumber||'UNVERIFIED')}</div></div>
+    <div class="box"><div class="label">BOOK TITLE</div><div class="value">${esc(x.bookTitle)}</div></div>
+    <div class="box"><div class="label">VERIFICATION</div><div class="value">${esc(x.verificationStatus)}</div></div>
     <div class="box"><div class="label">MAIN SUBJECT</div><div class="value">${esc(x.mainSubject)}</div></div>
     <div class="box"><div class="label">SUB SUBJECT</div><div class="value">${esc(x.subSubject)}</div></div>
-    <div class="box wide"><div class="label">NOTATION BREAKDOWN</div><div class="value">${esc(x.notationBreakdown)}</div></div>
-    <div class="box wide"><div class="label">EXPLANATION</div><div class="value">${esc(x.explanation)}</div></div>
-    <div class="box wide"><div class="label">EVIDENCE</div><div class="value">${esc(x.evidenceSummary)}</div></div>
-    <div class="box wide sources"><div class="label">GROUNDING SOURCES</div>
-      ${(x.sources||[]).length?x.sources.map(s=>`<div><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a><br><span class="small">${esc(s.relevance)}</span></div>`).join(""):"No web source returned by Gemini."}
-    </div>
-   </div>
- </section>`;
+    <div class="box" style="grid-column:1/-1"><div class="label">BREAKDOWN</div><div class="value">${esc(x.breakdown)}</div></div>
+    <div class="box" style="grid-column:1/-1"><div class="label">EXPLANATION</div><div class="value">${esc(x.shortExplanation)}</div></div>
+    <div class="box"><div class="label">CONFIDENCE</div><div class="value">${esc(x.confidence)}</div></div>
+    <div class="box sources"><div class="label">WEB SOURCES</div><div class="value">${src||'Grounding metadata not returned.'}</div></div>
+   </div>`;
+  document.getElementById('result').style.display='block';
+ }catch(e){document.getElementById('status').innerHTML='<div class="box error"><span class="badge">CONNECTION ERROR</span><div class="value">Server is reachable but the request failed. Check Render logs and the Gemini environment variable.</div></div>'}
+ finally{btn.disabled=false;btn.textContent='⚡ CLASSIFY IN ONE CLICK'}
 }
 </script>
 </body>
