@@ -1,133 +1,186 @@
-import express from "express";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
-app.use(express.json({limit:"1mb"}));
-app.use(express.static(__dirname));
-const PORT = process.env.PORT || 10000;
-const GROQ_KEY = process.env.GROQ_API_KEY || "";
-const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+const PORT = Number(process.env.PORT || 3000);
+const ROOT = __dirname;
+const INDEX = path.join(ROOT, 'index.html');
+
+// Google-only production route. The app never exposes the API key to the browser.
 const MODELS = [
- process.env.GEMINI_MODEL,
- process.env.GEMINI_PRO_MODEL,
- "gemini-3.8-flash",
- "gemini-3.1-pro-preview",
- "gemini-3.7-flash",
- "gemini-3.6-flash",
- "gemini-3.5-flash",
- "gemini-3.5-flash-lite",
- "gemini-3.1-flash-lite",
- "gemini-2.5-pro",
- "gemini-2.5-flash",
- "gemini-2.5-flash-lite",
- "gemma-4-31b-it",
- "gemma-4-26b-a4b-it"
-].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-const GROQ_MODELS=[
- process.env.GROQ_MODEL,
- "groq/compound",
- "openai/gpt-oss-120b",
- "openai/gpt-oss-20b",
- "qwen/qwen3.8-27b",
- "qwen/qwen3.6-27b"
-].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-const SUMMARY_BASE="https://udcsummary.info/php/index.php";
+  process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+  process.env.GEMINI_PRO_MODEL || 'gemini-3.1-pro-preview',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3-flash-preview',
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite'
+].filter((v,i,a)=>v && a.indexOf(v)===i);
 
-const UDC_RULES=`
-Universal Decimal Classification ONLY. Never DDC.
-Use UDC Summary as the public abridged-style authority when available. UDC is discipline-based, hierarchical, analytico-synthetic and faceted.
-Main classes: 0 knowledge/information/computing; 1 philosophy/psychology; 2 religion/theology; 3 social sciences; 4 vacant; 5 mathematics/natural sciences; 6 applied sciences/medicine/technology; 7 arts/entertainment/sport; 8 linguistics/literature; 9 geography/history.
-004 is computer science/computing/data processing ONLY. Do not choose 004 because a title merely contains technology, technical, digital, system, application, method, science, or tool.
-Common signs: + coordination, / consecutive extension, : simple relation, :: order-fixing, [] subgrouping, * non-UDC notation, A/Z alphabetical specification.
-Common auxiliaries include = language, (0...) form, (1/9) place, (=...) ethnicity/nationality, "..." time, -0... general characteristics. Special auxiliaries are local to designated schedules.
-Never add an auxiliary just because it is possible. Every component and symbol must be justified by the title and the UDC schedule.
-Never invent a licensed MRF class. Never return DDC, 0, blank, null or N/A.
+const OFFICIAL = 'https://udc-hub.com/';
+
+const CORE = `
+You are a professional Universal Decimal Classification (UDC) classification assistant.
+Use UDC ONLY. Never use DDC, LCC, NLM or another classification system.
+The target is the UDC Abridged Edition level where an abridged table is applicable, while preserving valid UDC notation and auxiliaries.
+Do not fabricate a classmark. Search the web when a current or exact notation needs verification. Prefer UDC Consortium / UDC Online sources and authoritative library or publisher sources. UDC Online is the authoritative current source when accessible, but it is subscription-based.
+
+CLASSIFICATION METHOD:
+1) Read the whole title semantically, not as isolated keywords.
+2) Determine the dominant subject and document intent: monograph, textbook, dictionary, handbook, manual, bibliography, statistics, literary work, etc.
+3) Select the most specific justified UDC main class.
+4) Add only auxiliaries actually supported by the title/content: common auxiliaries of language (=...), form (0...), place (1/9), ethnic/national groups (=...), time ("..."), general characteristics -0...; and appropriate special auxiliaries where the relevant UDC table permits them.
+5) Use connecting signs correctly when the title clearly requires a compound subject: +, /, :, ::, [ ] and * / A-Z only when their UDC meaning is justified.
+6) For literature, distinguish language/literature from literary form. For a drama, use the language/literature base plus the drama literary-form auxiliary where verified.
+7) For dictionaries/encyclopedias/handbooks/manuals, distinguish document form from subject. Do not blindly append a form auxiliary if the UDC schedule's preferred construction is different.
+8) Never infer a place, language, time or form auxiliary merely because a country/language word appears unless it is actually a facet of the work.
+9) Return one FINAL UDC NUMBER, not a list, when the evidence is sufficient. If evidence is genuinely insufficient, set status to REQUIRES VERIFICATION rather than inventing a number.
+10) The answer must explain every notation component in plain language.
+
+Important: the UDC Consortium states that UDC Online contains the complete current scheme and supports searching, parsing, validating and building UDC numbers. The app must therefore treat an exact official UDC hit as stronger evidence than model memory.
 `;
 
-const schema={type:"object",properties:{title:{type:"string"},udc_number:{type:"string"},main_subject:{type:"string"},sub_subject:{type:"string"},explanation:{type:"string"},breakdown:{type:"string"},confidence:{type:"string"},evidence_summary:{type:"string"},sources:{type:"array",items:{type:"string"}},evidence_level:{type:"string"},official_udc_match:{type:"boolean"},candidate_notes:{type:"string"},notation_check:{type:"string"}},required:["title","udc_number","main_subject","sub_subject","explanation","breakdown","confidence","evidence_summary","sources","evidence_level","official_udc_match","candidate_notes","notation_check"]};
+const schema = {
+  type: 'object',
+  properties: {
+    title: {type:'string'},
+    udc_number: {type:'string'},
+    main_subject: {type:'string'},
+    sub_subject: {type:'string'},
+    document_form: {type:'string'},
+    breakdown: {type:'string'},
+    explanation: {type:'string'},
+    confidence: {type:'string', enum:['High','Medium','Low']},
+    status: {type:'string', enum:['VERIFIED','PROVISIONAL','REQUIRES VERIFICATION']},
+    verification_basis: {type:'string'},
+    sources: {type:'array', items:{type:'string'}},
+    search_queries: {type:'array', items:{type:'string'}}
+  },
+  required:['title','udc_number','main_subject','sub_subject','document_form','breakdown','explanation','confidence','status','verification_basis','sources','search_queries']
+};
 
-function norm(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim()}
-function parseJSON(s){if(!s)throw Error("Empty AI response");s=String(s).replace(/^```json\s*/i,"").replace(/^```\s*/,"").replace(/```\s*$/i,"").trim();const a=s.indexOf("{"),b=s.lastIndexOf("}");if(a>=0&&b>a)s=s.slice(a,b+1);return JSON.parse(s)}
-function validate(r,title){const n=String(r?.udc_number||"").trim();if(!n||n==="0"||/^unknown|null|n\/a$/i.test(n))throw Error("Invalid UDC number");if(n.includes("004")&&!/(computer|computing|informatics|information technology|software|programming|data processing|artificial intelligence|machine learning|cyber|internet|database|ict)/i.test(title))throw Error("SEMANTIC_GUARD_004");return {...r,title:r?.title||title,udc_number:n,sources:Array.isArray(r?.sources)?r.sources.filter(Boolean).slice(0,8):[],official_udc_match:!!r?.official_udc_match}};
-
-// High-value UDC Summary concepts used as a deterministic safety net. These are
-// class references, not a copy of the licensed MRF. Exact claims are only made
-// where the public UDC Summary supports the class.
-const C=[
-["0","Knowledge, science and computer science",/\b(knowledge|information science|documentation|librarianship)\b/],["004","Computer science and technology. Computing. Data processing",/\b(computer|computing|informatics|programming|software|database|cybersecurity|cyber|machine learning|artificial intelligence|data processing|ict)\b/],
-["1","Philosophy",/\bphilosophy\b/],["159.9","Psychology",/\bpsychology\b/],["2","Religion. Theology",/\b(religion|theology|bible|quran|koran|christianity|islam|hinduism)\b/],
-["30","General social sciences",/\bsocial sciences?\b/],["31","Demography. Population studies",/\b(population|demography)\b/],["316","Sociology",/\bsociology\b/],["32","Politics",/\bpolitics?|political science\b/],["33","Economics",/\b(economy|economics|economic)\b/],["34","Law",/\b(law|legal|jurisprudence)\b/],["35","Public administration",/\b(public administration|government administration)\b/],["36","Social welfare",/\b(social welfare|social work)\b/],["37","Education",/\b(education|teaching|pedagogy|instruction|schooling|teacher training)\b/],["39","Ethnology. Folklore",/\b(ethnolog|folklore|folk lore|customs|traditions)\b/],
-["51","Mathematics",/\b(mathematics|maths?|algebra|geometry|calculus|number theory)\b/],["52","Astronomy",/\bastronom(y|ical)|cosmology\b/],["53","Physics",/\bphysics|mechanics|optics|thermodynamics|quantum physics\b/],["54","Chemistry",/\bchemistry|chemical\b/],["55","Earth sciences",/\bgeology|meteorology|earth science|geophysics\b/],["56","Palaeontology",/\bpalaeontolog|fossils?\b/],["57","Biological sciences",/\bbiology|botany|zoology|ecology|microbiology|genetics\b/],["58","Botanical sciences",/\bbotany|plants?\b/],["59","Zoological sciences",/\bzoology|animals?\b/],
-["61","Medical sciences",/\bmedicine|medical|disease|surgery|hospital|nursing|health care\b/],["62","Engineering and technology in general",/\bengineering\b/],["63","Agriculture and related sciences and technologies",/\bagriculture|farming|crop|crops|wheat|maize|corn|harvest|harvesting|irrigation|agronomy|horticulture\b/],["65","Management and organization",/\bmanagement|business|commerce|marketing|organization\b/],["66","Chemical technology",/\bchemical technolog|industrial chemistry\b/],["67","Various industries and crafts",/\bindustry|manufacturing|crafts?\b/],["68","Industries, trades and crafts",/\bworkshop|production technology\b/],["69","Building materials and building practice",/\bconstruction|building practice|building materials\b/],
-["7","The arts. Entertainment. Sport",/\barts?|entertainment\b/],["71","Landscape and regional planning",/\blandscape architecture|regional planning\b/],["72","Architecture",/\barchitecture|architectural\b/],["73","Sculpture",/\bsculpture\b/],["74","Drawing and applied art",/\bdrawing|applied art\b/],["75","Painting",/\bpainting\b/],["76","Graphic art",/\bgraphic art|printmaking\b/],["77","Photography and similar processes",/\bphotography\b/],["78","Music",/\bmusic|musical\b/],["79","Recreation. Entertainment. Games. Sport",/\bsport|games?|recreation\b/],["796","Sport and games",/\bfootball|cricket|athletics|tennis|basketball|sports?\b/],
-["80","General questions relating to linguistics and literature",/\blanguage|linguistics|dictionary|lexicography\b/],["81","Linguistics",/\blinguistics|grammar|phonetics|semantics\b/],["82","Literature",/\bliterature|poetry|novel|fiction|prose\b/],["821.111","English literature",/\benglish literature\b/],["821.111-2","English literature — drama",/\benglish drama|drama in english\b/],
-["90","Archaeology",/\barchaeolog(y|ical)\b/],["91","Geography",/\bgeograph(y|ical)\b/],["94","History",/\bhistor(y|ical)\b/]
-];
-
-const exact=[
-[/^history of india$/i,"94(540)","History","History of India","94 = History; (540) = India.","Official UDC Summary hierarchy match"],
-[/^geography of india$/i,"91(540)","Geography","Geography of India","91 = Geography; (540) = India.","Official UDC Summary hierarchy match"],
-[/^indian constitution$/i,"342(540)","Law","Constitutional law of India","342 = Constitutional law; (540) = India.","Reasoned from UDC Summary"],
-[/^indian literature$/i,"821.21(540)","Literature","Indian literature","821.21 = Indian literature; (540) = India.","Reasoned from UDC Summary"],
-[/^indian philosophy$/i,"1(540)","Philosophy","Philosophy of India","1 = Philosophy; (540) = India.","Reasoned from UDC Summary"],
-[/^indian art$/i,"7(540)","Arts","Art of India","7 = Arts; (540) = India.","Reasoned from UDC Summary"],
-[/^english drama$/i,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Official UDC Summary hierarchy match"],
-[/^music and entertainment$/i,"78+79","Music and entertainment","Music; entertainment","78 = Music; 79 = Recreation/entertainment/games/sport; + coordinates the two subjects.","UDC hierarchy cross-check"],
-[/^science and technology$/i,"5/6","Mathematics/natural sciences and applied sciences/technology","Science and technology","5 = Mathematics and natural sciences; 6 = Applied sciences, medicine and technology. The oblique stroke expresses consecutive extension.","Official UDC Summary hierarchy match"],
-[/^harvesting of wheat and maize$/i,"633.11+633.15:631.55","Agriculture","Harvesting of wheat and maize","633.11 = wheat; 633.15 = maize; + coordinates the two crops; : relates them to 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of wheat and barley$/i,"633.11+633.16:631.55","Agriculture","Harvesting of wheat and barley","633.11 = wheat; 633.16 = barley; + coordinates the two crops; : relates them to 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of cereals$/i,"633.1:631.55","Agriculture","Harvesting of cereals","633.1 = cereals/grain crops; 631.55 = gathering/harvesting; : expresses the relation.","UDC evidence cross-check"],
-[/^harvesting of wheat$/i,"633.11:631.55","Agriculture","Harvesting of wheat","633.11 = wheat; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of maize$/i,"633.15:631.55","Agriculture","Harvesting of maize","633.15 = maize; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of barley$/i,"633.16:631.55","Agriculture","Harvesting of barley","633.16 = barley; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^wheat and maize$/i,"633.11+633.15","Agriculture","Wheat and maize","633.11 = wheat; 633.15 = maize; + coordinates the crops.","UDC hierarchy cross-check"],
-[/^wheat and barley$/i,"633.11+633.16","Agriculture","Wheat and barley","633.11 = wheat; 633.16 = barley; + coordinates the crops.","UDC hierarchy cross-check"],
-[/^cultivation of wheat$/i,"633.11:631.5","Agriculture","Cultivation of wheat","633.11 = wheat; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
-[/^cultivation of maize$/i,"633.15:631.5","Agriculture","Cultivation of maize","633.15 = maize; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
-[/^cultivation of barley$/i,"633.16:631.5","Agriculture","Cultivation of barley","633.16 = barley; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
-];
-
-function localClassify(title){const t=norm(title);for(const e of exact){if(e[0].test(t))return result(title,e[1],e[2],e[3],e[4],e[5],true)}
- // Place-aware history/geography/constitution patterns.
- if(/\b(history|historical)\b/.test(t)&&/\bindia|bharat\b/.test(t))return result(title,"94(540)","History","History of India","94 = History; (540) = India.","Reasoned from UDC Summary",true);
- if(/\bgeograph/.test(t)&&/\bindia|bharat\b/.test(t))return result(title,"91(540)","Geography","Geography of India","91 = Geography; (540) = India.","Reasoned from UDC Summary",true);
- // Form-aware literature rules: do not blindly append auxiliaries.
- if(/\benglish\b/.test(t)&&/\bdrama\b/.test(t))return result(title,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Reasoned from UDC Summary",true);
- if(/\b(dictionary|lexicon|glossary)\b/.test(t)&&/\blanguage\b/.test(t))return result(title,"80","Language and linguistics","Language reference / lexicography","80 = General questions relating to linguistics and literature; exact dictionary treatment depends on the language and form stated in the title.","Reasoned from UDC Summary",false);
- // Agriculture: process + crop is deliberately more specific than broad 63.
- if(/\b(harvest|harvesting)\b/.test(t)&&/\b(wheat|maize|corn|cereal|grain)\b/.test(t))return result(title,"631.5:633.1","Agriculture","Agricultural operations relating to cereals","631.5 = Agricultural operations; 633.1 = Cereals/grain crops; : expresses their relation.","Reasoned from UDC Summary",true);
- let hits=C.filter(x=>x[2].test(t)); if(hits.length){hits.sort((a,b)=>b[2].source.length-a[2].source.length);const h=hits[0];return result(title,h[0],h[1],h[1],`${h[0]} = ${h[1]}.`,`Reasoned from UDC Summary`,false)}
- return result(title,"REQUIRES VERIFICATION","Unresolved","No verified subject-specific classmark","The title did not match a sufficiently specific deterministic UDC rule. No broad classmark is invented.","Requires verification",false);
+function cleanText(x){return String(x ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').trim();}
+function validUrl(u){try{const x=new URL(u); return /^https?:$/.test(x.protocol)}catch{return false}}
+function normalizeModelOutput(raw, title, model){
+  let text = raw;
+  if (typeof raw === 'object' && raw) text = raw.text || raw.output_text || JSON.stringify(raw);
+  text = cleanText(text);
+  // Remove accidental markdown fences.
+  text = text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+  let d;
+  try { d = JSON.parse(text); } catch {
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Google returned non-JSON output');
+    d = JSON.parse(m[0]);
+  }
+  d.title = d.title || title;
+  d.model = model;
+  d.sources = Array.isArray(d.sources) ? d.sources.filter(validUrl).slice(0,8) : [];
+  d.search_queries = Array.isArray(d.search_queries) ? d.search_queries.slice(0,8) : [];
+  d.udc_number = cleanText(d.udc_number);
+  if (!d.udc_number) throw new Error('No UDC number returned');
+  if (!/^[0-9.()=:\-+\/\[\]"' ]+[A-Za-z*]*$/.test(d.udc_number)) throw new Error('Invalid UDC notation characters');
+  return d;
 }
-function result(title,n,m,s,x,conf,official){return{title,udc_number:n,main_subject:m,sub_subject:s,breakdown:x,explanation:x+(official?"":" This result is not an exact licensed MRF lookup."),confidence:conf,evidence_summary:official?"Matched to a public UDC Summary concept/hierarchy.":"Deterministic semantic analysis; exact licensed MRF lookup not claimed.",sources:["https://udcsummary.info/"],evidence_level:conf,official_udc_match:official,candidate_notes:"",notation_check:"Every displayed component must be a UDC class, auxiliary or valid relation; DDC notation is prohibited.",engine:"V46 MAX local semantic engine",model:"offline",grounded:false}}
 
-async function gemini(title,model,grounded){const body={contents:[{role:"user",parts:[{text:`${UDC_RULES}\nClassify this complete book title: "${title}". Search the official UDC Summary first when grounding is enabled. Prefer an exact official UDC Summary class when available. Generate up to 3 candidates internally, audit every notation component and every crop/language/place/form auxiliary, then return one final result. Never convert a subject to a broader class merely because a model guess is convenient. Do not use 004 unless the subject is genuinely computing. Do not invent an official record. JSON only.`}]}],systemInstruction:{parts:[{text:UDC_RULES}]},generationConfig:{temperature:0.02,responseMimeType:"application/json",responseSchema:schema,maxOutputTokens:1600}};if(grounded)body.tools=[{googleSearch:{}}];const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),28000);try{const u=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":GEMINI_KEY},body:JSON.stringify(body),signal:ac.signal});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch{throw Error("Bad Gemini response")};if(!r.ok)throw Error(j?.error?.message||`Gemini HTTP ${r.status}`);const out=validate(parseJSON(j?.candidates?.[0]?.content?.parts?.map(x=>x.text||"").join("")),title);const chunks=j?.candidates?.[0]?.groundingMetadata?.groundingChunks||[];const gs=chunks.map(x=>x.web).filter(Boolean).map(x=>x.uri).filter(Boolean);if(!out.sources.length)out.sources=gs.slice(0,8);return{...out,engine:grounded?"Gemini + Google Search":"Gemini",model,grounded:gs.length>0}}finally{clearTimeout(tm)}}
-async function groq(title){if(!GROQ_KEY)throw Error("GROQ_API_KEY not configured");const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},body:JSON.stringify({model:process.env.GROQ_MODEL||"openai/gpt-oss-120b",temperature:0.02,response_format:{type:"json_object"},messages:[{role:"system",content:UDC_RULES},{role:"user",content:`Classify "${title}" using UDC Summary as public authority. Return the required JSON fields only. Never use DDC and never use 004 unless it is genuinely computing.`}]})});const j=await r.json();if(!r.ok)throw Error(j?.error?.message||`Groq HTTP ${r.status}`);return{...validate(parseJSON(j?.choices?.[0]?.message?.content||""),title),engine:"Groq fallback",model:process.env.GROQ_MODEL||"openai/gpt-oss-120b",grounded:false}}
-
-app.get("/",(_,res)=>res.sendFile(path.join(__dirname,"index.html")));
-app.get("/api/health",(_,res)=>res.json({ok:true,version:"V46 MAX",authority:"UDC Summary",authorityUrl:SUMMARY_BASE,geminiConfigured:!!GEMINI_KEY,groqConfigured:!!GROQ_KEY,geminiModels:MODELS,groqModels:GROQ_MODELS,features:["Google-only multi-model stack","Google Search grounding","retry/failover","UDC-only guard","no broad fallback","notation audit"]}));
-
-async function googleFallback(title){
- const models=MODELS.filter(m=>!m.includes("live")&&!m.includes("image")&&!m.includes("tts")&&!m.includes("transcribe"));
- const errors=[];
- // Google-only sequential fallback: one final answer, no jury/voting/consensus layer.
- for(const model of models){
+async function callGemini(model, title, candidate=null){
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY is not configured');
+  const prompt = CORE + `\nTITLE TO CLASSIFY:\n${title}\n` + (candidate ? `\nA first Google-grounded draft is below. Audit it against the evidence and UDC rules; correct it if needed. Do not accept it just because it was generated by another model.\nDRAFT:\n${JSON.stringify(candidate)}\n` : '') + `\nOutput ONLY the requested JSON object. Use Google Search grounding. For web evidence, prioritize searches containing the exact UDC notation/term and official UDC sources.\n`;
+  const body = {
+    contents:[{role:'user',parts:[{text:prompt}]}],
+    tools:[{google_search:{}}],
+    generationConfig:{response_mime_type:'application/json',response_schema:schema,temperature:0.1,max_output_tokens:4096}
+  };
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 35000);
   try{
-   const grounded=!model.startsWith("gemma-");
-   const out=await gemini(title,model,grounded);
-   return {...out,provider:"Google",fallback_chain:models,provider_errors:errors.slice(-8)};
-  }catch(e){errors.push(`${model}: ${e?.message||e}`)}
- }
- throw Error(errors.length?errors[errors.length-1]:"No Google model available");
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{
+      method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify(body),signal:controller.signal
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok){
+      const msg = j?.error?.message || `HTTP ${r.status}`;
+      const e = new Error(msg); e.status=r.status; throw e;
+    }
+    const text = j?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+    const d = normalizeModelOutput(text,title,model);
+    const chunks = j?.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const grounded = chunks.map(c=>c?.web?.uri).filter(validUrl);
+    d.sources = [...new Set([...d.sources,...grounded])].slice(0,8);
+    d.grounded = grounded.length>0;
+    d.google_searches = j?.candidates?.[0]?.groundingMetadata?.webSearchQueries || d.search_queries;
+    return d;
+  } finally { clearTimeout(timer); }
 }
-app.post("/api/classify",async(req,res)=>{
- const title=String(req.body?.title||"").trim(); if(!title)return res.status(400).json({error:"Enter a book title."});
- const lc=localClassify(title);
- if(lc.official_udc_match)return res.json(lc);
- if(!GEMINI_KEY){lc.udc_number="REQUIRES VERIFICATION";lc.confidence="Requires verification";lc.engine="Google AI stack not configured";return res.json(lc)}
- try{return res.json(await googleFallback(title));}
- catch(e){console.error("Google stack:",e.message);lc.udc_number="REQUIRES VERIFICATION";lc.confidence="Requires verification";lc.evidence_level="NO_GOOGLE_RESULT";lc.engine="Google AI fallback exhausted";lc.explanation="No Google model returned a verified result. The system intentionally withholds an unverified UDC number.";lc.provider_errors=[e.message];return res.json(lc)}
+
+function syntaxAudit(d){
+  const n=d.udc_number;
+  const problems=[];
+  if(!n || /undefined|null|unknown|not resolved/i.test(n)) problems.push('No usable classmark');
+  if(/[{}<>]/.test(n)) problems.push('Unsupported notation character');
+  const opens=(n.match(/\(/g)||[]).length, closes=(n.match(/\)/g)||[]).length;
+  if(opens!==closes) problems.push('Unbalanced parentheses');
+  const sq1=(n.match(/\[/g)||[]).length, sq2=(n.match(/\]/g)||[]).length;
+  if(sq1!==sq2) problems.push('Unbalanced brackets');
+  const q=(n.match(/"/g)||[]).length;
+  if(q%2) problems.push('Unbalanced time auxiliary quotation marks');
+  return {ok:problems.length===0, problems};
+}
+
+async function classify(title){
+  if(!title || title.length<2) throw new Error('Enter a complete book/document title.');
+  if(title.length>1000) throw new Error('Title is too long.');
+  const errors=[];
+  let first=null;
+  for(const model of MODELS){
+    try{
+      first = await callGemini(model,title,null);
+      const audit=syntaxAudit(first);
+      if(!audit.ok){errors.push(`${model}: ${audit.problems.join(', ')}`); first=null; continue;}
+      // Second-pass audit is a single Google model route, not a jury/vote.
+      const auditModel = MODELS.find(m=>m!==model) || model;
+      try{
+        const checked = await callGemini(auditModel,title,first);
+        const a2=syntaxAudit(checked);
+        if(a2.ok && checked.status !== 'REQUIRES VERIFICATION'){
+          checked.engine='Google Gemini Precision';
+          checked.audit_model=auditModel;
+          checked.provider_errors=errors;
+          checked.notation_check='Passed structural UDC notation audit';
+          checked.evidence_level=checked.grounded ? 'Google Search grounded' : 'Model analysis only';
+          return checked;
+        }
+        // If the audit route cannot verify, keep the first result only if it explicitly says verified/provisional.
+        if(first.status !== 'REQUIRES VERIFICATION'){
+          first.engine='Google Gemini Precision'; first.audit_model='Audit unavailable'; first.provider_errors=errors;
+          first.notation_check='Passed structural UDC notation audit'; first.evidence_level=first.grounded?'Google Search grounded':'Model analysis only';
+          return first;
+        }
+      }catch(e){errors.push(`${auditModel}: ${e.message}`)}
+    }catch(e){errors.push(`${model}: ${e.message}`)}
+  }
+  const err=new Error('Google AI could not return a verified UDC result. Try again or configure a higher-quota Gemini API key.');
+  err.details=errors.slice(-8); err.status=503; throw err;
+}
+
+function send(res,status,obj,ctype='application/json; charset=utf-8'){
+  res.writeHead(status,{'content-type':ctype,'cache-control':'no-store','access-control-allow-origin':'*'});res.end(ctype.startsWith('application/json')?JSON.stringify(obj):obj);
+}
+function body(req){return new Promise((resolve,reject)=>{let b='';req.on('data',c=>{b+=c;if(b.length>20000){req.destroy();reject(new Error('Request too large'));}});req.on('end',()=>{try{resolve(JSON.parse(b||'{}'))}catch{reject(new Error('Invalid JSON'))}});req.on('error',reject)})}
+
+const server=http.createServer(async(req,res)=>{
+  try{
+    if(req.method==='GET' && (req.url==='/'||req.url==='/index.html')) return send(res,200,fs.readFileSync(INDEX,'utf8'),'text/html; charset=utf-8');
+    if(req.method==='GET' && req.url==='/api/health') return send(res,200,{ok:true,googleConfigured:Boolean(process.env.GEMINI_API_KEY),models:MODELS,officialSource:OFFICIAL,seedJsonRequired:false,jury:false,searchGrounding:true});
+    if(req.method==='POST' && req.url==='/api/classify'){
+      const b=await body(req);const d=await classify(cleanText(b.title));return send(res,200,d);
+    }
+    send(res,404,{error:'Not found'});
+  }catch(e){send(res,e.status||500,{error:e.message,details:e.details||[]});}
 });
-app.listen(PORT,()=>console.log(`UDC V45 ULTRA on ${PORT}`));
+server.listen(PORT,()=>console.log(`UDC Precision listening on ${PORT}`));
