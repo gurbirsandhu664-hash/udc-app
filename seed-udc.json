@@ -1,0 +1,58 @@
+[
+  {
+    "title": "History of India",
+    "udc": "94(540)",
+    "subject": "History of India",
+    "breakdown": "94 History + (540) India",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "Geography of India",
+    "udc": "91(540)",
+    "subject": "Geography of India",
+    "breakdown": "91 Geography + (540) India",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "Indian Constitution",
+    "udc": "342(540)",
+    "subject": "Constitutional law of India",
+    "breakdown": "342 Constitutional law + (540) India",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "Economy of India",
+    "udc": "330(540)",
+    "subject": "Economy of India",
+    "breakdown": "330 Economics + (540) India",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "History of Punjab",
+    "udc": "94(540.15)",
+    "subject": "History of Punjab",
+    "breakdown": "94 History + (540.15) Punjab",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "Indian Literature",
+    "udc": "821.21(540)",
+    "subject": "Indian literature",
+    "breakdown": "821.21 Literature in Indian languages + (540) India",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "Indian Philosophy",
+    "udc": "1(540)",
+    "subject": "Philosophy in India",
+    "breakdown": "1 Philosophy + (540) India",
+    "source": "UDC starter reference"
+  },
+  {
+    "title": "Indian Art",
+    "udc": "7(540)",
+    "subject": "Art in India",
+    "breakdown": "7 Arts + (540) India",
+    "source": "UDC starter reference"
+  }
+]
