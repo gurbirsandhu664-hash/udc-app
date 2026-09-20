@@ -1,7 +1,8 @@
 {
-  "name": "udc-ai-classifier-v48-gemini-search",
-  "version": "48.1.0",
+  "name": "udc-one-click-v48-ultra-gemini-search",
+  "version": "48.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
