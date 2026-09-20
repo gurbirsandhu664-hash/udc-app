@@ -2,69 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1020">
-<title>UDC One-Click V36 — Stable</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>UDC One-Click V38</title>
 <style>
-:root{--bg:#070b14;--card:#111827;--line:#2c4168;--text:#f4f7ff;--muted:#9baaca;--a:#6d5dfc;--b:#45b8e8;--ok:#45d995;--warn:#ffca5b}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#17224b 0,#070b14 42%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
-.wrap{max-width:900px;margin:auto;padding:28px 16px 60px}.hero{padding:26px 4px 20px}.kicker{letter-spacing:.18em;color:#8e9bc0;font-weight:800;font-size:12px}.title{font-size:clamp(38px,8vw,76px);line-height:.95;margin:10px 0;font-weight:900}.v{color:#8d78ff}.sub{color:var(--muted);font-size:18px;line-height:1.5}.card{background:rgba(17,24,39,.92);border:1px solid var(--line);border-radius:28px;padding:22px;box-shadow:0 18px 60px rgba(0,0,0,.25)}textarea{width:100%;min-height:130px;resize:vertical;border:2px solid #324b7a;border-radius:20px;background:#050914;color:#fff;padding:18px;font-size:20px;outline:none}button{width:100%;border:0;border-radius:18px;padding:18px;margin-top:14px;color:white;font-size:20px;font-weight:900;background:linear-gradient(100deg,var(--a),var(--b));cursor:pointer}button:disabled{opacity:.55}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.chip{border:1px solid #33496f;background:#131d32;color:#cbd5ef;border-radius:999px;padding:10px 14px;cursor:pointer}.status{margin-top:18px}.result{margin-top:18px;display:none}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.box{background:#0b1220;border:1px solid #263b60;border-radius:16px;padding:15px}.label{font-size:11px;letter-spacing:.16em;color:#8798bd;font-weight:900}.value{font-size:17px;margin-top:7px;line-height:1.45}.udc{font-size:34px;font-weight:900;color:#7ee3ff;word-break:break-word}.sources a{color:#8ddcff;display:block;margin-top:8px;word-break:break-all}.error{border-color:#755c27}.badge{display:inline-block;padding:8px 12px;border-radius:999px;background:#173b30;color:#70efb1;font-weight:900;font-size:12px;letter-spacing:.08em}.foot{color:#71809f;font-size:13px;line-height:1.6;margin-top:18px}@media(max-width:650px){.grid{grid-template-columns:1fr}.card{padding:16px}}
+:root{--bg:#fff;--panel:#f7f8fb;--ink:#101522;--muted:#657087;--line:#dfe4ee;--accent:#5b4df6;--accent2:#1d8cff;--ok:#087f5b;--warn:#a16207}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#fff,#f4f7fb);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
+.wrap{max-width:900px;margin:auto;padding:28px 18px 60px}.brand{letter-spacing:.18em;font-size:12px;font-weight:800;color:#748096;margin-top:8px}
+h1{font-size:clamp(42px,8vw,76px);line-height:.95;margin:14px 0 8px;font-weight:900;letter-spacing:-.055em}
+.ver{color:var(--accent);display:block}.sub{font-size:18px;line-height:1.55;color:var(--muted);max-width:760px}
+.card{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:28px;padding:20px;margin-top:24px;box-shadow:0 18px 50px rgba(30,45,70,.08)}
+textarea{width:100%;min-height:150px;resize:vertical;border:2px solid #ccd5e5;border-radius:22px;padding:20px;font-size:22px;background:#fff;color:var(--ink);outline:none}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(91,77,246,.1)}
+button{width:100%;border:0;border-radius:20px;padding:18px 20px;margin-top:14px;background:linear-gradient(100deg,var(--accent),var(--accent2));color:white;font-size:19px;font-weight:900;cursor:pointer;box-shadow:0 12px 30px rgba(91,77,246,.2)}
+button:disabled{opacity:.6;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px}.chip{border:1px solid #d5dceb;background:#fff;padding:10px 14px;border-radius:999px;color:#43506a;cursor:pointer;font-weight:650}
+.result{display:none}.label{font-size:11px;letter-spacing:.17em;font-weight:900;color:#7b879c}.number{font-size:clamp(42px,10vw,76px);font-weight:950;letter-spacing:-.05em;margin:5px 0 18px;color:#171b28;word-break:break-word}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px}.box b{display:block;font-size:13px;color:#58657c;margin-bottom:5px}.box span{font-size:16px;line-height:1.5}.explain{margin-top:12px;line-height:1.65;color:#38445a}.status{margin-top:15px;padding:13px 15px;border-radius:15px;background:#eefaf5;color:var(--ok);font-weight:750}.sources{margin-top:12px}.sources a{display:block;color:#315bdc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:6px 0}.small{font-size:12px;color:#7b879c;line-height:1.5;margin-top:18px}.err{display:none;margin-top:15px;padding:14px;border-radius:15px;background:#fff4f4;color:#a12a2a;border:1px solid #f0caca}
+@media(max-width:650px){.wrap{padding:20px 13px 45px}.card{border-radius:22px;padding:14px}.grid{grid-template-columns:1fr}textarea{font-size:19px}.sub{font-size:16px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="hero">
-    <div class="kicker">UNIVERSAL DECIMAL CLASSIFICATION</div>
-    <div class="title">UDC One-Click <span class="v">V36</span></div>
-    <div class="sub">Gemini FINAL · Google Search grounding · Groq research-only · UDC ONLY · stable /api routing</div>
-  </div>
-  <div class="card">
-    <textarea id="title" placeholder="Enter any book title…">History of India</textarea>
-    <button id="go" onclick="classify()">⚡ CLASSIFY IN ONE CLICK</button>
-    <div class="chips">
-      <span class="chip" onclick="setT('History of India')">History of India</span>
-      <span class="chip" onclick="setT('Education')">Education</span>
-      <span class="chip" onclick="setT('English Drama')">English Drama</span>
-      <span class="chip" onclick="setT('Bible in Hindi')">Bible in Hindi</span>
-      <span class="chip" onclick="setT('Dictionary of Language and Literature')">Dictionary of Language and Literature</span>
-      <span class="chip" onclick="setT('Science and Technology')">Science and Technology</span>
-    </div>
-    <div id="status" class="status"></div>
-    <div id="result" class="result"></div>
-    <div class="foot">The final number is returned only by Gemini. If Gemini cannot verify a defensible UDC number, the app shows an unverified status instead of inventing a number. For highest authority, load your licensed UDC Abridged reference data when available.</div>
-  </div>
+<main class="wrap">
+<div class="brand">UNIVERSAL DECIMAL CLASSIFICATION</div>
+<h1>UDC One-Click <span class="ver">V38</span></h1>
+<div class="sub">AI-powered UDC search & classification · Google Search grounding · Gemini multi-model fallback · Groq research support · clean white interface</div>
+
+<section class="card">
+<textarea id="title" placeholder="Enter any book title…">History of India</textarea>
+<button id="go">⚡ CLASSIFY IN ONE CLICK</button>
+<div class="chips">
+<span class="chip">History of India</span><span class="chip">Education</span><span class="chip">English Drama</span>
+<span class="chip">Bible in Hindi</span><span class="chip">Dictionary of Language and Literature</span>
+<span class="chip">Foreign Relations between India and China</span><span class="chip">Library Classification</span>
 </div>
+<div id="err" class="err"></div>
+</section>
+
+<section id="result" class="card result">
+<div class="label">FINAL UDC NUMBER</div>
+<div id="num" class="number"></div>
+<div class="grid">
+<div class="box"><b>MAIN SUBJECT</b><span id="main"></span></div>
+<div class="box"><b>SUB SUBJECT</b><span id="sub"></span></div>
+<div class="box"><b>BREAKDOWN</b><span id="break"></span></div>
+<div class="box"><b>CONFIDENCE</b><span id="conf"></span></div>
+</div>
+<div class="box explain"><b>EXPLANATION</b><span id="why"></span></div>
+<div id="status" class="status"></div>
+<div id="sources" class="sources"></div>
+</section>
+
+<div class="small">
+V38 never uses DDC. Gemini is the final classifier; Google Search is used for grounding when available.
+No licensed UDC/MRF content is bundled or copied into this project. Search evidence can improve accuracy,
+but an AI-generated classification should not be represented as an official UDC catalogue record.
+</div>
+</main>
 <script>
-function setT(t){document.getElementById('title').value=t}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function classify(){
- const title=document.getElementById('title').value.trim(), btn=document.getElementById('go');
- if(!title){document.getElementById('status').innerHTML='<div class="box error">Enter a book title.</div>';return}
- btn.disabled=true; btn.textContent='SEARCHING UDC…'; document.getElementById('result').style.display='none';
- document.getElementById('status').innerHTML='<div class="box">Searching Google-grounded UDC evidence and asking Gemini for the final classification…</div>';
+const $=id=>document.getElementById(id);
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{$("title").value=c.textContent; window.scrollTo({top:0,behavior:"smooth"})});
+$("go").onclick=async()=>{
+ const title=$("title").value.trim(); if(!title){$("err").style.display="block";$("err").textContent="Enter a book title.";return}
+ $("go").disabled=true;$("go").textContent="SEARCHING UDC…";$("err").style.display="none";
  try{
-  const r=await fetch('/api/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});
-  const data=await r.json();
-  if(!data.ok){document.getElementById('status').innerHTML='<div class="box error"><span class="badge">VERIFICATION REQUIRED</span><div class="value">'+esc(data.message||data.error)+'</div></div>';return}
-  const x=data.result||{};
-  let src=(x.sources||[]).map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title||s.url)}</a>`).join('');
-  document.getElementById('status').innerHTML='<div class="box"><span class="badge">GEMINI FINAL</span><div class="value">Google grounding: ON · Groq research: '+(data.researchUsed?'used':'not needed')+'</div></div>';
-  document.getElementById('result').innerHTML=`
-   <div class="grid">
-    <div class="box" style="grid-column:1/-1"><div class="label">FINAL UDC NUMBER</div><div class="udc">${esc(x.finalUdcNumber||'UNVERIFIED')}</div></div>
-    <div class="box"><div class="label">BOOK TITLE</div><div class="value">${esc(x.bookTitle)}</div></div>
-    <div class="box"><div class="label">VERIFICATION</div><div class="value">${esc(x.verificationStatus)}</div></div>
-    <div class="box"><div class="label">MAIN SUBJECT</div><div class="value">${esc(x.mainSubject)}</div></div>
-    <div class="box"><div class="label">SUB SUBJECT</div><div class="value">${esc(x.subSubject)}</div></div>
-    <div class="box" style="grid-column:1/-1"><div class="label">BREAKDOWN</div><div class="value">${esc(x.breakdown)}</div></div>
-    <div class="box" style="grid-column:1/-1"><div class="label">EXPLANATION</div><div class="value">${esc(x.shortExplanation)}</div></div>
-    <div class="box"><div class="label">CONFIDENCE</div><div class="value">${esc(x.confidence)}</div></div>
-    <div class="box sources"><div class="label">WEB SOURCES</div><div class="value">${src||'Grounding metadata not returned.'}</div></div>
-   </div>`;
-  document.getElementById('result').style.display='block';
- }catch(e){document.getElementById('status').innerHTML='<div class="box error"><span class="badge">CONNECTION ERROR</span><div class="value">Server is reachable but the request failed. Check Render logs and the Gemini environment variable.</div></div>'}
- finally{btn.disabled=false;btn.textContent='⚡ CLASSIFY IN ONE CLICK'}
-}
+  const r=await fetch("/api/classify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title})});
+  const j=await r.json(); if(!r.ok) throw new Error(j.detail||j.error||"Classification failed");
+  $("result").style.display="block";
+  $("num").textContent=j.udc_number;$("main").textContent=j.main_subject;$("sub").textContent=j.sub_subject;
+  $("break").textContent=j.breakdown;$("conf").textContent=j.confidence;$("why").textContent=j.explanation;
+  $("status").textContent=`${j.engine} · ${j.model}${j.grounded?" · Google Search grounded":" · fallback mode"}`;
+  $("sources").innerHTML="";
+  (j.sources||[]).forEach(u=>{try{const a=document.createElement("a");a.href=u;a.target="_blank";a.rel="noopener";a.textContent=u;$("sources").appendChild(a)}catch{}});
+  $("result").scrollIntoView({behavior:"smooth",block:"start"});
+ }catch(e){$("err").style.display="block";$("err").textContent=e.message}
+ finally{$("go").disabled=false;$("go").textContent="⚡ CLASSIFY IN ONE CLICK"}
+};
 </script>
 </body>
 </html>

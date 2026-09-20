@@ -1,21 +1,27 @@
-# UDC One-Click V37 — resilient Gemini classifier
+# UDC One-Click V38
 
-### What changed
-- Removed the fragile requirement that Gemini Search + JSON structured output succeed in one request.
-- Tries Google Search grounding first, then automatically retries Gemini without Search.
-- Tries multiple Gemini models if a model is unavailable to the API key.
-- Groq remains research-only and can never become the final answer.
-- Keeps `/` routing so Render does not show `Cannot GET /`.
-- Never returns `0` as a guessed UDC number.
-- Final result is clearly marked VERIFIED only when Google grounding evidence was actually returned; otherwise AI_CLASSIFICATION/UNVERIFIED is used.
+## Render
+Build command:
+`npm install`
 
-### Render
-Build: `npm install`
-Start: `npm start`
+Start command:
+`npm start`
 
-Set `GEMINI_API_KEY` in Render Environment Variables.
-Optional: `GROQ_API_KEY`.
+Environment variables:
+- `GEMINI_API_KEY` = Google AI Studio/Gemini API key
+- `GROQ_API_KEY` = Groq key (optional research support)
+- `GEMINI_MODEL` = optional override
 
-Do not put API keys in GitHub.
+## What V38 changes
+- White professional UI
+- `/` route fixed
+- Gemini Interactions API as primary path
+- Google Search grounding on primary attempts
+- Automatic Gemini model fallback
+- Automatic no-search fallback
+- Legacy Generate Content compatibility fallback
+- Groq is research support, not the final classifier
+- Structured JSON response
+- No local 2700-title key and no copied licensed MRF/UDC database
 
-A truly exhaustive, authoritative UDC Abridged classifier still requires licensed UDC reference data. Web grounding + Gemini improves coverage but cannot guarantee a correct classification for every possible title.
+Important: web grounding improves evidence, but it cannot guarantee an official UDC Abridged match for every title without licensed UDC reference data.
