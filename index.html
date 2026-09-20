@@ -19,7 +19,7 @@ button:disabled{opacity:.6}.chips{display:flex;gap:9px;flex-wrap:wrap;margin-top
 <body><main class="wrap">
 <section class="hero">
 <div class="brand">UDC One-Click <span class="ver">V33</span></div>
-<div class="sub">UDC ONLY · Gemini FINAL · Google Search grounding · Groq research-only · no invented 0</div>
+<div class="sub">UDC ONLY · Gemini FINAL · Multi-query Google Search · Evidence Browser · Groq research-only · no invented 0</div>
 <textarea id="title" placeholder="Enter any book title… e.g. History of India"></textarea>
 <button id="go" onclick="classify()">⚡ CLASSIFY IN ONE CLICK</button>
 <div class="chips">
@@ -47,7 +47,7 @@ async function classify(){
       $("status").textContent="Verified classification returned.";
       $("out").innerHTML=`<section class="result"><div class="label">UDC CLASSIFICATION</div><div class="udc">${esc(d.udc_number)}</div><span class="badge">✓ ${esc(d.provider)}</span>
       ${field("BOOK TITLE",d.title)}${field("CONFIDENCE",d.confidence)}${field("MAIN SUBJECT",d.main_subject)}${field("SUB SUBJECT",d.sub_subject||"—")}${field("EXPLANATION",d.explanation)}
-      <div class="small" style="margin-top:14px">${esc(d.note||"")}</div>${sources(d.citations)}</section>`;
+      <div class="small" style="margin-top:14px">${esc(d.note||"")}</div>${d.searchQueries?.length?`<div class="field"><b>SEARCH QUERIES USED</b>${d.searchQueries.map(q=>`<div class="small">${esc(q)}</div>`).join("")}</div>`:""}${sources(d.citations)}</section>`;
     }else{
       $("status").textContent="Verification required.";
       $("out").innerHTML=`<section class="result"><div class="label">NO VERIFIED UDC RESULT</div><div class="udc">—</div><span class="badge warning">⚠ VERIFICATION REQUIRED</span>
@@ -57,7 +57,7 @@ async function classify(){
   finally{$("go").disabled=false}
 }
 function field(k,v){return `<div class="field"><b>${esc(k)}</b>${esc(v||"—")}</div>`}
-function sources(a){if(!a?.length)return"";return `<div class="field sources"><b>GROUNDING SOURCES</b>${a.map(x=>`<a href="${escAttr(x.uri)}" target="_blank" rel="noopener">${esc(x.title||x.uri)}</a>`).join("")}</div>`}
+function sources(a){if(!a?.length)return"";return `<div class="field sources"><b>GOOGLE EVIDENCE — OPEN SOURCE</b>${a.map((x,i)=>`<a href="${escAttr(x.uri)}" target="_blank" rel="noopener">${i+1}. ${esc(x.title||x.uri)}</a>`).join("")}</div>`}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function escAttr(s){return esc(s)}
 async function loadStatus(){try{const d=await (await fetch("/api/status")).json();$("engine").textContent=`Final: ${d.finalProvider} · Google grounding: ${d.googleSearchGrounding?"ON":"OFF"} · Groq: ${d.groqRole} · Imported classes: ${d.importedClassCount}`;}catch{$("engine").textContent="Status unavailable."}}

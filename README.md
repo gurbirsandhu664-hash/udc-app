@@ -1,31 +1,34 @@
-# UDC One-Click V33
+# UDC One-Click V35 — Evidence Search Engine
 
-## What it does
-- One-click title classification.
-- Exact verified supplied-dataset match is used first.
-- Otherwise Gemini is the ONLY AI allowed to produce the final UDC result.
-- Gemini uses Google Search grounding when available.
-- Multiple Gemini models can be tried in sequence.
-- Groq is optional research-only support and is never displayed as the final classification.
-- No guessed `0`, no fabricated UDC number.
-- If a defensible result cannot be verified, the UI clearly says verification is required.
-- Supports import of a legally obtained/licensed UDC dataset in JSON, CSV, or simple TXT format.
+A one-click UDC title classifier designed around evidence retrieval rather than guessing.
+
+## Search flow
+1. Exact verified local UDC record check.
+2. Optional Groq research notes (never final).
+3. Gemini final classifier with Google Search grounding.
+4. Gemini may automatically issue multiple Google queries and synthesize the evidence.
+5. UI shows the actual grounding search queries and clickable source pages returned by Google grounding.
+6. If a defensible UDC number cannot be verified, the app returns `NO VERIFIED UDC RESULT` instead of inventing a number.
+
+Google documents that Gemini's Google Search grounding can automatically generate one or multiple search queries, process results, and return citations. Current Gemini models including Gemini 3.8 Flash, Gemini 3.1 Pro Preview, Gemini 2.5 Pro and Gemini 2.5 Flash support Google Search grounding.
+
+## UDC policy
+- UDC only, never DDC.
+- Prefer authoritative UDC Consortium evidence when available.
+- Apply auxiliaries only when justified by the title/evidence.
+- Do not fabricate a 70,000-class database. The bundled seed data is only starter reference data.
+- Import only a UDC dataset you are legally entitled to use. UDC Consortium states that use of UDC MRF data requires a licence; UDC Summary's 2,600 classes have separate licensing terms.
 
 ## Render
-Build command: `npm install`
-Start command: `npm start`
+Build: `npm install`
+Start: `npm start`
 
-Set environment variables in Render:
-- GEMINI_API_KEY = your Google AI Studio/Gemini API key
-- GEMINI_MODELS = working Gemini model names, comma-separated
-- GROQ_API_KEY = optional
-- GROQ_MODEL = optional
-- PORT = 10000
+Environment:
+- `GEMINI_API_KEY` required for AI search/classification
+- `GEMINI_MODELS` optional comma-separated Gemini model fallback list
+- `GROQ_API_KEY` optional research-only
+- `GROQ_MODEL` optional
+- `PORT` optional (Render supplies its own port)
 
 ## Important
-The bundled seed file is only a small starter reference set. It is NOT a 70,000-class official UDC file.
-Do not copy or bypass a copyrighted/licensed UDC MRF. Import only a dataset you are legally entitled to use.
-
-## Expected behavior
-For a title such as "Education", a supplied verified direct match can return 37.
-For an unknown/random title, the engine attempts Gemini + Google Search grounding. If evidence is insufficient, it returns a clean verification status rather than inventing a number.
+Google Search grounding is a search/retrieval aid, not proof that every returned UDC number is correct. The classifier therefore requires the evidence to support the final result and otherwise reports that verification is required.

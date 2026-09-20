@@ -108,9 +108,14 @@ const schema={
   required:["status","udc_number","main_subject","sub_subject","explanation","confidence","source_note"]
 };
 
-function citations(resp){
-  const chunks=resp?.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-  return chunks.filter(x=>x.web?.uri).slice(0,8).map(x=>({title:x.web.title||"",uri:x.web.uri}));
+function groundingInfo(resp){
+  const gm=resp?.candidates?.[0]?.groundingMetadata || {};
+  const chunks=gm.groundingChunks || [];
+  return {
+    citations: chunks.filter(x=>x.web?.uri).slice(0,12).map(x=>({title:x.web.title||"",uri:x.web.uri})),
+    queries: gm.webSearchQueries || [],
+    hasGrounding: chunks.some(x=>x.web?.uri)
+  };
 }
 
 async function groqResearch(title){
@@ -182,10 +187,10 @@ RULES:
       });
       const data=JSON.parse(resp.text||"{}");
       if(data.status==="classified" && validUdc(data.udc_number)){
-        return {...data,model,citations:citations(resp)};
+        const gi=groundingInfo(resp); return {...data,model,citations:gi.citations,searchQueries:gi.queries,grounded:gi.hasGrounding};
       }
       if(data.status==="unverified" || data.status==="no_result"){
-        return {...data,model,citations:citations(resp)};
+        const gi=groundingInfo(resp); return {...data,model,citations:gi.citations,searchQueries:gi.queries,grounded:gi.hasGrounding};
       }
       last=new Error("INVALID_GEMINI_RESULT");
     }catch(e){
@@ -229,7 +234,7 @@ app.post("/api/classify",async(req,res)=>{
       status:"classified",final:true,provider:"Local verified direct match",
       title,udc_number:exact.udc,main_subject:exact.main_subject,
       sub_subject:exact.sub_subject,explanation:exact.explanation,
-      confidence:"High",citations:[],model:"local-direct-match",
+      confidence:"High",citations:[],searchQueries:[],grounded:false,model:"local-direct-match",
       note:"Exact/direct match from supplied verified dataset."
     });
   }
@@ -243,7 +248,7 @@ app.post("/api/classify",async(req,res)=>{
       title,udc_number:ok?g.udc_number:"",
       main_subject:g.main_subject||"",sub_subject:g.sub_subject||"",
       explanation:g.explanation||"",confidence:g.confidence||"Low",
-      citations:g.citations||[],model:g.model||"",
+      citations:g.citations||[],searchQueries:g.searchQueries||[],grounded:!!g.grounded,model:g.model||"",
       localMatches:hits.slice(0,5),
       note:"Gemini is the only AI allowed to produce the final classification. Groq is research-only."
     });
