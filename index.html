@@ -1,115 +1,126 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1020">
-<title>UDC AI Classifier v47</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07101d"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>UDC AI Classifier v48 FIX</title>
 <style>
-:root{--bg:#07101d;--card:#0e1a2b;--card2:#122238;--text:#eef5ff;--muted:#9db0c9;--line:#263a55;--accent:#64a8ff;--good:#55d49a;--warn:#ffd166}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#050a12,#0b1626);color:var(--text);font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:1100px;margin:auto;padding:24px 16px 50px}.hero{padding:24px 0 18px}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:6px 10px;color:var(--accent);font-size:12px;font-weight:700}.hero h1{font-size:clamp(30px,6vw,52px);margin:12px 0 6px}.hero p{color:var(--muted);margin:0}
-.tabs{display:flex;gap:8px;overflow:auto;margin:16px 0}.tabs button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:11px 15px;border-radius:12px;cursor:pointer;font-weight:700}.tabs button.active,.btn.primary{background:var(--accent);color:#07101d;border-color:var(--accent)}
-.panel{background:rgba(14,26,43,.9);border:1px solid var(--line);border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 12px 40px #0004}
-textarea,input{width:100%;background:#081321;color:var(--text);border:1px solid var(--line);border-radius:14px;padding:15px;font:inherit;outline:none}textarea{min-height:130px;resize:vertical}textarea:focus,input:focus{border-color:var(--accent)}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{border:1px solid var(--line);background:var(--card2);color:var(--muted);border-radius:999px;padding:8px 11px;cursor:pointer}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.stat{padding:15px;background:var(--card2);border:1px solid var(--line);border-radius:14px}.stat b{font-size:22px;display:block}.muted{color:var(--muted)}.result{border-left:4px solid var(--good)}.udc{font-size:34px;font-weight:800;color:var(--good);letter-spacing:.5px}.kv{display:grid;grid-template-columns:150px 1fr;gap:8px;padding:7px 0;border-bottom:1px solid #ffffff0d}.hidden{display:none}.small{font-size:12px}.notice{color:var(--warn);background:#2b2410;border:1px solid #604e1d;padding:11px;border-radius:12px;margin-top:12px}
-footer{color:var(--muted);font-size:12px;margin-top:22px}
-@media(max-width:600px){.kv{grid-template-columns:1fr}.udc{font-size:29px}}
+:root{--bg:#050b14;--p:#0b1727;--p2:#102139;--line:#27415f;--text:#f4f7ff;--muted:#9fb2ca;--a:#69aaff;--good:#51d7a0;--warn:#ffd166;--bad:#ff8290}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 450px at 50% -120px,#1a3c6b55,transparent),var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{max-width:1160px;margin:auto;padding:14px 14px 60px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:7px 0}.brand{display:flex;gap:10px;align-items:center}.logo{width:44px;height:44px;border:1px solid var(--line);border-radius:13px;display:grid;place-items:center;font-weight:900;color:var(--a);background:var(--p2)}.brand b{display:block}.brand span{font-size:11px;color:var(--muted)}.state{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--good)}
+.hero{text-align:center;padding:26px 0 18px}.pill{display:inline-block;border:1px solid #31567f;border-radius:99px;padding:7px 12px;color:var(--a);font-size:12px;font-weight:850}.hero h1{font-size:clamp(34px,7vw,62px);line-height:1;margin:15px 0 10px;letter-spacing:-1.5px}.hero p{color:var(--muted);max-width:780px;margin:auto;line-height:1.5}
+.nav{display:flex;gap:8px;overflow:auto;position:sticky;top:0;z-index:5;padding:5px 0 13px;background:linear-gradient(var(--bg) 72%,transparent)}button{font:inherit}.nav button,.btn,.chip{border:1px solid var(--line);background:var(--p);color:var(--text);border-radius:13px;padding:11px 14px;cursor:pointer;font-weight:750;white-space:nowrap}.nav button.active,.btn.primary{background:var(--a);color:#06101a;border-color:var(--a)}
+.panel{background:linear-gradient(180deg,#0d1a2b,#0a1523);border:1px solid var(--line);border-radius:21px;padding:17px;margin:11px 0;box-shadow:0 16px 50px #0005}.panel h2{margin:0 0 5px}.muted{color:var(--muted)}textarea,input{width:100%;background:#06111e;color:var(--text);border:1px solid #2c4b6e;border-radius:16px;padding:16px;outline:0}textarea{min-height:150px;resize:vertical;font-size:18px;line-height:1.45}input{padding:13px}textarea:focus,input:focus{border-color:var(--a);box-shadow:0 0 0 3px #69aaff18}.chips,.actions{display:flex;flex-wrap:wrap;gap:8px}.chips{margin-top:10px}.chip{font-size:13px;padding:8px 11px;border-radius:99px;color:#bdcce0}.actions{margin-top:12px}.loader{display:none;color:var(--a);margin:12px 0}.loader.show{display:block}.hidden{display:none!important}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.box{background:#0d1d30;border:1px solid var(--line);border-radius:14px;padding:12px}.box small{display:block;color:var(--muted);margin-bottom:4px}.result{border-left:4px solid var(--good)}.number{font-size:clamp(32px,8vw,50px);font-weight:900;color:var(--good);margin:3px 0 14px}.break{display:flex;flex-wrap:wrap;gap:8px}.token{background:#12263e;border:1px solid #2a4968;padding:8px 10px;border-radius:10px}.notice{margin-top:12px;padding:12px;border-radius:12px;border:1px solid #5b4a1b;background:#28210f;color:#f6da79;font-size:13px;line-height:1.45}.error{border-color:#67303b;background:#28121a;color:#ffb2bc}.item{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--p2);border:1px solid var(--line);padding:12px;border-radius:13px}.list{display:grid;gap:8px;margin-top:11px}.item code{color:var(--good);font-weight:850}.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 7px}footer{text-align:center;color:#71849b;font-size:12px;padding:20px 0}
+@media(max-width:600px){.state{display:none}.panel{padding:14px;border-radius:18px}.hero{padding-top:18px}textarea{min-height:135px;font-size:17px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header class="hero">
-<span class="badge">UDC Abridged • v47</span>
-<h1>UDC AI Classifier</h1>
-<p>Universal Decimal Classification — reference-aware title classification workstation.</p>
-</header>
+<div class="shell">
+<header class="top"><div class="brand"><div class="logo">UDC</div><div><b>UDC AI Classifier</b><span>v48 FIX · UDC-only</span></div></div><div class="state" id="state">● Ready</div></header>
+<section class="hero"><span class="pill">UDC ABRIDGED • v48 FIX</span><h1>Professional Book Classifier</h1><p>Enter a title. The app first checks the connected AI backend, then the local reference set. It never silently turns an unknown title into a fake “official” UDC answer.</p></section>
+<nav class="nav"><button class="active" onclick="tab('classify',this)">Classify</button><button onclick="tab('practice',this)">Practice</button><button onclick="tab('browse',this)">Browse</button><button onclick="tab('history',this)">History</button></nav>
 
-<nav class="tabs">
-<button class="active" onclick="showTab('classify',this)">Classify</button>
-<button onclick="showTab('practice',this)">Practice</button>
-<button onclick="showTab('browse',this)">Browse</button>
-<button onclick="showTab('history',this)">History</button>
-</nav>
-
-<section id="classify" class="tab">
+<section id="classify">
 <div class="panel">
-<h2>Enter Book Title</h2>
+<h2>Enter Book Title</h2><p class="muted">Typos are allowed; try the complete title. Example: <b>Alloy of Copper and Zinc</b></p>
 <textarea id="title" placeholder="History of India"></textarea>
 <div class="chips">
-<button class="chip" onclick="useTitle('History of India')">History of India</button>
-<button class="chip" onclick="useTitle('Geography of India')">Geography of India</button>
-<button class="chip" onclick="useTitle('Indian Constitution')">Indian Constitution</button>
-<button class="chip" onclick="useTitle('English Drama')">English Drama</button>
-<button class="chip" onclick="useTitle('Dictionary of Language and Literature')">Dictionary of Language and Literature</button>
-<button class="chip" onclick="useTitle('Handbook of Science and Technology')">Handbook of Science and Technology</button>
+<button class="chip" onclick="fill('History of India')">History of India</button><button class="chip" onclick="fill('Geography of India')">Geography of India</button><button class="chip" onclick="fill('Indian Constitution')">Indian Constitution</button><button class="chip" onclick="fill('English Drama')">English Drama</button><button class="chip" onclick="fill('Introduction to Physics')">Introduction to Physics</button><button class="chip" onclick="fill('Alloy of Copper and Zinc')">Alloy of Copper and Zinc</button>
 </div>
-<div class="row"><button class="btn primary" onclick="classify()">CLASSIFY</button><button class="btn" onclick="clearResult()">Clear</button></div>
-<div id="result"></div>
+<div class="actions"><button class="btn primary" onclick="classify()">✦ CLASSIFY BOOK</button><button class="btn" onclick="clearAll()">Clear</button></div>
+<div id="loader" class="loader">Analyzing with connected classifier…</div><div id="result"></div>
 </div>
-<div class="panel">
-<h3>Reference Status</h3>
-<div class="grid">
-<div class="stat"><b id="entryCount">8</b><span class="muted">Local examples</span></div>
-<div class="stat"><b>UDC</b><span class="muted">Classification system</span></div>
-<div class="stat"><b>v47</b><span class="muted">Application build</span></div>
-</div>
-<div class="notice">This starter build never claims that a number is officially verified unless it exists in the included reference examples. Add authorized/licensed UDC reference data before using it as an authoritative production classifier.</div>
-</div>
+<div class="panel"><h2>Answer pipeline</h2><div class="grid">
+<div class="box"><small>1</small><b>Normalize</b><br><span class="muted">Spelling, punctuation, aliases.</span></div>
+<div class="box"><small>2</small><b>AI backend</b><br><span class="muted">Tries compatible JSON/text response formats.</span></div>
+<div class="box"><small>3</small><b>Reference</b><br><span class="muted">Exact local evidence is used when available.</span></div>
+<div class="box"><small>4</small><b>Guard</b><br><span class="muted">No fake verification or DDC substitution.</span></div>
+</div><div class="notice">UDC Consortium documentation describes UDC as a decimal, hierarchical and syntactically expressive classification and documents common/special auxiliaries and notation signs. Exact authoritative schedules should come from the authorized edition/reference you are licensed to use.</div></div>
 </section>
 
-<section id="practice" class="tab hidden"><div class="panel"><h2>Practice</h2><p class="muted">Enter a UDC number for the title, then reveal the reference answer.</p><h3 id="pTitle"></h3><input id="pAnswer" placeholder="e.g. 94(540)"><div class="row"><button class="btn primary" onclick="checkPractice()">Check</button><button class="btn" onclick="newPractice()">New Question</button></div><div id="pResult"></div></div></section>
-
-<section id="browse" class="tab hidden"><div class="panel"><h2>Browse UDC</h2><input id="browseSearch" oninput="renderBrowse()" placeholder="Search local reference examples"><div id="browseList" class="grid" style="margin-top:12px"></div></div></section>
-
-<section id="history" class="tab hidden"><div class="panel"><h2>Classification History</h2><div id="historyList"></div><button class="btn" onclick="localStorage.removeItem('udcHistory');renderHistory()">Clear History</button></div></section>
-
-<footer>UDC AI Classifier v47 • Separate application version from reference-data version. Use only authorized/licensed UDC reference material.</footer>
+<section id="practice" class="hidden"><div class="panel"><h2>Practice Lab</h2><div id="pq"></div><input id="pa" placeholder="Enter UDC number"><div class="actions"><button class="btn primary" onclick="checkPractice()">Check</button><button class="btn" onclick="newPractice()">New Question</button></div><div id="pr"></div></div></section>
+<section id="browse" class="hidden"><div class="panel"><h2>Reference Browser</h2><input id="bs" oninput="renderBrowse()" placeholder="Search title, subject or UDC"><div id="bl" class="list"></div></div></section>
+<section id="history" class="hidden"><div class="panel"><h2>History</h2><div id="hl" class="list"></div><button class="btn" onclick="localStorage.removeItem('udc48_history');renderHistory()">Clear History</button></div></section>
+<footer>UDC AI Classifier v48 FIX · Application version and reference dataset are separate.</footer>
 </div>
-
 <script>
-const DB=[
-{q:"history of india",title:"History of India",udc:"94(540)",main:"History",sub:"History of India",aux:["(540) India"],breakdown:["94 = History","(540) = India"],explain:"The title concerns the history of India. The local reference example combines the history class with the India place auxiliary.",status:"Reference-supported",confidence:"High"},
-{q:"geography of india",title:"Geography of India",udc:"91(540)",main:"Geography",sub:"Geography of India",aux:["(540) India"],breakdown:["91 = Geography","(540) = India"],explain:"The title concerns geography of India.",status:"Reference-supported",confidence:"High"},
-{q:"indian constitution",title:"Indian Constitution",udc:"342(540)",main:"Law",sub:"Constitutional law of India",aux:["(540) India"],breakdown:["342 = Constitutional law","(540) = India"],explain:"The title concerns constitutional law in India.",status:"Reference-supported",confidence:"High"},
-{q:"economy of india",title:"Economy of India",udc:"330(540)",main:"Economics",sub:"Economy of India",aux:["(540) India"],breakdown:["330 = Economics","(540) = India"],explain:"The title concerns the economy of India.",status:"Reference-supported",confidence:"High"},
-{q:"history of punjab",title:"History of Punjab",udc:"94(540.15)",main:"History",sub:"History of Punjab",aux:["(540.15) Punjab"],breakdown:["94 = History","(540.15) = Punjab"],explain:"The local reference example combines history with the Punjab place auxiliary.",status:"Reference-supported",confidence:"High"},
-{q:"indian literature",title:"Indian Literature",udc:"821.21(540)",main:"Literature",sub:"Indian literature",aux:["(540) India"],breakdown:["821.21 = Literature in the relevant Indian-language grouping in the local reference","(540) = India"],explain:"The local reference example identifies Indian literature with a place auxiliary.",status:"Reference-supported",confidence:"Medium"},
-{q:"indian philosophy",title:"Indian Philosophy",udc:"1(540)",main:"Philosophy",sub:"Indian philosophy",aux:["(540) India"],breakdown:["1 = Philosophy","(540) = India"],explain:"The title concerns philosophy in an Indian context.",status:"Reference-supported",confidence:"High"},
-{q:"indian art",title:"Indian Art",udc:"7(540)",main:"Arts",sub:"Indian art",aux:["(540) India"],breakdown:["7 = Arts","(540) = India"],explain:"The title concerns art in an Indian context.",status:"Reference-supported",confidence:"High"}
-];
-let currentPractice=null;
-function norm(s){return s.toLowerCase().replace(/[“”"'.:,;!?()[\]{}]/g,' ').replace(/\s+/g,' ').trim()}
-function useTitle(t){document.getElementById('title').value=t;classify()}
-function classify(){
- const raw=document.getElementById('title').value.trim(), key=norm(raw), box=document.getElementById('result');
- if(!raw){box.innerHTML='<div class="notice">Enter a book title first.</div>';return}
- let r=DB.find(x=>x.q===key);
- if(!r){
-   r={title:raw,udc:"—",main:"Not resolved",sub:"",aux:[],breakdown:[],explain:"No exact local reference match. This build does not invent an official UDC number; load authorized/licensed reference data or connect a validated backend classifier.",status:"Requires verification",confidence:"Low"}
- }
- box.innerHTML=`<div class="panel result"><div class="muted">FINAL UDC NUMBER</div><div class="udc">${r.udc}</div>
- <div class="kv"><b>Book Title</b><span>${esc(r.title)}</span></div>
- <div class="kv"><b>Main Subject</b><span>${esc(r.main)}</span></div>
- <div class="kv"><b>Sub Subject</b><span>${esc(r.sub)}</span></div>
- <div class="kv"><b>Auxiliaries</b><span>${r.aux.length?r.aux.join(', '):'None recorded'}</span></div>
- <div class="kv"><b>Notation Breakdown</b><span>${r.breakdown.length?r.breakdown.join(' + '):'Not available'}</span></div>
- <div class="kv"><b>Explanation</b><span>${esc(r.explain)}</span></div>
- <div class="kv"><b>Confidence</b><span>${r.confidence}</span></div>
- <div class="kv"><b>Reference Status</b><span>${r.status}</span></div>
- <div class="row"><button class="btn" onclick="copyText('${esc(r.udc)}')">Copy UDC</button><button class="btn" onclick="copyText(${JSON.stringify(r.udc+' — '+r.title)})">Copy Result</button></div></div>`;
- let h=JSON.parse(localStorage.getItem('udcHistory')||'[]');h.unshift({title:r.title,udc:r.udc,time:new Date().toLocaleString()});localStorage.setItem('udcHistory',JSON.stringify(h.slice(0,50)));renderHistory()
+const DB={"application_version": "48-FIX", "entries": [{"title": "History of India", "aliases": ["history india"], "udc": "94(540)", "subject": "History", "sub_subject": "History of India", "breakdown": ["94 — History", "(540) — India"], "status": "Reference-supported"}, {"title": "Geography of India", "aliases": ["geography india"], "udc": "91(540)", "subject": "Geography", "sub_subject": "Geography of India", "breakdown": ["91 — Geography", "(540) — India"], "status": "Reference-supported"}, {"title": "Indian Constitution", "aliases": ["constitution india", "indian constitutional law"], "udc": "342(540)", "subject": "Law", "sub_subject": "Constitutional law of India", "breakdown": ["342 — Constitutional law", "(540) — India"], "status": "Reference-supported"}, {"title": "Economy of India", "aliases": ["indian economy", "economy india"], "udc": "330(540)", "subject": "Economics", "sub_subject": "Economy of India", "breakdown": ["330 — Economics", "(540) — India"], "status": "Reference-supported"}, {"title": "History of Punjab", "aliases": ["punjab history"], "udc": "94(540.15)", "subject": "History", "sub_subject": "History of Punjab", "breakdown": ["94 — History", "(540.15) — Punjab"], "status": "Reference-supported"}, {"title": "Indian Philosophy", "aliases": ["philosophy india"], "udc": "1(540)", "subject": "Philosophy", "sub_subject": "Indian philosophy", "breakdown": ["1 — Philosophy", "(540) — India"], "status": "Reference-supported"}, {"title": "Indian Art", "aliases": ["art india"], "udc": "7(540)", "subject": "Arts", "sub_subject": "Indian art", "breakdown": ["7 — Arts", "(540) — India"], "status": "Reference-supported"}, {"title": "Indian Literature", "aliases": ["literature india"], "udc": "821.21(540)", "subject": "Literature", "sub_subject": "Indian literature", "breakdown": ["821.21 — Literature grouping in the local reference", "(540) — India"], "status": "Reference-supported"}, {"title": "English Drama", "aliases": ["drama english", "english plays"], "udc": "821.111-2", "subject": "Literature", "sub_subject": "English drama", "breakdown": ["821.111 — English literature grouping", "-2 — Drama/form element in the configured reference"], "status": "Requires reference verification"}, {"title": "Introduction to Physics", "aliases": ["intro physics", "basic physics"], "udc": "53", "subject": "Physics", "sub_subject": "Physics", "breakdown": ["53 — Physics"], "status": "Reference-supported"}, {"title": "General Chemistry", "aliases": ["chemistry"], "udc": "54", "subject": "Chemistry", "sub_subject": "Chemistry", "breakdown": ["54 — Chemistry"], "status": "Reference-supported"}, {"title": "Mathematics", "aliases": ["math", "general mathematics"], "udc": "51", "subject": "Mathematics", "sub_subject": "Mathematics", "breakdown": ["51 — Mathematics"], "status": "Reference-supported"}, {"title": "Biology", "aliases": ["general biology"], "udc": "57", "subject": "Biology", "sub_subject": "Biology", "breakdown": ["57 — Biology"], "status": "Reference-supported"}, {"title": "Medicine", "aliases": ["general medicine"], "udc": "61", "subject": "Medicine", "sub_subject": "Medicine", "breakdown": ["61 — Medical sciences"], "status": "Reference-supported"}, {"title": "Architecture", "aliases": ["general architecture"], "udc": "72", "subject": "Arts / Architecture", "sub_subject": "Architecture", "breakdown": ["72 — Architecture"], "status": "Reference-supported"}, {"title": "Music", "aliases": ["general music"], "udc": "78", "subject": "Arts", "sub_subject": "Music", "breakdown": ["78 — Music"], "status": "Reference-supported"}, {"title": "Education", "aliases": ["general education"], "udc": "37", "subject": "Education", "sub_subject": "Education", "breakdown": ["37 — Education"], "status": "Reference-supported"}, {"title": "Sociology", "aliases": ["general sociology"], "udc": "316", "subject": "Social sciences", "sub_subject": "Sociology", "breakdown": ["316 — Sociology"], "status": "Reference-supported"}, {"title": "Computer Science", "aliases": ["computing", "computer science"], "udc": "004", "subject": "Computer science", "sub_subject": "Computer science", "breakdown": ["004 — Computer science / computing"], "status": "Reference-supported"}, {"title": "Agriculture", "aliases": ["general agriculture"], "udc": "63", "subject": "Agriculture", "sub_subject": "Agriculture", "breakdown": ["63 — Agricultural sciences"], "status": "Reference-supported"}]};
+let practice=null;
+const $=id=>document.getElementById(id);
+const norm=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[^\w\s.()\-+:/]/g,' ').replace(/\s+/g,' ').trim();
+const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+
+function tab(id,btn){document.querySelectorAll('body>.shell>section').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(id==='browse')renderBrowse();if(id==='history')renderHistory();if(id==='practice')newPractice()}
+function fill(t){$('title').value=t;classify()}
+function clearAll(){$('title').value='';$('result').innerHTML='';$('state').textContent='● Ready'}
+function setLoading(v){$('loader').classList.toggle('show',v);$('state').textContent=v?'● Working':'● Ready'}
+
+function localMatch(raw){
+ let n=norm(raw), words=n.split(/\s+/).filter(Boolean);
+ let exact=DB.entries.find(x=>norm(x.title)===n||x.aliases?.some(a=>norm(a)===n)); if(exact)return exact;
+ let scored=DB.entries.map(x=>{let t=norm(x.title+' '+(x.aliases||[]).join(' '));let hits=words.filter(w=>w.length>2&&t.includes(w)).length;return {x,hits}}).filter(z=>z.hits>0).sort((a,b)=>b.hits-a.hits);
+ return scored[0]&&scored[0].hits>=Math.max(2,Math.ceil(words.length*.6))?scored[0].x:null;
 }
-function clearResult(){document.getElementById('title').value='';document.getElementById('result').innerHTML=''}
-function esc(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
-function copyText(s){navigator.clipboard?.writeText(s)}
-function showTab(id,btn){document.querySelectorAll('.tab').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(id==='browse')renderBrowse();if(id==='history')renderHistory();if(id==='practice')newPractice()}
-function renderBrowse(){let q=norm(document.getElementById('browseSearch').value);let a=DB.filter(x=>!q||norm(x.title+' '+x.udc+' '+x.main).includes(q));document.getElementById('browseList').innerHTML=a.map(x=>`<div class="stat"><b>${x.udc}</b><strong>${esc(x.title)}</strong><div class="muted">${esc(x.main)}</div></div>`).join('')||'<p class="muted">No local matches.</p>'}
-function renderHistory(){let a=JSON.parse(localStorage.getItem('udcHistory')||'[]');document.getElementById('historyList').innerHTML=a.length?a.map(x=>`<div class="stat" style="margin:8px 0"><b>${esc(x.udc)}</b>${esc(x.title)}<div class="muted small">${esc(x.time)}</div></div>`).join(''):'<p class="muted">No classifications yet.</p>'}
-function newPractice(){currentPractice=DB[Math.floor(Math.random()*DB.length)];document.getElementById('pTitle').textContent=currentPractice.title;document.getElementById('pAnswer').value='';document.getElementById('pResult').innerHTML=''}
-function checkPractice(){if(!currentPractice)newPractice();let a=norm(document.getElementById('pAnswer').value),ok=a===norm(currentPractice.udc);document.getElementById('pResult').innerHTML=`<div class="panel ${ok?'result':''}"><b>${ok?'Correct':'Reference answer'}</b><div class="udc">${currentPractice.udc}</div><p>${esc(currentPractice.explain)}</p></div>`}
+
+function extractAI(raw){
+ if(!raw)return null;
+ let obj=null;try{obj=JSON.parse(raw)}catch(_){}
+ if(obj && obj.data)obj=obj.data;
+ if(obj && typeof obj.result==='object')obj=obj.result;
+ if(obj && (obj.udc||obj.final_udc_number||obj.classification||obj.finalUDC||obj.final_udc)){
+   return normalizeAI(obj,'AI backend');
+ }
+ let text=String(raw).replace(/```json|```/g,'').trim();
+ let m=text.match(/(?:FINAL\s+UDC(?:\s+NUMBER)?|UDC(?:\s+NUMBER)?|CLASSIFICATION)\s*[:\-]\s*([0-9][0-9A-Za-z().:+\-/'\[\]*\/]*)/i);
+ if(!m)m=text.match(/\b([0-9]{1,3}(?:\.[0-9]+)*(?:\([^)]+\))?(?:-[0-9]+)?)\b/);
+ if(!m)return null;
+ let udc=(m[1]||'').trim();
+ if(!udc||udc.length>80)return null;
+ return {title:$('title').value,udc,subject:'AI backend result',sub_subject:'See explanation',breakdown:[],explanation:text.slice(0,1600),confidence:'Backend supplied',status:'AI result — verify against authorized UDC reference'};
+}
+function normalizeAI(o,source){
+ let udc=o.udc||o.final_udc_number||o.finalUDC||o.final_udc||o.classification||'';
+ return {title:$('title').value,udc:String(udc).trim(),subject:o.subject||o.main_subject||o.mainSubject||'—',sub_subject:o.sub_subject||o.subSubject||'—',breakdown:o.breakdown||o.notation_breakdown||o.notationBreakdown||[],explanation:o.explanation||o.explain||o.reason||o.rationale||'',confidence:o.confidence||'Not supplied',status:o.reference_status||o.status||'AI result — verify against authorized UDC reference',source};
+}
+async function callBackend(title){
+ const endpoints=['/api/classify','/classify','/api/udc/classify'];
+ for(const url of endpoints){
+   const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),9000);
+   try{
+     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json,text/plain,*/*'},body:JSON.stringify({title}),signal:ctl.signal});
+     const txt=await r.text();
+     clearTimeout(timer);
+     if(r.ok){
+       const parsed=extractAI(txt);
+       if(parsed)return parsed;
+     }
+   }catch(e){clearTimeout(timer)}
+ }
+ return null;
+}
+async function classify(){
+ const raw=$('title').value.trim();if(!raw){$('result').innerHTML='<div class="notice error">Please enter a book title.</div>';return}
+ setLoading(true);$('result').innerHTML='';
+ let r=await callBackend(raw);
+ if(!r){
+   const local=localMatch(raw);
+   if(local)r={...local,title:raw,explanation:'Matched against the loaded local reference example.',confidence:'High for this reference match'};
+ }
+ if(!r)r={title:raw,udc:'—',subject:'Not resolved',sub_subject:'No sufficiently supported match',breakdown:[],explanation:'The connected backend did not return a usable UDC result and the local reference does not contain a sufficiently close match. No number was invented.',confidence:'Low',status:'Requires verification'};
+ setLoading(false);renderResult(r);saveHistory(r);
+}
+function renderResult(r){
+ $('result').innerHTML=`<div class="panel result"><small class="muted">FINAL UDC NUMBER</small><div class="number">${esc(r.udc||'—')}</div>
+ <div class="grid"><div class="box"><small>Book Title</small><b>${esc(r.title)}</b></div><div class="box"><small>Main Subject</small><b>${esc(r.subject||r.main_subject||'—')}</b></div><div class="box"><small>Sub Subject</small><b>${esc(r.sub_subject||'—')}</b></div><div class="box"><small>Confidence</small><b>${esc(r.confidence||'—')}</b></div><div class="box"><small>Status</small><b>${esc(r.status||'Requires verification')}</b></div></div>
+ <h3>Notation Breakdown</h3><div class="break">${(r.breakdown||[]).map(x=>`<span class="token">${esc(x)}</span>`).join('')||'<span class="muted">No breakdown supplied.</span>'}</div>
+ <h3>Explanation</h3><p class="muted">${esc(r.explanation||'No explanation supplied.')}</p>
+ <div class="actions"><button class="btn" onclick="navigator.clipboard?.writeText(${JSON.stringify(r.udc||'')})">Copy UDC</button><button class="btn" onclick="window.print()">Print</button></div></div>`;
+}
+function saveHistory(r){let a=JSON.parse(localStorage.getItem('udc48_history')||'[]');a.unshift({title:r.title,udc:r.udc,status:r.status,time:new Date().toLocaleString()});localStorage.setItem('udc48_history',JSON.stringify(a.slice(0,60)))}
+function renderBrowse(){let q=norm($('bs').value);let a=DB.entries.filter(x=>!q||norm([x.title,x.udc,x.subject,x.sub_subject,...(x.aliases||[])].join(' ')).includes(q));$('bl').innerHTML=a.map(x=>`<div class="item"><div><b>${esc(x.title)}</b><div class="muted">${esc(x.subject)}</div></div><div><code>${esc(x.udc)}</code><div class="tag">${esc(x.status)}</div></div></div>`).join('')||'<p class="muted">No matches.</p>'}
+function renderHistory(){let a=JSON.parse(localStorage.getItem('udc48_history')||'[]');$('hl').innerHTML=a.length?a.map(x=>`<div class="item"><div><b>${esc(x.title)}</b><div class="muted">${esc(x.time)}</div></div><code>${esc(x.udc)}</code></div>`).join(''):'<p class="muted">No history yet.</p>'}
+function newPractice(){practice=DB.entries[Math.floor(Math.random()*DB.entries.length)];$('pq').innerHTML=`<div class="panel"><small class="muted">CLASSIFY THIS TITLE</small><h2>${esc(practice.title)}</h2></div>`;$('pa').value='';$('pr').innerHTML=''}
+function checkPractice(){if(!practice)newPractice();let ok=norm($('pa').value)===norm(practice.udc);$('pr').innerHTML=`<div class="panel ${ok?'result':''}"><b>${ok?'✓ Correct':'Reference answer'}</b><div class="number">${esc(practice.udc)}</div><p class="muted">${esc(practice.breakdown.join(' + '))}</p></div>`}
 renderBrowse();renderHistory();newPractice();
 </script>
-</body>
-</html>
+</body></html>

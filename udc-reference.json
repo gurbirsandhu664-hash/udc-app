@@ -1,0 +1,283 @@
+{
+  "application": "UDC AI Classifier",
+  "application_version": "48-FIX",
+  "reference_dataset_version": "seed-2",
+  "entries": [
+    {
+      "title": "History of India",
+      "aliases": [
+        "history india"
+      ],
+      "udc": "94(540)",
+      "subject": "History",
+      "sub_subject": "History of India",
+      "breakdown": [
+        "94 — History",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Geography of India",
+      "aliases": [
+        "geography india"
+      ],
+      "udc": "91(540)",
+      "subject": "Geography",
+      "sub_subject": "Geography of India",
+      "breakdown": [
+        "91 — Geography",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Indian Constitution",
+      "aliases": [
+        "constitution india",
+        "indian constitutional law"
+      ],
+      "udc": "342(540)",
+      "subject": "Law",
+      "sub_subject": "Constitutional law of India",
+      "breakdown": [
+        "342 — Constitutional law",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Economy of India",
+      "aliases": [
+        "indian economy",
+        "economy india"
+      ],
+      "udc": "330(540)",
+      "subject": "Economics",
+      "sub_subject": "Economy of India",
+      "breakdown": [
+        "330 — Economics",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "History of Punjab",
+      "aliases": [
+        "punjab history"
+      ],
+      "udc": "94(540.15)",
+      "subject": "History",
+      "sub_subject": "History of Punjab",
+      "breakdown": [
+        "94 — History",
+        "(540.15) — Punjab"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Indian Philosophy",
+      "aliases": [
+        "philosophy india"
+      ],
+      "udc": "1(540)",
+      "subject": "Philosophy",
+      "sub_subject": "Indian philosophy",
+      "breakdown": [
+        "1 — Philosophy",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Indian Art",
+      "aliases": [
+        "art india"
+      ],
+      "udc": "7(540)",
+      "subject": "Arts",
+      "sub_subject": "Indian art",
+      "breakdown": [
+        "7 — Arts",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Indian Literature",
+      "aliases": [
+        "literature india"
+      ],
+      "udc": "821.21(540)",
+      "subject": "Literature",
+      "sub_subject": "Indian literature",
+      "breakdown": [
+        "821.21 — Literature grouping in the local reference",
+        "(540) — India"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "English Drama",
+      "aliases": [
+        "drama english",
+        "english plays"
+      ],
+      "udc": "821.111-2",
+      "subject": "Literature",
+      "sub_subject": "English drama",
+      "breakdown": [
+        "821.111 — English literature grouping",
+        "-2 — Drama/form element in the configured reference"
+      ],
+      "status": "Requires reference verification"
+    },
+    {
+      "title": "Introduction to Physics",
+      "aliases": [
+        "intro physics",
+        "basic physics"
+      ],
+      "udc": "53",
+      "subject": "Physics",
+      "sub_subject": "Physics",
+      "breakdown": [
+        "53 — Physics"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "General Chemistry",
+      "aliases": [
+        "chemistry"
+      ],
+      "udc": "54",
+      "subject": "Chemistry",
+      "sub_subject": "Chemistry",
+      "breakdown": [
+        "54 — Chemistry"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Mathematics",
+      "aliases": [
+        "math",
+        "general mathematics"
+      ],
+      "udc": "51",
+      "subject": "Mathematics",
+      "sub_subject": "Mathematics",
+      "breakdown": [
+        "51 — Mathematics"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Biology",
+      "aliases": [
+        "general biology"
+      ],
+      "udc": "57",
+      "subject": "Biology",
+      "sub_subject": "Biology",
+      "breakdown": [
+        "57 — Biology"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Medicine",
+      "aliases": [
+        "general medicine"
+      ],
+      "udc": "61",
+      "subject": "Medicine",
+      "sub_subject": "Medicine",
+      "breakdown": [
+        "61 — Medical sciences"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Architecture",
+      "aliases": [
+        "general architecture"
+      ],
+      "udc": "72",
+      "subject": "Arts / Architecture",
+      "sub_subject": "Architecture",
+      "breakdown": [
+        "72 — Architecture"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Music",
+      "aliases": [
+        "general music"
+      ],
+      "udc": "78",
+      "subject": "Arts",
+      "sub_subject": "Music",
+      "breakdown": [
+        "78 — Music"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Education",
+      "aliases": [
+        "general education"
+      ],
+      "udc": "37",
+      "subject": "Education",
+      "sub_subject": "Education",
+      "breakdown": [
+        "37 — Education"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Sociology",
+      "aliases": [
+        "general sociology"
+      ],
+      "udc": "316",
+      "subject": "Social sciences",
+      "sub_subject": "Sociology",
+      "breakdown": [
+        "316 — Sociology"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Computer Science",
+      "aliases": [
+        "computing",
+        "computer science"
+      ],
+      "udc": "004",
+      "subject": "Computer science",
+      "sub_subject": "Computer science",
+      "breakdown": [
+        "004 — Computer science / computing"
+      ],
+      "status": "Reference-supported"
+    },
+    {
+      "title": "Agriculture",
+      "aliases": [
+        "general agriculture"
+      ],
+      "udc": "63",
+      "subject": "Agriculture",
+      "sub_subject": "Agriculture",
+      "breakdown": [
+        "63 — Agricultural sciences"
+      ],
+      "status": "Reference-supported"
+    }
+  ],
+  "notice": "Limited seed examples only; not a complete or authoritative UDC table. Use authorized/licensed UDC reference data for authoritative verification."
+}
