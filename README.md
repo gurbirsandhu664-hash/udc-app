@@ -1,17 +1,18 @@
-# UDC One-Click V44 ULTRA
+# UDC One-Click V45 ULTRA
 
-- UDC-only classifier; never DDC.
-- Deterministic high-value rules run before AI to prevent recurring semantic drift.
-- UDC Summary-first design with notation audit and explicit evidence levels.
-- Gemini + Google Search grounding when configured.
-- Groq fallback when configured.
-- Offline semantic fallback when providers fail or hit quota.
-- Special protection against false `004` Computer classifications.
-- Handles subject, process, relation, literary form, place patterns and selected UDC symbols.
-- Does not bundle the licensed UDC MRF.
+Evidence-first UDC classifier. UDC ONLY; never DDC.
 
-## Authority
-The public UDC Summary is maintained by the UDC Consortium and is a selection of about 2,600 classes from the wider scheme. Follow the UDC Summary licence/attribution terms when using it.
+## V45 improvements
+- Current Gemini model order starts with Gemini 3.8 Flash and supports Google Search grounding.
+- Deterministic UDC safeguards run before AI.
+- Agriculture crop/process notation is explicitly audited.
+- Known evidence-backed examples include wheat `633.11`, maize `633.15`, barley `633.16`, harvesting `631.55`.
+- `Harvesting of Wheat and Maize` is handled as `633.11+633.15:631.55` (wheat 633.11, maize 633.15, harvesting 631.55).
+- `Harvesting of Wheat and Barley` is handled as `633.11+633.16:631.55`.
+- AI/provider failure no longer produces “classification paths exhausted”; the local semantic safety net returns a result with an evidence status.
+- 004 is blocked unless the title is genuinely about computing.
+- No licensed UDC MRF is bundled.
 
 ## Render
-Set `GEMINI_API_KEY` and optionally `GROQ_API_KEY`. Start with `npm start`.
+Set `GEMINI_API_KEY` and optionally `GEMINI_MODEL`, `GEMINI_PRO_MODEL`, `GROQ_API_KEY`, `GROQ_MODEL` as environment variables.
+Start with `npm start`.
