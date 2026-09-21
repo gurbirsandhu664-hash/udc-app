@@ -52,6 +52,7 @@ const C=[
 // (the app must never silently change a known answer because of model output).
 const ANSWER_KEY_AUTHORITY = "UDC Summary (public abridged reference)";
 const exact=[
+[/^handbook of systematic zoology$/i,"592/599","Zoology","Systematic zoology","592/599 = Systematic zoology; the title is a handbook covering systematic zoological classification.","UDC Summary systematic zoology range"],
 [/^history of india$/i,"94(540)","History","History of India","94 = History; (540) = India.","Official UDC Summary hierarchy match"],
 [/^history of punjab$/i,"94(540)","History","History of Punjab","94 = History; (540) = India. The abridged Summary does not expose a Punjab-specific place subdivision, so no unsupported (540.15) is used.","UDC Summary-supported abridged result"],
 [/^economy of india$/i,"330(540)","Economics","Economy of India","330 = Economics in general; (540) = India.","UDC Summary hierarchy + place auxiliary"],
