@@ -44,6 +44,11 @@ const C=[
 ];
 
 const exact=[
+[/^knowledge metaphysics and logic$/i,"001+11+16","Knowledge / metaphysics / logic","Knowledge, Metaphysics and Logic","001 = Science and knowledge in general; 11 = Metaphysics; 16 = Logic and theory of knowledge; + coordinates the separate subjects.","UDC Summary hierarchy + coordination synthesis"],
+[/^knowledge, metaphysics and logic$/i,"001+11+16","Knowledge / metaphysics / logic","Knowledge, Metaphysics and Logic","001 = Science and knowledge in general; 11 = Metaphysics; 16 = Logic and theory of knowledge; + coordinates the separate subjects.","UDC Summary hierarchy + coordination synthesis"],
+[/^knowledge metaphysics$/i,"001+11","Knowledge / metaphysics","Knowledge, Metaphysics","001 = Science and knowledge in general; 11 = Metaphysics; + coordinates the separate subjects.","UDC Summary hierarchy + coordination synthesis"],
+[/^handbook of systematic zoology$/i,"592/599","Systematic zoology","Handbook of Systematic Zoology","592/599 = Systematic zoology. The title identifies the subject as systematic zoology; no form auxiliary is added here because the requested established classification is 592/599.","UDC Summary hierarchy match"],
+[/^handbook of education science and technology$/i,"37:5/6(035)","Education in relation to science and technology","Handbook of Education Science and Technology","37 = Education; 5/6 = mathematics/natural sciences through applied sciences and technology; : expresses relation; (035) = handbooks and manuals.","UDC hierarchy + relation + form synthesis"],
 [/^history of india$/i,"94(540)","History","History of India","94 = History; (540) = India.","Official UDC Summary hierarchy match"],
 [/^history of punjab$/i,"94(540.15)","History","History of Punjab","94 = History; (540.15) = Punjab.","UDC Summary place-auxiliary synthesis"],
 [/^economy of india$/i,"330(540)","Economics","Economy of India","330 = Economics; (540) = India.","UDC Summary hierarchy + place-auxiliary synthesis"],
@@ -74,15 +79,13 @@ function localClassify(title){const t=norm(title);for(const e of exact){if(e[0].
  // Place-aware history/geography/constitution patterns.
  if(/\b(history|historical)\b/.test(t)&&/\bindia|bharat\b/.test(t))return result(title,"94(540)","History","History of India","94 = History; (540) = India.","Reasoned from UDC Summary",true);
  if(/\bgeograph/.test(t)&&/\bindia|bharat\b/.test(t))return result(title,"91(540)","Geography","Geography of India","91 = Geography; (540) = India.","Reasoned from UDC Summary",true);
- // Exact high-value title: Knowledge, Metaphysics and Logic.
- if(/\bknowledge\b/.test(t)&&/\bmetaphysics\b/.test(t)&&/\blogic\b/.test(t))return result(title,"001+11+16","Knowledge, Metaphysics and Logic","Knowledge, metaphysics and logic","001 = Knowledge, science and computer science; +11 = Metaphysics; +16 = Logic. Coordination sign + joins the three subjects.","Exact UDC title rule",true);
-// Form-aware literature rules: do not blindly append auxiliaries.
+ // Form-aware literature rules: do not blindly append auxiliaries.
  if(/\benglish\b/.test(t)&&/\bdrama\b/.test(t))return result(title,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Reasoned from UDC Summary",true);
  if(/\b(dictionary|lexicon|glossary)\b/.test(t)&&/\blanguage\b/.test(t))return result(title,"80","Language and linguistics","Language reference / lexicography","80 = General questions relating to linguistics and literature; exact dictionary treatment depends on the language and form stated in the title.","Reasoned from UDC Summary",false);
  // Agriculture: process + crop is deliberately more specific than broad 63.
  if(/\b(harvest|harvesting)\b/.test(t)&&/\b(wheat|maize|corn|cereal|grain)\b/.test(t))return result(title,"633.1:631.55","Agriculture","Harvesting of cereals","633.1 = Cereals/grain crops; 631.55 = gathering/harvesting; : expresses the relation.","UDC Summary hierarchy + relation synthesis",true);
- let hits=C.filter(x=>x[2].test(t)); if(hits.length){hits.sort((a,b)=>b[2].source.length-a[2].source.length);const h=hits[0];return result(title,h[0],h[1],h[1],`${h[0]} = ${h[1]}.`,`Reasoned from UDC Summary`,false)}
- return result(title,"3","Social sciences / unresolved subject","Broad fallback — manual verification required","3 is used only as a broad emergency fallback when no subject-specific rule is available.","Fallback — verify against UDC Summary",false);
+ // Do not guess a broad class from a single keyword. Unknown titles must go to an authoritative AI/search path or remain unverified.
+ return result(title,"—","Unresolved subject","Requires authoritative UDC verification","No exact verified notation was found in the local safety-net. An authoritative UDC Summary/MRF lookup is required before assigning a final number.","Needs verification",false);
 }
 function result(title,n,m,s,x,conf,official){return{title,udc_number:n,main_subject:m,sub_subject:s,breakdown:x,explanation:x+(official?"":" This result is not an exact licensed MRF lookup."),confidence:conf,evidence_summary:official?"Matched to a public UDC Summary concept/hierarchy.":"Deterministic semantic fallback based on UDC Summary concepts.",sources:["https://udcsummary.info/"],evidence_level:conf,official_udc_match:official,candidate_notes:"",notation_check:"Each displayed component is a UDC class or a justified UDC relation; no DDC notation is used.",engine:"V45 ULTRA local semantic engine",model:"offline",grounded:false}}
 
