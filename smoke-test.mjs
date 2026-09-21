@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const html = fs.readFileSync('./index.html','utf8');
+const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
+if (!script) throw new Error('index.html script missing');
+if (!html.includes("['knowledge metaphysics and logic','001+11+16'")) throw new Error('Knowledge correction missing');
+if (!html.includes("['handbook of education science and technology','37+5/6(035)'")) throw new Error('Education/Science/Technology correction missing');
+if (!html.includes("['economy of india','330(540)'")) throw new Error('Economy of India correction missing');
+if (!html.includes("'001':['Science and knowledge in general'")) throw new Error('001 description missing');
+if (html.includes('V45 ULTRA') === false) throw new Error('V45 label missing');
+if (fs.existsSync('./VERSION.txt')) throw new Error('VERSION.txt must not be present');
+console.log('PASS: V45 ULTRA stable release smoke checks');
