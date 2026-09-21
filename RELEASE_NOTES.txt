@@ -1,0 +1,14 @@
+UDC V45 ULTRA — RANDOM TITLE HARDENED STABLE RELEASE
+
+- Universal title capture preserved: the complete submitted title is classified.
+- Deterministic exact-title rules run before AI fallback.
+- Hardened AI validation rejects unrelated subject jumps and invalid 378 higher-education matches for generic education titles.
+- Handbook of Education Science and Technology -> 37:5/6(035).
+- Knowledge, Metaphysics and Logic -> 001+11+16.
+- Handbook of Systematic Zoology -> 592/599.
+- Existing India, literature, language, arts and agriculture rules retained.
+- UDC only; no DDC.
+- VERSION.txt intentionally excluded from this release.
+
+Deployment: replace ALL existing project files with this bundle and redeploy/restart Render.
+Do not mix an older index.html/server.js with this release.
