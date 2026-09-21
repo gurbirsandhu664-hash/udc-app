@@ -33,7 +33,7 @@ function validate(r,title){const n=String(r?.udc_number||"").trim();if(!n||n==="
 // class references, not a copy of the licensed MRF. Exact claims are only made
 // where the public UDC Summary supports the class.
 const C=[
-["0","Knowledge, science and computer science",/\b(knowledge|information science|documentation|librarianship)\b/],["004","Computer science and technology. Computing. Data processing",/\b(computer|computing|informatics|programming|software|database|cybersecurity|cyber|machine learning|artificial intelligence|data processing|ict)\b/],
+["001","Knowledge, science and intellectual work",/\b(knowledge|information science|documentation|librarianship)\b/],["004","Computer science and technology. Computing. Data processing",/\b(computer|computing|informatics|programming|software|database|cybersecurity|cyber|machine learning|artificial intelligence|data processing|ict)\b/],
 ["1","Philosophy",/\bphilosophy\b/],["159.9","Psychology",/\bpsychology\b/],["2","Religion. Theology",/\b(religion|theology|bible|quran|koran|christianity|islam|hinduism)\b/],
 ["30","General social sciences",/\bsocial sciences?\b/],["31","Demography. Population studies",/\b(population|demography)\b/],["316","Sociology",/\bsociology\b/],["32","Politics",/\bpolitics?|political science\b/],["33","Economics",/\b(economy|economics|economic)\b/],["34","Law",/\b(law|legal|jurisprudence)\b/],["35","Public administration",/\b(public administration|government administration)\b/],["36","Social welfare",/\b(social welfare|social work)\b/],["37","Education",/\b(education|teaching|pedagogy|instruction|schooling|teacher training)\b/],["39","Ethnology. Folklore",/\b(ethnolog|folklore|folk lore|customs|traditions)\b/],
 ["51","Mathematics",/\b(mathematics|maths?|algebra|geometry|calculus|number theory)\b/],["52","Astronomy",/\bastronom(y|ical)|cosmology\b/],["53","Physics",/\bphysics|mechanics|optics|thermodynamics|quantum physics\b/],["54","Chemistry",/\bchemistry|chemical\b/],["55","Earth sciences",/\bgeology|meteorology|earth science|geophysics\b/],["56","Palaeontology",/\bpalaeontolog|fossils?\b/],["57","Biological sciences",/\bbiology|botany|zoology|ecology|microbiology|genetics\b/],["58","Botanical sciences",/\bbotany|plants?\b/],["59","Zoological sciences",/\bzoology|animals?\b/],
@@ -43,27 +43,37 @@ const C=[
 ["90","Archaeology",/\barchaeolog(y|ical)\b/],["91","Geography",/\bgeograph(y|ical)\b/],["94","History",/\bhistor(y|ical)\b/]
 ];
 
+// FIXED ANSWER KEY: deterministic entries are returned before any AI call.
+// Version remains V45 ULTRA. These entries are pinned to the public UDC Summary
+// (the app must never silently change a known answer because of model output).
+const ANSWER_KEY_AUTHORITY = "UDC Summary (public abridged reference)";
 const exact=[
 [/^history of india$/i,"94(540)","History","History of India","94 = History; (540) = India.","Official UDC Summary hierarchy match"],
+[/^history of punjab$/i,"94(540)","History","History of Punjab","94 = History; (540) = India. The abridged Summary does not expose a Punjab-specific place subdivision, so no unsupported (540.15) is used.","UDC Summary-supported abridged result"],
+[/^economy of india$/i,"330(540)","Economics","Economy of India","330 = Economics in general; (540) = India.","UDC Summary hierarchy + place auxiliary"],
 [/^geography of india$/i,"91(540)","Geography","Geography of India","91 = Geography; (540) = India.","Official UDC Summary hierarchy match"],
-[/^indian constitution$/i,"342(540)","Law","Constitutional law of India","342 = Constitutional law; (540) = India.","Reasoned from UDC Summary"],
-[/^indian literature$/i,"821.21(540)","Literature","Indian literature","821.21 = Indian literature; (540) = India.","Reasoned from UDC Summary"],
+[/^indian constitution$/i,"342.4(540)","Constitutional law","Constitution of India","342.4 = Constitutions; (540) = India.","UDC Summary hierarchy match"],
+[/^indian literature$/i,"821.21","Literature","Indian literature","821.21 = Indian literatures.","UDC Summary hierarchy match"],
 [/^indian philosophy$/i,"1(540)","Philosophy","Philosophy of India","1 = Philosophy; (540) = India.","Reasoned from UDC Summary"],
 [/^indian art$/i,"7(540)","Arts","Art of India","7 = Arts; (540) = India.","Reasoned from UDC Summary"],
 [/^english drama$/i,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Official UDC Summary hierarchy match"],
 [/^music and entertainment$/i,"78+79","Music and entertainment","Music; entertainment","78 = Music; 79 = Recreation/entertainment/games/sport; + coordinates the two subjects.","UDC hierarchy cross-check"],
 [/^science and technology$/i,"5/6","Mathematics/natural sciences and applied sciences/technology","Science and technology","5 = Mathematics and natural sciences; 6 = Applied sciences, medicine and technology. The oblique stroke expresses consecutive extension.","Official UDC Summary hierarchy match"],
-[/^harvesting of wheat and maize$/i,"633.11+633.15:631.55","Agriculture","Harvesting of wheat and maize","633.11 = wheat; 633.15 = maize; + coordinates the two crops; : relates them to 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of wheat and barley$/i,"633.11+633.16:631.55","Agriculture","Harvesting of wheat and barley","633.11 = wheat; 633.16 = barley; + coordinates the two crops; : relates them to 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of cereals$/i,"633.1:631.55","Agriculture","Harvesting of cereals","633.1 = cereals/grain crops; 631.55 = gathering/harvesting; : expresses the relation.","UDC evidence cross-check"],
-[/^harvesting of wheat$/i,"633.11:631.55","Agriculture","Harvesting of wheat","633.11 = wheat; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of maize$/i,"633.15:631.55","Agriculture","Harvesting of maize","633.15 = maize; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^harvesting of barley$/i,"633.16:631.55","Agriculture","Harvesting of barley","633.16 = barley; 631.55 = gathering/harvesting.","UDC evidence cross-check"],
-[/^wheat and maize$/i,"633.11+633.15","Agriculture","Wheat and maize","633.11 = wheat; 633.15 = maize; + coordinates the crops.","UDC hierarchy cross-check"],
-[/^wheat and barley$/i,"633.11+633.16","Agriculture","Wheat and barley","633.11 = wheat; 633.16 = barley; + coordinates the crops.","UDC hierarchy cross-check"],
-[/^cultivation of wheat$/i,"633.11:631.5","Agriculture","Cultivation of wheat","633.11 = wheat; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
-[/^cultivation of maize$/i,"633.15:631.5","Agriculture","Cultivation of maize","633.15 = maize; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
-[/^cultivation of barley$/i,"633.16:631.5","Agriculture","Cultivation of barley","633.16 = barley; 631.5 = agricultural operations/cultivation.","UDC hierarchy cross-check"],
+[/^harvesting of wheat and maize$/i,"633.1:631.5","Agriculture","Harvesting of wheat and maize","633.1 = cereals/grain crops; 631.5 = agricultural operations; : expresses the relation. The abridged Summary does not expose separate wheat/maize classes here.","UDC evidence cross-check"],
+[/^harvesting of wheat and barley$/i,"633.1:631.5","Agriculture","Harvesting of wheat and barley","633.1 = cereals/grain crops; 631.5 = agricultural operations; : expresses the relation. The abridged Summary does not expose separate wheat/barley classes here.","UDC evidence cross-check"],
+[/^harvesting of cereals$/i,"633.1:631.5","Agriculture","Harvesting of cereals","633.1 = cereals/grain crops; 631.5 = agricultural operations; : expresses the relation.","UDC evidence cross-check"],
+[/^harvesting of wheat$/i,"633.1:631.5","Agriculture","Harvesting of wheat","633.1 = cereals/grain crops; 631.5 = agricultural operations.","UDC evidence cross-check"],
+[/^harvesting of maize$/i,"633.1:631.5","Agriculture","Harvesting of maize","633.1 = cereals/grain crops; 631.5 = agricultural operations.","UDC evidence cross-check"],
+[/^harvesting of barley$/i,"633.1:631.5","Agriculture","Harvesting of barley","633.1 = cereals/grain crops; 631.5 = agricultural operations.","UDC Summary cross-check"],
+[/^wheat$/i,"633.1","Agriculture","Wheat","633.1 = cereals/grain crops; the abridged Summary does not expose a separate wheat class.","UDC Summary cross-check"],
+[/^maize$/i,"633.1","Agriculture","Maize","633.1 = cereals/grain crops; the abridged Summary does not expose a separate maize class.","UDC Summary cross-check"],
+[/^barley$/i,"633.1","Agriculture","Barley","633.1 = cereals/grain crops; the abridged Summary does not expose a separate barley class.","UDC Summary cross-check"],
+[/^dictionary of language and literature$/i,"80","Language and literature","Dictionary/reference work covering language and literature","80 = General questions relating to linguistics and literature; the title does not specify one particular language.","UDC Summary cross-check"],
+[/^wheat and maize$/i,"633.1","Agriculture","Wheat and maize","633.1 = cereals/grain crops; the abridged Summary does not expose separate wheat and maize classes.","UDC Summary cross-check"],
+[/^wheat and barley$/i,"633.1","Agriculture","Wheat and barley","633.1 = cereals/grain crops; the abridged Summary does not expose separate wheat and barley classes.","UDC hierarchy cross-check"],
+[/^cultivation of wheat$/i,"633.1:631.5","Agriculture","Cultivation of wheat","633.1 = cereals/grain crops; 631.5 = agricultural operations/cultivation. The abridged Summary does not expose a separate wheat class.","UDC hierarchy cross-check"],
+[/^cultivation of maize$/i,"633.1:631.5","Agriculture","Cultivation of maize","633.1 = cereals/grain crops; 631.5 = agricultural operations/cultivation. The abridged Summary does not expose a separate maize class.","UDC hierarchy cross-check"],
+[/^cultivation of barley$/i,"633.1:631.5","Agriculture","Cultivation of barley","633.1 = cereals/grain crops; 631.5 = agricultural operations/cultivation. The abridged Summary does not expose a separate barley class.","UDC hierarchy cross-check"],
 ];
 
 function localClassify(title){const t=norm(title);for(const e of exact){if(e[0].test(t))return result(title,e[1],e[2],e[3],e[4],e[5],true)}
@@ -74,7 +84,7 @@ function localClassify(title){const t=norm(title);for(const e of exact){if(e[0].
  if(/\benglish\b/.test(t)&&/\bdrama\b/.test(t))return result(title,"821.111-2","English literature","Drama in English","821.111 = English literature; -2 = drama.","Reasoned from UDC Summary",true);
  if(/\b(dictionary|lexicon|glossary)\b/.test(t)&&/\blanguage\b/.test(t))return result(title,"80","Language and linguistics","Language reference / lexicography","80 = General questions relating to linguistics and literature; exact dictionary treatment depends on the language and form stated in the title.","Reasoned from UDC Summary",false);
  // Agriculture: process + crop is deliberately more specific than broad 63.
- if(/\b(harvest|harvesting)\b/.test(t)&&/\b(wheat|maize|corn|cereal|grain)\b/.test(t))return result(title,"631.5:633.1","Agriculture","Agricultural operations relating to cereals","631.5 = Agricultural operations; 633.1 = Cereals/grain crops; : expresses their relation.","Reasoned from UDC Summary",true);
+ if(/\b(harvest|harvesting)\b/.test(t)&&/\b(wheat|maize|corn|cereal|grain|barley)\b/.test(t))return result(title,"633.1:631.5","Agriculture","Harvesting of cereals","633.1 = cereals/grain crops; 631.5 = agricultural operations; : expresses the relation.","UDC Summary cross-check",true);
  let hits=C.filter(x=>x[2].test(t)); if(hits.length){hits.sort((a,b)=>b[2].source.length-a[2].source.length);const h=hits[0];return result(title,h[0],h[1],h[1],`${h[0]} = ${h[1]}.`,`Reasoned from UDC Summary`,false)}
  return result(title,"3","Social sciences / unresolved subject","Broad fallback — manual verification required","3 is used only as a broad emergency fallback when no subject-specific rule is available.","Fallback — verify against UDC Summary",false);
 }
@@ -84,7 +94,7 @@ async function gemini(title,model,grounded){const body={contents:[{role:"user",p
 async function groq(title){if(!GROQ_KEY)throw Error("GROQ_API_KEY not configured");const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},body:JSON.stringify({model:process.env.GROQ_MODEL||"openai/gpt-oss-120b",temperature:0.02,response_format:{type:"json_object"},messages:[{role:"system",content:UDC_RULES},{role:"user",content:`Classify "${title}" using UDC Summary as public authority. Return the required JSON fields only. Never use DDC and never use 004 unless it is genuinely computing.`}]})});const j=await r.json();if(!r.ok)throw Error(j?.error?.message||`Groq HTTP ${r.status}`);return{...validate(parseJSON(j?.choices?.[0]?.message?.content||""),title),engine:"Groq fallback",model:process.env.GROQ_MODEL||"openai/gpt-oss-120b",grounded:false}}
 
 app.get("/",(_,res)=>res.sendFile(path.join(__dirname,"index.html")));
-app.get("/api/health",(_,res)=>res.json({ok:true,version:"V45 ULTRA",geminiConfigured:!!GEMINI_KEY,groqConfigured:!!GROQ_KEY,models:MODELS,authority:"UDC Summary",authorityUrl:SUMMARY_BASE}));
+app.get("/api/health",(_,res)=>res.json({ok:true,version:"V45 ULTRA",geminiConfigured:!!GEMINI_KEY,groqConfigured:!!GROQ_KEY,models:MODELS,fixedAnswerKey:exact.length,authority:ANSWER_KEY_AUTHORITY,authorityUrl:SUMMARY_BASE}));
 app.post("/api/classify",async(req,res)=>{const title=String(req.body?.title||"").trim();if(!title)return res.status(400).json({error:"Enter a book title."});
  // Deterministic exact/high-value rules run first: this prevents AI drift on known titles.
  const lc=localClassify(title); if(lc.official_udc_match) return res.json(lc);

@@ -15,9 +15,9 @@
   },
   {
     "title": "Indian Constitution",
-    "udc": "342(540)",
+    "udc": "342.4(540)",
     "subject": "Constitutional law of India",
-    "breakdown": "342 Constitutional law + (540) India",
+    "breakdown": "342.4 Constitutions + (540) India",
     "source": "UDC starter reference"
   },
   {
@@ -29,16 +29,16 @@
   },
   {
     "title": "History of Punjab",
-    "udc": "94(540.15)",
+    "udc": "94(540)",
     "subject": "History of Punjab",
-    "breakdown": "94 History + (540.15) Punjab",
+    "breakdown": "94 History + (540) India",
     "source": "UDC starter reference"
   },
   {
     "title": "Indian Literature",
-    "udc": "821.21(540)",
+    "udc": "821.21",
     "subject": "Indian literature",
-    "breakdown": "821.21 Literature in Indian languages + (540) India",
+    "breakdown": "821.21 Indian literatures",
     "source": "UDC starter reference"
   },
   {
