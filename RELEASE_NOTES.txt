@@ -1,0 +1,15 @@
+UDC V45 ULTRA - STABLE RELEASE
+
+Version: V45 ULTRA
+
+This release preserves the existing UI/index.html and focuses classification on:
+- Knowledge, Metaphysics and Logic -> 001+11+16
+- Knowledge, Metaphysics -> 001+11
+- Handbook of Systematic Zoology -> 592/599
+- Handbook of Education Science and Technology -> 37:5/6(035)
+- Existing exact India/literature/agriculture rules remain in server.js.
+- Removed the unsafe broad '3 Social sciences' fallback for unknown titles.
+- Unknown titles now require an authoritative AI/search path; if unavailable, they remain unverified instead of receiving a fabricated broad class.
+- UDC only; no DDC.
+
+Replace only server.js in the existing V45 project. Do not replace index.html or VERSION.txt.
