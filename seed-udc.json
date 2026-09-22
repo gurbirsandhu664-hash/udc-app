@@ -1,0 +1,28 @@
+{
+  "edition": "UDC Abridged-style public Summary reference",
+  "policy": "UDC ONLY — Never DDC",
+  "entries": [
+    {"title":"Knowledge Metaphysics and Logic","udc":"001+11+16","subject":"Knowledge + Metaphysics + Logic"},
+    {"title":"Handbook of Education, Science and Technology","udc":"37+5/6(035)","subject":"Handbook of Education, Science and Technology"},
+    {"title":"Handbook of Science and Technology","udc":"5/6(035)","subject":"Handbook of Science and Technology"},
+    {"title":"History of India","udc":"94(540)","subject":"History of India"},
+    {"title":"Geography of India","udc":"91(540)","subject":"Geography of India"},
+    {"title":"Indian Constitution","udc":"342(540)","subject":"Constitutional Law of India"},
+    {"title":"Economy of India","udc":"330(540)","subject":"Economy of India"},
+    {"title":"History of Punjab","udc":"94(540.15)","subject":"History of Punjab"},
+    {"title":"Indian Literature","udc":"821.21(540)","subject":"Indian Literature"},
+    {"title":"Indian Philosophy","udc":"1(540)","subject":"Indian Philosophy"},
+    {"title":"Indian Art","udc":"7(540)","subject":"Indian Art"},
+    {"title":"Dictionary of Language and Literature","udc":"80(038)","subject":"Dictionary of Language and Literature"},
+    {"title":"Dictionary of Literature","udc":"82(038)","subject":"Dictionary of Literature"},
+    {"title":"Handbook of Systematic Zoology","udc":"592/599","subject":"Systematic Zoology"},
+    {"title":"Systematic Zoology","udc":"592/599","subject":"Systematic Zoology"},
+    {"title":"Handbook of Zoology","udc":"59","subject":"Zoology"},
+    {"title":"English Drama","udc":"821.111-2","subject":"English Drama"},
+    {"title":"Music and Entertainment","udc":"78+79","subject":"Music and Entertainment"},
+    {"title":"Science and Technology","udc":"5/6","subject":"Science and Technology"},
+    {"title":"Harvesting of Wheat and Maize","udc":"633.11+633.15:631.55","subject":"Harvesting of Wheat and Maize"},
+    {"title":"Harvesting of Cereals","udc":"633.1:631.55","subject":"Harvesting of Cereals"},
+    {"title":"Wheat and Maize","udc":"633.11+633.15","subject":"Wheat and Maize"}
+  ]
+}
