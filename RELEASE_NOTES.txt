@@ -1,0 +1,21 @@
+V45 ULTRA — UPLOADED UDC EVIDENCE ENGINE FIX
+
+- Version remains V45 ULTRA.
+- Uploaded UDC B.S. 1000A:1961 remains the primary authority.
+- Replaced the old 5-page/keyword-only retrieval with full-source ranked retrieval.
+- Added title-term normalization, plural/singular handling, subject synonyms, rare-term weighting, phrase scoring, adjacent-page retrieval, and multiple evidence locations.
+- Gemini now receives a larger evidence set from the uploaded UDC and is instructed to verify systematic-table notation and all auxiliaries.
+- Default Gemini model is gemini-2.5-flash; GEMINI_MODEL can override it.
+- Removed invalid/obsolete Gemini model-name fallback chain.
+- Exact source-verified entries remain deterministic safeguards only.
+- Arbitrary titles now use the uploaded-UDC evidence retrieval + AI pipeline instead of a small hard-coded title list.
+- Without an AI provider key, the app shows retrieved evidence and verification-required status rather than inventing a UDC number.
+- No DDC or silent modern-UDC replacement.
+
+V45 FIX V4 — SEMANTIC TITLE MATCHING
+- Fixed the reported error where “A handbook of ethics Librarians” could return 173 (Family ethics).
+- Librarianship + ethics is now treated as a combined concept from the uploaded 1961 UDC: 17:02; handbook form adds (021), giving 17:02(021).
+- Offline candidate extraction now scores whole-title coverage and penalizes candidates supported only by a generic title word.
+- Added librarian/library/librarianship and handbook/manual/treatise synonym handling.
+- Corrected the deterministic “Harvesting of maize” component to 633.15:631.55 based on the uploaded alphabetical index.
+- V45 version remains unchanged; uploaded B.S. 1000A:1961 remains the controlling UDC source.
