@@ -1,0 +1,13 @@
+V45 ULTRA — UPLOADED UDC EVIDENCE ENGINE FIX
+
+- Version remains V45 ULTRA.
+- Uploaded UDC B.S. 1000A:1961 remains the primary authority.
+- Replaced the old 5-page/keyword-only retrieval with full-source ranked retrieval.
+- Added title-term normalization, plural/singular handling, subject synonyms, rare-term weighting, phrase scoring, adjacent-page retrieval, and multiple evidence locations.
+- Gemini now receives a larger evidence set from the uploaded UDC and is instructed to verify systematic-table notation and all auxiliaries.
+- Default Gemini model is gemini-2.5-flash; GEMINI_MODEL can override it.
+- Removed invalid/obsolete Gemini model-name fallback chain.
+- Exact source-verified entries remain deterministic safeguards only.
+- Arbitrary titles now use the uploaded-UDC evidence retrieval + AI pipeline instead of a small hard-coded title list.
+- Without an AI provider key, the app shows retrieved evidence and verification-required status rather than inventing a UDC number.
+- No DDC or silent modern-UDC replacement.
