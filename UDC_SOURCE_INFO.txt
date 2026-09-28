@@ -1,0 +1,10 @@
+PRIMARY UDC SOURCE FOR V45
+
+Universal Decimal Classification
+B.S. 1000A:1961
+Abridged English Edition
+3rd Edition, Revised 1961
+Incorporating Amendment No. 1 (PD 4824), issued June, 1963
+
+V45 is configured to use this uploaded UDC edition as its primary authority.
+Do not silently substitute DDC or a modern UDC edition.
