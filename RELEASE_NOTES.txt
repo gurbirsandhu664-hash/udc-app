@@ -1,0 +1,63 @@
+V45 ULTRA V6 — UPLOADED UDC EVIDENCE ENGINE FIX
+
+- Version remains V45 ULTRA V6.
+- Uploaded UDC B.S. 1000A:1961 remains the primary authority.
+- Replaced the old 5-page/keyword-only retrieval with full-source ranked retrieval.
+- Added title-term normalization, plural/singular handling, subject synonyms, rare-term weighting, phrase scoring, adjacent-page retrieval, and multiple evidence locations.
+- Gemini now receives a larger evidence set from the uploaded UDC and is instructed to verify systematic-table notation and all auxiliaries.
+- Default Gemini model is gemini-2.5-flash; GEMINI_MODEL can override it.
+- Removed invalid/obsolete Gemini model-name fallback chain.
+- Exact source-verified entries remain deterministic safeguards only.
+- Arbitrary titles now use the uploaded-UDC evidence retrieval + AI pipeline instead of a small hard-coded title list.
+- Without an AI provider key, the app shows retrieved evidence and verification-required status rather than inventing a UDC number.
+- No DDC or silent modern-UDC replacement.
+
+V45 FIX V4 — SEMANTIC TITLE MATCHING
+- Fixed the reported error where “A handbook of ethics Librarians” could return 173 (Family ethics).
+- Librarianship + ethics is now treated as a combined concept from the uploaded 1961 UDC: 17:02; handbook form adds (021), giving 17:02(021).
+- Offline candidate extraction now scores whole-title coverage and penalizes candidates supported only by a generic title word.
+- Added librarian/library/librarianship and handbook/manual/treatise synonym handling.
+- Corrected the deterministic “Harvesting of maize” component to 633.15:631.55 based on the uploaded alphabetical index.
+- V45 version remains unchanged; uploaded B.S. 1000A:1961 remains the controlling UDC source.
+
+V45 FINAL V6 — title-semantic fixes
+- Preserved uploaded UDC B.S. 1000A:1961 as the controlling source.
+- Added verified title safeguards for ethics/librarianship handbook, harvesting of cereals, wheat, maize, barley, music, entertainment, music and entertainment, science and technology, and the Mexico newspaper-list title.
+- Prevents incidental child entries such as 786.2 from winning for a title whose main concept is simply Music.
+- No DDC or modern UDC substitution.
+
+V45 V7 ALL-TITLE ENGINE FIX
+- Generic subject + document-form construction added for encyclopedia/dictionary/handbook/manual/treatise titles.
+- Prevents form auxiliaries such as (023) from being selected as the subject merely because words like “concise” occur in the title.
+- Subject anchors are taken from the uploaded 1961 UDC main classes and applied to the complete title.
+- Exact example: Concise Encyclopedia of Western Philosophy -> 1(03).
+- No DDC or modern UDC replacement notation is generated.
+
+
+V45 V8 ALL-TITLE ENGINE FIX
+- Fixed generic dictionary/form classification for specific library subjects.
+- Scientific + technical + libraries now resolves from the uploaded 1961 table as 027.021, not broad 02.
+- United States is applied as uploaded place auxiliary (73) when present.
+- Dictionary/encyclopaedia form remains (03).
+- Example: Dictionary of Scientific and Technical Libraries in United States -> 027.021(73)(03).
+- This is a generic facet rule, not a hard-coded exact-title safeguard.
+
+
+V45 V9 ALL-TITLE ENGINE FIX
+- Added generic semantic facet construction for common library titles.
+- Scientific/technical libraries -> 027.021 from the uploaded 1961 table.
+- Medical libraries -> 026:61 where the title explicitly contains medical libraries.
+- Reference/lending/private/public library facets use only notation present in the uploaded 1961 table.
+- Generic place auxiliaries currently grounded for United States (73), Mexico (72), and India (540).
+- Generic document forms: (03) for dictionaries/encyclopaedias/reference works and (021) for comprehensive manuals/handbooks/treatises, based on the uploaded 1961 form table.
+- Components are combined from title facets; this is not an exact-title hard-code list.
+- V45 is preserved; no DDC or modern UDC replacement notation is generated.
+
+
+V10 WORLD TITLE SEMANTIC FIX (2026-09-28)
+- Added source-driven country/region resolver for History of X and Geography of X.
+- Resolver reads the exact B.S. 1000A:1961 uploaded index and returns the classmark printed for that place/facet.
+- Runs before AI and generic keyword scoring, preventing unrelated nearby entries from winning.
+- Preserves the 1961 edition instead of silently converting to modern UDC.
+- AI path remains available for arbitrary non-history/non-geography titles when GEMINI_API_KEY or GROQ_API_KEY is configured.
+- No DDC numbers are generated.
