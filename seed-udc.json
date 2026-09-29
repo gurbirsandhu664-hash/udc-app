@@ -1,0 +1,170 @@
+[
+  {
+    "title": "History of China",
+    "udc": "951",
+    "subject": "History of China and Korea",
+    "breakdown": "951 = China and neighbours. Korea",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Korea",
+    "udc": "951",
+    "subject": "History of China and Korea",
+    "breakdown": "951 = China and neighbours. Korea",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of France",
+    "udc": "944",
+    "subject": "History of France",
+    "breakdown": "944 = France (including Algeria, Corsica)",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Germany",
+    "udc": "943",
+    "subject": "History of Germany",
+    "breakdown": "943 = Germany and other Central European states",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Japan",
+    "udc": "952",
+    "subject": "History of Japan",
+    "breakdown": "952 = Japan",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of India",
+    "udc": "954",
+    "subject": "History of India, Ceylon and Pakistan",
+    "breakdown": "954 = India, Ceylon and Pakistan",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Pakistan",
+    "udc": "954",
+    "subject": "History of Pakistan",
+    "breakdown": "954 = India, Ceylon and Pakistan",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Brazil",
+    "udc": "981",
+    "subject": "History of Brazil",
+    "breakdown": "981 = Brazil",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Argentina",
+    "udc": "982",
+    "subject": "History of Argentina",
+    "breakdown": "982 = Argentina",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Canada",
+    "udc": "971",
+    "subject": "History of Canada and Newfoundland",
+    "breakdown": "971 = Canada and Newfoundland",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of USA",
+    "udc": "973",
+    "subject": "History of United States of America",
+    "breakdown": "973 = United States of America",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Australia",
+    "udc": "994",
+    "subject": "History of Australia",
+    "breakdown": "994 = Australia",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "History of Indonesia",
+    "udc": "991",
+    "subject": "History of East Indies and Indonesia",
+    "breakdown": "991 = East Indies. Indonesia",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of China",
+    "udc": "915.1",
+    "subject": "Geography of China and neighbours",
+    "breakdown": "915.1 = China and neighbours",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of Japan",
+    "udc": "915.2",
+    "subject": "Geography of Japan",
+    "breakdown": "915.2 = Japan",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of India",
+    "udc": "915.4",
+    "subject": "Geography of Indo-Pakistan subcontinent. India",
+    "breakdown": "915.4 = Indo-Pakistan subcontinent. India",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of France",
+    "udc": "914.4",
+    "subject": "Geography of France",
+    "breakdown": "914.4 = France",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of Germany",
+    "udc": "914.3",
+    "subject": "Geography of Germany and Central Europe",
+    "breakdown": "914.3 = Germany and Central Europe",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of USA",
+    "udc": "917.3",
+    "subject": "Geography of United States of America",
+    "breakdown": "917.3 = United States of America",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of Canada",
+    "udc": "917.1",
+    "subject": "Geography of Canada and Newfoundland",
+    "breakdown": "917.1 = Canada, Newfoundland",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of Brazil",
+    "udc": "918.1",
+    "subject": "Geography of Brazil",
+    "breakdown": "918.1 = Brazil",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of Argentina",
+    "udc": "918.2",
+    "subject": "Geography of Argentina",
+    "breakdown": "918.2 = Argentina",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Geography of Australia",
+    "udc": "919.4",
+    "subject": "Geography of Australia and Tasmania",
+    "breakdown": "919.4 = Australia and Tasmania",
+    "source": "UDC B.S. 1000A:1961"
+  },
+  {
+    "title": "Harvesting of Wheat and Maize",
+    "udc": "633.11+633.15:631.55",
+    "subject": "Agriculture",
+    "breakdown": "633.11 = Wheat; 633.15 = Maize; + = combination; 631.55 = Harvesting",
+    "source": "UDC B.S. 1000A:1961"
+  }
+]

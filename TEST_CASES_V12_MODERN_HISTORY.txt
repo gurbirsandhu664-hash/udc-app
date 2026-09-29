@@ -1,0 +1,9 @@
+CURRENT UDC HISTORY TESTS
+History of China -> 94(510)
+History of India -> 94(540)
+History of Japan -> 94(52)
+History of North Korea -> 94(519.3)
+History of South Korea -> 94(519.5)
+History of Korea -> 94(519)
+
+The old 1961 951 mapping is no longer allowed to override these current-UDC history rules.

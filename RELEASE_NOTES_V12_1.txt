@@ -1,0 +1,2 @@
+V12.1 COGNITIVE UDC
+The UI remains V11-style. The new Answer Shield adds a semantic gate before AI and an evidence audit after AI. It is designed to prevent keyword/index hijacking and unsupported notation.
