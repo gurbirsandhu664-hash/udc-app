@@ -1,123 +1,79 @@
 const express = require('express');
+const https = require('https');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-function generateUDC(rawText) {
-  let text = rawText.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+function askAIClassifier(title, apiKey) {
+  return new Promise((resolve, reject) => {
+    const prompt = `You are a certified expert in Library Classification following STRICTLY the Universal Decimal Classification (UDC) BS 1000A:1961 Edition.
+Analyze and classify the given book title or subject into its exact UDC number and facets.
+Title: "${title}"
 
-  // 1. Direct Rule for Religious Unrest in India -> 2-674(540)
-  if (text.includes("religious unrest") && text.includes("india")) {
-    return {
-      code: "2-674(540)",
-      description: "Religious unrest in India",
-      breakdown: [
-        { part: "2", label: "Religion. Theology" },
-        { part: "-674", label: "Special auxiliary for unrest, disputes, conflicts" },
-        { part: "(540)", label: "Place auxiliary for India" }
-      ]
+Strict Rules:
+1. Higher education = 378, Computers = 681.14.
+2. History of India = 94(540).
+3. Religious Unrest in India = 2-674(540).
+4. A handbook of ethics of librarians = 02:17(035).
+5. Knowledge Metaphysics and Logic = 001 + 111 + 16.
+6. Biography of Dr S.R. Ranganathan = 929(Ranganathan).
+7. English drama = 820-2.
+8. Science and technology = 5/6.
+9. Research on Sacred Literature = 2.001.5 or 2:001.5 (or respective schedule with research viewpoint .001.5).
+10. Use exact UDC signs: Colon (:), Plus (+), Stroke (/), Place (1/9), Form (0...), Viewpoint (.00...).
+
+Respond strictly in valid JSON format only, with no markdown formatting, using this exact schema:
+{
+  "code": "EXACT_UDC_NUMBER",
+  "description": "Short description of the classification",
+  "breakdown": [
+    {"part": "FACET_CODE", "label": "Meaning of facet"}
+  ]
+}`;
+
+    const data = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
     };
-  }
 
-  // 2. Higher Education and Computers -> 378:681.14
-  if ((text.includes("higher education") || text.includes("university")) && (text.includes("computer") || text.includes("computing"))) {
-    return {
-      code: "378:681.14",
-      description: "Higher education in relation to computers",
-      breakdown: [
-        { part: "378", label: "Higher education. Universities" },
-        { part: ":", label: "Colon relation sign" },
-        { part: "681.14", label: "Calculating mechanisms. Computers" }
-      ]
-    };
-  }
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          const rawText = parsed.candidates[0].content.parts[0].text;
+          resolve(JSON.parse(rawText));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
 
-  // 3. Knowledge, Metaphysics and Logic -> 001 + 111 + 16
-  if (text.includes("knowledge") && text.includes("metaphysics") && text.includes("logic")) {
-    return {
-      code: "001 + 111 + 16",
-      description: "Knowledge + Metaphysics + Logic",
-      breakdown: [
-        { part: "001", label: "Science and knowledge in general" },
-        { part: "+", label: "Coordination sign" },
-        { part: "111", label: "General metaphysics. Ontology" },
-        { part: "+", label: "Coordination sign" },
-        { part: "16", label: "Logic" }
-      ]
-    };
-  }
-
-  // 4. Biography of Dr S.R. Ranganathan -> 929(Ranganathan)
-  let bioMatch = text.match(/(?:biography|life)\s+of\s+(?:dr\.?\s*)?([a-z\s\.]+)/i);
-  if (bioMatch) {
-    let nameParts = bioMatch[1].trim().split(' ');
-    let nameKey = nameParts[nameParts.length - 1];
-    let personName = nameKey.charAt(0).toUpperCase() + nameKey.slice(1);
-    return {
-      code: "929(" + personName + ")",
-      description: "Biography of individual: " + personName,
-      breakdown: [
-        { part: "929", label: "Biographies" },
-        { part: "(" + personName + ")", label: "Individual name auxiliary" }
-      ]
-    };
-  }
-
-  // 5. History of India -> 94(540)
-  if (text.includes("history") && text.includes("india")) {
-    return {
-      code: "94(540)",
-      description: "History of India",
-      breakdown: [
-        { part: "94", label: "History" },
-        { part: "(540)", label: "Place auxiliary: India" }
-      ]
-    };
-  }
-
-  // 6. A handbook of ethics of librarians -> 02:17(035)
-  if (text.includes("handbook") && text.includes("ethics") && text.includes("librarian")) {
-    return {
-      code: "02:17(035)",
-      description: "Handbook of ethics of librarians",
-      breakdown: [
-        { part: "02", label: "Libraries. Librarianship" },
-        { part: ":", label: "Relation sign" },
-        { part: "17", label: "Ethics" },
-        { part: "(035)", label: "Handbook form auxiliary" }
-      ]
-    };
-  }
-
-  // 7. Science and technology -> 5/6
-  if (text.includes("science and technology") || text.includes("science & technology")) {
-    return {
-      code: "5/6",
-      description: "Pure sciences / Applied sciences",
-      breakdown: [
-        { part: "5", label: "Pure sciences" },
-        { part: "/", label: "Stroke extension sign" },
-        { part: "6", label: "Applied sciences. Technology" }
-      ]
-    };
-  }
-
-  return {
-    code: "001",
-    description: "Science and knowledge in general",
-    breakdown: [{ part: "001", label: "General knowledge" }]
-  };
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
 }
 
-// UI Route
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>UDC Classifier (BS 1000A:1961)</title>
+      <title>Universal UDC Classifier (BS 1000A:1961)</title>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; margin: 0; padding: 40px 15px; text-align: center; }
@@ -139,8 +95,8 @@ app.get('/', (req, res) => {
     <body>
       <div class="box">
         <h2>UDC Classifier (BS 1000A:1961)</h2>
-        <p>100% Accurate UDC Engine</p>
-        <input type="text" id="subject" placeholder="e.g. Religious Unrest in India">
+        <p>AI-Powered Intelligent UDC Engine</p>
+        <input type="text" id="subject" placeholder="e.g. Research on Sacred Literature">
         <button onclick="run()">Classify</button>
         <div id="resBox" class="res">
           <div><strong>UDC Code:</strong> <span id="outCode" class="code"></span></div>
@@ -179,18 +135,23 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.post('/api/classify', (req, res) => {
+app.post('/api/classify', async (req, res) => {
   const title = req.body.title || "";
   if (!title.trim()) {
     return res.status(400).json({ error: "Title is required" });
   }
-  const result = generateUDC(title);
-  return res.json({
-    title: title,
-    code: result.code,
-    description: result.description,
-    breakdown: result.breakdown
-  });
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ code: "ERROR", description: "GEMINI_API_KEY is not set in Render Environment variables." });
+  }
+
+  try {
+    const aiRes = await askAIClassifier(title, apiKey);
+    return res.json(aiRes);
+  } catch (e) {
+    return res.status(500).json({ code: "Error", description: e.message });
+  }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
