@@ -1,7 +1,0 @@
-V12.2 fixes the failure shown in the Religious Unrest in India screenshot.
-
-Root cause: the local source matcher could select a nearby classmark (e.g. 355/327-family evidence) from an index line based on a generic word.
-
-Fix: universal semantic arbitration runs before raw source candidate selection and a final semantic-safety gate rejects candidates that do not explain the title's head concept.
-
-This is an engine-level fix, not a single-title patch.
