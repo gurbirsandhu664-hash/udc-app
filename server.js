@@ -1,4 +1,4 @@
-// UDC AI V27 - Full Web App
+{ 
 const express = require("express");
 const cors = require("cors");
 
