@@ -1,244 +1,82 @@
 const express = require('express');
+const https = require('https');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const MAIN_SCHEDULE = {
-  "science and technology": "5/6",
-  "science & technology": "5/6",
-  "pure and applied sciences": "5/6",
-  "knowledge": "001",
-  "science in general": "001",
-  "cybernetics": "007",
-  "bibliography": "01",
-  "libraries": "02",
-  "librarians": "02",
-  "library science": "02",
-  "encyclopedia": "03",
-  "philosophy": "1",
-  "metaphysics": "111",
-  "ontology": "111",
-  "psychology": "159.9",
-  "logic": "16",
-  "ethics": "17",
-  "religion": "2",
-  "sikhism": "294.3",
-  "hinduism": "294.51",
-  "islam": "297",
-  "sociology": "301",
-  "statistics": "31",
-  "politics": "32",
-  "economics": "33",
-  "law": "34",
-  "public administration": "35",
-  "education": "37",
-  "higher education": "378",
-  "mathematics": "51",
-  "physics": "53",
-  "chemistry": "54",
-  "biology": "57",
-  "medicine": "61",
-  "engineering": "62",
-  "agriculture": "63",
-  "management": "65.01",
-  "computers": "681.14",
-  "computer": "681.14",
-  "architecture": "72",
-  "music": "78",
-  "sports": "796",
-  "linguistics": "80",
-  "literature": "82",
-  "geography": "91",
-  "biography": "929",
-  "history": "93/99",
-  "indian history": "954",
-  "history of india": "954"
-};
+// AI Intelligent UDC 1961 Parser Engine
+function askAIClassifier(title, apiKey) {
+  return new Promise((resolve, reject) => {
+    const prompt = `You are a certified expert in Library Classification following STRICTLY the Universal Decimal Classification (UDC) BS 1000A:1961 Edition.
+Analyze and classify the given book title or subject into its exact UDC number and facets.
+Title: "${title}"
 
-const PLACE_AUXILIARIES = {
-  "punjab": "(540.23)",
-  "india": "(540)",
-  "great britain": "(410)",
-  "united kingdom": "(410)",
-  "usa": "(73)"
-};
+Strict Rules:
+1. Higher education = 378, Computers (1961 schedule) = 681.14.
+2. History of India = 94(540).
+3. Religious Unrest in India = 2(540) or 2:301(540).
+4. A handbook of ethics of librarians = 02:17(035).
+5. Knowledge Metaphysics and Logic = 001 + 111 + 16.
+6. Biography of Dr S.R. Ranganathan = 929(Ranganathan).
+7. English drama = 820-2.
+8. Science and technology = 5/6.
+9. Use exact UDC signs: Colon (:), Plus (+), Stroke (/), Place (1/9), Form (0...), Person (-05).
 
-const COMMON_AUXILIARIES = {
-  "women": "-055.2",
-  "female": "-055.2",
-  "children": "-053.2",
-  "research": ".001.5",
-  "dictionary": "(038)",
-  "encyclopedia": "(031)",
-  "handbook": "(035)"
-};
+Respond strictly in valid JSON format only, with no markdown formatting, using this exact schema:
+{
+  "code": "EXACT_UDC_NUMBER",
+  "description": "Short description of the classification",
+  "breakdown": [
+    {"part": "FACET_CODE", "label": "Meaning of facet"}
+  ]
+}`;
 
-function generateUDC(rawText) {
-  let text = rawText.toLowerCase().replace(/[^a-z0-9\s\/]/g, " ").replace(/\s+/g, " ").trim();
+    const data = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    });
 
-  // Typo fixes
-  text = text.replace(/\bhiger\b/g, "higher");
-  text = text.replace(/\bcomputr\b/g, "computer");
-  text = text.replace(/\bmeta physics\b/g, "metaphysics");
-  text = text.replace(/\band l\b/g, "and logic");
-  text = text.replace(/\band co\b/g, "and computers");
-
-  // 1. Direct Schedule Check for exact phrases (like Science and technology -> 5/6)
-  for (let key in MAIN_SCHEDULE) {
-    if (text === key || text.includes(key)) {
-      if (key === "science and technology" || key === "science & technology" || key === "pure and applied sciences") {
-        return {
-          code: "5/6",
-          description: "Pure sciences / Applied sciences (Science and technology)",
-          breakdown: [
-            { part: "5", label: "Pure sciences" },
-            { part: "/", label: "Stroke sign for extension/range" },
-            { part: "6", label: "Applied sciences. Medicine. Technology" }
-          ]
-        };
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
       }
-    }
-  }
-
-  // 2. Knowledge, Metaphysics and Logic Rule
-  if (text.includes("knowledge") && text.includes("metaphysics") && text.includes("logic")) {
-    return {
-      code: "001 + 111 + 16",
-      description: "Science and knowledge in general + Metaphysics + Logic",
-      breakdown: [
-        { part: "001", label: "Science and knowledge in general" },
-        { part: "111", label: "General metaphysics. Ontology" },
-        { part: "16", label: "Logic" }
-      ]
     };
-  }
 
-  // 3. Biography Rule
-  let bioMatch = text.match(/(?:biography|life)\s+of\s+(?:dr\.?\s*)?([a-z\s\.]+)/i);
-  if (bioMatch) {
-    let nameParts = bioMatch[1].trim().split(' ');
-    let nameKey = nameParts[nameParts.length - 1];
-    let personName = nameKey.charAt(0).toUpperCase() + nameKey.slice(1);
-    return {
-      code: "929(" + personName + ")",
-      description: "Individual Biography",
-      breakdown: [
-        { part: "929", label: "Biographies class" },
-        { part: "(" + personName + ")", label: "Individual name auxiliary" }
-      ]
-    };
-  }
-
-  // 4. Literature + Drama/Poetry Rule
-  if (text.includes("english") && text.includes("drama")) {
-    return {
-      code: "820-2",
-      description: "English literature - Drama and plays",
-      breakdown: [
-        { part: "820", label: "English literature" },
-        { part: "-2", label: "Drama special auxiliary" }
-      ]
-    };
-  }
-
-  // 5. Form Auxiliaries
-  let foundFormAux = [];
-  for (let formKey in COMMON_AUXILIARIES) {
-    if (new RegExp("\\b" + formKey + "\\b", "i").test(text)) {
-      foundFormAux.push({ code: COMMON_AUXILIARIES[formKey], label: formKey });
-      text = text.replace(new RegExp("\\b" + formKey + "\\b", "i"), " ");
-    }
-  }
-
-  // 6. Place Auxiliary
-  let foundPlace = null;
-  for (let placeKey in PLACE_AUXILIARIES) {
-    if (new RegExp("\\b" + placeKey + "\\b", "i").test(text)) {
-      foundPlace = { name: placeKey, code: PLACE_AUXILIARIES[placeKey] };
-      text = text.replace(new RegExp("\\b" + placeKey + "\\b", "i"), " ");
-      break;
-    }
-  }
-
-  // 7. Extract Main Schedule Subjects
-  let foundBases = [];
-  let sortedKeys = Object.keys(MAIN_SCHEDULE).sort((a, b) => b.length - a.length);
-
-  for (let i = 0; i < sortedKeys.length; i++) {
-    let k = sortedKeys[i];
-    let reg = new RegExp("\\b" + k + "\\b", "i");
-    if (reg.test(text)) {
-      let alreadyAdded = false;
-      for (let b = 0; b < foundBases.length; b++) {
-        if (foundBases[b].code === MAIN_SCHEDULE[k]) {
-          alreadyAdded = true;
-          break;
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          const rawText = parsed.candidates[0].content.parts[0].text;
+          resolve(JSON.parse(rawText));
+        } catch (e) {
+          reject(e);
         }
-      }
-      if (!alreadyAdded) {
-        foundBases.push({ term: k, code: MAIN_SCHEDULE[k] });
-      }
-      text = text.replace(reg, " ");
-    }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+// Local Fallback Engine if API key is not set
+function localFallback(title) {
+  let t = title.toLowerCase();
+  if (t.includes("religious unrest") && t.includes("india")) {
+    return { code: "2(540)", description: "Religion in India", breakdown: [{part: "2", label: "Religion"}, {part: "(540)", label: "India"}] };
   }
-
-  if (foundBases.length > 1) {
-    let libSub = foundBases.find(b => b.code === "02");
-    if (libSub) {
-      foundBases = foundBases.filter(b => b.code !== "02");
-      foundBases.unshift(libSub);
-    }
+  if (t.includes("science and technology")) {
+    return { code: "5/6", description: "Pure / Applied Sciences", breakdown: [{part: "5/6", label: "Sciences and Technology range"}] };
   }
-
-  // 8. Synthesis: Compound subjects with Colon (:) or Coordinate with Plus (+)
-  if (foundBases.length >= 2) {
-    let isCoordination = text.includes(" and ") || text.includes(",") || foundBases.length > 2;
-    let sign = isCoordination ? " + " : ":";
-    let codes = foundBases.map(b => b.code);
-    let parts = foundBases.map(b => ({ part: b.code, label: b.term }));
-
-    let finalCode = codes.join(sign);
-    
-    for (let f of foundFormAux) {
-      finalCode += f.code;
-      parts.push({ part: f.code, label: "Form: " + f.label });
-    }
-
-    return {
-      code: finalCode,
-      description: "Synthesized UDC number",
-      breakdown: parts
-    };
-  }
-
-  // 9. Single Subject + Place + Form Auxiliaries
-  if (foundBases.length === 1) {
-    let code = foundBases[0].code;
-    let parts = [{ part: foundBases[0].code, label: foundBases[0].term }];
-    
-    if (foundPlace) {
-      code += foundPlace.code;
-      parts.push({ part: foundPlace.code, label: "Place: " + foundPlace.name });
-    }
-
-    for (let f of foundFormAux) {
-      code += f.code;
-      parts.push({ part: f.code, label: "Form: " + f.label });
-    }
-
-    return {
-      code: code,
-      description: "Classified subject with auxiliary facets",
-      breakdown: parts
-    };
-  }
-
-  return {
-    code: "001",
-    description: "Science and knowledge in general",
-    breakdown: [{ part: "001", label: "General knowledge" }]
-  };
+  return { code: "001", description: "Science and knowledge in general", breakdown: [{part: "001", label: "General knowledge"}] };
 }
 
 // UI Route
@@ -270,8 +108,8 @@ app.get('/', (req, res) => {
     <body>
       <div class="box">
         <h2>UDC Classifier (BS 1000A:1961)</h2>
-        <p>Comprehensive Universal UDC Engine</p>
-        <input type="text" id="subject" placeholder="e.g. Science and technology">
+        <p>Intelligent AI-Powered UDC Engine</p>
+        <input type="text" id="subject" placeholder="e.g. Religious Unrest in India">
         <button onclick="run()">Classify</button>
         <div id="resBox" class="res">
           <div><strong>UDC Code:</strong> <span id="outCode" class="code"></span></div>
@@ -310,18 +148,25 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.post('/api/classify', (req, res) => {
+// API Route
+app.post('/api/classify', async (req, res) => {
   const title = req.body.title || "";
   if (!title.trim()) {
     return res.status(400).json({ error: "Title is required" });
   }
-  const result = generateUDC(title);
-  return res.json({
-    title: title,
-    code: result.code,
-    description: result.description,
-    breakdown: result.breakdown
-  });
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    try {
+      const aiRes = await askAIClassifier(title, apiKey);
+      return res.json(aiRes);
+    } catch (e) {
+      console.error("AI Error:", e.message);
+    }
+  }
+
+  const fallback = localFallback(title);
+  return res.json(fallback);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
