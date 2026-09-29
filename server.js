@@ -6,12 +6,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
+// Seed data load
 let udcData = [];
 try {
-  const rawData = fs.readFileSync(path.join(__dirname, 'seed-udc.json'), 'utf8');
-  udcData = JSON.parse(rawData);
+  const seedPath = path.join(__dirname, 'seed-udc.json');
+  if (fs.existsSync(seedPath)) {
+    udcData = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+  }
 } catch (err) {
   console.error("Data load error:", err);
 }
@@ -32,6 +34,43 @@ const baseScheduleRules = {
   "electrical engineering": "621.3"
 };
 
+// UI Route (Fallback HTML ਤਾਂ ਕਿ ਪੇਜ ਕਦੇ ਫੇਲ ਨਾ ਹੋਵੇ)
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, 'index.html');
+  const publicIndexPath = path.join(__dirname, 'public', 'index.html');
+  
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  } else if (fs.existsSync(publicIndexPath)) {
+    return res.sendFile(publicIndexPath);
+  } else {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>UDC V45 Classifier</title></head>
+      <body style="font-family: Arial; padding: 40px; text-align: center;">
+        <h2>UDC Classifier (BS 1000A:1961 Edition) - V45</h2>
+        <input type="text" id="title" placeholder="Enter title (e.g. Higher education and computers)" style="width: 60%; padding: 10px; font-size: 16px;">
+        <button onclick="classify()" style="padding: 10px 20px; font-size: 16px;">Search</button>
+        <div id="result" style="margin-top: 30px; font-size: 20px; font-weight: bold; color: green;"></div>
+        <script>
+          async function classify() {
+            const title = document.getElementById('title').value;
+            const res = await fetch('/api/classify', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({title})
+            });
+            const data = await res.json();
+            document.getElementById('result').innerText = data.code ? (data.code + ' : ' + data.description) : 'No match found';
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  }
+});
+
 app.post('/api/classify', (req, res) => {
   const rawTitle = req.body.title || "";
   const title = rawTitle.toLowerCase().trim();
@@ -40,9 +79,8 @@ app.post('/api/classify', (req, res) => {
     return res.status(400).json({ error: "Please enter a title." });
   }
 
-  // 1. Direct Answer Key Match
   const directMatch = udcData.find(item => 
-    item.keywords.some(k => title === k || title.includes(k))
+    item.keywords && item.keywords.some(k => title === k || title.includes(k))
   );
 
   if (directMatch) {
@@ -54,7 +92,6 @@ app.post('/api/classify', (req, res) => {
     });
   }
 
-  // 2. Compound Synthesis using Colon (:)
   let detectedCodes = [];
   for (const [key, code] of Object.entries(baseScheduleRules)) {
     if (title.includes(key) && !detectedCodes.includes(code)) {
@@ -87,5 +124,5 @@ app.post('/api/classify', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(Server running on port ${PORT});
+  console.log(Server is running on port ${PORT});
 });
