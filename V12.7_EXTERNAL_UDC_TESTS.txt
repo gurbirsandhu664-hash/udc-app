@@ -1,9 +1,0 @@
-V12.7 external authority regression targets
-
-Dictionary of Language and Literature -> UDC form (038) + class 8 hierarchy; must not return legacy 030.8.
-Higher Education -> 378 when external UDC Summary returns the concept.
-Computer Science -> 004 when external UDC Summary returns the concept.
-History of China -> 94(510) when 94 and (510) are corroborated.
-Geography of India -> 91(540) when 91 and (540) are corroborated.
-
-If external sources are temporarily unavailable, deterministic/current-authority fallback remains active.
