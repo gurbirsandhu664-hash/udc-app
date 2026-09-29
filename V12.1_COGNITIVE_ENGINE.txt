@@ -1,9 +1,0 @@
-V12.1 COGNITIVE UDC ENGINE
-
-NEW FEATURE: ANSWER SHIELD
-- Head-concept semantic gate runs before AI.
-- AI candidates are audited against the uploaded UDC authority.
-- Unrelated alphabetical-index candidates are rejected.
-- Every notation component must be supported by the authority unless it is a deterministic current-UDC exact rule.
-
-Example: Religious Unrest in India cannot be hijacked by a 327 Pan-Slavism line just because the word unrest appears there.
