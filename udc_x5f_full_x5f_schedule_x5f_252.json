@@ -1,0 +1,2521 @@
+[
+  {
+    "code": "0",
+    "description": "Generalities. Science and knowledge. Organization. Information. Documentation. Librarianship. Institutions. Publications",
+    "examples": [
+      "Generalities",
+      "Handbook of generalities",
+      "Generalities in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "001",
+    "description": "Science and knowledge in general. Organization of intellectual work",
+    "examples": [
+      "Science and knowledge in general",
+      "Essence of knowledge",
+      "Organization of knowledge"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "001.8",
+    "description": "Methodology",
+    "examples": [
+      "Methodology",
+      "Handbook of methodology",
+      "Methodology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "01",
+    "description": "Bibliography and bibliographies. Catalogues",
+    "examples": [
+      "Bibliography and bibliographies",
+      "Handbook of bibliography and bibliographies",
+      "Bibliography and bibliographies in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "1",
+    "description": "Philosophy. Psychology",
+    "examples": [
+      "Philosophy",
+      "Handbook of philosophy",
+      "Philosophy in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "002",
+    "description": "Documentation. Books. Writings. Authorship",
+    "examples": [
+      "Documentation",
+      "Handbook of documentation",
+      "Documentation in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "02",
+    "description": "Librarianship",
+    "examples": [
+      "Librarianship",
+      "Handbook of librarianship",
+      "Librarianship in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "2",
+    "description": "Religion. Theology",
+    "examples": [
+      "Religion",
+      "Handbook of religion",
+      "Religion in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "2-674",
+    "description": "UDC 2-674 - 2 class subdivision",
+    "examples": [
+      "Study of 2-674",
+      "Handbook of 2-674",
+      "2-674 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "003",
+    "description": "Writing systems and scripts",
+    "examples": [
+      "Writing systems and scripts",
+      "Handbook of writing systems and scripts",
+      "Writing systems and scripts in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "03",
+    "description": "General reference works. Encyclopaedias",
+    "examples": [
+      "General reference works",
+      "Handbook of general reference works",
+      "General reference works in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "3",
+    "description": "Social sciences. Statistics. Politics. Economics. Law. Education",
+    "examples": [
+      "Social sciences",
+      "Handbook of social sciences",
+      "Social sciences in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "3/.5",
+    "description": "Pencils",
+    "examples": [
+      "Pencils",
+      "Handbook of pencils",
+      "Pencils in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "004",
+    "description": "Computer science and technology",
+    "examples": [
+      "Computer science and technology",
+      "Handbook of computer science and technology",
+      "Computer science and technology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "04",
+    "description": "Essays",
+    "examples": [
+      "Essays",
+      "Handbook of essays",
+      "Essays in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "4",
+    "description": "Vacant (formerly Philology. Linguistics)",
+    "examples": [
+      "Vacant (formerly Philology",
+      "Handbook of vacant (formerly philology",
+      "Vacant (formerly Philology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "005",
+    "description": "Study methods",
+    "examples": [
+      "Study methods",
+      "Handbook of study methods",
+      "Study methods in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "05",
+    "description": "Serial publications. Periodicals",
+    "examples": [
+      "Serial publications",
+      "Handbook of serial publications",
+      "Serial publications in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "5",
+    "description": "Mathematics. Natural sciences",
+    "examples": [
+      "Mathematics",
+      "Handbook of mathematics",
+      "Mathematics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "006",
+    "description": "UDC 006 - 0 class subdivision",
+    "examples": [
+      "Study of 006",
+      "Handbook of 006",
+      "006 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "06",
+    "description": "Organizations. Associations. Museums",
+    "examples": [
+      "Organizations",
+      "Handbook of organizations",
+      "Organizations in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "6",
+    "description": "Applied sciences. Medicine. Technology",
+    "examples": [
+      "Applied sciences",
+      "Handbook of applied sciences",
+      "Applied sciences in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "007",
+    "description": "Activity and organizing. Communication and control theory",
+    "examples": [
+      "Activity and organizing",
+      "Handbook of activity and organizing",
+      "Activity and organizing in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "07",
+    "description": "Newspapers. The Press. Journalism",
+    "examples": [
+      "Newspapers",
+      "Handbook of newspapers",
+      "Newspapers in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "7",
+    "description": "Arts. Entertainment. Sport",
+    "examples": [
+      "Arts and entertainment",
+      "History of arts",
+      "Encyclopedia of arts"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "008",
+    "description": "UDC 008 - 0 class subdivision",
+    "examples": [
+      "Study of 008",
+      "Handbook of 008",
+      "008 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "08",
+    "description": "Collective works. Polygraphy",
+    "examples": [
+      "Collective works",
+      "Handbook of collective works",
+      "Collective works in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "8",
+    "description": "Language. Linguistics. Literature",
+    "examples": [
+      "Language",
+      "Handbook of language",
+      "Language in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "009.18",
+    "description": "Relations with public authorities",
+    "examples": [
+      "Relations with public authorities",
+      "Handbook of relations with public authorities",
+      "Relations with public authorities in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "09",
+    "description": "Manuscripts. Rare and remarkable works",
+    "examples": [
+      "Manuscripts",
+      "Handbook of manuscripts",
+      "Manuscripts in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "9",
+    "description": "Geography. Biography. History",
+    "examples": [
+      "Geography",
+      "Handbook of geography",
+      "Geography in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "11",
+    "description": "Metaphysics",
+    "examples": [
+      "Metaphysics",
+      "Handbook of metaphysics",
+      "Metaphysics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "13",
+    "description": "Philosophy of mind and spirit. Metaphysics of spiritual life",
+    "examples": [
+      "Philosophy of mind and spirit",
+      "Handbook of philosophy of mind and spirit",
+      "Philosophy of mind and spirit in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "14",
+    "description": "Philosophical systems",
+    "examples": [
+      "Philosophical systems",
+      "Handbook of philosophical systems",
+      "Philosophical systems in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "16",
+    "description": "Logic. Epistemology. Theory of knowledge",
+    "examples": [
+      "Logic",
+      "Handbook of logic",
+      "Logic in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "17",
+    "description": "Ethics. Moral philosophy",
+    "examples": [
+      "Ethics",
+      "Handbook of ethics",
+      "Ethics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "18",
+    "description": "UDC 18 - 1 class subdivision",
+    "examples": [
+      "Study of 18",
+      "Handbook of 18",
+      "18 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "19.24",
+    "description": "Statistical probability calculation",
+    "examples": [
+      "Statistical probability calculation",
+      "Handbook of statistical probability calculation",
+      "Statistical probability calculation in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "21",
+    "description": "Natural theology. Theodicy",
+    "examples": [
+      "Natural theology",
+      "Handbook of natural theology",
+      "Natural theology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "22",
+    "description": "The Bible. Holy Scripture",
+    "examples": [
+      "The Bible",
+      "Handbook of the bible",
+      "The Bible in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "22-27",
+    "description": "UDC 22-27 - 2 class subdivision",
+    "examples": [
+      "Study of 22-27",
+      "Handbook of 22-27",
+      "22-27 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "22/28",
+    "description": "The Christian Religion",
+    "examples": [
+      "The Christian Religion",
+      "Handbook of the christian religion",
+      "The Christian Religion in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "23",
+    "description": "Dogmatic theology",
+    "examples": [
+      "Dogmatic theology",
+      "Handbook of dogmatic theology",
+      "Dogmatic theology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "24",
+    "description": "Practical theology",
+    "examples": [
+      "Practical theology",
+      "Handbook of practical theology",
+      "Practical theology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "025.3",
+    "description": "Cataloguing",
+    "examples": [
+      "Cataloguing",
+      "Handbook of cataloguing",
+      "Cataloguing in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "025.4",
+    "description": "Classification and indexing",
+    "examples": [
+      "Classification and indexing",
+      "Handbook of classification and indexing",
+      "Classification and indexing in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "25",
+    "description": "Pastoral theology",
+    "examples": [
+      "Pastoral theology",
+      "Handbook of pastoral theology",
+      "Pastoral theology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "26",
+    "description": "Christian church",
+    "examples": [
+      "Christian church",
+      "Handbook of christian church",
+      "Christian church in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "27",
+    "description": "History of the Christian church",
+    "examples": [
+      "History of the Christian church",
+      "Handbook of history of the christian church",
+      "History of the Christian church in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "28",
+    "description": "Christian churches, sects, denominations",
+    "examples": [
+      "Christian churches, sects, denominations",
+      "Handbook of christian churches, sects, denominations",
+      "Christian churches, sects, denominations in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "29",
+    "description": "Non-Christian religions",
+    "examples": [
+      "Non-Christian religions",
+      "Handbook of non-christian religions",
+      "Non-Christian religions in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "30",
+    "description": "General sociology",
+    "examples": [
+      "General sociology",
+      "Handbook of general sociology",
+      "General sociology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "31",
+    "description": "Statistics. Demography",
+    "examples": [
+      "Statistics",
+      "Handbook of statistics",
+      "Statistics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "32",
+    "description": "Politics. Political science",
+    "examples": [
+      "Politics",
+      "Handbook of politics",
+      "Politics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "33",
+    "description": "Economics. Economic science",
+    "examples": [
+      "Economics",
+      "Handbook of economics",
+      "Economics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "34",
+    "description": "Law. Jurisprudence",
+    "examples": [
+      "Study of 34",
+      "Introduction to 34"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "35",
+    "description": "Public administration. Government. Military affairs",
+    "examples": [
+      "Public administration",
+      "Handbook of public administration",
+      "Public administration in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "35/.36",
+    "description": "Drawing paper",
+    "examples": [
+      "Drawing paper",
+      "Handbook of drawing paper",
+      "Drawing paper in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "36",
+    "description": "Social welfare. Social work. Social security",
+    "examples": [
+      "Social welfare",
+      "Handbook of social welfare",
+      "Social welfare in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "37",
+    "description": "Education. Pedagogy",
+    "examples": [
+      "Education",
+      "Handbook of education",
+      "Education in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "38",
+    "description": "Commerce. Trade. Transport. Communication",
+    "examples": [
+      "Commerce",
+      "Handbook of commerce",
+      "Commerce in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "039",
+    "description": "Tclccom01Uniclltion",
+    "examples": [
+      "Tclccom01Uniclltion",
+      "Handbook of tclccom01uniclltion",
+      "Tclccom01Uniclltion in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "39",
+    "description": "Cultural anthropology. Ethnography. Folklore",
+    "examples": [
+      "Cultural anthropology",
+      "Handbook of cultural anthropology",
+      "Cultural anthropology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "40",
+    "description": "General Qu",
+    "examples": [
+      "General Qu",
+      "Handbook of general qu",
+      "General Qu in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "041/.42",
+    "description": "Intersection andtravcrsing",
+    "examples": [
+      "Intersection andtravcrsing",
+      "Handbook of intersection andtravcrsing",
+      "Intersection andtravcrsing in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "41",
+    "description": "General Philology and Linguistics -",
+    "examples": [
+      "General Philology and Linguistics -",
+      "Handbook of general philology and linguistics -",
+      "General Philology and Linguistics - in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "42",
+    "description": "Western languages in general",
+    "examples": [
+      "Western languages in general",
+      "Handbook of western languages in general",
+      "Western languages in general in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "42/49",
+    "description": "Languages and Dialects",
+    "examples": [
+      "Languages and Dialects",
+      "Handbook of languages and dialects",
+      "Languages and Dialects in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "43",
+    "description": "Germanic languages",
+    "examples": [
+      "Germanic languages",
+      "Handbook of germanic languages",
+      "Germanic languages in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "44",
+    "description": "Romance languages in general",
+    "examples": [
+      "Romance languages in general",
+      "Handbook of romance languages in general",
+      "Romance languages in general in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "45",
+    "description": "Italian",
+    "examples": [
+      "Italian",
+      "Handbook of italian",
+      "Italian in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "46",
+    "description": "Spanish",
+    "examples": [
+      "Spanish",
+      "Handbook of spanish",
+      "Spanish in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "47",
+    "description": "Latin and Greek",
+    "examples": [
+      "Latin and Greek",
+      "Handbook of latin and greek",
+      "Latin and Greek in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "48",
+    "description": "Arsenic, antimony, bismuth (-ites, oates)",
+    "examples": [
+      "Arsenic, antimony, bismuth (-ites, oates)",
+      "Handbook of arsenic, antimony, bismuth (-ites, oates)",
+      "Arsenic, antimony, bismuth (-ites, oates) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "49",
+    "description": "Oriental, African and other languages",
+    "examples": [
+      "Oriental, African and other languages",
+      "Handbook of oriental, african and other languages",
+      "Oriental, African and other languages in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "050",
+    "description": "UDC 050 - 0 class subdivision",
+    "examples": [
+      "Study of 050",
+      "Handbook of 050",
+      "050 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "051",
+    "description": "Compression of air and gases",
+    "examples": [
+      "Compression of air and gases",
+      "Handbook of compression of air and gases",
+      "Compression of air and gases in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "51",
+    "description": "Mathematics",
+    "examples": [
+      "Introduction to mathematics",
+      "Advanced mathematics handbook",
+      "Mathematical analysis"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "52",
+    "description": "Astronomy. Astrophysics. Geodesy",
+    "examples": [
+      "Astronomy and astrophysics",
+      "Introduction to stars and planets",
+      "Handbook of astronomy"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "53",
+    "description": "Physics",
+    "examples": [
+      "Physics textbook",
+      "Quantum physics",
+      "Handbook of physics"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "54",
+    "description": "Chemistry. Crystallography. Mineralogy",
+    "examples": [
+      "Chemistry textbook",
+      "Organic chemistry",
+      "Handbook of chemistry"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "055.2",
+    "description": "Women's auxiliary (army) corps",
+    "examples": [
+      "Women's auxiliary (army) corps",
+      "Handbook of women's auxiliary (army) corps",
+      "Women's auxiliary (army) corps in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "55",
+    "description": "Earth sciences. Geology. Meteorology",
+    "examples": [
+      "Earth sciences",
+      "Handbook of earth sciences",
+      "Earth sciences in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "56",
+    "description": "Palaeontology",
+    "examples": [
+      "Palaeontology",
+      "Handbook of palaeontology",
+      "Palaeontology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "57",
+    "description": "Biological sciences",
+    "examples": [
+      "Biological sciences",
+      "Handbook of biological sciences",
+      "Biological sciences in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "58",
+    "description": "Botany",
+    "examples": [
+      "Botany of India",
+      "Handbook of botany",
+      "Plant science in Punjab"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "59",
+    "description": "Zoology",
+    "examples": [
+      "Zoology handbook",
+      "Systematic zoology",
+      "Animal biology"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "61",
+    "description": "Medicine. Medical sciences",
+    "examples": [
+      "Medical science handbook",
+      "Textbook of medicine",
+      "Human anatomy"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "62",
+    "description": "Engineering. Technology in general",
+    "examples": [
+      "Engineering principles",
+      "Mechanical engineering",
+      "Handbook of engineering"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "63",
+    "description": "Agriculture. Forestry. Animal husbandry",
+    "examples": [
+      "Agriculture in Punjab",
+      "Farming techniques in India",
+      "Handbook of agriculture"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "64",
+    "description": "Domestic science. Housekeeping",
+    "examples": [
+      "Domestic science",
+      "Handbook of domestic science",
+      "Domestic science in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "65",
+    "description": "Management. Business organization",
+    "examples": [
+      "Management",
+      "Handbook of management",
+      "Management in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "66",
+    "description": "Chemical technology. Chemical industry",
+    "examples": [
+      "Chemical technology",
+      "Handbook of chemical technology",
+      "Chemical technology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "67",
+    "description": "Various industries and trades",
+    "examples": [
+      "Various industries and trades",
+      "Handbook of various industries and trades",
+      "Various industries and trades in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "67/68",
+    "description": "Manufactures",
+    "examples": [
+      "Manufactures",
+      "Handbook of manufactures",
+      "Manufactures in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "68",
+    "description": "Manufacture for final use",
+    "examples": [
+      "Manufacture for final use",
+      "Handbook of manufacture for final use",
+      "Manufacture for final use in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "69",
+    "description": "Building. Construction",
+    "examples": [
+      "Building",
+      "Handbook of building",
+      "Building in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "070",
+    "description": "UDC 070 - 0 class subdivision",
+    "examples": [
+      "Study of 070",
+      "Handbook of 070",
+      "070 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "71",
+    "description": "Physical planning. Regional planning. Town planning. Landscape",
+    "examples": [
+      "Physical planning",
+      "Handbook of physical planning",
+      "Physical planning in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "72",
+    "description": "Architecture",
+    "examples": [
+      "Architecture of India",
+      "History of architecture",
+      "Handbook of architecture"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "73",
+    "description": "Sculpture",
+    "examples": [
+      "Sculpture",
+      "Handbook of sculpture",
+      "Sculpture in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "74",
+    "description": "Drawing. Design. Applied arts",
+    "examples": [
+      "Drawing",
+      "Handbook of drawing",
+      "Drawing in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "75",
+    "description": "Painting",
+    "examples": [
+      "Painting",
+      "Handbook of painting",
+      "Painting in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "76",
+    "description": "Graphic arts. Engraving. Prints",
+    "examples": [
+      "Graphic arts",
+      "Handbook of graphic arts",
+      "Graphic arts in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "77",
+    "description": "Photography. Cinematography",
+    "examples": [
+      "Photography",
+      "Handbook of photography",
+      "Photography in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "78",
+    "description": "Music",
+    "examples": [
+      "Music theory",
+      "History of Indian music",
+      "Handbook of music"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "78.073",
+    "description": "Amateur musicmaking",
+    "examples": [
+      "Amateur musicmaking",
+      "Handbook of amateur musicmaking",
+      "Amateur musicmaking in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "79",
+    "description": "Entertainment. Recreation. Games. Sport",
+    "examples": [
+      "Entertainment",
+      "Handbook of entertainment",
+      "Entertainment in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "80",
+    "description": "Generalities",
+    "examples": [
+      "Generalities",
+      "Handbook of generalities",
+      "Generalities in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "81",
+    "description": "Linguistics. Languages",
+    "examples": [
+      "Linguistics",
+      "Handbook of linguistics",
+      "Linguistics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "82",
+    "description": "Literature in general. Belles-lettres",
+    "examples": [
+      "Literature anthology",
+      "World literature",
+      "Introduction to literature"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "82-1",
+    "description": "UDC 82-1 - 8 class subdivision",
+    "examples": [
+      "Study of 82-1",
+      "Handbook of 82-1",
+      "82-1 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "82-2",
+    "description": "UDC 82-2 - 8 class subdivision",
+    "examples": [
+      "Study of 82-2",
+      "Handbook of 82-2",
+      "82-2 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "82-3",
+    "description": "UDC 82-3 - 8 class subdivision",
+    "examples": [
+      "Study of 82-3",
+      "Handbook of 82-3",
+      "82-3 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "84",
+    "description": "Romance literature",
+    "examples": [
+      "Romance literature",
+      "Handbook of romance literature",
+      "Romance literature in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "86",
+    "description": "Spanish literature",
+    "examples": [
+      "Spanish literature",
+      "Handbook of spanish literature",
+      "Spanish literature in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "87",
+    "description": "Classical, Latin and Greek literature",
+    "examples": [
+      "Classical, Latin and Greek literature",
+      "Handbook of classical, latin and greek literature",
+      "Classical, Latin and Greek literature in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "88",
+    "description": "Slavonic literatlll'e",
+    "examples": [
+      "Slavonic literatlll'e",
+      "Handbook of slavonic literatlll'e",
+      "Slavonic literatlll'e in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "89",
+    "description": "Oriental, African and other literature",
+    "examples": [
+      "Oriental, African and other literature",
+      "Handbook of oriental, african and other literature",
+      "Oriental, African and other literature in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "91",
+    "description": "Geography. Exploration",
+    "examples": [
+      "Geography",
+      "Handbook of geography",
+      "Geography in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "92",
+    "description": "Biography",
+    "examples": [
+      "Biography",
+      "Handbook of biography",
+      "Biography in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "93",
+    "description": "History",
+    "examples": [
+      "History",
+      "Handbook of history",
+      "History in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "93/99",
+    "description": "History",
+    "examples": [
+      "History",
+      "Handbook of history",
+      "History in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "94",
+    "description": "General history. World history",
+    "examples": [
+      "World history",
+      "History textbook",
+      "General history"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "94(410)",
+    "description": "UDC 94(410) - 9 class subdivision",
+    "examples": [
+      "Study of 94(410)",
+      "Handbook of 94(410)",
+      "94(410) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "94(540)",
+    "description": "History of India",
+    "examples": [
+      "History of India",
+      "Indian history handbook",
+      "History of ancient India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "94(540.23)",
+    "description": "UDC 94(540.23) - 9 class subdivision",
+    "examples": [
+      "Study of 94(540.23)",
+      "Handbook of 94(540.23)",
+      "94(540.23) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "94(73)",
+    "description": "UDC 94(73) - 9 class subdivision",
+    "examples": [
+      "Study of 94(73)",
+      "Handbook of 94(73)",
+      "94(73) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "97",
+    "description": "Hammers and hammering",
+    "examples": [
+      "Hammers and hammering",
+      "Handbook of hammers and hammering",
+      "Hammers and hammering in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "111",
+    "description": "UDC 111 - 1 class subdivision",
+    "examples": [
+      "Study of 111",
+      "Handbook of 111",
+      "111 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "122",
+    "description": "UDC 122 - 1 class subdivision",
+    "examples": [
+      "Study of 122",
+      "Handbook of 122",
+      "122 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "122/129",
+    "description": "Special metaphysics",
+    "examples": [
+      "Special metaphysics",
+      "Handbook of special metaphysics",
+      "Special metaphysics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "159.9",
+    "description": "Psychology",
+    "examples": [
+      "Psychology",
+      "Handbook of psychology",
+      "Psychology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "291",
+    "description": "UDC 291 - 2 class subdivision",
+    "examples": [
+      "Study of 291",
+      "Handbook of 291",
+      "291 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "292",
+    "description": "UDC 292 - 2 class subdivision",
+    "examples": [
+      "Study of 292",
+      "Handbook of 292",
+      "292 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "294.3",
+    "description": "Buddhism",
+    "examples": [
+      "Buddhism",
+      "Handbook of buddhism",
+      "Buddhism in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "294.4",
+    "description": "UDC 294.4 - 2 class subdivision",
+    "examples": [
+      "Study of 294.4",
+      "Handbook of 294.4",
+      "294.4 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "294.5",
+    "description": "Hinduism",
+    "examples": [
+      "Hinduism",
+      "Handbook of hinduism",
+      "Hinduism in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "294.6",
+    "description": "Sikhism",
+    "examples": [
+      "Sikhism",
+      "Handbook of sikhism",
+      "Sikhism in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "296",
+    "description": "UDC 296 - 2 class subdivision",
+    "examples": [
+      "Study of 296",
+      "Handbook of 296",
+      "296 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "297",
+    "description": "Islam",
+    "examples": [
+      "Islam",
+      "Handbook of islam",
+      "Islam in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "301",
+    "description": "Sociology",
+    "examples": [
+      "Sociology",
+      "Handbook of sociology",
+      "Sociology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "302",
+    "description": "UDC 302 - 3 class subdivision",
+    "examples": [
+      "Study of 302",
+      "Handbook of 302",
+      "302 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "303",
+    "description": "UDC 303 - 3 class subdivision",
+    "examples": [
+      "Study of 303",
+      "Handbook of 303",
+      "303 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "304",
+    "description": "UDC 304 - 3 class subdivision",
+    "examples": [
+      "Study of 304",
+      "Handbook of 304",
+      "304 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "321",
+    "description": "UDC 321 - 3 class subdivision",
+    "examples": [
+      "Study of 321",
+      "Handbook of 321",
+      "321 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "324",
+    "description": "Elections",
+    "examples": [
+      "Elections",
+      "Handbook of elections",
+      "Elections in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "325",
+    "description": "UDC 325 - 3 class subdivision",
+    "examples": [
+      "Study of 325",
+      "Handbook of 325",
+      "325 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "327",
+    "description": "International relations. Foreign policy. Foreign affairs",
+    "examples": [
+      "Foreign relations between India and USA",
+      "International relations in modern world",
+      "Diplomacy and foreign policy"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "327(540)",
+    "description": "UDC 327(540) - 3 class subdivision",
+    "examples": [
+      "Study of 327(540)",
+      "Handbook of 327(540)",
+      "327(540) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "327(73)",
+    "description": "UDC 327(73) - 3 class subdivision",
+    "examples": [
+      "Study of 327(73)",
+      "Handbook of 327(73)",
+      "327(73) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "330",
+    "description": "UDC 330 - 3 class subdivision",
+    "examples": [
+      "Study of 330",
+      "Handbook of 330",
+      "330 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "331",
+    "description": "UDC 331 - 3 class subdivision",
+    "examples": [
+      "Study of 331",
+      "Handbook of 331",
+      "331 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "331.88",
+    "description": "Mineworkers' union organization",
+    "examples": [
+      "Mineworkers' union organization",
+      "Handbook of mineworkers' union organization",
+      "Mineworkers' union organization in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "332",
+    "description": "UDC 332 - 3 class subdivision",
+    "examples": [
+      "Study of 332",
+      "Handbook of 332",
+      "332 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "333",
+    "description": "UDC 333 - 3 class subdivision",
+    "examples": [
+      "Study of 333",
+      "Handbook of 333",
+      "333 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "336.24/.25",
+    "description": "Various taxes and levies",
+    "examples": [
+      "Various taxes and levies",
+      "Handbook of various taxes and levies",
+      "Various taxes and levies in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "341",
+    "description": "UDC 341 - 3 class subdivision",
+    "examples": [
+      "Study of 341",
+      "Handbook of 341",
+      "341 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "342",
+    "description": "UDC 342 - 3 class subdivision",
+    "examples": [
+      "Study of 342",
+      "Handbook of 342",
+      "342 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "347.91/.95.",
+    "description": "Cf Trials",
+    "examples": [
+      "Cf Trials",
+      "Handbook of cf trials",
+      "Cf Trials in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "372",
+    "description": "Primary education",
+    "examples": [
+      "Primary education",
+      "Handbook of primary education",
+      "Primary education in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "373",
+    "description": "Secondary education",
+    "examples": [
+      "Secondary education",
+      "Handbook of secondary education",
+      "Secondary education in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "378",
+    "description": "Higher education. University",
+    "examples": [
+      "Higher education",
+      "Handbook of higher education",
+      "Higher education in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "464/.465",
+    "description": "Acetate",
+    "examples": [
+      "Acetate",
+      "Handbook of acetate",
+      "Acetate in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "502",
+    "description": "UDC 502 - 5 class subdivision",
+    "examples": [
+      "Study of 502",
+      "Handbook of 502",
+      "502 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "502/504",
+    "description": "UDC 502/504 - 5 class subdivision",
+    "examples": [
+      "Study of 502/504",
+      "Handbook of 502/504",
+      "502/504 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "504",
+    "description": "UDC 504 - 5 class subdivision",
+    "examples": [
+      "Study of 504",
+      "Handbook of 504",
+      "504 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "512",
+    "description": "UDC 512 - 5 class subdivision",
+    "examples": [
+      "Study of 512",
+      "Handbook of 512",
+      "512 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "514",
+    "description": "UDC 514 - 5 class subdivision",
+    "examples": [
+      "Study of 514",
+      "Handbook of 514",
+      "514 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "523",
+    "description": "UDC 523 - 5 class subdivision",
+    "examples": [
+      "Study of 523",
+      "Handbook of 523",
+      "523 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "530.145",
+    "description": "UDC 530.145 - 5 class subdivision",
+    "examples": [
+      "Study of 530.145",
+      "Handbook of 530.145",
+      "530.145 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "541",
+    "description": "UDC 541 - 5 class subdivision",
+    "examples": [
+      "Study of 541",
+      "Handbook of 541",
+      "541 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "542",
+    "description": "UDC 542 - 5 class subdivision",
+    "examples": [
+      "Study of 542",
+      "Handbook of 542",
+      "542 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "543",
+    "description": "UDC 543 - 5 class subdivision",
+    "examples": [
+      "Study of 543",
+      "Handbook of 543",
+      "543 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "546.22",
+    "description": "Sulphur (in iron and steel)",
+    "examples": [
+      "Sulphur (in iron and steel)",
+      "Handbook of sulphur (in iron and steel)",
+      "Sulphur (in iron and steel) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "549.091",
+    "description": "Precious stones",
+    "examples": [
+      "Precious stones",
+      "Handbook of precious stones",
+      "Precious stones in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "551",
+    "description": "UDC 551 - 5 class subdivision",
+    "examples": [
+      "Study of 551",
+      "Handbook of 551",
+      "551 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "572",
+    "description": "UDC 572 - 5 class subdivision",
+    "examples": [
+      "Study of 572",
+      "Handbook of 572",
+      "572 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "576.8.095",
+    "description": "Physiology, metabolism, growth, etc",
+    "examples": [
+      "Physiology, metabolism, growth, etc",
+      "Handbook of physiology, metabolism, growth, etc",
+      "Physiology, metabolism, growth, etc in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "581",
+    "description": "UDC 581 - 5 class subdivision",
+    "examples": [
+      "Study of 581",
+      "Handbook of 581",
+      "581 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "592/599",
+    "description": "UDC 592/599 - 5 class subdivision",
+    "examples": [
+      "Study of 592/599",
+      "Handbook of 592/599",
+      "592/599 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "595.7",
+    "description": "UDC 595.7 - 5 class subdivision",
+    "examples": [
+      "Study of 595.7",
+      "Handbook of 595.7",
+      "595.7 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "598.2",
+    "description": "UDC 598.2 - 5 class subdivision",
+    "examples": [
+      "Study of 598.2",
+      "Handbook of 598.2",
+      "598.2 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "611",
+    "description": "UDC 611 - 6 class subdivision",
+    "examples": [
+      "Study of 611",
+      "Handbook of 611",
+      "611 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "612",
+    "description": "UDC 612 - 6 class subdivision",
+    "examples": [
+      "Study of 612",
+      "Handbook of 612",
+      "612 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "613",
+    "description": "UDC 613 - 6 class subdivision",
+    "examples": [
+      "Study of 613",
+      "Handbook of 613",
+      "613 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "615",
+    "description": "UDC 615 - 6 class subdivision",
+    "examples": [
+      "Study of 615",
+      "Handbook of 615",
+      "615 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "616.717.5/.6.",
+    "description": "Cf, Arm(s); Limb(s)",
+    "examples": [
+      "Cf, Arm(s); Limb(s)",
+      "Handbook of cf, arm(s); limb(s)",
+      "Cf, Arm(s); Limb(s) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "617",
+    "description": "UDC 617 - 6 class subdivision",
+    "examples": [
+      "Study of 617",
+      "Handbook of 617",
+      "617 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "620",
+    "description": "UDC 620 - 6 class subdivision",
+    "examples": [
+      "Study of 620",
+      "Handbook of 620",
+      "620 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "620.9",
+    "description": "UDC 620.9 - 6 class subdivision",
+    "examples": [
+      "Study of 620.9",
+      "Handbook of 620.9",
+      "620.9 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621",
+    "description": "UDC 621 - 6 class subdivision",
+    "examples": [
+      "Study of 621",
+      "Handbook of 621",
+      "621 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621.039",
+    "description": "Nuclear technology",
+    "examples": [
+      "Nuclear technology",
+      "Handbook of nuclear technology",
+      "Nuclear technology in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621.039.524.2.034.3.077",
+    "description": "Thennal re-",
+    "examples": [
+      "Thennal re-",
+      "Handbook of thennal re-",
+      "Thennal re- in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621.22",
+    "description": "Hydraulic",
+    "examples": [
+      "Hydraulic",
+      "Handbook of hydraulic",
+      "Hydraulic in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621.3",
+    "description": "Electrical engineering",
+    "examples": [
+      "Electrical engineering",
+      "Handbook of electrical engineering",
+      "Electrical engineering in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621.38",
+    "description": "Electronics",
+    "examples": [
+      "Electronics",
+      "Handbook of electronics",
+      "Electronics in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "621.7/.9",
+    "description": "Workshop practice",
+    "examples": [
+      "Workshop practice",
+      "Handbook of workshop practice",
+      "Workshop practice in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "622",
+    "description": "Mineworkers",
+    "examples": [
+      "Mineworkers",
+      "Handbook of mineworkers",
+      "Mineworkers in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "624",
+    "description": "UDC 624 - 6 class subdivision",
+    "examples": [
+      "Study of 624",
+      "Handbook of 624",
+      "624 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "624.92/.93.",
+    "description": "Cf, Arch",
+    "examples": [
+      "Cf, Arch",
+      "Handbook of cf, arch",
+      "Cf, Arch in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "624/628",
+    "description": "Civil engineering (equivalent to",
+    "examples": [
+      "Civil engineering (equivalent to",
+      "Handbook of civil engineering (equivalent to",
+      "Civil engineering (equivalent to in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "625",
+    "description": "UDC 625 - 6 class subdivision",
+    "examples": [
+      "Study of 625",
+      "Handbook of 625",
+      "625 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "626",
+    "description": "UDC 626 - 6 class subdivision",
+    "examples": [
+      "Study of 626",
+      "Handbook of 626",
+      "626 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "627",
+    "description": "Hllrbour and",
+    "examples": [
+      "Hllrbour and",
+      "Handbook of hllrbour and",
+      "Hllrbour and in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "628",
+    "description": "Public health",
+    "examples": [
+      "Public health",
+      "Handbook of public health",
+      "Public health in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "631",
+    "description": "UDC 631 - 6 class subdivision",
+    "examples": [
+      "Study of 631",
+      "Handbook of 631",
+      "631 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "636",
+    "description": "UDC 636 - 6 class subdivision",
+    "examples": [
+      "Study of 636",
+      "Handbook of 636",
+      "636 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "638",
+    "description": "Carbonates",
+    "examples": [
+      "Carbonates",
+      "Handbook of carbonates",
+      "Carbonates in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "641",
+    "description": "UDC 641 - 6 class subdivision",
+    "examples": [
+      "Study of 641",
+      "Handbook of 641",
+      "641 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "651",
+    "description": "UDC 651 - 6 class subdivision",
+    "examples": [
+      "Study of 651",
+      "Handbook of 651",
+      "651 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "657",
+    "description": "UDC 657 - 6 class subdivision",
+    "examples": [
+      "Study of 657",
+      "Handbook of 657",
+      "657 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "658",
+    "description": "UDC 658 - 6 class subdivision",
+    "examples": [
+      "Study of 658",
+      "Handbook of 658",
+      "658 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "661",
+    "description": "UDC 661 - 6 class subdivision",
+    "examples": [
+      "Study of 661",
+      "Handbook of 661",
+      "661 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "664.6/.7",
+    "description": "Baking, flour milling",
+    "examples": [
+      "Baking, flour milling",
+      "Handbook of baking, flour milling",
+      "Baking, flour milling in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "666.8/.9",
+    "description": "Gypsum, lime, cement",
+    "examples": [
+      "Gypsum, lime, cement",
+      "Handbook of gypsum, lime, cement",
+      "Gypsum, lime, cement in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "667.0/.3",
+    "description": "Textile finishing",
+    "examples": [
+      "Textile finishing",
+      "Handbook of textile finishing",
+      "Textile finishing in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "669.848/.849",
+    "description": "Technetium (Masurium)",
+    "examples": [
+      "Technetium (Masurium)",
+      "Handbook of technetium (masurium)",
+      "Technetium (Masurium) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "669.871/.873",
+    "description": "Gallium",
+    "examples": [
+      "Gallium",
+      "Handbook of gallium",
+      "Gallium in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "675.02",
+    "description": "Working processes",
+    "examples": [
+      "Working processes",
+      "Handbook of working processes",
+      "Working processes in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "681.3",
+    "description": "Computer science. Informatics",
+    "examples": [
+      "Computer science fundamentals",
+      "Introduction to computers",
+      "Programming handbook"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "681.3:007.52",
+    "description": "UDC 681.3:007.52 - 6 class subdivision",
+    "examples": [
+      "Study of 681.3:007.52",
+      "Handbook of 681.3:007.52",
+      "681.3:007.52 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "683.35",
+    "description": "Cf Shaft keys",
+    "examples": [
+      "Cf Shaft keys",
+      "Handbook of cf shaft keys",
+      "Cf Shaft keys in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "790",
+    "description": "UDC 790 - 7 class subdivision",
+    "examples": [
+      "Study of 790",
+      "Handbook of 790",
+      "790 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "791",
+    "description": "UDC 791 - 7 class subdivision",
+    "examples": [
+      "Study of 791",
+      "Handbook of 791",
+      "791 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "792",
+    "description": "UDC 792 - 7 class subdivision",
+    "examples": [
+      "Study of 792",
+      "Handbook of 792",
+      "792 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "794",
+    "description": "Scandium",
+    "examples": [
+      "Scandium",
+      "Handbook of scandium",
+      "Scandium in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "796",
+    "description": "UDC 796 - 7 class subdivision",
+    "examples": [
+      "Study of 796",
+      "Handbook of 796",
+      "796 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "796.33",
+    "description": "UDC 796.33 - 7 class subdivision",
+    "examples": [
+      "Study of 796.33",
+      "Handbook of 796.33",
+      "796.33 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "796.358",
+    "description": "UDC 796.358 - 7 class subdivision",
+    "examples": [
+      "Study of 796.358",
+      "Handbook of 796.358",
+      "796.358 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "811",
+    "description": "UDC 811 - 8 class subdivision",
+    "examples": [
+      "Study of 811",
+      "Handbook of 811",
+      "811 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "820",
+    "description": "English literature",
+    "examples": [
+      "English literature",
+      "Handbook of english literature",
+      "English literature in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "820(73)",
+    "description": "UDC 820(73) - 8 class subdivision",
+    "examples": [
+      "Study of 820(73)",
+      "Handbook of 820(73)",
+      "820(73) in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "820-1",
+    "description": "English poetry",
+    "examples": [
+      "English poetry",
+      "Handbook of english poetry",
+      "English poetry in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "820-2",
+    "description": "English drama",
+    "examples": [
+      "English drama collection",
+      "Shakespearean drama",
+      "Modern English drama"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "820-3",
+    "description": "English fiction. English novel",
+    "examples": [
+      "English fiction",
+      "Handbook of english fiction",
+      "English fiction in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "830",
+    "description": "Goethe",
+    "examples": [
+      "Goethe",
+      "Handbook of goethe",
+      "Goethe in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "840",
+    "description": "UDC 840 - 8 class subdivision",
+    "examples": [
+      "Study of 840",
+      "Handbook of 840",
+      "840 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "850",
+    "description": "UDC 850 - 8 class subdivision",
+    "examples": [
+      "Study of 850",
+      "Handbook of 850",
+      "850 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "860",
+    "description": "UDC 860 - 8 class subdivision",
+    "examples": [
+      "Study of 860",
+      "Handbook of 860",
+      "860 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "882",
+    "description": "UDC 882 - 8 class subdivision",
+    "examples": [
+      "Study of 882",
+      "Handbook of 882",
+      "882 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "891.2",
+    "description": "UDC 891.2 - 8 class subdivision",
+    "examples": [
+      "Study of 891.2",
+      "Handbook of 891.2",
+      "891.2 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "891.42",
+    "description": "UDC 891.42 - 8 class subdivision",
+    "examples": [
+      "Study of 891.42",
+      "Handbook of 891.42",
+      "891.42 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "891.43",
+    "description": "UDC 891.43 - 8 class subdivision",
+    "examples": [
+      "Study of 891.43",
+      "Handbook of 891.43",
+      "891.43 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "892.4",
+    "description": "Hebrew literature (parallel to 492",
+    "examples": [
+      "Hebrew literature (parallel to 492",
+      "Handbook of hebrew literature (parallel to 492",
+      "Hebrew literature (parallel to 492 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "910",
+    "description": "UDC 910 - 9 class subdivision",
+    "examples": [
+      "Study of 910",
+      "Handbook of 910",
+      "910 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "929.1/.5",
+    "description": "Genealogy",
+    "examples": [
+      "Genealogy",
+      "Handbook of genealogy",
+      "Genealogy in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "930",
+    "description": "UDC 930 - 9 class subdivision",
+    "examples": [
+      "Study of 930",
+      "Handbook of 930",
+      "930 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "940",
+    "description": "UDC 940 - 9 class subdivision",
+    "examples": [
+      "Study of 940",
+      "Handbook of 940",
+      "940 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "950",
+    "description": "UDC 950 - 9 class subdivision",
+    "examples": [
+      "Study of 950",
+      "Handbook of 950",
+      "950 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "954",
+    "description": "UDC 954 - 9 class subdivision",
+    "examples": [
+      "Study of 954",
+      "Handbook of 954",
+      "954 in India"
+    ],
+    "type": "main"
+  },
+  {
+    "code": "973",
+    "description": "Lightweight concretes",
+    "examples": [
+      "Lightweight concretes",
+      "Handbook of lightweight concretes",
+      "Lightweight concretes in India"
+    ],
+    "type": "main"
+  }
+]

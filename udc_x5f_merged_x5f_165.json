@@ -1,0 +1,786 @@
+[
+  {
+    "code": "0",
+    "desc": "Generalities. Science and knowledge. Organization. Information. Documentation. Librarianship. Institutions. Publications"
+  },
+  {
+    "code": "001",
+    "desc": "Science and knowledge in general. Organization of intellectual work"
+  },
+  {
+    "code": "001.8",
+    "desc": "Methodology"
+  },
+  {
+    "code": "002",
+    "desc": "Documentation. Books. Writings. Authorship"
+  },
+  {
+    "code": "003",
+    "desc": "Writing systems and scripts"
+  },
+  {
+    "code": "004",
+    "desc": "Computer science and technology"
+  },
+  {
+    "code": "005",
+    "desc": "Study methods"
+  },
+  {
+    "code": "007",
+    "desc": "Activity and organizing. Communication and control theory"
+  },
+  {
+    "code": "01",
+    "desc": "Bibliography and bibliographies. Catalogues"
+  },
+  {
+    "code": "02",
+    "desc": "Librarianship"
+  },
+  {
+    "code": "025.3",
+    "desc": "Cataloguing"
+  },
+  {
+    "code": "025.4",
+    "desc": "Classification and indexing"
+  },
+  {
+    "code": "03",
+    "desc": "General reference works. Encyclopaedias"
+  },
+  {
+    "code": "05",
+    "desc": "Serial publications. Periodicals"
+  },
+  {
+    "code": "06",
+    "desc": "Organizations. Associations. Museums"
+  },
+  {
+    "code": "07",
+    "desc": "Newspapers. The Press. Journalism"
+  },
+  {
+    "code": "08",
+    "desc": "Collective works. Polygraphy"
+  },
+  {
+    "code": "09",
+    "desc": "Manuscripts. Rare and remarkable works"
+  },
+  {
+    "code": "1",
+    "desc": "Philosophy. Psychology"
+  },
+  {
+    "code": "11",
+    "desc": "Metaphysics"
+  },
+  {
+    "code": "122/129",
+    "desc": "Special metaphysics"
+  },
+  {
+    "code": "13",
+    "desc": "Philosophy of mind and spirit. Metaphysics of spiritual life"
+  },
+  {
+    "code": "14",
+    "desc": "Philosophical systems"
+  },
+  {
+    "code": "159.9",
+    "desc": "Psychology"
+  },
+  {
+    "code": "16",
+    "desc": "Logic. Epistemology. Theory of knowledge"
+  },
+  {
+    "code": "17",
+    "desc": "Ethics. Moral philosophy"
+  },
+  {
+    "code": "2",
+    "desc": "Religion. Theology"
+  },
+  {
+    "code": "21",
+    "desc": "Natural theology. Theodicy"
+  },
+  {
+    "code": "22",
+    "desc": "The Bible. Holy Scripture"
+  },
+  {
+    "code": "23",
+    "desc": "Dogmatic theology"
+  },
+  {
+    "code": "24",
+    "desc": "Practical theology"
+  },
+  {
+    "code": "25",
+    "desc": "Pastoral theology"
+  },
+  {
+    "code": "26",
+    "desc": "Christian church"
+  },
+  {
+    "code": "27",
+    "desc": "History of the Christian church"
+  },
+  {
+    "code": "28",
+    "desc": "Christian churches, sects, denominations"
+  },
+  {
+    "code": "29",
+    "desc": "Non-Christian religions"
+  },
+  {
+    "code": "294.3",
+    "desc": "Buddhism"
+  },
+  {
+    "code": "294.5",
+    "desc": "Hinduism"
+  },
+  {
+    "code": "294.6",
+    "desc": "Sikhism"
+  },
+  {
+    "code": "297",
+    "desc": "Islam"
+  },
+  {
+    "code": "3",
+    "desc": "Social sciences. Statistics. Politics. Economics. Law. Education"
+  },
+  {
+    "code": "301",
+    "desc": "Sociology"
+  },
+  {
+    "code": "31",
+    "desc": "Statistics. Demography"
+  },
+  {
+    "code": "32",
+    "desc": "Politics. Political science"
+  },
+  {
+    "code": "324",
+    "desc": "Elections"
+  },
+  {
+    "code": "327",
+    "desc": "International relations. Foreign policy. Foreign affairs"
+  },
+  {
+    "code": "33",
+    "desc": "Economics. Economic science"
+  },
+  {
+    "code": "34",
+    "desc": "Law. Jurisprudence"
+  },
+  {
+    "code": "35",
+    "desc": "Public administration. Government. Military affairs"
+  },
+  {
+    "code": "36",
+    "desc": "Social welfare. Social work. Social security"
+  },
+  {
+    "code": "37",
+    "desc": "Education. Pedagogy"
+  },
+  {
+    "code": "372",
+    "desc": "Primary education"
+  },
+  {
+    "code": "373",
+    "desc": "Secondary education"
+  },
+  {
+    "code": "378",
+    "desc": "Higher education. University"
+  },
+  {
+    "code": "38",
+    "desc": "Commerce. Trade. Transport. Communication"
+  },
+  {
+    "code": "39",
+    "desc": "Cultural anthropology. Ethnography. Folklore"
+  },
+  {
+    "code": "4",
+    "desc": "Vacant (formerly Philology. Linguistics)"
+  },
+  {
+    "code": "5",
+    "desc": "Mathematics. Natural sciences"
+  },
+  {
+    "code": "51",
+    "desc": "Mathematics"
+  },
+  {
+    "code": "52",
+    "desc": "Astronomy. Astrophysics. Geodesy"
+  },
+  {
+    "code": "53",
+    "desc": "Physics"
+  },
+  {
+    "code": "54",
+    "desc": "Chemistry. Crystallography. Mineralogy"
+  },
+  {
+    "code": "55",
+    "desc": "Earth sciences. Geology. Meteorology"
+  },
+  {
+    "code": "56",
+    "desc": "Palaeontology"
+  },
+  {
+    "code": "57",
+    "desc": "Biological sciences"
+  },
+  {
+    "code": "58",
+    "desc": "Botany"
+  },
+  {
+    "code": "59",
+    "desc": "Zoology"
+  },
+  {
+    "code": "6",
+    "desc": "Applied sciences. Medicine. Technology"
+  },
+  {
+    "code": "61",
+    "desc": "Medicine. Medical sciences"
+  },
+  {
+    "code": "62",
+    "desc": "Engineering. Technology in general"
+  },
+  {
+    "code": "621.3",
+    "desc": "Electrical engineering"
+  },
+  {
+    "code": "621.38",
+    "desc": "Electronics"
+  },
+  {
+    "code": "63",
+    "desc": "Agriculture. Forestry. Animal husbandry"
+  },
+  {
+    "code": "64",
+    "desc": "Domestic science. Housekeeping"
+  },
+  {
+    "code": "65",
+    "desc": "Management. Business organization"
+  },
+  {
+    "code": "66",
+    "desc": "Chemical technology. Chemical industry"
+  },
+  {
+    "code": "67",
+    "desc": "Various industries and trades"
+  },
+  {
+    "code": "68",
+    "desc": "Manufacture for final use"
+  },
+  {
+    "code": "681.3",
+    "desc": "Computer science. Informatics"
+  },
+  {
+    "code": "69",
+    "desc": "Building. Construction"
+  },
+  {
+    "code": "7",
+    "desc": "Arts. Entertainment. Sport"
+  },
+  {
+    "code": "71",
+    "desc": "Physical planning. Regional planning. Town planning. Landscape"
+  },
+  {
+    "code": "72",
+    "desc": "Architecture"
+  },
+  {
+    "code": "73",
+    "desc": "Sculpture"
+  },
+  {
+    "code": "74",
+    "desc": "Drawing. Design. Applied arts"
+  },
+  {
+    "code": "75",
+    "desc": "Painting"
+  },
+  {
+    "code": "76",
+    "desc": "Graphic arts. Engraving. Prints"
+  },
+  {
+    "code": "77",
+    "desc": "Photography. Cinematography"
+  },
+  {
+    "code": "78",
+    "desc": "Music"
+  },
+  {
+    "code": "79",
+    "desc": "Entertainment. Recreation. Games. Sport"
+  },
+  {
+    "code": "8",
+    "desc": "Language. Linguistics. Literature"
+  },
+  {
+    "code": "81",
+    "desc": "Linguistics. Languages"
+  },
+  {
+    "code": "82",
+    "desc": "Literature in general. Belles-lettres"
+  },
+  {
+    "code": "820",
+    "desc": "English literature"
+  },
+  {
+    "code": "820-1",
+    "desc": "English poetry"
+  },
+  {
+    "code": "820-2",
+    "desc": "English drama"
+  },
+  {
+    "code": "820-3",
+    "desc": "English fiction. English novel"
+  },
+  {
+    "code": "9",
+    "desc": "Geography. Biography. History"
+  },
+  {
+    "code": "91",
+    "desc": "Geography. Exploration"
+  },
+  {
+    "code": "92",
+    "desc": "Biography"
+  },
+  {
+    "code": "93/99",
+    "desc": "History"
+  },
+  {
+    "code": "94",
+    "desc": "General history. World history"
+  },
+  {
+    "code": "94(540)",
+    "desc": "History of India"
+  },
+  {
+    "code": "3/.5",
+    "desc": "Pencils",
+    "page": 129,
+    "type": "main"
+  },
+  {
+    "code": "04",
+    "desc": "Essays",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "009.18",
+    "desc": "Relations with public authorities",
+    "page": 130,
+    "type": "main"
+  },
+  {
+    "code": "19.24",
+    "desc": "Statistical probability calculation",
+    "page": 52,
+    "type": "main"
+  },
+  {
+    "code": "22/28",
+    "desc": "The Christian Religion",
+    "page": 32,
+    "type": "main"
+  },
+  {
+    "code": "30",
+    "desc": "General sociology",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "35/.36",
+    "desc": "Drawing paper",
+    "page": 125,
+    "type": "main"
+  },
+  {
+    "code": "039",
+    "desc": "Tclccom01Uniclltion",
+    "page": 7,
+    "type": "main"
+  },
+  {
+    "code": "40",
+    "desc": "General Qu",
+    "page": 56,
+    "type": "main"
+  },
+  {
+    "code": "41",
+    "desc": "General Philology and Linguistics -",
+    "page": 57,
+    "type": "main"
+  },
+  {
+    "code": "041/.42",
+    "desc": "Intersection andtravcrsing",
+    "page": 60,
+    "type": "main"
+  },
+  {
+    "code": "42",
+    "desc": "Western languages in general",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "42/49",
+    "desc": "Languages and Dialects",
+    "page": 57,
+    "type": "main"
+  },
+  {
+    "code": "43",
+    "desc": "Germanic languages",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "44",
+    "desc": "Romance languages in general",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "45",
+    "desc": "Italian",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "46",
+    "desc": "Spanish",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "47",
+    "desc": "Latin and Greek",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "48",
+    "desc": "Arsenic, antimony, bismuth (-ites, oates)",
+    "page": 117,
+    "type": "main"
+  },
+  {
+    "code": "49",
+    "desc": "Oriental, African and other languages",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "051",
+    "desc": "Compression of air and gases",
+    "page": 7,
+    "type": "main"
+  },
+  {
+    "code": "055.2",
+    "desc": "Women's auxiliary (army) corps",
+    "page": 24,
+    "type": "main"
+  },
+  {
+    "code": "67/68",
+    "desc": "Manufactures",
+    "page": 124,
+    "type": "main"
+  },
+  {
+    "code": "78.073",
+    "desc": "Amateur musicmaking",
+    "page": 130,
+    "type": "main"
+  },
+  {
+    "code": "80",
+    "desc": "Generalities",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "84",
+    "desc": "Romance literature",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "86",
+    "desc": "Spanish literature",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "87",
+    "desc": "Classical, Latin and Greek literature",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "88",
+    "desc": "Slavonic literatlll'e",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "89",
+    "desc": "Oriental, African and other literature",
+    "page": 25,
+    "type": "main"
+  },
+  {
+    "code": "93",
+    "desc": "History",
+    "page": 143,
+    "type": "main"
+  },
+  {
+    "code": "97",
+    "desc": "Hammers and hammering",
+    "page": 7,
+    "type": "main"
+  },
+  {
+    "code": "331.88",
+    "desc": "Mineworkers' union organization",
+    "page": 22,
+    "type": "main"
+  },
+  {
+    "code": "336.24/.25",
+    "desc": "Various taxes and levies",
+    "page": 40,
+    "type": "main"
+  },
+  {
+    "code": "347.91/.95.",
+    "desc": "Cf Trials",
+    "page": 221,
+    "type": "main"
+  },
+  {
+    "code": "464/.465",
+    "desc": "Acetate",
+    "page": 126,
+    "type": "main"
+  },
+  {
+    "code": "546.22",
+    "desc": "Sulphur (in iron and steel)",
+    "page": 10,
+    "type": "main"
+  },
+  {
+    "code": "549.091",
+    "desc": "Precious stones",
+    "page": 69,
+    "type": "main"
+  },
+  {
+    "code": "576.8.095",
+    "desc": "Physiology, metabolism, growth, etc",
+    "page": 73,
+    "type": "main"
+  },
+  {
+    "code": "616.717.5/.6.",
+    "desc": "Cf, Arm(s); Limb(s)",
+    "page": 223,
+    "type": "main"
+  },
+  {
+    "code": "621.22",
+    "desc": "Hydraulic",
+    "page": 7,
+    "type": "main"
+  },
+  {
+    "code": "621.039",
+    "desc": "Nuclear technology",
+    "page": 1,
+    "type": "main"
+  },
+  {
+    "code": "621.7/.9",
+    "desc": "Workshop practice",
+    "page": 1,
+    "type": "main"
+  },
+  {
+    "code": "621.039.524.2.034.3.077",
+    "desc": "Thennal re-",
+    "page": 86,
+    "type": "main"
+  },
+  {
+    "code": "622",
+    "desc": "Mineworkers",
+    "page": 38,
+    "type": "main"
+  },
+  {
+    "code": "624/628",
+    "desc": "Civil engineering (equivalent to",
+    "page": 9,
+    "type": "main"
+  },
+  {
+    "code": "624.92/.93.",
+    "desc": "Cf, Arch",
+    "page": 154,
+    "type": "main"
+  },
+  {
+    "code": "627",
+    "desc": "Hllrbour and",
+    "page": 7,
+    "type": "main"
+  },
+  {
+    "code": "628",
+    "desc": "Public health",
+    "page": 7,
+    "type": "main"
+  },
+  {
+    "code": "638",
+    "desc": "Carbonates",
+    "page": 72,
+    "type": "main"
+  },
+  {
+    "code": "664.6/.7",
+    "desc": "Baking, flour milling",
+    "page": 1,
+    "type": "main"
+  },
+  {
+    "code": "666.8/.9",
+    "desc": "Gypsum, lime, cement",
+    "page": 1,
+    "type": "main"
+  },
+  {
+    "code": "667.0/.3",
+    "desc": "Textile finishing",
+    "page": 1,
+    "type": "main"
+  },
+  {
+    "code": "669.848/.849",
+    "desc": "Technetium (Masurium)",
+    "page": 123,
+    "type": "main"
+  },
+  {
+    "code": "669.871/.873",
+    "desc": "Gallium",
+    "page": 123,
+    "type": "main"
+  },
+  {
+    "code": "675.02",
+    "desc": "Working processes",
+    "page": 9,
+    "type": "main"
+  },
+  {
+    "code": "683.35",
+    "desc": "Cf Shaft keys",
+    "page": 197,
+    "type": "main"
+  },
+  {
+    "code": "794",
+    "desc": "Scandium",
+    "page": 123,
+    "type": "main"
+  },
+  {
+    "code": "830",
+    "desc": "Goethe",
+    "page": 143,
+    "type": "main"
+  },
+  {
+    "code": "892.4",
+    "desc": "Hebrew literature (parallel to 492",
+    "page": 141,
+    "type": "main"
+  },
+  {
+    "code": "929.1/.5",
+    "desc": "Genealogy",
+    "page": 143,
+    "type": "main"
+  },
+  {
+    "code": "973",
+    "desc": "Lightweight concretes",
+    "page": 131,
+    "type": "main"
+  }
+]
