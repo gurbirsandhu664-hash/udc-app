@@ -1,1 +1,12 @@
-{"name":"udc-one-click-v45-ultra","version":"51.0.0","type":"module","scripts":{"start":"node server.js"},"dependencies":{"express":"^4.21.2"}}
+{
+  "name": "udc-classifier-app",
+  "version": "1.0.0",
+  "description": "UDC Classifier with 1961 Schedule Answer Key",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
