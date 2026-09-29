@@ -1,0 +1,12 @@
+V12 COMPLETE UNIVERSAL POLICY
+
+1. Analyze complete title meaning first.
+2. Identify the head subject/phenomenon.
+3. Detect explicit facets: place, language, time, document form, process, material, persons.
+4. Build UDC notation only from supported UDC syntax and reference evidence.
+5. An alphabetical-index hit can never override the head concept merely because a single word matches.
+6. Country names are place facets, not automatic subjects.
+7. No DDC. No random nearest-number selection. No title-only patch list as the primary classifier.
+8. Exact/source-backed > semantic construction > broad subject fallback.
+9. Example: Religious unrest in India must be analysed as unrest + India, not as an unrelated entry containing the word unrest.
+10. For current UDC syntax, 94(410) is the Consortium's documented pattern for History of United Kingdom; common place auxiliaries are synthetically appended to subject numbers.

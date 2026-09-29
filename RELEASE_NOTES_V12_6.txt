@@ -1,0 +1,17 @@
+V12.6 — GOOGLE + GEMINI UDC VERIFICATION LOCK
+Date: 2026-09-29
+
+Added Google Search grounding to the Gemini classification pass.
+
+Rules:
+- Gemini + Google Search are verification/research layers, not UDC authority.
+- Prefer official UDC Consortium (udcc.org) sources.
+- Imported licensed MRF remains highest authority.
+- Official UDC Summary remains authoritative for its covered subset.
+- Google/Gemini cannot override current MRF/current UDC authority.
+- DDC and unrelated keyword/index matches remain blocked.
+- Grounding sources and search queries are returned for audit/debugging.
+- If grounded web evidence does not provide an official UDC source or an independently authorized current-UDC match, the candidate is rejected.
+
+Important:
+Google Search grounding may incur Gemini API usage charges according to Google's current API pricing/terms.

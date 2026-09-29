@@ -1,0 +1,14 @@
+{
+  "version": "V12.6",
+  "name": "GOOGLE-GEMINI UDC VERIFICATION LOCK",
+  "authority_priority": [
+    "LICENSED_MRF",
+    "OFFICIAL_UDC_SUMMARY",
+    "DETERMINISTIC_CURRENT_RULE"
+  ],
+  "legacy_1961_override": false,
+  "ddc": false,
+  "summary_subset_supported": true,
+  "mrf_import_supported": true,
+  "build": "V12.6-GOOGLE-GEMINI-2026-09-29"
+}
