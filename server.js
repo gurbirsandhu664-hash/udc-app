@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Seed data load
+// Seed data load safely
 let udcData = [];
 try {
   const seedPath = path.join(__dirname, 'seed-udc.json');
@@ -34,43 +34,62 @@ const baseScheduleRules = {
   "electrical engineering": "621.3"
 };
 
-// UI Route (Fallback HTML ਤਾਂ ਕਿ ਪੇਜ ਕਦੇ ਫੇਲ ਨਾ ਹੋਵੇ)
+// Main Home Page Route
 app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, 'index.html');
-  const publicIndexPath = path.join(__dirname, 'public', 'index.html');
-  
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  } else if (fs.existsSync(publicIndexPath)) {
-    return res.sendFile(publicIndexPath);
-  } else {
-    return res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head><title>UDC V45 Classifier</title></head>
-      <body style="font-family: Arial; padding: 40px; text-align: center;">
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>UDC V45 Classifier</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
+        .box { background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input { width: 80%; padding: 12px; margin-bottom: 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 12px 24px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 25px; font-size: 18px; text-align: left; }
+      </style>
+    </head>
+    <body>
+      <div class="box">
         <h2>UDC Classifier (BS 1000A:1961 Edition) - V45</h2>
-        <input type="text" id="title" placeholder="Enter title (e.g. Higher education and computers)" style="width: 60%; padding: 10px; font-size: 16px;">
-        <button onclick="classify()" style="padding: 10px 20px; font-size: 16px;">Search</button>
-        <div id="result" style="margin-top: 30px; font-size: 20px; font-weight: bold; color: green;"></div>
-        <script>
-          async function classify() {
-            const title = document.getElementById('title').value;
+        <input type="text" id="title" placeholder="e.g. Higher education and computers">
+        <br>
+        <button onclick="classify()">Classify Subject</button>
+        <div id="result"></div>
+      </div>
+      <script>
+        async function classify() {
+          const title = document.getElementById('title').value;
+          const out = document.getElementById('result');
+          out.innerHTML = "Processing...";
+          try {
             const res = await fetch('/api/classify', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({title})
             });
             const data = await res.json();
-            document.getElementById('result').innerText = data.code ? (data.code + ' : ' + data.description) : 'No match found';
+            if(data.error) {
+              out.innerHTML = '<span style="color:red;">' + data.error + '</span>';
+            } else {
+              out.innerHTML = '<p><strong>UDC Code:</strong> ' + data.code + '</p>' +
+                              '<p><strong>Description:</strong> ' + data.description + '</p>' +
+                              '<p><strong>Standard:</strong> ' + data.standard + '</p>';
+            }
+          } catch(e) {
+            out.innerHTML = '<span style="color:red;">Error connecting to server</span>';
           }
-        </script>
-      </body>
-      </html>
-    `);
-  }
+        }
+      </script>
+    </body>
+    </html>
+  `);
 });
 
+// Classification API
 app.post('/api/classify', (req, res) => {
   const rawTitle = req.body.title || "";
   const title = rawTitle.toLowerCase().trim();
@@ -79,6 +98,7 @@ app.post('/api/classify', (req, res) => {
     return res.status(400).json({ error: "Please enter a title." });
   }
 
+  // 1. Direct Seed Match
   const directMatch = udcData.find(item => 
     item.keywords && item.keywords.some(k => title === k || title.includes(k))
   );
@@ -92,6 +112,7 @@ app.post('/api/classify', (req, res) => {
     });
   }
 
+  // 2. Synthesized Colon Match
   let detectedCodes = [];
   for (const [key, code] of Object.entries(baseScheduleRules)) {
     if (title.includes(key) && !detectedCodes.includes(code)) {
