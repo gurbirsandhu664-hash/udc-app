@@ -14,7 +14,7 @@ const MODEL_CACHE_MS = 10 * 60 * 1000;
 let modelCache = { at: 0, names: [] };
 
 const CONFIG = {
-  version: "29",
+  version: "30",
   appTitle: "UDC AI Classifier",
   reference: "B.S. 1000A:1961, Abridged English Edition, 3rd Edition Revised 1961",
   rule: "UDC only — never DDC"
@@ -28,6 +28,30 @@ try {
   );
 } catch (e) {
   console.error("UDC reference file not found:", e.message);
+}
+
+let ANSWER_KEYS = {};
+try {
+  const keyData = JSON.parse(fs.readFileSync(path.join(__dirname, "answer_keys.json"), "utf8"));
+  ANSWER_KEYS = keyData.keys || {};
+  console.log("Loaded deterministic UDC answer keys:", Object.keys(ANSWER_KEYS).length);
+} catch (e) {
+  console.error("Answer key file not found/invalid:", e.message);
+}
+
+function normalizeTitleKey(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[’‘]/g, "'")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9+\/.:()\-\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function answerFromKey(title, key) {
+  return `FINAL UDC NUMBER: ${key.udc}\nMAIN SUBJECT: ${key.subject}\nSHORT EXPLANATION: ${key.udc} is the fixed UDC answer for this exact title in the V30 answer-key layer.\nVERIFICATION: Answer-key match (${key.source}).`;
 }
 
 function normalize(s) {
@@ -92,10 +116,14 @@ function referenceSnippets(question) {
 }
 
 function extractUDC(answer) {
-  const m = String(answer || "").match(
-    /(?:FINAL\s+UDC\s+NUMBER\s*[:\-]?\s*)?(\d{1,3}(?:\.\d+)*(?:\([^)]+\))?(?::\d+(?:\.\d+)*(?:\([^)]+\))?)?)/i
-  );
-  return m ? m[1] : "";
+  const text = String(answer || "");
+  const m = text.match(/FINAL\s+UDC\s+NUMBER\s*[:\-]?\s*([^\n]+)/i);
+  if (m) {
+    const candidate = m[1].trim().match(/^[0-9.()=+\/:\-]+/);
+    if (candidate) return candidate[0];
+  }
+  const fallback = text.match(/\b\d{1,3}(?:\.\d+)*(?:\([^)]*\))?(?:[+/:]\d{1,3}(?:\.\d+)*(?:\([^)]*\))?)*(?:\/\d{1,3}(?:\.\d+)*)?/);
+  return fallback ? fallback[0] : "";
 }
 
 app.get("/", (req, res) => {
@@ -125,7 +153,7 @@ button:disabled{opacity:.6}.loading{display:none;text-align:center;margin-top:15
 <body>
 <div class="wrap">
 <div class="header">
-<span class="badge">VERSION 29</span>
+<span class="badge">VERSION 30</span>
 <h1>UDC AI Classifier</h1>
 <div class="sub">B.S. 1000A:1961 Abridged UDC • Never DDC</div>
 </div>
@@ -166,15 +194,29 @@ async function go(){
 });
 
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", version: CONFIG.version, referenceLoaded: !!UDC_REFERENCE });
+  res.json({ status: "ok", version: CONFIG.version, referenceLoaded: !!UDC_REFERENCE, answerKeys: Object.keys(ANSWER_KEYS).length });
 });
 
-app.get("/api/config", (req, res) => res.json(CONFIG));
+app.get("/api/config", (req, res) => res.json({ ...CONFIG, answerKeys: Object.keys(ANSWER_KEYS).length }));
 
 app.post("/api/ask", async (req, res) => {
   try {
     const question = String(req.body?.question || "").trim();
     if (!question) return res.status(400).json({ error: "Question required" });
+
+    // V30 deterministic answer-key layer runs BEFORE Gemini.
+    // This prevents known titles from being reinterpreted by an LLM.
+    const exactKey = ANSWER_KEYS[normalizeTitleKey(question)];
+    if (exactKey) {
+      const answer = answerFromKey(question, exactKey);
+      return res.json({
+        answer,
+        udc: exactKey.udc,
+        subject: exactKey.subject,
+        source: "answer-key",
+        version: CONFIG.version
+      });
+    }
 
     if (!GEMINI_API_KEY) {
       return res.status(500).json({
@@ -353,5 +395,5 @@ async function generateWithModel(model, body, maxRetries = 2) {
 }
 
 app.listen(PORT, () => {
-  console.log("UDC AI V29 running on port " + PORT);
+  console.log("UDC AI V30 running on port " + PORT);
 });
