@@ -1,10 +1,74 @@
 [
-  {"title":"History of India","udc":"94(540)","subject":"History of India","breakdown":"94 History + (540) India","source":"UDC starter reference"},
-  {"title":"Geography of India","udc":"91(540)","subject":"Geography of India","breakdown":"91 Geography + (540) India","source":"UDC starter reference"},
-  {"title":"Indian Constitution","udc":"342.4(540)","subject":"Constitutional law of India","breakdown":"342.4 Constitutions + (540) India","source":"UDC starter reference"},
-  {"title":"Economy of India","udc":"330(540)","subject":"Economy of India","breakdown":"330 Economics + (540) India","source":"UDC starter reference"},
-  {"title":"History of Punjab","udc":"94(540)","subject":"History of Punjab","breakdown":"94 History + (540) India","source":"UDC starter reference"},
-  {"title":"Indian Literature","udc":"821.21","subject":"Indian literature","breakdown":"821.21 Indian literatures","source":"UDC starter reference"},
-  {"title":"Indian Philosophy","udc":"1(540)","subject":"Philosophy in India","breakdown":"1 Philosophy + (540) India","source":"UDC starter reference"},
-  {"title":"Indian Art","udc":"7(540)","subject":"Art in India","breakdown":"7 Arts + (540) India","source":"UDC starter reference"}
+  {
+    "code": "378:681.14",
+    "description": "Higher education and computers / Data processing machines",
+    "keywords": [
+      "higher education and computers",
+      "higher education computers",
+      "universities and computers",
+      "college computers",
+      "computers in higher education",
+      "dso higher education and computers"
+    ]
+  },
+  {
+    "code": "681.14:378",
+    "description": "Computers and data processing machines in relation to universities and higher education",
+    "keywords": [
+      "computers in universities",
+      "computer science in higher education"
+    ]
+  },
+  {
+    "code": "378",
+    "description": "Higher education. Universities. Colleges. Academies",
+    "keywords": [
+      "higher education",
+      "universities",
+      "colleges",
+      "academies",
+      "academic study"
+    ]
+  },
+  {
+    "code": "681.14",
+    "description": "Specialized trades: Computers, calculating devices and data processing machines (DPM)",
+    "keywords": [
+      "computers",
+      "computer",
+      "data processing machines",
+      "dpm",
+      "calculating machines",
+      "computing"
+    ]
+  },
+  {
+    "code": "007",
+    "description": "Activity and organizing. Information, communication, control theory (cybernetics)",
+    "keywords": [
+      "cybernetics",
+      "information theory",
+      "control theory",
+      "human engineering"
+    ]
+  },
+  {
+    "code": "621.38",
+    "description": "Electronics. Electronic devices",
+    "keywords": [
+      "electronics",
+      "semiconductors",
+      "transistors"
+    ]
+  },
+  {
+    "code": "37",
+    "description": "Education. Teaching. School organization",
+    "keywords": [
+      "education",
+      "teaching",
+      "schools",
+      "training"
+    ]
+  }
 ]
