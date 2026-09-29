@@ -1,7 +1,7 @@
 {
-  "name": "udc-ai-v27",
-  "version": "27.0.0",
-  "description": "UDC AI Classifier V27",
+  "name": "udc-ai-v28",
+  "version": "28.0.0",
+  "description": "UDC AI Classifier using supplied B.S. 1000A:1961 reference",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
