@@ -4,23 +4,22 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Comprehensive UDC BS 1000A:1961 Schedule & Pattern Engine
 const MAIN_SCHEDULE = {
+  "science and technology": "5/6",
+  "science & technology": "5/6",
+  "pure and applied sciences": "5/6",
   "knowledge": "001",
   "science in general": "001",
   "cybernetics": "007",
   "bibliography": "01",
   "libraries": "02",
   "librarians": "02",
-  "librarianship": "02",
   "library science": "02",
   "encyclopedia": "03",
-  "encyclopaedia": "03",
   "philosophy": "1",
   "metaphysics": "111",
   "ontology": "111",
   "psychology": "159.9",
-  "child psychology": "159.922.7",
   "logic": "16",
   "ethics": "17",
   "religion": "2",
@@ -35,8 +34,6 @@ const MAIN_SCHEDULE = {
   "public administration": "35",
   "education": "37",
   "higher education": "378",
-  "universities": "378",
-  "colleges": "378",
   "mathematics": "51",
   "physics": "53",
   "chemistry": "54",
@@ -47,7 +44,6 @@ const MAIN_SCHEDULE = {
   "management": "65.01",
   "computers": "681.14",
   "computer": "681.14",
-  "data processing": "681.14",
   "architecture": "72",
   "music": "78",
   "sports": "796",
@@ -81,14 +77,31 @@ const COMMON_AUXILIARIES = {
 function generateUDC(rawText) {
   let text = rawText.toLowerCase().replace(/[^a-z0-9\s\/]/g, " ").replace(/\s+/g, " ").trim();
 
-  // Typo fixes & short-hands
+  // Typo fixes
   text = text.replace(/\bhiger\b/g, "higher");
   text = text.replace(/\bcomputr\b/g, "computer");
   text = text.replace(/\bmeta physics\b/g, "metaphysics");
   text = text.replace(/\band l\b/g, "and logic");
   text = text.replace(/\band co\b/g, "and computers");
 
-  // 1. Critical Rule: Knowledge, Metaphysics and Logic
+  // 1. Direct Schedule Check for exact phrases (like Science and technology -> 5/6)
+  for (let key in MAIN_SCHEDULE) {
+    if (text === key || text.includes(key)) {
+      if (key === "science and technology" || key === "science & technology" || key === "pure and applied sciences") {
+        return {
+          code: "5/6",
+          description: "Pure sciences / Applied sciences (Science and technology)",
+          breakdown: [
+            { part: "5", label: "Pure sciences" },
+            { part: "/", label: "Stroke sign for extension/range" },
+            { part: "6", label: "Applied sciences. Medicine. Technology" }
+          ]
+        };
+      }
+    }
+  }
+
+  // 2. Knowledge, Metaphysics and Logic Rule
   if (text.includes("knowledge") && text.includes("metaphysics") && text.includes("logic")) {
     return {
       code: "001 + 111 + 16",
@@ -101,7 +114,7 @@ function generateUDC(rawText) {
     };
   }
 
-  // 2. Critical Rule: Biography of Individual
+  // 3. Biography Rule
   let bioMatch = text.match(/(?:biography|life)\s+of\s+(?:dr\.?\s*)?([a-z\s\.]+)/i);
   if (bioMatch) {
     let nameParts = bioMatch[1].trim().split(' ');
@@ -117,7 +130,7 @@ function generateUDC(rawText) {
     };
   }
 
-  // 3. Critical Rule: Literature + Drama/Poetry (e.g., English drama -> 820-2)
+  // 4. Literature + Drama/Poetry Rule
   if (text.includes("english") && text.includes("drama")) {
     return {
       code: "820-2",
@@ -128,18 +141,8 @@ function generateUDC(rawText) {
       ]
     };
   }
-  if (text.includes("english") && text.includes("poetry")) {
-    return {
-      code: "820-1",
-      description: "English literature - Poetry",
-      breakdown: [
-        { part: "820", label: "English literature" },
-        { part: "-1", label: "Poetry special auxiliary" }
-      ]
-    };
-  }
 
-  // 4. Form Auxiliaries (like Handbook -> (035))
+  // 5. Form Auxiliaries
   let foundFormAux = [];
   for (let formKey in COMMON_AUXILIARIES) {
     if (new RegExp("\\b" + formKey + "\\b", "i").test(text)) {
@@ -148,7 +151,7 @@ function generateUDC(rawText) {
     }
   }
 
-  // 5. Place Auxiliary
+  // 6. Place Auxiliary
   let foundPlace = null;
   for (let placeKey in PLACE_AUXILIARIES) {
     if (new RegExp("\\b" + placeKey + "\\b", "i").test(text)) {
@@ -158,7 +161,7 @@ function generateUDC(rawText) {
     }
   }
 
-  // 6. Extract Main Schedule Subjects (Longest matches first)
+  // 7. Extract Main Schedule Subjects
   let foundBases = [];
   let sortedKeys = Object.keys(MAIN_SCHEDULE).sort((a, b) => b.length - a.length);
 
@@ -180,7 +183,6 @@ function generateUDC(rawText) {
     }
   }
 
-  // Priority check for libraries in relation to ethics
   if (foundBases.length > 1) {
     let libSub = foundBases.find(b => b.code === "02");
     if (libSub) {
@@ -189,7 +191,7 @@ function generateUDC(rawText) {
     }
   }
 
-  // 7. Synthesis: Compound subjects with Colon (:) or Coordinate with Plus (+)
+  // 8. Synthesis: Compound subjects with Colon (:) or Coordinate with Plus (+)
   if (foundBases.length >= 2) {
     let isCoordination = text.includes(" and ") || text.includes(",") || foundBases.length > 2;
     let sign = isCoordination ? " + " : ":";
@@ -210,7 +212,7 @@ function generateUDC(rawText) {
     };
   }
 
-  // 8. Single Subject + Place + Form Auxiliaries
+  // 9. Single Subject + Place + Form Auxiliaries
   if (foundBases.length === 1) {
     let code = foundBases[0].code;
     let parts = [{ part: foundBases[0].code, label: foundBases[0].term }];
@@ -269,7 +271,7 @@ app.get('/', (req, res) => {
       <div class="box">
         <h2>UDC Classifier (BS 1000A:1961)</h2>
         <p>Comprehensive Universal UDC Engine</p>
-        <input type="text" id="subject" placeholder="e.g. A handbook of ethics of librarians">
+        <input type="text" id="subject" placeholder="e.g. Science and technology">
         <button onclick="run()">Classify</button>
         <div id="resBox" class="res">
           <div><strong>UDC Code:</strong> <span id="outCode" class="code"></span></div>
