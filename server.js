@@ -4,67 +4,172 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Core UDC BS 1000A:1961 Engine
-const MAIN_MAP = {
-  "higher education": "378",
-  "universities": "378",
-  "university": "378",
-  "colleges": "378",
-  "computers": "681.14",
-  "computer": "681.14",
-  "data processing": "681.14",
+// Comprehensive UDC BS 1000A:1961 Schedule (Classes 0 to 9)
+const MAIN_SCHEDULE = {
+  // Class 0: Generalities
   "knowledge": "001",
+  "science in general": "001",
+  "cybernetics": "007",
+  "bibliography": "01",
+  "library science": "02",
+  "libraries": "02",
+  "encyclopedia": "03",
+  "encyclopaedia": "03",
+  "periodicals": "05",
+  "journalism": "07",
+
+  // Class 1: Philosophy & Psychology
+  "philosophy": "1",
   "metaphysics": "111",
   "ontology": "111",
-  "logic": "16",
-  "ethics": "17",
   "psychology": "159.9",
   "child psychology": "159.922.7",
-  "philosophy": "1",
+  "logic": "16",
+  "ethics": "17",
+
+  // Class 2: Religion & Theology
   "religion": "2",
+  "theology": "2",
+  "bible": "22",
+  "christianity": "22/28",
   "sikhism": "294.3",
   "hinduism": "294.51",
   "islam": "297",
+
+  // Class 3: Social Sciences, Law, Education, Politics, Economics
+  "social sciences": "3",
   "sociology": "301",
   "statistics": "31",
+  "political science": "32",
+  "politics": "32",
   "economics": "33",
+  "banking": "332.1",
   "law": "34",
+  "jurisprudence": "34",
+  "public administration": "35",
   "education": "37",
+  "teaching methods": "371.3",
+  "primary education": "372",
+  "secondary education": "373",
+  "higher education": "378",
+  "universities": "378",
+  "colleges": "378",
+  "commerce": "38",
+
+  // Class 5: Pure Sciences
   "mathematics": "51",
+  "algebra": "512",
+  "geometry": "513",
+  "calculus": "517",
+  "astronomy": "52",
   "physics": "53",
+  "mechanics": "531",
+  "optics": "535",
+  "electricity": "537",
   "chemistry": "54",
+  "organic chemistry": "547",
+  "geology": "55",
   "biology": "57",
+  "botany": "58",
+  "zoology": "59",
+
+  // Class 6: Applied Sciences & Technology (1961 Edition)
   "medicine": "61",
+  "medical sciences": "61",
+  "anatomy": "611",
+  "physiology": "612",
+  "public health": "614",
   "engineering": "62",
+  "mechanical engineering": "621",
   "electrical engineering": "621.3",
+  "electronics": "621.38",
+  "telecommunication": "621.39",
+  "civil engineering": "624",
   "agriculture": "63",
+  "forestry": "634.0",
+  "horticulture": "635",
+  "management": "65.01",
+  "accounting": "657",
+  "chemical technology": "66",
+  "metallurgy": "669",
+  "computers": "681.14",
+  "computer": "681.14",
+  "data processing": "681.14",
+
+  // Class 7: Arts, Fine Arts, Recreation
   "architecture": "72",
+  "sculpture": "73",
+  "painting": "75",
+  "photography": "77",
   "music": "78",
+  "sports": "796",
+  "games": "796",
+
+  // Class 8: Linguistics & Literature
   "linguistics": "80",
+  "languages": "80",
   "literature": "82",
+
+  // Class 9: Geography, Biography, History
   "geography": "91",
-  "history": "93/99"
+  "biography": "929",
+  "history": "93/99",
+  "indian history": "954",
+  "history of india": "954"
 };
 
-const AUX_MAP = {
+// Place Auxiliaries (1/9)
+const PLACE_AUXILIARIES = {
   "punjab": "(540.23)",
   "india": "(540)",
-  "women": "-055.2",
-  "female": "-055.2",
-  "children": "-053.2",
-  "research": ".001.5",
-  "dictionary": "(038)",
-  "encyclopedia": "(031)"
+  "great britain": "(410)",
+  "united kingdom": "(410)",
+  "uk": "(410)",
+  "england": "(420)",
+  "usa": "(73)",
+  "america": "(73)",
+  "france": "(44)",
+  "germany": "(430)",
+  "russia": "(47)",
+  "china": "(510)",
+  "japan": "(520)"
 };
 
-function processUDC(rawText) {
-  let text = rawText.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+// Common Auxiliaries (Persons -05, Viewpoint .00, Form (0))
+const COMMON_AUXILIARIES = {
+  "women": "-055.2",
+  "female": "-055.2",
+  "men": "-055.1",
+  "children": "-053.2",
+  "students": "-057.87",
+  "research": ".001.5",
+  "dictionary": "(038)",
+  "encyclopedia": "(031)",
+  "handbook": "(035)"
+};
 
-  // Typo fixes
+// Literature Forms
+const LIT_FORMS = {
+  "poetry": "-1",
+  "poems": "-1",
+  "drama": "-2",
+  "plays": "-2",
+  "fiction": "-3",
+  "novels": "-3",
+  "essays": "-4"
+};
+
+function generateUDC(rawText) {
+  let text = rawText.toLowerCase().replace(/[^a-z0-9\s\/]/g, " ").replace(/\s+/g, " ").trim();
+
+  // Spelling & Typo Fixes
   text = text.replace(/\bhiger\b/g, "higher");
   text = text.replace(/\bcomputr\b/g, "computer");
+  text = text.replace(/\beductaion\b/g, "education");
+  text = text.replace(/\band l\b/g, "and logic");
+  text = text.replace(/\band co\b/g, "and computers");
 
-  // 1. Biography Rule (e.g., Biography of Dr S.R. Ranganathan)
+  // 1. Biography Rule (e.g., Biography of Dr S.R. Ranganathan -> 929(Ranganathan))
   let bioMatch = text.match(/(?:biography|life)\s+of\s+(?:dr\.?\s*)?([a-z\s\.]+)/i);
   if (bioMatch) {
     let nameParts = bioMatch[1].trim().split(' ');
@@ -72,48 +177,76 @@ function processUDC(rawText) {
     let personName = nameKey.charAt(0).toUpperCase() + nameKey.slice(1);
     return {
       code: "929(" + personName + ")",
-      description: "Biography of individual: " + personName,
+      description: "Individual Biography following UDC standards",
       breakdown: [
-        { part: "929", label: "Biographies" },
-        { part: "(" + personName + ")", label: "Individual name auxiliary" }
+        { part: "929", label: "Biographies class" },
+        { part: "(" + personName + ")", label: "Individual person auxiliary" }
       ]
     };
   }
 
-  // 2. Literature Forms Rule (e.g., English drama -> 820-2)
-  if (text.includes("english") && text.includes("drama")) {
-    return {
-      code: "820-2",
-      description: "English literature - Drama and plays",
-      breakdown: [
-        { part: "820", label: "English literature" },
-        { part: "-2", label: "Drama special auxiliary" }
-      ]
-    };
-  }
-  if (text.includes("english") && text.includes("poetry")) {
-    return {
-      code: "820-1",
-      description: "English literature - Poetry",
-      breakdown: [
-        { part: "820", label: "English literature" },
-        { part: "-1", label: "Poetry special auxiliary" }
-      ]
-    };
-  }
+  // 2. Literature + Form Rule (e.g., English drama -> 820-2)
+  let langMatch = null;
+  if (text.includes("english")) langMatch = { code: "820", name: "English literature" };
+  else if (text.includes("french")) langMatch = { code: "840", name: "French literature" };
+  else if (text.includes("german")) langMatch = { code: "830", name: "German literature" };
+  else if (text.includes("hindi")) langMatch = { code: "891.43", name: "Hindi literature" };
+  else if (text.includes("punjabi")) langMatch = { code: "891.42", name: "Punjabi literature" };
 
-  // 3. Match Auxiliaries
-  let foundAux = [];
-  for (let key in AUX_MAP) {
-    if (new RegExp("\\b" + key + "\\b", "i").test(text)) {
-      foundAux.push({ code: AUX_MAP[key], label: key });
-      text = text.replace(new RegExp("\\b" + key + "\\b", "i"), " ");
+  let formMatchKey = null;
+  for (let fKey in LIT_FORMS) {
+    if (new RegExp("\\b" + fKey + "\\b", "i").test(text)) {
+      formMatchKey = fKey;
+      break;
     }
   }
 
-  // 4. Match Main Schedule Subjects
+  if (langMatch && formMatchKey) {
+    let formCode = LIT_FORMS[formMatchKey];
+    return {
+      code: langMatch.code + formCode,
+      description: langMatch.name + " - " + formMatchKey,
+      breakdown: [
+        { part: langMatch.code, label: langMatch.name },
+        { part: formCode, label: "Literature form: " + formMatchKey }
+      ]
+    };
+  }
+
+  // 3. Extract Place Auxiliary
+  let foundPlace = null;
+  for (let placeKey in PLACE_AUXILIARIES) {
+    if (new RegExp("\\b" + placeKey + "\\b", "i").test(text)) {
+      foundPlace = { name: placeKey, code: PLACE_AUXILIARIES[placeKey] };
+      text = text.replace(new RegExp("\\b" + placeKey + "\\b", "i"), " ");
+      break;
+    }
+  }
+
+  // 4. Dynamic History Rule (e.g., History of India -> 94(540))
+  if (text.includes("history") && foundPlace) {
+    return {
+      code: "94" + foundPlace.code,
+      description: "History of " + foundPlace.name.charAt(0).toUpperCase() + foundPlace.name.slice(1),
+      breakdown: [
+        { part: "94", label: "History main class" },
+        { part: foundPlace.code, label: "Place auxiliary for " + foundPlace.name }
+      ]
+    };
+  }
+
+  // 5. Extract Common Auxiliaries (Persons, Viewpoints, Forms)
+  let foundAux = [];
+  for (let auxKey in COMMON_AUXILIARIES) {
+    if (new RegExp("\\b" + auxKey + "\\b", "i").test(text)) {
+      foundAux.push({ code: COMMON_AUXILIARIES[auxKey], label: auxKey });
+      text = text.replace(new RegExp("\\b" + auxKey + "\\b", "i"), " ");
+    }
+  }
+
+  // 6. Extract Main Schedule Subjects (Longest matches first)
   let foundBases = [];
-  let sortedKeys = Object.keys(MAIN_MAP).sort((a, b) => b.length - a.length);
+  let sortedKeys = Object.keys(MAIN_SCHEDULE).sort((a, b) => b.length - a.length);
 
   for (let i = 0; i < sortedKeys.length; i++) {
     let k = sortedKeys[i];
@@ -121,29 +254,50 @@ function processUDC(rawText) {
     if (reg.test(text)) {
       let alreadyAdded = false;
       for (let b = 0; b < foundBases.length; b++) {
-        if (foundBases[b].code === MAIN_MAP[k]) {
+        if (foundBases[b].code === MAIN_SCHEDULE[k]) {
           alreadyAdded = true;
           break;
         }
       }
       if (!alreadyAdded) {
-        foundBases.push({ term: k, code: MAIN_MAP[k] });
+        foundBases.push({ term: k, code: MAIN_SCHEDULE[k] });
       }
       text = text.replace(reg, " ");
     }
   }
 
-  // Filter general 001 if specific subjects exist
-  if (foundBases.length > 1) {
-    foundBases = foundBases.filter(b => b.code !== "001");
+  // Clean general '001' if specific subjects exist (unless explicitly part of knowledge list)
+  if (foundBases.length > 1 && !text.includes("knowledge")) {
+    let hasSpecific = foundBases.some(b => b.code !== "001");
+    if (hasSpecific) {
+      foundBases = foundBases.filter(b => b.code !== "001");
+    }
   }
 
-  // 5. Synthesis Rules: Plus (+) for coordination, Colon (:) for compound
+  // 7. Stroke (/) Sign for Ranges or Extensions (e.g., X to Y)
+  if (text.includes(" to ") || text.includes(" through ") || text.includes("/")) {
+    if (foundBases.length >= 2) {
+      let codes = foundBases.map(b => b.code);
+      let parts = foundBases.map(b => ({ part: b.code, label: b.term }));
+      return {
+        code: codes[0] + "/" + codes[codes.length - 1],
+        description: "Continuous range/extension using Stroke sign (/)",
+        breakdown: parts
+      };
+    }
+  }
+
+  // 8. Synthesis: Plus (+) for independent coordinate subjects, Colon (:) for compound/interacting subjects
   if (foundBases.length >= 2) {
     let isCoordination = text.includes(" and ") || text.includes(",") || foundBases.length > 2;
     let sign = isCoordination ? " + " : ":";
     let codes = foundBases.map(b => b.code);
     let parts = foundBases.map(b => ({ part: b.code, label: b.term }));
+
+    if (foundPlace) {
+      codes[codes.length - 1] += foundPlace.code;
+      parts.push({ part: foundPlace.code, label: "Place: " + foundPlace.name });
+    }
 
     return {
       code: codes.join(sign),
@@ -152,11 +306,16 @@ function processUDC(rawText) {
     };
   }
 
-  // 6. Single Subject + Auxiliaries
+  // 9. Single Subject + Place + Auxiliaries
   if (foundBases.length === 1) {
     let code = foundBases[0].code;
     let parts = [{ part: foundBases[0].code, label: foundBases[0].term }];
     
+    if (foundPlace) {
+      code += foundPlace.code;
+      parts.push({ part: foundPlace.code, label: "Place: " + foundPlace.name });
+    }
+
     for (let i = 0; i < foundAux.length; i++) {
       code += foundAux[i].code;
       parts.push({ part: foundAux[i].code, label: foundAux[i].label });
@@ -164,26 +323,26 @@ function processUDC(rawText) {
 
     return {
       code: code,
-      description: "Classified subject with auxiliary facets",
+      description: "Classified subject with geographic and auxiliary facets",
       breakdown: parts
     };
   }
 
   return {
     code: "001",
-    description: "Science and knowledge in general",
+    description: "Science and knowledge in general (Fallback)",
     breakdown: [{ part: "001", label: "General knowledge" }]
   };
 }
 
-// UI Route
+// Web Interface UI
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>UDC Classifier (BS 1000A:1961)</title>
+      <title>Universal UDC Classifier (BS 1000A:1961)</title>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; margin: 0; padding: 40px 15px; text-align: center; }
@@ -205,8 +364,8 @@ app.get('/', (req, res) => {
     <body>
       <div class="box">
         <h2>UDC Classifier (BS 1000A:1961)</h2>
-        <p>Reliable and lightweight classification engine</p>
-        <input type="text" id="subject" placeholder="e.g. Higher education and computers">
+        <p>Comprehensive Universal UDC Engine (Classes 0–9)</p>
+        <input type="text" id="subject" placeholder="e.g. History of India, Higher education and computers">
         <button onclick="run()">Classify</button>
         <div id="resBox" class="res">
           <div><strong>UDC Code:</strong> <span id="outCode" class="code"></span></div>
@@ -245,13 +404,13 @@ app.get('/', (req, res) => {
   `);
 });
 
-// API Route
+// API Endpoint
 app.post('/api/classify', (req, res) => {
   const title = req.body.title || "";
   if (!title.trim()) {
     return res.status(400).json({ error: "Title is required" });
   }
-  const result = processUDC(title);
+  const result = generateUDC(title);
   return res.json({
     title: title,
     code: result.code,
