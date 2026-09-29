@@ -10,9 +10,11 @@ app.use(express.json({ limit: "1mb" }));
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const MODEL_CACHE_MS = 10 * 60 * 1000;
+let modelCache = { at: 0, names: [] };
 
 const CONFIG = {
-  version: "28",
+  version: "29",
   appTitle: "UDC AI Classifier",
   reference: "B.S. 1000A:1961, Abridged English Edition, 3rd Edition Revised 1961",
   rule: "UDC only — never DDC"
@@ -123,7 +125,7 @@ button:disabled{opacity:.6}.loading{display:none;text-align:center;margin-top:15
 <body>
 <div class="wrap">
 <div class="header">
-<span class="badge">VERSION 28</span>
+<span class="badge">VERSION 29</span>
 <h1>UDC AI Classifier</h1>
 <div class="sub">B.S. 1000A:1961 Abridged UDC • Never DDC</div>
 </div>
@@ -210,39 +212,70 @@ MAIN SUBJECT: ...
 SHORT EXPLANATION: ...
 VERIFICATION: Verified in supplied reference / Exact notation not verified in supplied reference`;
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/" +
-      GEMINI_MODEL +
-      ":generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{
-              text: "Follow the UDC classification rules exactly. Do not substitute DDC."
-            }]
-          },
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 700
-          }
-        })
+    const body = {
+      systemInstruction: {
+        parts: [{
+          text: "Follow the UDC classification rules exactly. Do not substitute DDC."
+        }]
+      },
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 700
       }
-    );
+    };
 
-    const data = await response.json();
+    // Build a live list of models available to THIS API key.
+    // If the model list endpoint is temporarily unavailable, use a safe priority list.
+    const fallbackPriority = [
+      GEMINI_MODEL,
+      "gemini-3.8-flash",
+      "gemini-3.7-flash",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-2.5-flash-lite"
+    ];
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data?.error?.message || "Gemini API error"
+    let available = [];
+    try {
+      available = await listGenerateContentModels();
+    } catch (e) {
+      console.warn("Could not list Gemini models; using fallback priority:", e.message);
+    }
+
+    const candidates = [...new Set(
+      fallbackPriority.filter(Boolean).concat(available)
+    )].filter(name => !available.length || available.includes(name));
+
+    let lastError = "Gemini API error";
+    let result = null;
+
+    for (const model of candidates) {
+      const attempt = await generateWithModel(model, body, 2);
+      if (attempt?.response?.ok) {
+        result = attempt;
+        console.log("UDC classification model:", model);
+        break;
+      }
+
+      const status = attempt?.response?.status || 500;
+      const msg = attempt?.data?.error?.message || `HTTP ${status}`;
+      lastError = msg;
+      console.warn(`Gemini model ${model} failed (${status}): ${msg}`);
+
+      // 400/401/402/403 are account/request problems; switching models
+      // normally cannot fix them, so stop and show the real reason.
+      if ([400, 401, 402, 403].includes(status)) break;
+    }
+
+    if (!result) {
+      return res.status(503).json({
+        error: "Gemini is temporarily busy or unavailable. The app automatically retried and checked available models. Please try again in a moment. Details: " + lastError
       });
     }
 
+    const data = result.data;
     const answer =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "No answer received.";
@@ -260,6 +293,65 @@ VERIFICATION: Verified in supplied reference / Exact notation not verified in su
   }
 });
 
+async function listGenerateContentModels() {
+  const now = Date.now();
+  if (modelCache.names.length && now - modelCache.at < MODEL_CACHE_MS) {
+    return modelCache.names;
+  }
+
+  const url = "https://generativelanguage.googleapis.com/v1beta/models";
+  const r = await fetch(url, { headers: { "x-goog-api-key": GEMINI_API_KEY } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d?.error?.message || `Model list failed (${r.status})`);
+
+  const names = (d.models || [])
+    .filter(m => Array.isArray(m.supportedGenerationMethods) &&
+      m.supportedGenerationMethods.includes("generateContent"))
+    .map(m => String(m.name || "").replace(/^models\//, ""))
+    .filter(Boolean);
+
+  modelCache = { at: now, names };
+  return names;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRetryable(status) {
+  return [408, 429, 500, 502, 503, 504].includes(status);
+}
+
+async function generateWithModel(model, body, maxRetries = 2) {
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    encodeURIComponent(model) + ":generateContent";
+
+  let last = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) return { response, data };
+
+    last = { response, data };
+    if (!isRetryable(response.status) || attempt === maxRetries) break;
+
+    const delay = Math.min(8000, 1200 * (2 ** attempt)) + Math.floor(Math.random() * 500);
+    console.log(`Gemini ${model} returned ${response.status}; retrying in ${delay}ms`);
+    await sleep(delay);
+  }
+
+  return last;
+}
+
 app.listen(PORT, () => {
-  console.log("UDC AI V28 running on port " + PORT);
+  console.log("UDC AI V29 running on port " + PORT);
 });
