@@ -1,0 +1,26 @@
+{
+  "version": "V13",
+  "name": "UNIVERSAL UDC SEMANTIC OPERATOR ENGINE",
+  "authority_priority": [
+    "LICENSED_MRF",
+    "OFFICIAL_UDC_SUMMARY",
+    "DETERMINISTIC_CURRENT_RULE"
+  ],
+  "legacy_1961_override": false,
+  "ddc": false,
+  "summary_subset_supported": true,
+  "mrf_import_supported": true,
+  "build": "V13-UNIVERSAL-OPERATOR-2026-09-29",
+  "external_udc_sources": [
+    "Finto UDC Summary REST API",
+    "VocabularyServer UDC Summary TemaTres API"
+  ],
+  "external_authority_note": "Third-party UDC Summary mirrors used as UDC-specific corroboration; not a replacement for licensed MRF.",
+  "third_party_authority_pack": "UDC_THIRD_PARTY_AUTHORITY_PACK.json",
+  "operator_engine": {
+    "coordination": "+",
+    "simple_relation": ":",
+    "conservative_synthesis": true,
+    "keyword_only_combination": false
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "pack_name": "UDC Third-Party Authority Pack",
+  "pack_version": "1.0",
+  "purpose": "UDC-specific corroboration layer; not a copy of the licensed UDC Master Reference File.",
+  "sources": [
+    {"name":"Finto UDC Summary","url":"https://finto.fi/udcs/en/","type":"UDC Summary mirror/API"},
+    {"name":"VocabularyServer UDC Summary","url":"https://vocabularyserver.com/udc/en/","type":"UDC Summary mirror/API"},
+    {"name":"UDC Consortium subject coverage","url":"https://udcc.org/index.php/site/page?view=subject_coverage","type":"official reference"}
+  ],
+  "records": [
+    {"notation":"8","label":"Language. Linguistics. Literature","kind":"main_class"},
+    {"notation":"37","label":"Education","kind":"main_class"},
+    {"notation":"378","label":"Higher education. Universities. Academic study","kind":"main_class"},
+    {"notation":"004","label":"Computer science and technology. Computing. Data processing","kind":"main_class"},
+    {"notation":"91","label":"Geography. Exploration of the Earth and of individual countries","kind":"main_class"},
+    {"notation":"94","label":"History","kind":"main_class"},
+    {"notation":"(038)","label":"Dictionaries","kind":"common_auxiliary_form"},
+    {"notation":"(035)","label":"Handbooks. Manuals","kind":"common_auxiliary_form"},
+    {"notation":"(031)","label":"Encyclopaedias","kind":"common_auxiliary_form"},
+    {"notation":"(510)","label":"China","kind":"common_auxiliary_place"},
+    {"notation":"(519)","label":"Korea","kind":"common_auxiliary_place"},
+    {"notation":"(519.3)","label":"North Korea","kind":"common_auxiliary_place"},
+    {"notation":"(519.5)","label":"South Korea","kind":"common_auxiliary_place"},
+    {"notation":"(52)","label":"Japan","kind":"common_auxiliary_place"},
+    {"notation":"(540)","label":"India","kind":"common_auxiliary_place"}
+  ],
+  "authority_policy": {
+    "licensed_mrf": "highest",
+    "official_udc_summary": "high",
+    "third_party_udc_summary_mirrors": "corroboration",
+    "google_or_gemini": "research_only",
+    "legacy_1961": "diagnostic_only",
+    "ddc": "reject"
+  }
+}

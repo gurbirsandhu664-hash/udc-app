@@ -1,0 +1,7 @@
+V12.6.1 — DICTIONARY FORM FIX
+
+Fixed: “Dictionary of Language and Literature” no longer returns legacy 030.8.
+Current deterministic construction: 8(038).
+8 = Language, Linguistics, Literature; (038) = dictionary form.
+Added (038) to the current reference seed and added a regression self-test.
+Legacy 030.8 remains diagnostic only and cannot override the current rule.
