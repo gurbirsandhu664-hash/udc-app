@@ -1,7 +1,7 @@
-{
-  "name": "udc-classifier-app",
-  "version": "1.0.0",
-  "description": "UDC Classifier with 1961 Schedule Answer Key",
+{ 
+  "name": "udc-v45-uploaded-udc-fixed-final",
+  "version": "45.0.0",
+  "description": "UDC V45 Project with Uploaded 1961 Schedule Answer Key",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
