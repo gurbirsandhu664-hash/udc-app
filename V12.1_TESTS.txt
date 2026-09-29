@@ -1,0 +1,11 @@
+V12.1 REGRESSION TESTS
+1. History of China -> 94(510)
+2. History of India -> 94(540)
+3. History of Japan -> 94(52)
+4. History of Korea -> 94(519)
+5. Religious Unrest in India -> 323.22(540) [semantic gate]
+6. Religious Unrest in China -> 323.22(510) [semantic gate]
+7. Religious Unrest in South Korea -> 323.22(519.5) [semantic gate]
+8. Music -> 78
+9. Dictionary of Language and Literature -> subject + form construction
+10. No DDC fallback.

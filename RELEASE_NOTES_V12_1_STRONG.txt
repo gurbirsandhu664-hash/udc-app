@@ -1,0 +1,13 @@
+V12.1 STRONG UNIVERSAL
+
+- Rebuilt semantic answer-key layer.
+- Head concept is identified before incidental index terms.
+- Religious unrest in India -> 323.22(540).
+- Country place auxiliaries are appended only after the head concept is selected.
+- Unrelated candidate lines such as Pan-Slavism cannot win on the word "unrest" alone.
+- Added regression tests and machine-readable answer key.
+- Existing V11 UI/project structure preserved.
+
+UDC is analytico-synthetic: subject relations and common auxiliaries must be combined only when supported by the relevant UDC tables.
+
+V12.1.1: fixed initialization order for the place-auxiliary map; server syntax checked.

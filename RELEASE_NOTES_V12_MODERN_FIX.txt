@@ -1,0 +1,13 @@
+V12 MODERN-UDC HISTORY FIX
+
+Observed problem: History of China was still returning 951 from the bundled 1961 schedule.
+Fix: current-UDC history rules now run before the historical 1961 schedule.
+
+History of China -> 94(510)
+History of India -> 94(540)
+History of Japan -> 94(52)
+History of North Korea -> 94(519.3)
+History of South Korea -> 94(519.5)
+History of Korea -> 94(519)
+
+The UI now says UDC REFERENCE VERIFIED rather than falsely claiming that these current rules were verified by the 1961 uploaded schedule.

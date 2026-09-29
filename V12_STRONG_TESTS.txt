@@ -1,0 +1,15 @@
+V12 STRONG REGRESSION TESTS
+
+Religious unrest in India -> 323.22(540)
+Religious unrest in China -> 323.22(510)
+Religious unrest in Japan -> 323.22(52)
+Religious unrest in South Korea -> 323.22(519.5)
+Religious unrest in North Korea -> 323.22(519.3)
+Political unrest in India -> 323.22(540)
+Social unrest in India -> 323.22(540)
+Civil unrest in India -> 323.22(540)
+Unrest in India -> 323.22(540)
+Riots in India -> 323.22(540)
+Civil disturbances in India -> 323.22(540)
+
+Regression rule: an unrelated source line such as 327(=81) Pan-Slavism must NEVER win merely because the word "unrest" appears nearby.
