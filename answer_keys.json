@@ -1,18 +1,18 @@
 {
-  "version": "30",
+  "version": "33",
   "basis": "B.S. 1000A:1961 Abridged English UDC",
   "keys": {
     "history of india": {
-      "udc": "954",
+      "udc": "94(540)",
       "subject": "History of India",
       "title": "History Of India",
-      "source": "1961 index"
+      "source": "user-requested fixed answer key"
     },
     "indian history": {
-      "udc": "954",
+      "udc": "94(540)",
       "subject": "History of India",
       "title": "Indian History",
-      "source": "1961 index"
+      "source": "user-requested fixed answer key"
     },
     "history of punjab": {
       "udc": "94(540.15)",
@@ -1681,6 +1681,30 @@
       "subject": "Economy of India",
       "title": "Indian Economy",
       "source": "1961 main division 33 + India auxiliary"
+    },
+    "higher education and computers": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    },
+    "higher education & computers": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    },
+    "higher education and computer": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    },
+    "computers in higher education": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
     }
   }
 }

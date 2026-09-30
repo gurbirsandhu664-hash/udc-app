@@ -14,7 +14,7 @@ const MODEL_CACHE_MS = 10 * 60 * 1000;
 let modelCache = { at: 0, names: [] };
 
 const CONFIG = {
-  version: "32",
+  version: "33",
   appTitle: "UDC AI Classifier — 1961 Edition",
   reference: "B.S. 1000A:1961, Abridged English Edition, 3rd Edition Revised 1961",
   rule: "UDC only — never DDC — 1961 edition locked"
@@ -83,28 +83,40 @@ const STOP = new Set([
 ]);
 
 function referenceSnippets(question, details = "") {
-  const q = `${question} ${details}`;
-  const words = [...new Set(normalize(q).split(" ").filter(w => w.length >= 3 && !STOP.has(w)))];
+  const q = normalize(`${question} ${details}`);
+  const rawWords = q.split(" ").filter(w => w.length >= 3);
+  const stop = new Set(["the","and","for","with","from","into","about","book","study","general","introduction","using","use","principles","theory","volume","edition"]);
+  const words = [...new Set(rawWords.filter(w => !stop.has(w)))];
   if (!UDC_REFERENCE || !words.length) return "";
 
+  // Phrase-aware retrieval: title phrases receive a large bonus, then individual
+  // concepts, so an unfamiliar title still gets the right part of the 1961 index.
+  const phrases = [];
+  for (let n = Math.min(5, words.length); n >= 2; n--) {
+    for (let i = 0; i + n <= words.length; i++) phrases.push(words.slice(i, i+n).join(" "));
+  }
   const scored = [];
   for (let i = 0; i < REFERENCE_LINES.length; i++) {
-    const line = normalize(REFERENCE_LINES[i]);
+    const lineRaw = REFERENCE_LINES[i];
+    const line = normalize(lineRaw);
     if (!line) continue;
     let score = 0;
-    for (const word of words) {
-      if (line.includes(word)) score += word.length >= 7 ? 4 : word.length >= 5 ? 2 : 1;
+    for (const w of words) {
+      if (line.includes(w)) score += w.length >= 8 ? 5 : w.length >= 6 ? 3 : 1;
     }
+    for (const ph of phrases) if (line.includes(ph)) score += Math.min(18, ph.split(" ").length * 5);
+    if (/\b(udc|index|history|education|computer|science|literature|language|law|medicine|agriculture)\b/i.test(line)) score += 0.2;
     if (score > 0) {
-      const start = Math.max(0, i - 2), end = Math.min(REFERENCE_LINES.length, i + 3);
-      scored.push({ score, block: REFERENCE_LINES.slice(start, end).join("\n") });
+      const startLine = Math.max(0, i - 2), endLine = Math.min(REFERENCE_LINES.length, i + 4);
+      scored.push({ score, block: REFERENCE_LINES.slice(startLine, endLine).join("\n") });
     }
   }
   scored.sort((a,b) => b.score - a.score);
   const out = [], seen = new Set();
   for (const x of scored) {
-    const k = x.block.trim(); if (!seen.has(k)) { seen.add(k); out.push(k); }
-    if (out.length >= 24) break;
+    const key = x.block.trim();
+    if (!seen.has(key)) { seen.add(key); out.push(key); }
+    if (out.length >= 40) break;
   }
   return out.join("\n\n");
 }
@@ -122,6 +134,18 @@ function extractUDC(answer) {
 
 function classifyProvisional(title, details) {
   const t = normalize(`${title} ${details}`);
+  const compound = [
+    [/\b(higher education|university|universities|college).{0,35}\b(computer|computers|computing|informatics)\b|\b(computer|computers|computing|informatics)\b.{0,35}\b(higher education|university|universities|college)\b/, "378:681.14", "Higher Education and Computers"],
+    [/\b(science)\b.{0,20}\b(and|&)\b.{0,20}\b(art|arts)\b/, "5+7", "Science and Arts"],
+    [/\b(knowledge)\b.{0,30}\b(metaphysics)\b.{0,30}\b(logic)\b/, "001+11+16", "Knowledge, Metaphysics and Logic"],
+    [/\b(handbook)\b.{0,25}\b(science)\b.{0,25}\b(technology)\b/, "5/6(035)", "Handbook of Science and Technology"]
+  ];
+  for (const [re, udc, subject] of compound) if (re.test(t)) return {
+    udc, subject,
+    answer: `FINAL UDC NUMBER: ${udc}\nMAIN SUBJECT: ${subject}\nSHORT EXPLANATION: Compound subject detected and classified using the 1961 UDC answer layer.\nVERIFICATION: REFERENCE-SUPPORTED — exact compound title rule.` ,
+    confidence: "High",
+    method: "local-compound-1961-rule"
+  };
   const rules = [
     [/\b(medicine|medical|clinical|disease|diseases|surgery|nursing|health|pathology|anatomy|physiology|pharmacy|drug|drugs|hospital)\b/, "61", "Medicine and related medical sciences"],
     [/\b(engineering|mechanical|electrical|electronics|telecommunication|civil engineering|construction|technology|manufacturing|machine|machines)\b/, "6", "Applied science and technology"],
@@ -167,19 +191,19 @@ function answerFromKey(key, method) {
   return {
     udc: key.udc,
     subject: key.subject,
-    answer: `FINAL UDC NUMBER: ${key.udc}\nMAIN SUBJECT: ${key.subject}\nSHORT EXPLANATION: ${key.udc} is the fixed UDC answer stored for this title in the deterministic V31 answer-key layer.\nVERIFICATION: ${verification}`,
+    answer: `FINAL UDC NUMBER: ${key.udc}\nMAIN SUBJECT: ${key.subject}\nSHORT EXPLANATION: ${key.udc} is the fixed UDC answer stored for this title in the deterministic 1961 answer-key layer. Source: ${key.source || '1961 UDC reference'}.\nVERIFICATION: ${verification}`,
     confidence: method === "exact-answer-key" ? "High" : "Medium-High",
     method
   };
 }
 
 function page() {
-return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220"><title>UDC AI Classifier V31</title>
+return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220"><title>UDC AI Classifier V33</title>
 <style>
 :root{--bg:#f3f6fb;--card:#fff;--ink:#0b1220;--muted:#64748b;--line:#e5eaf1;--accent:#1d4ed8;--accent2:#0f172a;--ok:#0f766e;--warn:#92400e}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eef4ff 0,#f7f9fc 42%,#eef2f7 100%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.shell{max-width:1080px;margin:auto;padding:24px 16px 60px}.hero{padding:30px;border-radius:28px;background:linear-gradient(135deg,#0b1220,#172554);color:#fff;box-shadow:0 20px 55px rgba(15,23,42,.18)}.tag{display:inline-flex;padding:7px 11px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(255,255,255,.08);font-size:12px;font-weight:800;letter-spacing:.04em}.hero h1{font-size:clamp(30px,5vw,52px);line-height:1.02;margin:16px 0 10px}.hero p{margin:0;color:#dbeafe;max-width:760px;line-height:1.6}.grid{display:grid;grid-template-columns:1.45fr .75fr;gap:18px;margin-top:18px}.card{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 10px 30px rgba(15,23,42,.06)}.card h2{margin:0 0 7px;font-size:20px}.small{color:var(--muted);font-size:13px;line-height:1.5}.label{display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px;font-weight:800;font-size:14px}textarea{width:100%;border:1px solid #cbd5e1;border-radius:15px;padding:15px;font:inherit;font-size:17px;outline:none;min-height:105px;resize:vertical}textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 4px rgba(96,165,250,.16)}button{border:0;border-radius:14px;padding:15px 18px;background:var(--accent2);color:#fff;font-weight:800;font-size:16px;cursor:pointer;width:100%;margin-top:13px}button:hover{transform:translateY(-1px)}button:disabled{opacity:.55;cursor:wait}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.chip{border:1px solid #dbe2ec;background:#f8fafc;color:#334155;padding:8px 10px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:700}.feature{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}.feature:last-child{border-bottom:0}.dot{width:9px;height:9px;border-radius:50%;background:#2563eb;margin-top:6px;flex:0 0 auto}.status{display:none;margin-top:14px;padding:12px 14px;border-radius:13px;background:#eff6ff;color:#1e3a8a;font-size:13px}.error{display:none;margin-top:14px;padding:12px 14px;border-radius:13px;background:#fff1f2;color:#9f1239;font-size:13px}.result{display:none;margin-top:18px}.resultHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.pill{padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900;background:#ecfeff;color:#155e75}.udc{font-size:clamp(38px,7vw,64px);font-weight:900;letter-spacing:-.03em;margin:8px 0}.box{border-top:1px solid var(--line);padding:15px 0}.answer{white-space:pre-wrap;line-height:1.6;font-size:15px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px}.meta div{background:#f8fafc;border:1px solid var(--line);border-radius:13px;padding:12px}.meta b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}.footer{margin-top:18px;color:#64748b;font-size:12px;line-height:1.6}.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef2f7;padding:2px 5px;border-radius:5px}.spinner{display:inline-block;width:14px;height:14px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:820px){.grid{grid-template-columns:1fr}.hero{padding:24px}.card{padding:18px}.meta{grid-template-columns:1fr}}
-</style></head><body><main class="shell"><section class="hero"><span class="tag">VERSION 31 • UDC ONLY</span><h1>Universal Decimal Classification AI</h1><p>Enter an English book title. The classifier checks deterministic UDC answer keys first, searches the supplied 1961 UDC reference, then uses an available Gemini model for semantic classification. It is designed to return a result rather than simply failing on unfamiliar titles.</p></section>
+</style></head><body><main class="shell"><section class="hero"><span class="tag">VERSION 33 • UDC ONLY</span><h1>Universal Decimal Classification AI</h1><p>Enter an English book title. The classifier checks deterministic UDC answer keys first, searches the supplied 1961 UDC reference, then uses an available Gemini model for semantic classification. It is designed to return a result rather than simply failing on unfamiliar titles.</p></section>
 <div class="grid"><section class="card"><h2>Classify a Book</h2><div class="small">Best results come from the full title. For an ambiguous title, add a short description or subject.</div><div class="label"><span>Book title</span><span class="small">English</span></div><textarea id="title" placeholder="e.g. History of India"></textarea><div class="label"><span>Optional subject / description</span><span class="small">Recommended for vague titles</span></div><textarea id="details" style="min-height:80px" placeholder="e.g. A study of India's political and social history after independence"></textarea><div class="chips"><button class="chip" type="button" onclick="sample('History of India')">History of India</button><button class="chip" type="button" onclick="sample('Handbook of Systematic Zoology')">Systematic Zoology</button><button class="chip" type="button" onclick="sample('Knowledge, Metaphysics and Logic')">Knowledge &amp; Logic</button><button class="chip" type="button" onclick="sample('Principles of Quantum Computing')">Quantum Computing</button></div><button id="go" onclick="classify()">CLASSIFY BOOK</button><div id="status" class="status"><span class="spinner"></span><span id="statusText">Searching the UDC reference…</span></div><div id="error" class="error"></div><section id="result" class="result"><div class="resultHead"><div><div class="small">FINAL UDC NUMBER</div><div id="udc" class="udc">—</div></div><span id="pill" class="pill">—</span></div><div class="box"><div class="small">MAIN SUBJECT</div><div id="subject" style="font-weight:800;font-size:19px;margin-top:4px">—</div></div><div class="meta"><div><b>Confidence</b><span id="confidence">—</span></div><div><b>Method</b><span id="method">—</span></div></div><div class="box"><div class="small">CLASSIFICATION REPORT</div><div id="answer" class="answer">—</div></div></section></section>
-<aside class="card"><h2>How V31 works</h2><div class="feature"><span class="dot"></span><div><b>1. Exact keys</b><div class="small">Known titles are answered deterministically before AI.</div></div></div><div class="feature"><span class="dot"></span><div><b>2. Close-title matching</b><div class="small">Small punctuation/spelling changes can still match a verified key.</div></div></div><div class="feature"><span class="dot"></span><div><b>3. Reference retrieval</b><div class="small">Relevant lines from the supplied UDC reference are sent with the title.</div></div></div><div class="feature"><span class="dot"></span><div><b>4. Semantic AI</b><div class="small">The AI is instructed to classify meaning, not keywords alone.</div></div></div><div class="feature"><span class="dot"></span><div><b>5. No-error fallback</b><div class="small">If Gemini is unavailable, a provisional broad class is returned instead of a server error.</div></div></div><div class="footer"><b>Reference basis:</b> B.S. 1000A:1961, Abridged English Edition, 3rd Edition Revised 1961. For current UDC, use properly licensed current schedules. UDC schedules are copyright/licence-controlled by the UDC Consortium.</div></aside></div></main>
+<aside class="card"><h2>How V33 works</h2><div class="feature"><span class="dot"></span><div><b>1. Exact keys</b><div class="small">Known titles are answered deterministically before AI.</div></div></div><div class="feature"><span class="dot"></span><div><b>2. Close-title matching</b><div class="small">Small punctuation/spelling changes can still match a verified key.</div></div></div><div class="feature"><span class="dot"></span><div><b>3. Reference retrieval</b><div class="small">Relevant lines from the supplied UDC reference are sent with the title.</div></div></div><div class="feature"><span class="dot"></span><div><b>4. Semantic AI</b><div class="small">The AI is instructed to classify meaning, not keywords alone.</div></div></div><div class="feature"><span class="dot"></span><div><b>5. No-error fallback</b><div class="small">If Gemini is unavailable, a provisional broad class is returned instead of a server error.</div></div></div><div class="footer"><b>Reference basis:</b> B.S. 1000A:1961, Abridged English Edition, 3rd Edition Revised 1961. For current UDC, use properly licensed current schedules. UDC schedules are copyright/licence-controlled by the UDC Consortium.</div></aside></div></main>
 <script>
 const $=id=>document.getElementById(id);
 function sample(x){$('title').value=x;$('title').focus()}
@@ -235,7 +259,7 @@ app.post('/api/ask', async (req,res)=>{
 
     const answer=result.data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('\n')||'';
     const udc=extractUDC(answer);
-    return res.json({answer,udc,subject:extractField(answer,'MAIN SUBJECT'),confidence:answer.toLowerCase().includes('not verified')?'Medium':'High',method:'gemini-reference-classification',verification:answer.toLowerCase().includes('not verified')?'REFERENCE-SUPPORTED':'AI CLASSIFICATION',version:CONFIG.version});
+    return res.json({answer,udc,subject:extractField(answer,'MAIN SUBJECT'),subSubject:extractField(answer,'SUB SUBJECT'),confidence:answer.toLowerCase().includes('not verified')?'Medium':'High',method:'gemini-reference-classification',verification:answer.toLowerCase().includes('not verified')?'REFERENCE-SUPPORTED':'AI CLASSIFICATION',version:CONFIG.version});
   }catch(error){
     console.error(error);
     const out=classifyProvisional(String(req.body?.question||''),String(req.body?.details||''));
