@@ -1,28 +1,18 @@
-# UDC AI Classifier V30
+# UDC AI Classifier V32 — 1961 Edition Locked
 
-UDC-only classifier using the supplied **B.S. 1000A:1961 Abridged English UDC** reference.
+A Node/Express web app for classifying English book titles using the supplied **B.S. 1000A:1961 Universal Decimal Classification, Abridged English Edition, 3rd Edition Revised 1961** reference.
 
-## V30 key fix
-V30 adds a deterministic **answer-key layer before Gemini**. Exact known titles are answered from `answer_keys.json`; Gemini is used only when a title is not in the exact key layer.
-
-This prevents Gemini from changing a fixed answer such as `History of India` into an unrelated number.
-
-The supplied 1961 UDC alphabetical index explicitly lists **India — history 954**, **China — history 951**, and **Korea — history 951.9**. The app therefore uses those numbers for those exact titles in V30.
+## Core behavior
+- UDC only — never DDC.
+- 1961-edition locked: the AI prompt explicitly forbids silently replacing 1961 notation with modern UDC/MRF notation.
+- Deterministic answer keys run before AI.
+- Safer fuzzy matching handles harmless title wording such as `A History of India` without turning unrelated titles into fixed answers.
+- Unknown/random English titles do not produce a classification-service error. The app falls back to a broad 1961 UDC class and marks it **PROVISIONAL** when an exact source-backed number cannot be established.
+- Optional book description/contents can be supplied for difficult titles.
+- The app never claims a provisional number is verified.
 
 ## Render
-- Build Command: `npm install`
-- Start Command: `npm start`
-- Environment Variable: `GEMINI_API_KEY`
-- Optional: `GEMINI_MODEL`
-
-## Files
-- `server.js`
-- `package.json`
-- `answer_keys.json`
-- `udc_reference.txt`
-- `.gitignore`
-
-## Important
-This app is based on the supplied 1961 abridged reference. For titles whose exact notation is not established by that reference, the app falls back to Gemini with the supplied reference excerpts and clearly asks for verification instead of inventing a number.
-
-UDC only — never DDC.
+Build: `npm install`
+Start: `npm start`
+Environment variable: `GEMINI_API_KEY`
+Optional: `GEMINI_MODEL`
