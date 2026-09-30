@@ -1,6 +1,0 @@
-V45 WORKING FIX
-- Version remains V45 ULTRA.
-- Fixed truncated index.html ending that caused the inline JavaScript/Classify button to fail.
-- Added exact fast match for "Theory and Philosophy of University" -> 378.01.
-- Kept UDC-only / no DDC behavior.
-- Existing V45 files and UI retained.
