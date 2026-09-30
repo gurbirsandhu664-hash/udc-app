@@ -1,0 +1,1710 @@
+{
+  "version": "33",
+  "basis": "B.S. 1000A:1961 Abridged English UDC",
+  "keys": {
+    "history of india": {
+      "udc": "94(540)",
+      "subject": "History of India",
+      "title": "History Of India",
+      "source": "user-requested fixed answer key"
+    },
+    "indian history": {
+      "udc": "94(540)",
+      "subject": "History of India",
+      "title": "Indian History",
+      "source": "user-requested fixed answer key"
+    },
+    "history of punjab": {
+      "udc": "94(540.15)",
+      "subject": "History of Punjab",
+      "title": "History Of Punjab",
+      "source": "existing fixed answer key"
+    },
+    "history of pakistan": {
+      "udc": "94(549)",
+      "subject": "History of Pakistan",
+      "title": "history of pakistan",
+      "source": "answer-key"
+    },
+    "history of china": {
+      "udc": "951",
+      "subject": "History of China",
+      "title": "History Of China",
+      "source": "1961 index"
+    },
+    "history of japan": {
+      "udc": "952",
+      "subject": "History of Japan",
+      "title": "History Of Japan",
+      "source": "1961 index"
+    },
+    "history of united kingdom": {
+      "udc": "94(410)",
+      "subject": "History of United Kingdom",
+      "title": "history of united kingdom",
+      "source": "answer-key"
+    },
+    "history of usa": {
+      "udc": "94(73)",
+      "subject": "History of United States",
+      "title": "history of usa",
+      "source": "answer-key"
+    },
+    "history of the united states": {
+      "udc": "94(73)",
+      "subject": "History of United States",
+      "title": "history of the united states",
+      "source": "answer-key"
+    },
+    "geography of india": {
+      "udc": "91(540)",
+      "subject": "Geography of India",
+      "title": "Geography Of India",
+      "source": "existing fixed answer key"
+    },
+    "geography of punjab": {
+      "udc": "91(540.15)",
+      "subject": "Geography of Punjab",
+      "title": "geography of punjab",
+      "source": "answer-key"
+    },
+    "geography of pakistan": {
+      "udc": "91(549)",
+      "subject": "Geography of Pakistan",
+      "title": "geography of pakistan",
+      "source": "answer-key"
+    },
+    "geography of china": {
+      "udc": "91(510)",
+      "subject": "Geography of China",
+      "title": "geography of china",
+      "source": "answer-key"
+    },
+    "geography of japan": {
+      "udc": "91(520)",
+      "subject": "Geography of Japan",
+      "title": "geography of japan",
+      "source": "answer-key"
+    },
+    "indian constitution": {
+      "udc": "342(540)",
+      "subject": "Constitutional Law of India",
+      "title": "Indian Constitution",
+      "source": "existing fixed answer key"
+    },
+    "constitution of india": {
+      "udc": "342(540)",
+      "subject": "Constitutional law of India",
+      "title": "constitution of india",
+      "source": "answer-key"
+    },
+    "economy of india": {
+      "udc": "33(540)",
+      "subject": "Economy of India",
+      "title": "Economy Of India",
+      "source": "1961 main division 33 + India auxiliary"
+    },
+    "economics of india": {
+      "udc": "33(540)",
+      "subject": "Economics of India",
+      "title": "economics of india",
+      "source": "answer-key"
+    },
+    "international relations": {
+      "udc": "327",
+      "subject": "International Relations",
+      "title": "international relations",
+      "source": "answer-key"
+    },
+    "international relation": {
+      "udc": "327",
+      "subject": "International Relations",
+      "title": "international relation",
+      "source": "answer-key"
+    },
+    "foreign relations": {
+      "udc": "327",
+      "subject": "Foreign Relations",
+      "title": "foreign relations",
+      "source": "answer-key"
+    },
+    "foreign relation": {
+      "udc": "327",
+      "subject": "Foreign Relations",
+      "title": "foreign relation",
+      "source": "answer-key"
+    },
+    "foreign policy": {
+      "udc": "327",
+      "subject": "Foreign Policy",
+      "title": "foreign policy",
+      "source": "answer-key"
+    },
+    "diplomacy": {
+      "udc": "327",
+      "subject": "Diplomacy",
+      "title": "diplomacy",
+      "source": "answer-key"
+    },
+    "diplomatic relations": {
+      "udc": "327",
+      "subject": "Diplomatic Relations",
+      "title": "diplomatic relations",
+      "source": "answer-key"
+    },
+    "international affairs": {
+      "udc": "327",
+      "subject": "International Affairs",
+      "title": "international affairs",
+      "source": "answer-key"
+    },
+    "international affair": {
+      "udc": "327",
+      "subject": "International Affairs",
+      "title": "international affair",
+      "source": "answer-key"
+    },
+    "geopolitics": {
+      "udc": "327",
+      "subject": "International Relations / Geopolitics",
+      "title": "geopolitics",
+      "source": "answer-key"
+    },
+    "global politics": {
+      "udc": "327",
+      "subject": "International Relations / Global Politics",
+      "title": "global politics",
+      "source": "answer-key"
+    },
+    "international politics": {
+      "udc": "327",
+      "subject": "International Relations / International Politics",
+      "title": "international politics",
+      "source": "answer-key"
+    },
+    "international security": {
+      "udc": "327",
+      "subject": "International Relations / Security",
+      "title": "international security",
+      "source": "answer-key"
+    },
+    "international cooperation": {
+      "udc": "327",
+      "subject": "International Relations / Cooperation",
+      "title": "international cooperation",
+      "source": "answer-key"
+    },
+    "international organizations": {
+      "udc": "327",
+      "subject": "International Relations / International Organizations",
+      "title": "international organizations",
+      "source": "answer-key"
+    },
+    "international organization": {
+      "udc": "327",
+      "subject": "International Relations / International Organizations",
+      "title": "international organization",
+      "source": "answer-key"
+    },
+    "foreign affairs": {
+      "udc": "327",
+      "subject": "Foreign Affairs",
+      "title": "foreign affairs",
+      "source": "answer-key"
+    },
+    "treaty": {
+      "udc": "327",
+      "subject": "Treaties / International Relations",
+      "title": "treaty",
+      "source": "answer-key"
+    },
+    "treaties": {
+      "udc": "327",
+      "subject": "Treaties / International Relations",
+      "title": "treaties",
+      "source": "answer-key"
+    },
+    "alliance": {
+      "udc": "327",
+      "subject": "International Alliances",
+      "title": "alliance",
+      "source": "answer-key"
+    },
+    "alliances": {
+      "udc": "327",
+      "subject": "International Alliances",
+      "title": "alliances",
+      "source": "answer-key"
+    },
+    "united nations": {
+      "udc": "327",
+      "subject": "United Nations / International Relations",
+      "title": "united nations",
+      "source": "answer-key"
+    },
+    "saarc": {
+      "udc": "327",
+      "subject": "SAARC / International Relations",
+      "title": "saarc",
+      "source": "answer-key"
+    },
+    "brics": {
+      "udc": "327",
+      "subject": "BRICS / International Relations",
+      "title": "brics",
+      "source": "answer-key"
+    },
+    "g20": {
+      "udc": "327",
+      "subject": "G20 / International Relations",
+      "title": "g20",
+      "source": "answer-key"
+    },
+    "india pakistan relations": {
+      "udc": "327(540:549)",
+      "subject": "India–Pakistan Relations",
+      "title": "india pakistan relations",
+      "source": "answer-key"
+    },
+    "india pakistan relation": {
+      "udc": "327(540:549)",
+      "subject": "India–Pakistan Relations",
+      "title": "india pakistan relation",
+      "source": "answer-key"
+    },
+    "relations between india and pakistan": {
+      "udc": "327(540:549)",
+      "subject": "India–Pakistan Relations",
+      "title": "relations between india and pakistan",
+      "source": "answer-key"
+    },
+    "foreign relations between india and pakistan": {
+      "udc": "327(540:549)",
+      "subject": "India–Pakistan Relations",
+      "title": "foreign relations between india and pakistan",
+      "source": "answer-key"
+    },
+    "foreign relation between india and pakistan": {
+      "udc": "327(540:549)",
+      "subject": "India–Pakistan Relations",
+      "title": "foreign relation between india and pakistan",
+      "source": "answer-key"
+    },
+    "india and pakistan relations": {
+      "udc": "327(540:549)",
+      "subject": "India–Pakistan Relations",
+      "title": "india and pakistan relations",
+      "source": "answer-key"
+    },
+    "india china relations": {
+      "udc": "327(540:510)",
+      "subject": "India–China Relations",
+      "title": "india china relations",
+      "source": "answer-key"
+    },
+    "india china relation": {
+      "udc": "327(540:510)",
+      "subject": "India–China Relations",
+      "title": "india china relation",
+      "source": "answer-key"
+    },
+    "relations between india and china": {
+      "udc": "327(540:510)",
+      "subject": "India–China Relations",
+      "title": "relations between india and china",
+      "source": "answer-key"
+    },
+    "india nepal relations": {
+      "udc": "327(540:541.35)",
+      "subject": "India–Nepal Relations",
+      "title": "india nepal relations",
+      "source": "answer-key"
+    },
+    "india bangladesh relations": {
+      "udc": "327(540:549.2)",
+      "subject": "India–Bangladesh Relations",
+      "title": "india bangladesh relations",
+      "source": "answer-key"
+    },
+    "india sri lanka relations": {
+      "udc": "327(540:548.7)",
+      "subject": "India–Sri Lanka Relations",
+      "title": "india sri lanka relations",
+      "source": "answer-key"
+    },
+    "india usa relations": {
+      "udc": "327(540:73)",
+      "subject": "India–United States Relations",
+      "title": "india usa relations",
+      "source": "answer-key"
+    },
+    "india united states relations": {
+      "udc": "327(540:73)",
+      "subject": "India–United States Relations",
+      "title": "india united states relations",
+      "source": "answer-key"
+    },
+    "india russia relations": {
+      "udc": "327(540:470)",
+      "subject": "India–Russia Relations",
+      "title": "india russia relations",
+      "source": "answer-key"
+    },
+    "india japan relations": {
+      "udc": "327(540:520)",
+      "subject": "India–Japan Relations",
+      "title": "india japan relations",
+      "source": "answer-key"
+    },
+    "pakistan china relations": {
+      "udc": "327(549:510)",
+      "subject": "Pakistan–China Relations",
+      "title": "pakistan china relations",
+      "source": "answer-key"
+    },
+    "china japan relations": {
+      "udc": "327(510:520)",
+      "subject": "China–Japan Relations",
+      "title": "china japan relations",
+      "source": "answer-key"
+    },
+    "english language": {
+      "udc": "811.111",
+      "subject": "English Language",
+      "title": "english language",
+      "source": "answer-key"
+    },
+    "hindi language": {
+      "udc": "811.214.21",
+      "subject": "Hindi Language",
+      "title": "hindi language",
+      "source": "answer-key"
+    },
+    "punjabi language": {
+      "udc": "811.214.22",
+      "subject": "Punjabi Language",
+      "title": "punjabi language",
+      "source": "answer-key"
+    },
+    "urdu language": {
+      "udc": "811.214.31",
+      "subject": "Urdu Language",
+      "title": "urdu language",
+      "source": "answer-key"
+    },
+    "bengali language": {
+      "udc": "811.214.32",
+      "subject": "Bengali Language",
+      "title": "bengali language",
+      "source": "answer-key"
+    },
+    "marathi language": {
+      "udc": "811.214.34",
+      "subject": "Marathi Language",
+      "title": "marathi language",
+      "source": "answer-key"
+    },
+    "gujarati language": {
+      "udc": "811.214.35",
+      "subject": "Gujarati Language",
+      "title": "gujarati language",
+      "source": "answer-key"
+    },
+    "tamil language": {
+      "udc": "811.214.42",
+      "subject": "Tamil Language",
+      "title": "tamil language",
+      "source": "answer-key"
+    },
+    "telugu language": {
+      "udc": "811.214.43",
+      "subject": "Telugu Language",
+      "title": "telugu language",
+      "source": "answer-key"
+    },
+    "kannada language": {
+      "udc": "811.214.44",
+      "subject": "Kannada Language",
+      "title": "kannada language",
+      "source": "answer-key"
+    },
+    "malayalam language": {
+      "udc": "811.214.45",
+      "subject": "Malayalam Language",
+      "title": "malayalam language",
+      "source": "answer-key"
+    },
+    "sanskrit language": {
+      "udc": "811.211",
+      "subject": "Sanskrit Language",
+      "title": "sanskrit language",
+      "source": "answer-key"
+    },
+    "french language": {
+      "udc": "811.133.1",
+      "subject": "French Language",
+      "title": "french language",
+      "source": "answer-key"
+    },
+    "german language": {
+      "udc": "811.112.2",
+      "subject": "German Language",
+      "title": "german language",
+      "source": "answer-key"
+    },
+    "spanish language": {
+      "udc": "811.134.2",
+      "subject": "Spanish Language",
+      "title": "spanish language",
+      "source": "answer-key"
+    },
+    "arabic language": {
+      "udc": "811.411",
+      "subject": "Arabic Language",
+      "title": "arabic language",
+      "source": "answer-key"
+    },
+    "persian language": {
+      "udc": "811.411.1",
+      "subject": "Persian Language",
+      "title": "persian language",
+      "source": "answer-key"
+    },
+    "chinese language": {
+      "udc": "811.581",
+      "subject": "Chinese Language",
+      "title": "chinese language",
+      "source": "answer-key"
+    },
+    "japanese language": {
+      "udc": "811.521",
+      "subject": "Japanese Language",
+      "title": "japanese language",
+      "source": "answer-key"
+    },
+    "english literature": {
+      "udc": "821.111",
+      "subject": "English Literature",
+      "title": "english literature",
+      "source": "answer-key"
+    },
+    "hindi literature": {
+      "udc": "821.214.21",
+      "subject": "Hindi Literature",
+      "title": "hindi literature",
+      "source": "answer-key"
+    },
+    "punjabi literature": {
+      "udc": "821.214.22",
+      "subject": "Punjabi Literature",
+      "title": "punjabi literature",
+      "source": "answer-key"
+    },
+    "urdu literature": {
+      "udc": "821.214.31",
+      "subject": "Urdu Literature",
+      "title": "urdu literature",
+      "source": "answer-key"
+    },
+    "bengali literature": {
+      "udc": "821.214.32",
+      "subject": "Bengali Literature",
+      "title": "bengali literature",
+      "source": "answer-key"
+    },
+    "marathi literature": {
+      "udc": "821.214.34",
+      "subject": "Marathi Literature",
+      "title": "marathi literature",
+      "source": "answer-key"
+    },
+    "gujarati literature": {
+      "udc": "821.214.35",
+      "subject": "Gujarati Literature",
+      "title": "gujarati literature",
+      "source": "answer-key"
+    },
+    "tamil literature": {
+      "udc": "821.214.42",
+      "subject": "Tamil Literature",
+      "title": "tamil literature",
+      "source": "answer-key"
+    },
+    "telugu literature": {
+      "udc": "821.214.43",
+      "subject": "Telugu Literature",
+      "title": "telugu literature",
+      "source": "answer-key"
+    },
+    "kannada literature": {
+      "udc": "821.214.44",
+      "subject": "Kannada Literature",
+      "title": "kannada literature",
+      "source": "answer-key"
+    },
+    "malayalam literature": {
+      "udc": "821.214.45",
+      "subject": "Malayalam Literature",
+      "title": "malayalam literature",
+      "source": "answer-key"
+    },
+    "sanskrit literature": {
+      "udc": "821.211",
+      "subject": "Sanskrit Literature",
+      "title": "sanskrit literature",
+      "source": "answer-key"
+    },
+    "french literature": {
+      "udc": "821.133.1",
+      "subject": "French Literature",
+      "title": "french literature",
+      "source": "answer-key"
+    },
+    "german literature": {
+      "udc": "821.112.2",
+      "subject": "German Literature",
+      "title": "german literature",
+      "source": "answer-key"
+    },
+    "spanish literature": {
+      "udc": "821.134.2",
+      "subject": "Spanish Literature",
+      "title": "spanish literature",
+      "source": "answer-key"
+    },
+    "arabic literature": {
+      "udc": "821.411",
+      "subject": "Arabic Literature",
+      "title": "arabic literature",
+      "source": "answer-key"
+    },
+    "persian literature": {
+      "udc": "821.411.1",
+      "subject": "Persian Literature",
+      "title": "persian literature",
+      "source": "answer-key"
+    },
+    "chinese literature": {
+      "udc": "821.581",
+      "subject": "Chinese Literature",
+      "title": "chinese literature",
+      "source": "answer-key"
+    },
+    "japanese literature": {
+      "udc": "821.521",
+      "subject": "Japanese Literature",
+      "title": "japanese literature",
+      "source": "answer-key"
+    },
+    "english drama": {
+      "udc": "821.111-2",
+      "subject": "English Drama",
+      "title": "english drama",
+      "source": "answer-key"
+    },
+    "english plays": {
+      "udc": "821.111-2",
+      "subject": "English Drama",
+      "title": "english plays",
+      "source": "answer-key"
+    },
+    "english poetry": {
+      "udc": "821.111-1",
+      "subject": "English Poetry",
+      "title": "english poetry",
+      "source": "answer-key"
+    },
+    "english fiction": {
+      "udc": "821.111-3",
+      "subject": "English Fiction",
+      "title": "english fiction",
+      "source": "answer-key"
+    },
+    "english novel": {
+      "udc": "821.111-3",
+      "subject": "English Novel",
+      "title": "english novel",
+      "source": "answer-key"
+    },
+    "english essay": {
+      "udc": "821.111-4",
+      "subject": "English Essay",
+      "title": "english essay",
+      "source": "answer-key"
+    },
+    "punjabi poetry": {
+      "udc": "821.214.22-1",
+      "subject": "Punjabi Poetry",
+      "title": "punjabi poetry",
+      "source": "answer-key"
+    },
+    "punjabi drama": {
+      "udc": "821.214.22-2",
+      "subject": "Punjabi Drama",
+      "title": "punjabi drama",
+      "source": "answer-key"
+    },
+    "punjabi fiction": {
+      "udc": "821.214.22-3",
+      "subject": "Punjabi Fiction",
+      "title": "punjabi fiction",
+      "source": "answer-key"
+    },
+    "hindi poetry": {
+      "udc": "821.214.21-1",
+      "subject": "Hindi Poetry",
+      "title": "hindi poetry",
+      "source": "answer-key"
+    },
+    "hindi drama": {
+      "udc": "821.214.21-2",
+      "subject": "Hindi Drama",
+      "title": "hindi drama",
+      "source": "answer-key"
+    },
+    "hindi fiction": {
+      "udc": "821.214.21-3",
+      "subject": "Hindi Fiction",
+      "title": "hindi fiction",
+      "source": "answer-key"
+    },
+    "sanskrit drama": {
+      "udc": "821.211-2",
+      "subject": "Sanskrit Drama",
+      "title": "sanskrit drama",
+      "source": "answer-key"
+    },
+    "sanskrit poetry": {
+      "udc": "821.211-1",
+      "subject": "Sanskrit Poetry",
+      "title": "sanskrit poetry",
+      "source": "answer-key"
+    },
+    "literature": {
+      "udc": "82",
+      "subject": "Literature",
+      "title": "literature",
+      "source": "answer-key"
+    },
+    "drama": {
+      "udc": "82-2",
+      "subject": "Drama / Literature",
+      "title": "drama",
+      "source": "answer-key"
+    },
+    "poetry": {
+      "udc": "82-1",
+      "subject": "Poetry / Literature",
+      "title": "poetry",
+      "source": "answer-key"
+    },
+    "fiction": {
+      "udc": "82-3",
+      "subject": "Fiction / Literature",
+      "title": "fiction",
+      "source": "answer-key"
+    },
+    "novel": {
+      "udc": "82-3",
+      "subject": "Novel / Fiction",
+      "title": "novel",
+      "source": "answer-key"
+    },
+    "essay": {
+      "udc": "82-4",
+      "subject": "Essay",
+      "title": "essay",
+      "source": "answer-key"
+    },
+    "short stories": {
+      "udc": "82-32",
+      "subject": "Short Stories",
+      "title": "short stories",
+      "source": "answer-key"
+    },
+    "short story": {
+      "udc": "82-32",
+      "subject": "Short Story",
+      "title": "short story",
+      "source": "answer-key"
+    },
+    "dictionary of language and literature": {
+      "udc": "80(038)",
+      "subject": "Dictionary of Language and Literature",
+      "title": "Dictionary Of Language And Literature",
+      "source": "existing fixed answer key"
+    },
+    "dictionary of linguistics": {
+      "udc": "81(038)",
+      "subject": "Dictionary of Linguistics",
+      "title": "dictionary of linguistics",
+      "source": "answer-key"
+    },
+    "dictionary of literature": {
+      "udc": "82(038)",
+      "subject": "Dictionary of Literature",
+      "title": "Dictionary Of Literature",
+      "source": "existing fixed answer key"
+    },
+    "dictionary of english language": {
+      "udc": "811.111(038)",
+      "subject": "Dictionary of English Language",
+      "title": "dictionary of english language",
+      "source": "answer-key"
+    },
+    "english dictionary": {
+      "udc": "811.111(038)",
+      "subject": "English Dictionary",
+      "title": "english dictionary",
+      "source": "answer-key"
+    },
+    "dictionary of hindi language": {
+      "udc": "811.214.21(038)",
+      "subject": "Dictionary of Hindi Language",
+      "title": "dictionary of hindi language",
+      "source": "answer-key"
+    },
+    "hindi dictionary": {
+      "udc": "811.214.21(038)",
+      "subject": "Hindi Dictionary",
+      "title": "hindi dictionary",
+      "source": "answer-key"
+    },
+    "dictionary of punjabi language": {
+      "udc": "811.214.22(038)",
+      "subject": "Dictionary of Punjabi Language",
+      "title": "dictionary of punjabi language",
+      "source": "answer-key"
+    },
+    "punjabi dictionary": {
+      "udc": "811.214.22(038)",
+      "subject": "Punjabi Dictionary",
+      "title": "punjabi dictionary",
+      "source": "answer-key"
+    },
+    "dictionary of urdu language": {
+      "udc": "811.214.31(038)",
+      "subject": "Dictionary of Urdu Language",
+      "title": "dictionary of urdu language",
+      "source": "answer-key"
+    },
+    "urdu dictionary": {
+      "udc": "811.214.31(038)",
+      "subject": "Urdu Dictionary",
+      "title": "urdu dictionary",
+      "source": "answer-key"
+    },
+    "dictionary of sanskrit language": {
+      "udc": "811.211(038)",
+      "subject": "Dictionary of Sanskrit Language",
+      "title": "dictionary of sanskrit language",
+      "source": "answer-key"
+    },
+    "sanskrit dictionary": {
+      "udc": "811.211(038)",
+      "subject": "Sanskrit Dictionary",
+      "title": "sanskrit dictionary",
+      "source": "answer-key"
+    },
+    "philosophy": {
+      "udc": "1",
+      "subject": "Philosophy",
+      "title": "philosophy",
+      "source": "answer-key"
+    },
+    "indian philosophy": {
+      "udc": "1(540)",
+      "subject": "Philosophy of India",
+      "title": "indian philosophy",
+      "source": "answer-key"
+    },
+    "ethics": {
+      "udc": "17",
+      "subject": "Ethics",
+      "title": "ethics",
+      "source": "answer-key"
+    },
+    "logic": {
+      "udc": "16",
+      "subject": "Logic",
+      "title": "logic",
+      "source": "answer-key"
+    },
+    "psychology": {
+      "udc": "159.9",
+      "subject": "Psychology",
+      "title": "psychology",
+      "source": "answer-key"
+    },
+    "psychoanalysis": {
+      "udc": "159.9",
+      "subject": "Psychoanalysis",
+      "title": "psychoanalysis",
+      "source": "answer-key"
+    },
+    "religion": {
+      "udc": "2",
+      "subject": "Religion",
+      "title": "religion",
+      "source": "answer-key"
+    },
+    "sikhism": {
+      "udc": "2",
+      "subject": "Sikhism",
+      "title": "sikhism",
+      "source": "answer-key"
+    },
+    "hinduism": {
+      "udc": "233",
+      "subject": "Hinduism",
+      "title": "hinduism",
+      "source": "answer-key"
+    },
+    "islam": {
+      "udc": "28",
+      "subject": "Islam",
+      "title": "islam",
+      "source": "answer-key"
+    },
+    "christianity": {
+      "udc": "27",
+      "subject": "Christianity",
+      "title": "christianity",
+      "source": "answer-key"
+    },
+    "buddhism": {
+      "udc": "24",
+      "subject": "Buddhism",
+      "title": "buddhism",
+      "source": "answer-key"
+    },
+    "jainism": {
+      "udc": "26",
+      "subject": "Jainism",
+      "title": "jainism",
+      "source": "answer-key"
+    },
+    "political science": {
+      "udc": "32",
+      "subject": "Political Science",
+      "title": "political science",
+      "source": "answer-key"
+    },
+    "politics": {
+      "udc": "32",
+      "subject": "Politics",
+      "title": "politics",
+      "source": "answer-key"
+    },
+    "government": {
+      "udc": "32",
+      "subject": "Government",
+      "title": "government",
+      "source": "answer-key"
+    },
+    "democracy": {
+      "udc": "321",
+      "subject": "Democracy",
+      "title": "democracy",
+      "source": "answer-key"
+    },
+    "elections": {
+      "udc": "324",
+      "subject": "Elections",
+      "title": "elections",
+      "source": "answer-key"
+    },
+    "election": {
+      "udc": "324",
+      "subject": "Elections",
+      "title": "election",
+      "source": "answer-key"
+    },
+    "parliament": {
+      "udc": "328",
+      "subject": "Parliament",
+      "title": "parliament",
+      "source": "answer-key"
+    },
+    "public administration": {
+      "udc": "35",
+      "subject": "Public Administration",
+      "title": "public administration",
+      "source": "answer-key"
+    },
+    "social sciences": {
+      "udc": "3",
+      "subject": "Social Sciences",
+      "title": "social sciences",
+      "source": "answer-key"
+    },
+    "sociology": {
+      "udc": "316",
+      "subject": "Sociology",
+      "title": "sociology",
+      "source": "answer-key"
+    },
+    "society": {
+      "udc": "316",
+      "subject": "Society",
+      "title": "society",
+      "source": "answer-key"
+    },
+    "anthropology": {
+      "udc": "39",
+      "subject": "Anthropology / Ethnography",
+      "title": "anthropology",
+      "source": "answer-key"
+    },
+    "ethnography": {
+      "udc": "39",
+      "subject": "Ethnography",
+      "title": "ethnography",
+      "source": "answer-key"
+    },
+    "folklore": {
+      "udc": "398",
+      "subject": "Folklore",
+      "title": "folklore",
+      "source": "answer-key"
+    },
+    "demography": {
+      "udc": "314",
+      "subject": "Demography",
+      "title": "demography",
+      "source": "answer-key"
+    },
+    "population": {
+      "udc": "314",
+      "subject": "Population Studies",
+      "title": "population",
+      "source": "answer-key"
+    },
+    "law": {
+      "udc": "34",
+      "subject": "Law",
+      "title": "law",
+      "source": "answer-key"
+    },
+    "jurisprudence": {
+      "udc": "34",
+      "subject": "Jurisprudence",
+      "title": "jurisprudence",
+      "source": "answer-key"
+    },
+    "criminal law": {
+      "udc": "343",
+      "subject": "Criminal Law",
+      "title": "criminal law",
+      "source": "answer-key"
+    },
+    "civil law": {
+      "udc": "347",
+      "subject": "Civil Law",
+      "title": "civil law",
+      "source": "answer-key"
+    },
+    "international law": {
+      "udc": "341",
+      "subject": "International Law",
+      "title": "international law",
+      "source": "answer-key"
+    },
+    "human rights": {
+      "udc": "342",
+      "subject": "Human Rights",
+      "title": "human rights",
+      "source": "answer-key"
+    },
+    "constitutional law": {
+      "udc": "342",
+      "subject": "Constitutional Law",
+      "title": "constitutional law",
+      "source": "answer-key"
+    },
+    "economics": {
+      "udc": "33",
+      "subject": "Economics",
+      "title": "economics",
+      "source": "answer-key"
+    },
+    "economy": {
+      "udc": "33",
+      "subject": "Economy",
+      "title": "economy",
+      "source": "answer-key"
+    },
+    "trade": {
+      "udc": "339",
+      "subject": "Trade",
+      "title": "trade",
+      "source": "answer-key"
+    },
+    "international trade": {
+      "udc": "339.5",
+      "subject": "International Trade",
+      "title": "international trade",
+      "source": "answer-key"
+    },
+    "finance": {
+      "udc": "336",
+      "subject": "Finance",
+      "title": "finance",
+      "source": "answer-key"
+    },
+    "banking": {
+      "udc": "336",
+      "subject": "Banking",
+      "title": "banking",
+      "source": "answer-key"
+    },
+    "accounting": {
+      "udc": "657",
+      "subject": "Accounting",
+      "title": "accounting",
+      "source": "answer-key"
+    },
+    "education": {
+      "udc": "37",
+      "subject": "Education",
+      "title": "education",
+      "source": "answer-key"
+    },
+    "teaching": {
+      "udc": "37",
+      "subject": "Teaching",
+      "title": "teaching",
+      "source": "answer-key"
+    },
+    "pedagogy": {
+      "udc": "37",
+      "subject": "Pedagogy",
+      "title": "pedagogy",
+      "source": "answer-key"
+    },
+    "higher education": {
+      "udc": "378",
+      "subject": "Higher Education",
+      "title": "higher education",
+      "source": "answer-key"
+    },
+    "educational psychology": {
+      "udc": "37.015.3",
+      "subject": "Educational Psychology",
+      "title": "educational psychology",
+      "source": "answer-key"
+    },
+    "mathematics": {
+      "udc": "51",
+      "subject": "Mathematics",
+      "title": "mathematics",
+      "source": "answer-key"
+    },
+    "algebra": {
+      "udc": "512",
+      "subject": "Algebra",
+      "title": "algebra",
+      "source": "answer-key"
+    },
+    "geometry": {
+      "udc": "514",
+      "subject": "Geometry",
+      "title": "geometry",
+      "source": "answer-key"
+    },
+    "calculus": {
+      "udc": "517",
+      "subject": "Calculus",
+      "title": "calculus",
+      "source": "answer-key"
+    },
+    "statistics": {
+      "udc": "519.2",
+      "subject": "Statistics",
+      "title": "statistics",
+      "source": "answer-key"
+    },
+    "astronomy": {
+      "udc": "52",
+      "subject": "Astronomy",
+      "title": "astronomy",
+      "source": "answer-key"
+    },
+    "physics": {
+      "udc": "53",
+      "subject": "Physics",
+      "title": "physics",
+      "source": "answer-key"
+    },
+    "chemistry": {
+      "udc": "54",
+      "subject": "Chemistry",
+      "title": "chemistry",
+      "source": "answer-key"
+    },
+    "geology": {
+      "udc": "55",
+      "subject": "Geology",
+      "title": "geology",
+      "source": "answer-key"
+    },
+    "biology": {
+      "udc": "57",
+      "subject": "Biology",
+      "title": "biology",
+      "source": "answer-key"
+    },
+    "botany": {
+      "udc": "58",
+      "subject": "Botany",
+      "title": "botany",
+      "source": "answer-key"
+    },
+    "zoology": {
+      "udc": "59",
+      "subject": "Zoology",
+      "title": "zoology",
+      "source": "answer-key"
+    },
+    "ecology": {
+      "udc": "574",
+      "subject": "Ecology",
+      "title": "ecology",
+      "source": "answer-key"
+    },
+    "environmental science": {
+      "udc": "504",
+      "subject": "Environmental Science",
+      "title": "environmental science",
+      "source": "answer-key"
+    },
+    "environment": {
+      "udc": "504",
+      "subject": "Environment",
+      "title": "environment",
+      "source": "answer-key"
+    },
+    "computer science": {
+      "udc": "004",
+      "subject": "Computer Science",
+      "title": "computer science",
+      "source": "answer-key"
+    },
+    "computer programming": {
+      "udc": "004.42",
+      "subject": "Computer Programming",
+      "title": "computer programming",
+      "source": "answer-key"
+    },
+    "programming": {
+      "udc": "004.42",
+      "subject": "Programming",
+      "title": "programming",
+      "source": "answer-key"
+    },
+    "artificial intelligence": {
+      "udc": "004.8",
+      "subject": "Artificial Intelligence",
+      "title": "artificial intelligence",
+      "source": "answer-key"
+    },
+    "machine learning": {
+      "udc": "004.8",
+      "subject": "Machine Learning",
+      "title": "machine learning",
+      "source": "answer-key"
+    },
+    "software": {
+      "udc": "004",
+      "subject": "Software",
+      "title": "software",
+      "source": "answer-key"
+    },
+    "information technology": {
+      "udc": "004",
+      "subject": "Information Technology",
+      "title": "information technology",
+      "source": "answer-key"
+    },
+    "medicine": {
+      "udc": "61",
+      "subject": "Medicine",
+      "title": "medicine",
+      "source": "answer-key"
+    },
+    "medical science": {
+      "udc": "61",
+      "subject": "Medical Sciences",
+      "title": "medical science",
+      "source": "answer-key"
+    },
+    "health": {
+      "udc": "61",
+      "subject": "Health",
+      "title": "health",
+      "source": "answer-key"
+    },
+    "anatomy": {
+      "udc": "611",
+      "subject": "Anatomy",
+      "title": "anatomy",
+      "source": "answer-key"
+    },
+    "physiology": {
+      "udc": "612",
+      "subject": "Physiology",
+      "title": "physiology",
+      "source": "answer-key"
+    },
+    "surgery": {
+      "udc": "617",
+      "subject": "Surgery",
+      "title": "surgery",
+      "source": "answer-key"
+    },
+    "nursing": {
+      "udc": "614.253",
+      "subject": "Nursing",
+      "title": "nursing",
+      "source": "answer-key"
+    },
+    "ayurveda": {
+      "udc": "615.89",
+      "subject": "Ayurveda",
+      "title": "ayurveda",
+      "source": "answer-key"
+    },
+    "stroke": {
+      "udc": "616.831",
+      "subject": "Stroke",
+      "title": "stroke",
+      "source": "answer-key"
+    },
+    "stroke rehabilitation": {
+      "udc": "616.831",
+      "subject": "Stroke Rehabilitation",
+      "title": "stroke rehabilitation",
+      "source": "answer-key"
+    },
+    "treatment of stroke": {
+      "udc": "616.831",
+      "subject": "Treatment of Stroke",
+      "title": "treatment of stroke",
+      "source": "answer-key"
+    },
+    "prevention of stroke": {
+      "udc": "616.831",
+      "subject": "Prevention of Stroke",
+      "title": "prevention of stroke",
+      "source": "answer-key"
+    },
+    "agriculture": {
+      "udc": "63",
+      "subject": "Agriculture",
+      "title": "agriculture",
+      "source": "answer-key"
+    },
+    "farming": {
+      "udc": "63",
+      "subject": "Farming",
+      "title": "farming",
+      "source": "answer-key"
+    },
+    "crop production": {
+      "udc": "633",
+      "subject": "Crop Production",
+      "title": "crop production",
+      "source": "answer-key"
+    },
+    "crops": {
+      "udc": "633",
+      "subject": "Crops",
+      "title": "crops",
+      "source": "answer-key"
+    },
+    "horticulture": {
+      "udc": "635",
+      "subject": "Horticulture",
+      "title": "horticulture",
+      "source": "answer-key"
+    },
+    "forestry": {
+      "udc": "630",
+      "subject": "Forestry",
+      "title": "forestry",
+      "source": "answer-key"
+    },
+    "animal husbandry": {
+      "udc": "636",
+      "subject": "Animal Husbandry",
+      "title": "animal husbandry",
+      "source": "answer-key"
+    },
+    "fisheries": {
+      "udc": "639",
+      "subject": "Fisheries",
+      "title": "fisheries",
+      "source": "answer-key"
+    },
+    "engineering": {
+      "udc": "62",
+      "subject": "Engineering",
+      "title": "engineering",
+      "source": "answer-key"
+    },
+    "technology": {
+      "udc": "62",
+      "subject": "Technology",
+      "title": "technology",
+      "source": "answer-key"
+    },
+    "mechanical engineering": {
+      "udc": "621",
+      "subject": "Mechanical Engineering",
+      "title": "mechanical engineering",
+      "source": "answer-key"
+    },
+    "electrical engineering": {
+      "udc": "621.3",
+      "subject": "Electrical Engineering",
+      "title": "electrical engineering",
+      "source": "answer-key"
+    },
+    "electronics": {
+      "udc": "621.38",
+      "subject": "Electronics",
+      "title": "electronics",
+      "source": "answer-key"
+    },
+    "civil engineering": {
+      "udc": "624",
+      "subject": "Civil Engineering",
+      "title": "civil engineering",
+      "source": "answer-key"
+    },
+    "architecture": {
+      "udc": "72",
+      "subject": "Architecture",
+      "title": "architecture",
+      "source": "answer-key"
+    },
+    "business management": {
+      "udc": "65",
+      "subject": "Business Management",
+      "title": "business management",
+      "source": "answer-key"
+    },
+    "management": {
+      "udc": "65",
+      "subject": "Management",
+      "title": "management",
+      "source": "answer-key"
+    },
+    "business": {
+      "udc": "65",
+      "subject": "Business",
+      "title": "business",
+      "source": "answer-key"
+    },
+    "marketing": {
+      "udc": "658.8",
+      "subject": "Marketing",
+      "title": "marketing",
+      "source": "answer-key"
+    },
+    "human resource management": {
+      "udc": "658.3",
+      "subject": "Human Resource Management",
+      "title": "human resource management",
+      "source": "answer-key"
+    },
+    "entrepreneurship": {
+      "udc": "658.1",
+      "subject": "Entrepreneurship",
+      "title": "entrepreneurship",
+      "source": "answer-key"
+    },
+    "art": {
+      "udc": "7",
+      "subject": "The Arts",
+      "title": "art",
+      "source": "answer-key"
+    },
+    "painting": {
+      "udc": "75",
+      "subject": "Painting",
+      "title": "painting",
+      "source": "answer-key"
+    },
+    "sculpture": {
+      "udc": "73",
+      "subject": "Sculpture",
+      "title": "sculpture",
+      "source": "answer-key"
+    },
+    "music": {
+      "udc": "78",
+      "subject": "Music",
+      "title": "music",
+      "source": "answer-key"
+    },
+    "dance": {
+      "udc": "793.3",
+      "subject": "Dance",
+      "title": "dance",
+      "source": "answer-key"
+    },
+    "cinema": {
+      "udc": "791",
+      "subject": "Cinema",
+      "title": "cinema",
+      "source": "answer-key"
+    },
+    "film": {
+      "udc": "791",
+      "subject": "Film",
+      "title": "film",
+      "source": "answer-key"
+    },
+    "theatre": {
+      "udc": "792",
+      "subject": "Theatre",
+      "title": "theatre",
+      "source": "answer-key"
+    },
+    "drama performance": {
+      "udc": "792",
+      "subject": "Dramatic Performance",
+      "title": "drama performance",
+      "source": "answer-key"
+    },
+    "photography": {
+      "udc": "77",
+      "subject": "Photography",
+      "title": "photography",
+      "source": "answer-key"
+    },
+    "sports": {
+      "udc": "796",
+      "subject": "Sports",
+      "title": "sports",
+      "source": "answer-key"
+    },
+    "sport": {
+      "udc": "796",
+      "subject": "Sport",
+      "title": "sport",
+      "source": "answer-key"
+    },
+    "cricket": {
+      "udc": "796.358",
+      "subject": "Cricket",
+      "title": "cricket",
+      "source": "answer-key"
+    },
+    "football": {
+      "udc": "796.332",
+      "subject": "Football",
+      "title": "football",
+      "source": "answer-key"
+    },
+    "hockey": {
+      "udc": "796.355",
+      "subject": "Hockey",
+      "title": "hockey",
+      "source": "answer-key"
+    },
+    "olympics": {
+      "udc": "796.032",
+      "subject": "Olympic Games",
+      "title": "olympics",
+      "source": "answer-key"
+    },
+    "yoga": {
+      "udc": "796",
+      "subject": "Yoga",
+      "title": "yoga",
+      "source": "answer-key"
+    },
+    "library science": {
+      "udc": "02",
+      "subject": "Library Science",
+      "title": "library science",
+      "source": "answer-key"
+    },
+    "librarianship": {
+      "udc": "02",
+      "subject": "Librarianship",
+      "title": "librarianship",
+      "source": "answer-key"
+    },
+    "cataloguing": {
+      "udc": "025.3",
+      "subject": "Cataloguing",
+      "title": "cataloguing",
+      "source": "answer-key"
+    },
+    "cataloging": {
+      "udc": "025.3",
+      "subject": "Cataloguing",
+      "title": "cataloging",
+      "source": "answer-key"
+    },
+    "classification": {
+      "udc": "025.4",
+      "subject": "Library Classification",
+      "title": "classification",
+      "source": "answer-key"
+    },
+    "journalism": {
+      "udc": "070",
+      "subject": "Journalism",
+      "title": "journalism",
+      "source": "answer-key"
+    },
+    "mass communication": {
+      "udc": "316.77",
+      "subject": "Mass Communication",
+      "title": "mass communication",
+      "source": "answer-key"
+    },
+    "media": {
+      "udc": "316.77",
+      "subject": "Mass Communication / Media",
+      "title": "media",
+      "source": "answer-key"
+    },
+    "communication": {
+      "udc": "316.77",
+      "subject": "Communication",
+      "title": "communication",
+      "source": "answer-key"
+    },
+    "tourism": {
+      "udc": "338.48",
+      "subject": "Tourism",
+      "title": "tourism",
+      "source": "answer-key"
+    },
+    "military science": {
+      "udc": "355",
+      "subject": "Military Science",
+      "title": "military science",
+      "source": "answer-key"
+    },
+    "military": {
+      "udc": "355",
+      "subject": "Military Science",
+      "title": "military",
+      "source": "answer-key"
+    },
+    "war": {
+      "udc": "355.01",
+      "subject": "War",
+      "title": "war",
+      "source": "answer-key"
+    },
+    "biography": {
+      "udc": "92",
+      "subject": "Biography",
+      "title": "biography",
+      "source": "answer-key"
+    },
+    "autobiography": {
+      "udc": "92",
+      "subject": "Autobiography",
+      "title": "autobiography",
+      "source": "answer-key"
+    },
+    "memoir": {
+      "udc": "92",
+      "subject": "Memoir",
+      "title": "memoir",
+      "source": "answer-key"
+    },
+    "history of korea": {
+      "udc": "951.9",
+      "subject": "History of Korea",
+      "title": "History Of Korea",
+      "source": "1961 index"
+    },
+    "knowledge metaphysics and logic": {
+      "udc": "001+11+16",
+      "subject": "Knowledge + Metaphysics + Logic",
+      "title": "Knowledge Metaphysics And Logic",
+      "source": "1961 UDC main divisions"
+    },
+    "knowledge, metaphysics and logic": {
+      "udc": "001+11+16",
+      "subject": "Knowledge + Metaphysics + Logic",
+      "title": "Knowledge, Metaphysics And Logic",
+      "source": "1961 UDC main divisions"
+    },
+    "science and arts": {
+      "udc": "5+7",
+      "subject": "Science and Arts",
+      "title": "Science And Arts",
+      "source": "UDC coordination rule"
+    },
+    "science and art": {
+      "udc": "5+7",
+      "subject": "Science and Arts",
+      "title": "Science And Art",
+      "source": "UDC coordination rule"
+    },
+    "handbook of science and technology": {
+      "udc": "5/6(035)",
+      "subject": "Science and Technology",
+      "title": "Handbook Of Science And Technology",
+      "source": "UDC hierarchy + form auxiliary"
+    },
+    "systematic zoology": {
+      "udc": "592/599",
+      "subject": "Systematic Zoology",
+      "title": "Systematic Zoology",
+      "source": "existing fixed answer key"
+    },
+    "handbook of systematic zoology": {
+      "udc": "592/599",
+      "subject": "Systematic Zoology",
+      "title": "Handbook Of Systematic Zoology",
+      "source": "existing fixed answer key"
+    },
+    "handbook of zoology": {
+      "udc": "59",
+      "subject": "Zoology",
+      "title": "Handbook Of Zoology",
+      "source": "existing fixed answer key"
+    },
+    "indian economy": {
+      "udc": "33(540)",
+      "subject": "Economy of India",
+      "title": "Indian Economy",
+      "source": "1961 main division 33 + India auxiliary"
+    },
+    "higher education and computers": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    },
+    "higher education & computers": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    },
+    "higher education and computer": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    },
+    "computers in higher education": {
+      "udc": "378:681.14",
+      "subject": "Higher Education and Computers",
+      "title": "Higher Education and Computers",
+      "source": "1961 UDC: higher education 378 + computers 681.14; relationship notation supported by UDC practice"
+    }
+  }
+}

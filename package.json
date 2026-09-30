@@ -1,0 +1,9 @@
+{
+  "name": "udc-ai-classifier-v31",
+  "version": "31.0.0",
+  "description": "High-quality UDC book classifier with deterministic answer keys, semantic reference retrieval, Gemini fallback and no-error provisional classification",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "cors": "^2.8.5", "express": "^4.21.2" }
+}
