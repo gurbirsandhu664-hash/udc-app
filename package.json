@@ -1,1 +1,0 @@
-{"name":"udc-one-click-v45-ultra","version":"45.0.0","type":"module","scripts":{"start":"node server.js"},"dependencies":{"express":"^4.21.2"}}
