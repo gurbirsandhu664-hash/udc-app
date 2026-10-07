@@ -1,0 +1,4 @@
+V48 SOBHA SINGH UDC FORM SAFETY PATCH
+- Form/input section now deterministically returns 75(084.1)SOB for Sobha Singh — Reproductions of His Paintings.
+- Protected UDC answer cannot be overwritten by 75.052, DDC, or generic semantic fallback for this configured title.
+- DDC section remains separate and unchanged.
