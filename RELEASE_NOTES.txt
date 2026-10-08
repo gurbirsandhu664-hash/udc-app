@@ -1,0 +1,6 @@
+V72 — DUAL ANSWER RECOVERY
+- UDC and DDC must both be present before a classification result is rendered.
+- Exact protected UDC + DDC keys are rendered directly.
+- When only one local key exists, the API is queried for the missing side and exact local keys are merged back in.
+- Unknown/unverified titles remain totally silent: no red error, no message, no empty result card, no fallback number.
+- Previous result is cleared before every classification.
