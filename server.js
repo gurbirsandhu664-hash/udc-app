@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Inbuilt CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -17,6 +18,8 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+// Static Files Serve
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -34,7 +37,7 @@ RULES:
   * Music = 78
   * Painting = 75
   * Veterinary Science = 619
-  * Zoology/Animals = 59 / 636
+  * Domestic Animals / Livestock = 636
   * Reptiles / Snakes = 598.12 or 639.15
   * Floor Construction / Building = 69.025 / 693.5
   * Library Science = 02
@@ -49,7 +52,7 @@ Return ONLY valid JSON with this exact structure:
   "udcNumber": "synthesized UDC notation",
   "mainSubject": "Short main subject name",
   "subSubject": "Detailed facet description",
-  "breakdown": "Element breakdown (e.g. 75=Painting; (540)=India)",
+  "breakdown": "Element breakdown",
   "confidence": "95%",
   "evidence": "Schedule verified"
 }`;
@@ -62,39 +65,6 @@ app.get('/', (req, res) => {
   res.send("UDC Server Running");
 });
 
-// Cache for active working model
-let verifiedModel = null;
-
-async function getActiveGeminiModel() {
-  if (verifiedModel) return verifiedModel;
-
-  try {
-    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
-    const listRes = await fetch(listUrl);
-    const listData = await listRes.json();
-
-    if (listData.models && Array.isArray(listData.models)) {
-      // Find models supporting generateContent
-      const valid = listData.models.filter(m => 
-        m.supportedGenerationMethods && 
-        m.supportedGenerationMethods.includes('generateContent')
-      );
-
-      // Prioritize flash models, then any valid model
-      const preferred = valid.find(m => m.name.includes('flash')) || valid[0];
-      if (preferred) {
-        verifiedModel = preferred.name.replace('models/', '');
-        return verifiedModel;
-      }
-    }
-  } catch (e) {
-    console.error("ListModels check failed:", e.message);
-  }
-
-  // Fallback defaults
-  return 'gemini-1.5-flash-latest';
-}
-
 app.post(['/api/classify', '/classify'], async (req, res) => {
   try {
     const title = req.body.title || req.body.query || req.body.text;
@@ -103,11 +73,11 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
     }
 
     if (!GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY environment variable missing on Render" });
+      return res.status(500).json({ error: "GEMINI_API_KEY missing on Render" });
     }
 
-    const activeModel = await getActiveGeminiModel();
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${GEMINI_API_KEY}`;
+    // Google de message mutabiq direct gemini-3.8-flash
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -125,8 +95,6 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      // Invalidate cached model if it fails
-      verifiedModel = null;
       throw new Error(data.error?.message || "Gemini API classification failed");
     }
 
