@@ -1,0 +1,3 @@
+V81 RESULT-RENDER FIX
+
+Critical UI bug fixed: the page used duplicate id="main" on the outer <main> element and the Main Subject span. document.getElementById("main") selected the outer <main>; showResult() then replaced its entire textContent, deleting the complete app UI when a result arrived. The Main Subject span now uses id="mainSubject", and the render code targets that unique id. UDC/DDC classification logic and voice-search behavior otherwise preserved.
