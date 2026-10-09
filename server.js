@@ -27,7 +27,7 @@ const UDC_SYSTEM_PROMPT = `You are an expert Universal Decimal Classification (U
 Synthesize the complete, untruncated UDC class number and provide full breakdowns.
 
 RULES:
-- Exact subject mapping (Astronomy = 52, Physics = 53, Chemistry = 54, Music = 78, Painting = 75, Veterinary = 619, Reptiles/Snakes = 598.12 or 639.15).
+- Exact subject mapping (Astronomy = 52, Physics = 53, Chemistry = 54, Music = 78, Painting = 75, Veterinary = 619, Reptiles/Snakes = 598.12 or 639.15, Floor construction = 69.025 / 693.5).
 - Organizations = 061 or :061.2 (NEVER use 361 for scientific organizations).
 - Common auxiliaries of form: Dictionaries=(038), Directories=(058.7), Reproductions/Plates=(084.1), Speeches=(042).
 - Common auxiliaries of place: India=(540), South India=(540-13), World=(100).
@@ -51,7 +51,6 @@ app.get('/', (req, res) => {
   res.send("UDC Server Running");
 });
 
-// Handle both standard classification endpoints
 app.post(['/api/classify', '/classify'], async (req, res) => {
   try {
     const title = req.body.title || req.body.query || req.body.text;
@@ -63,29 +62,52 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing" });
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    // List of active models to try sequentially
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-pro'
+    ];
 
-    const apiResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1
+    let apiData = null;
+    let lastError = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.1
+            }
+          })
+        });
+
+        const data = await response.json();
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          apiData = data;
+          break;
+        } else {
+          lastError = data.error?.message || `Failed on model ${modelName}`;
         }
-      })
-    });
-
-    const data = await apiResponse.json();
-    if (!apiResponse.ok) {
-      throw new Error(data.error?.message || "Google Gemini API error");
+      } catch (err) {
+        lastError = err.message;
+      }
     }
 
-    const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
-    
-    // Response mapped for all possible frontend key names
+    if (!apiData) {
+      throw new Error(lastError || "All Gemini models failed to generate content");
+    }
+
+    const rawOutput = apiData.candidates[0].content.parts[0].text;
+    const cleanOutput = rawOutput.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleanOutput);
+
     res.json({
       success: true,
       result: parsed.fullNotation || parsed.udcNumber,
@@ -94,7 +116,7 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       mainSubject: parsed.mainSubject,
       subSubject: parsed.subSubject,
       breakdown: parsed.breakdown,
-      confidence: parsed.confidence || "90%",
+      confidence: parsed.confidence || "95%",
       evidence: parsed.evidence || "B.S. 1000A:1961"
     });
 
