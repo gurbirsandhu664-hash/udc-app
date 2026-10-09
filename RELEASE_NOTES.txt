@@ -1,3 +1,0 @@
-V77 — ANSWER FIELD FALLBACK FIX
-
-Root cause found in browser rendering: empty-string udc_answer/ddc_answer fields were preferred over populated udc_number/ddc_number fields because nullish-coalescing (??) treats empty strings as present. The UI then hid the valid number. Rendering now selects the first non-empty answer/number for both UDC and DDC. This is a display-path fix; it does not invent missing classifications.
