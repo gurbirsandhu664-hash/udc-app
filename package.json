@@ -1,0 +1,12 @@
+{
+  "name": "udc-ddc-shared-index-v76",
+  "version": "76.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
