@@ -45,8 +45,8 @@ RULES:
 
 Return ONLY valid JSON with this exact structure:
 {
-  "fullNotation": "pure synthesized class mark, e.g. 52:061(100)(058.7)",
-  "mainSubject": "Short main discipline name",
+  "fullNotation": "exact synthesized notation without description, e.g. 52:061(100)(058.7)",
+  "mainSubject": "Short main subject name",
   "subSubject": "Detailed facet description",
   "breakdown": "Element breakdown (e.g. 52: Astronomy; :061: Organizations; (100): World; (058.7): Directories)",
   "confidence": "95%",
@@ -72,60 +72,42 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY missing on Render" });
     }
 
-    const candidateModels = [
-      'gemini-3.8-flash',
-      'gemini-3-flash',
-      'gemini-2.5-flash'
-    ];
+    // Google ke direct active model ka use
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-    let apiData = null;
-    let lastError = null;
-
-    for (const model of candidateModels) {
-      try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
-            contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1
-            }
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          apiData = data;
-          break;
-        } else {
-          lastError = data.error?.message || `Failed on ${model}`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1
         }
-      } catch (err) {
-        lastError = err.message;
-      }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      throw new Error(data.error?.message || "Gemini API classification failed");
     }
 
-    if (!apiData) {
-      throw new Error(lastError || "Failed to classify title");
+    const rawOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawOutput) {
+      throw new Error("Empty response from AI engine");
     }
 
-    const rawOutput = apiData.candidates[0].content.parts[0].text;
     const cleanOutput = rawOutput.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleanOutput);
 
-    // Extract exact notation string cleanly
-    const num = (
+    const notation = (
       parsed.fullNotation || 
       parsed.udcNumber || 
       parsed.notation || 
       parsed.classNumber || 
       parsed.completeAnswer || 
-      parsed.answer || 
       ''
     ).trim();
 
@@ -135,32 +117,27 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
     const conf = parsed.confidence || '95%';
     const evid = parsed.evidence || 'B.S. 1000A:1961 schedule verified';
 
-    // Comprehensive payload satisfying ANY UI field binding:
+    // Saari fields frontend ke mapping ke liye di gayi hain
     res.json({
       success: true,
-      // All possible notations
-      answer: num,
-      result: num,
-      completeAnswer: num,
-      complete_answer: num,
-      fullNotation: num,
-      full_notation: num,
-      udcNumber: num,
-      udc_number: num,
-      classNumber: num,
-      class_number: num,
-      classMark: num,
-      class_mark: num,
-      notation: num,
-      raw_notation: num,
-      
-      // Main and Sub subject mappings
+      answer: notation,
+      result: notation,
+      completeAnswer: notation,
+      complete_answer: notation,
+      fullNotation: notation,
+      full_notation: notation,
+      udcNumber: notation,
+      udc_number: notation,
+      classNumber: notation,
+      class_number: notation,
+      classMark: notation,
+      class_mark: notation,
+      notation: notation,
+      raw_notation: notation,
       mainSubject: mainSub,
       main_subject: mainSub,
       subSubject: subSub,
       sub_subject: subSub,
-      
-      // Breakdown & evidence
       breakdown: brk,
       confidence: conf,
       confidence_level: conf,
