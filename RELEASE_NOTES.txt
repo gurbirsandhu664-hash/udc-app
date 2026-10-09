@@ -1,3 +1,0 @@
-V83 DUAL-ANSWER RECOVERY
-
-Root-cause fix: the API route previously returned immediately when a local UDC exact match existed, even if the DDC answer was missing. It now returns early only when both UDC and DDC answers are present. If one side is missing, provider recovery is allowed to run. Exact local keys remain authoritative and unknown titles are not assigned fabricated numbers.
