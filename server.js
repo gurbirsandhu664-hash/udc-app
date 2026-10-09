@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+
 const app = express();
 
-// 1. Inbuilt CORS (No external package needed)
+// Inbuilt CORS (koi 'cors' package install karan di lod nahi)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -77,7 +78,6 @@ app.post('/api/classify', async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable missing on Render" });
     }
 
-    // Direct REST API Call using Node 18+ native fetch
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
