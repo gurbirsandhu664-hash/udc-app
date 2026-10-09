@@ -1,13 +1,23 @@
 import express from 'express';
-import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const app = express();
-app.use(cors());
+
+// Built-in CORS handling (bina 'cors' package de)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 const UDC_SYSTEM_PROMPT = `You are an expert Universal Decimal Classification (UDC - BS 1000A / Standard Edition) engine.
 Your task is to accurately synthesize the full UDC class mark for any given document title without truncation or hallucination.
@@ -41,7 +51,6 @@ CRITICAL MAPPING & CITATION ORDER RULES:
      * International / World: (100)
      * India: (540)
      * South India: (540-13)
-     * Developing Countries: (4-77)
 
 4. SYNTAX & FACET ORDER:
    - Standard structure: [Main Subject] : [Secondary Subject or Organization] (Place) (Form)
@@ -55,8 +64,8 @@ Respond ONLY with a JSON object adhering to this schema:
   "fullNotation": "Synthesized UDC number here",
   "mainSubject": "Short description of main subject",
   "subSubject": "Refined breakdown of title facets",
-  "breakdown": "Element-by-element UDC breakdown explaining each component (e.g., 52 = Astronomy; 061 = Organizations...)",
-  "confidence": "Percentage or HIGH/CONFIRMED"
+  "breakdown": "Element-by-element UDC breakdown",
+  "confidence": "HIGH"
 }`;
 
 app.post('/api/classify', async (req, res) => {
@@ -71,7 +80,7 @@ app.post('/api/classify', async (req, res) => {
       systemInstruction: UDC_SYSTEM_PROMPT,
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.1, // Low temperature for high deterministic accuracy
+        temperature: 0.1,
       }
     });
 
@@ -81,7 +90,7 @@ app.post('/api/classify', async (req, res) => {
     res.json(parsedData);
   } catch (error) {
     console.error("UDC classification error:", error);
-    res.status(500).json({ error: "Failed to generate UDC number" });
+    res.status(500).json({ error: "Failed to generate UDC number", details: error.message });
   }
 });
 
