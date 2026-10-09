@@ -1,0 +1,3 @@
+V80 — INDEX VERSION UPDATE + DUAL ANSWER FIX
+
+The visible version label in index.html is updated to V80 as requested. Server health/version string and package version are also aligned to V80. Existing answer-handling code is carried forward from V79; this version-label update alone does not prove that the live UDC/DDC answer issue is resolved.
