@@ -1,0 +1,5 @@
+V73 VOICE + SPEED FIX
+- SpeechRecognition aborted events no longer show a spurious voice-search error.
+- Voice start/stop handling is guarded for mobile browser state errors.
+- Classification provider attempts are bounded: one grounded Gemini attempt, one plain Gemini attempt, then Groq; Gemini request timeout reduced to 12 seconds.
+- Exact/local answer keys and strict unknown-title behavior retained.
