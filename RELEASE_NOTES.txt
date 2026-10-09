@@ -1,0 +1,9 @@
+V89 Full-Page Shared DDC-23 Index — 4,248-page support
+
+- Preserves a page record for every PDF page scanned, including pages with no extractable text, instead of silently dropping blank/image-only pages.
+- Makes the indexed page count represent pages scanned; search can use text-bearing pages while empty-text pages remain represented.
+- Raises JSON request capacity to 40 MB and accepts up to 5,000 page records, sufficient for the requested 4,248-page four-volume set when its total page count is confirmed.
+- Shared index remains public-read and write-token protected; write-once lock is retained to protect an existing shared index.
+- Other browsers auto-load the published shared index from PostgreSQL when DATABASE_URL is configured.
+
+Setup required on Render: configure DATABASE_URL and DDC_INDEX_WRITE_TOKEN. In one browser, select all four DDC-23 PDFs, wait for indexing to finish, confirm the reported page count, then press PUBLISH SHARED INDEX and enter the token. The ZIP cannot configure Render environment variables or publish data by itself.
