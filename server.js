@@ -1,8 +1,14 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Inbuilt CORS (koi 'cors' package install karan di lod nahi)
+// Inbuilt CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -14,6 +20,10 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+// Static Files Serve
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
@@ -67,6 +77,21 @@ Respond ONLY with a JSON object adhering to this schema:
   "confidence": "HIGH"
 }`;
 
+// Root URL Route (index.html dhoond ke serve karega)
+app.get('/', (req, res) => {
+  const rootIndex = path.join(__dirname, 'index.html');
+  const publicIndex = path.join(__dirname, 'public', 'index.html');
+
+  if (fs.existsSync(rootIndex)) {
+    return res.sendFile(rootIndex);
+  } else if (fs.existsSync(publicIndex)) {
+    return res.sendFile(publicIndex);
+  } else {
+    res.send("<h1>Server Active!</h1><p>index.html upload karo ya API check karo (/api/classify).</p>");
+  }
+});
+
+// API endpoint
 app.post('/api/classify', async (req, res) => {
   try {
     const { title } = req.body;
@@ -75,7 +100,7 @@ app.post('/api/classify', async (req, res) => {
     }
 
     if (!GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY environment variable missing on Render" });
+      return res.status(500).json({ error: "GEMINI_API_KEY missing on Render" });
     }
 
     const response = await fetch(
