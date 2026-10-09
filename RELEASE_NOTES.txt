@@ -1,0 +1,7 @@
+V82 STABLE RESULT FIX
+
+- Fixed result rendering so hiding a missing UDC answer only hides the UDC block, not the entire result card.
+- The DDC card is appended to the result section, independent of the UDC block.
+- Updated visible app/server/package version to V82.
+- Preserved existing voice input, local exact-title keys, and silent unknown-title behavior.
+- Syntax/integrity checks are local; live Render deployment and provider configuration must be checked separately.
