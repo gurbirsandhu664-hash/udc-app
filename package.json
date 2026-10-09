@@ -1,0 +1,12 @@
+{
+  "name": "udc-ddc-resilient-recovery-v77",
+  "version": "77.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
