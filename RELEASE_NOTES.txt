@@ -1,0 +1,7 @@
+V92 — PDF INDEXING EVENT + CDN FIX
+- Updates the visible version label so the deployed build can be identified.
+- Adds immediate status feedback on mobile file selection.
+- Adds sequential PDF.js CDN fallbacks (cdnjs, jsDelivr, unpkg).
+- Keeps existing saved-index lock and IndexedDB record; no clear/delete behavior added.
+- Shows clearer failure state if PDF.js cannot load.
+- Does not guarantee indexing until this ZIP is deployed to Render and tested with the four source PDFs.
