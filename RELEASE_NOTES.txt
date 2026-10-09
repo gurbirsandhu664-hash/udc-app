@@ -1,7 +1,0 @@
-V75 — ANSWER VISIBILITY RECOVERY
-- Fixed a display gate that hid the entire classification result whenever either UDC or DDC was missing.
-- The UI now displays an independently available answer and hides only the missing answer section; it does not invent a missing number.
-- The server now returns locally supported UDC-only answers instead of silently returning HTTP 204 when the UDC is protected but no matching DDC key exists.
-- Exact configured title keys and independent UDC/DDC separation are preserved.
-- Unknown/unverified titles remain silent; no fabricated fallback number is added.
-- Provider attempts remain concurrent and bounded by existing timeout.
