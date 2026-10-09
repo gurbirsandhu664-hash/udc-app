@@ -1,6 +1,0 @@
-V74 — DUAL ANSWER COMPLETION
-- Requires separate non-empty UDC and DDC answers before returning a classification result.
-- Merges deterministic DDC-23 answer keys with UDC results without copying notation between systems.
-- Runs grounded Gemini, plain Gemini, and Groq attempts concurrently to reduce serial waiting.
-- Keeps unknown/unverified titles silent; never fabricates a missing classification number.
-- Preserves existing voice-search behavior and full notation rendering.
