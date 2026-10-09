@@ -1,13 +1,11 @@
-import express from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
+const express = require('express');
 const app = express();
 
-// Built-in CORS handling (bina 'cors' package de)
+// 1. Inbuilt CORS (No external package needed)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -17,7 +15,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const UDC_SYSTEM_PROMPT = `You are an expert Universal Decimal Classification (UDC - BS 1000A / Standard Edition) engine.
 Your task is to accurately synthesize the full UDC class mark for any given document title without truncation or hallucination.
@@ -75,22 +73,47 @@ app.post('/api/classify', async (req, res) => {
       return res.status(400).json({ error: "Title is required" });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: UDC_SYSTEM_PROMPT,
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.1,
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({ error: "GEMINI_API_KEY environment variable missing on Render" });
+    }
+
+    // Direct REST API Call using Node 18+ native fetch
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: UDC_SYSTEM_PROMPT }]
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `Synthesize full UDC notation for: "${title}"` }]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.1
+          }
+        })
       }
-    });
+    );
 
-    const result = await model.generateContent(`Synthesize full UDC notation for: "${title}"`);
-    const parsedData = JSON.parse(result.response.text());
+    const apiData = await response.json();
 
-    res.json(parsedData);
+    if (!response.ok) {
+      throw new Error(apiData.error?.message || 'Gemini API call failed');
+    }
+
+    const rawText = apiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const cleanJson = JSON.parse(rawText);
+
+    res.json(cleanJson);
   } catch (error) {
-    console.error("UDC classification error:", error);
-    res.status(500).json({ error: "Failed to generate UDC number", details: error.message });
+    console.error("Server Error:", error.message);
+    res.status(500).json({ error: "Failed to classify title", details: error.message });
   }
 });
 
