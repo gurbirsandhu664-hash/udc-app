@@ -27,17 +27,28 @@ const UDC_SYSTEM_PROMPT = `You are an expert Universal Decimal Classification (U
 Synthesize the complete, untruncated UDC class number and provide full breakdowns.
 
 RULES:
-- Exact subject mapping (Astronomy = 52, Physics = 53, Chemistry = 54, Music = 78, Painting = 75, Veterinary = 619, Animals = 636, Floor = 69.025, Library = 02).
-- Organizations = 061 or :061.2.
-- Common auxiliaries of form: Dictionaries=(038), Directories=(058.7), Speeches=(042), Handbook=(035).
-- Common auxiliaries of place: India=(540), South India=(540-13), World=(100).
+- Exact subject mapping:
+  * Astronomy = 52 (NEVER map to 53)
+  * Physics = 53
+  * Chemistry = 54
+  * Music = 78
+  * Painting = 75
+  * Veterinary Science = 619
+  * Domestic Animals / Livestock = 636
+  * Reptiles / Snakes = 598.12 or 639.15
+  * Floor Construction / Building = 69.025 / 693.5
+  * Library Science = 02
+  * Biographies = 929
+- Organizations = 061 or :061.2 (NEVER use 361 for scientific organizations).
+- Common auxiliaries of form: Dictionaries=(038), Directories=(058.7), Reproductions/Plates=(084.1), Speeches=(042), Handbook=(035).
+- Common auxiliaries of place: India=(540), South India=(540-13), World/International=(100).
 
-Return ONLY valid JSON matching this schema:
+Return ONLY valid JSON with this exact structure:
 {
-  "fullNotation": "pure notation without brackets around subject, e.g. 52:061(100)(058.7)",
-  "mainSubject": "Short main subject name, e.g. Astronomy / Astronomical Organizations",
-  "subSubject": "Detailed facet description, e.g. International directory of organizations",
-  "breakdown": "Element-by-element breakdown",
+  "fullNotation": "pure synthesized class mark, e.g. 52:061(100)(058.7)",
+  "mainSubject": "Short main discipline name",
+  "subSubject": "Detailed facet description",
+  "breakdown": "Element breakdown (e.g. 52: Astronomy; :061: Organizations; (100): World; (058.7): Directories)",
   "confidence": "95%",
   "evidence": "Schedule verified"
 }`;
@@ -61,8 +72,7 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY missing on Render" });
     }
 
-    // Models sequence: agar pehla busy hove taan agla sambhale
-    const activeModels = [
+    const candidateModels = [
       'gemini-3.8-flash',
       'gemini-3-flash',
       'gemini-2.5-flash'
@@ -71,7 +81,7 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
     let apiData = null;
     let lastError = null;
 
-    for (const model of activeModels) {
+    for (const model of candidateModels) {
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(apiUrl, {
@@ -89,15 +99,11 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
 
         const data = await response.json();
 
-        // 503 / high demand check
-        if (!response.ok || data.error) {
-          lastError = data.error?.message || `Model ${model} unavailable`;
-          continue; // try next model immediately
-        }
-
-        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
           apiData = data;
           break;
+        } else {
+          lastError = data.error?.message || `Failed on ${model}`;
         }
       } catch (err) {
         lastError = err.message;
@@ -105,32 +111,61 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
     }
 
     if (!apiData) {
-      throw new Error(lastError || "High demand on all models, please retry in a moment");
+      throw new Error(lastError || "Failed to classify title");
     }
 
     const rawOutput = apiData.candidates[0].content.parts[0].text;
     const cleanOutput = rawOutput.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleanOutput);
 
-    const notationValue = parsed.fullNotation || parsed.udcNumber || parsed.notation || parsed.classNumber || '';
-    const mainSubValue = parsed.mainSubject || parsed.main_subject || 'Primary Subject';
-    const subSubValue = parsed.subSubject || parsed.sub_subject || 'Document Facets';
+    // Extract exact notation string cleanly
+    const num = (
+      parsed.fullNotation || 
+      parsed.udcNumber || 
+      parsed.notation || 
+      parsed.classNumber || 
+      parsed.completeAnswer || 
+      parsed.answer || 
+      ''
+    ).trim();
 
+    const mainSub = parsed.mainSubject || parsed.main_subject || '';
+    const subSub = parsed.subSubject || parsed.sub_subject || '';
+    const brk = parsed.breakdown || '';
+    const conf = parsed.confidence || '95%';
+    const evid = parsed.evidence || 'B.S. 1000A:1961 schedule verified';
+
+    // Comprehensive payload satisfying ANY UI field binding:
     res.json({
       success: true,
-      answer: notationValue,
-      result: notationValue,
-      classNumber: notationValue,
-      fullNotation: notationValue,
-      udcNumber: notationValue,
-      notation: notationValue,
-      mainSubject: mainSubValue,
-      main_subject: mainSubValue,
-      subSubject: subSubValue,
-      sub_subject: subSubValue,
-      breakdown: parsed.breakdown || '',
-      confidence: parsed.confidence || '95%',
-      evidence: parsed.evidence || 'B.S. 1000A:1961 schedule verified'
+      // All possible notations
+      answer: num,
+      result: num,
+      completeAnswer: num,
+      complete_answer: num,
+      fullNotation: num,
+      full_notation: num,
+      udcNumber: num,
+      udc_number: num,
+      classNumber: num,
+      class_number: num,
+      classMark: num,
+      class_mark: num,
+      notation: num,
+      raw_notation: num,
+      
+      // Main and Sub subject mappings
+      mainSubject: mainSub,
+      main_subject: mainSub,
+      subSubject: subSub,
+      sub_subject: subSub,
+      
+      // Breakdown & evidence
+      breakdown: brk,
+      confidence: conf,
+      confidence_level: conf,
+      evidence: evid,
+      schedule_reference: evid
     });
 
   } catch (err) {
