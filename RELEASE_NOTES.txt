@@ -1,5 +1,0 @@
-V90 PDF INDEXING START FIX
-- Fixes PDF.js startup race: the PDF reader is loaded on demand and awaited before indexing begins.
-- Selecting DDC-23 PDF files now attempts to start indexing instead of silently returning when the deferred PDF.js library has not initialized.
-- Existing saved-index lock and backup protections remain unchanged.
-- This fixes client-side indexing startup; shared publishing still requires Render DATABASE_URL and DDC_INDEX_WRITE_TOKEN and a successful publish action.
