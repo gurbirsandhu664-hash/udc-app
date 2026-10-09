@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 1. In-built CORS handling
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -18,15 +17,12 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-
-// 2. Static files serve (index.html, css, seed data)
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-// 3. Strict UDC synthesis instructions (BS 1000A:1961 standards)
 const UDC_SYSTEM_PROMPT = `You are an expert Universal Decimal Classification (UDC - BS 1000A:1961 schedule) engine.
 Synthesize the complete, untruncated UDC class number and provide full breakdowns.
 
@@ -53,12 +49,11 @@ Return ONLY valid JSON with this exact structure:
   "udcNumber": "synthesized UDC notation",
   "mainSubject": "Short main subject name",
   "subSubject": "Detailed facet description",
-  "breakdown": "Element breakdown (e.g. 52=Astronomy; :061=Organizations; (100)=World; (058.7)=Directory)",
+  "breakdown": "Element breakdown (e.g. 75=Painting; (540)=India)",
   "confidence": "95%",
   "evidence": "Schedule verified"
 }`;
 
-// Root Route
 app.get('/', (req, res) => {
   const rootIndex = path.join(__dirname, 'index.html');
   const pubIndex = path.join(__dirname, 'public', 'index.html');
@@ -67,7 +62,39 @@ app.get('/', (req, res) => {
   res.send("UDC Server Running");
 });
 
-// API Routes (Frontend ke dono endpoints handle honge)
+// Cache for active working model
+let verifiedModel = null;
+
+async function getActiveGeminiModel() {
+  if (verifiedModel) return verifiedModel;
+
+  try {
+    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+    const listRes = await fetch(listUrl);
+    const listData = await listRes.json();
+
+    if (listData.models && Array.isArray(listData.models)) {
+      // Find models supporting generateContent
+      const valid = listData.models.filter(m => 
+        m.supportedGenerationMethods && 
+        m.supportedGenerationMethods.includes('generateContent')
+      );
+
+      // Prioritize flash models, then any valid model
+      const preferred = valid.find(m => m.name.includes('flash')) || valid[0];
+      if (preferred) {
+        verifiedModel = preferred.name.replace('models/', '');
+        return verifiedModel;
+      }
+    }
+  } catch (e) {
+    console.error("ListModels check failed:", e.message);
+  }
+
+  // Fallback defaults
+  return 'gemini-1.5-flash-latest';
+}
+
 app.post(['/api/classify', '/classify'], async (req, res) => {
   try {
     const title = req.body.title || req.body.query || req.body.text;
@@ -79,53 +106,34 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable missing on Render" });
     }
 
-    // Models with automatic fallback to prevent "model not found" errors
-    const modelsToTry = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-pro'
-    ];
+    const activeModel = await getActiveGeminiModel();
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${GEMINI_API_KEY}`;
 
-    let apiData = null;
-    let lastError = null;
-
-    for (const model of modelsToTry) {
-      try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
-            contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1
-            }
-          })
-        });
-
-        const data = await response.json();
-        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          apiData = data;
-          break;
-        } else {
-          lastError = data.error?.message || `Failed on ${model}`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1
         }
-      } catch (err) {
-        lastError = err.message;
-      }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Invalidate cached model if it fails
+      verifiedModel = null;
+      throw new Error(data.error?.message || "Gemini API classification failed");
     }
 
-    if (!apiData) {
-      throw new Error(lastError || "Gemini API classification failed");
-    }
-
-    const rawOutput = apiData.candidates[0].content.parts[0].text;
+    const rawOutput = data.candidates[0].content.parts[0].text;
     const cleanOutput = rawOutput.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleanOutput);
 
-    // Exact response mapping jo frontend validation ko pass karega
     res.json({
       success: true,
       result: parsed.fullNotation || parsed.udcNumber,
