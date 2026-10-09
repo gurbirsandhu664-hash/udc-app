@@ -1,0 +1,11 @@
+{
+  "name": "udc-one-click-v67-persistent-ddc23-index",
+  "version": "67.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
