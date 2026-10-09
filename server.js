@@ -61,28 +61,54 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY missing on Render" });
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
+    // Models sequence: agar pehla busy hove taan agla sambhale
+    const activeModels = [
+      'gemini-3.8-flash',
+      'gemini-3-flash',
+      'gemini-2.5-flash'
+    ];
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1
+    let apiData = null;
+    let lastError = null;
+
+    for (const model of activeModels) {
+      try {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: UDC_SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: `Synthesize full UDC notation for: "${title}"` }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.1
+            }
+          })
+        });
+
+        const data = await response.json();
+
+        // 503 / high demand check
+        if (!response.ok || data.error) {
+          lastError = data.error?.message || `Model ${model} unavailable`;
+          continue; // try next model immediately
         }
-      })
-    });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || "Gemini API classification failed");
+        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          apiData = data;
+          break;
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
     }
 
-    const rawOutput = data.candidates[0].content.parts[0].text;
+    if (!apiData) {
+      throw new Error(lastError || "High demand on all models, please retry in a moment");
+    }
+
+    const rawOutput = apiData.candidates[0].content.parts[0].text;
     const cleanOutput = rawOutput.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleanOutput);
 
@@ -90,7 +116,6 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
     const mainSubValue = parsed.mainSubject || parsed.main_subject || 'Primary Subject';
     const subSubValue = parsed.subSubject || parsed.sub_subject || 'Document Facets';
 
-    // Sare possible frontend property names provide kite gaye ne:
     res.json({
       success: true,
       answer: notationValue,
