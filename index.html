@@ -83,15 +83,62 @@
 </div>
 
 <script>
-  function clientSideRuleEngine(rawTitle) {
-    var t = (rawTitle || '').toLowerCase().trim();
-    var isBib = t.indexOf('bibliograph') !== -1;
+  function normalizeQuery(str) {
+    var s = (str || '').toLowerCase();
+    s = s.replace(/astromic\w*/g, 'astronomic');
+    s = s.replace(/organis\w*/g, 'organization');
+    s = s.replace(/adminstr\w*/g, 'administration');
+    return s;
+  }
 
-    // 1. Public Administration
-    if (t.indexOf('public admin') !== -1 || t.indexOf('administration') !== -1 || t.indexOf('administrative') !== -1) {
-      var isReport = t.indexOf('annual report') !== -1 || t.indexOf('report') !== -1;
-      var isIndia = t.indexOf('india') !== -1 || t.indexOf('indian') !== -1;
-      var isInst = t.indexOf('institute') !== -1 || t.indexOf('institution') !== -1 || t.indexOf('society') !== -1;
+  function clientScheduleEngine(rawTitle) {
+    var norm = normalizeQuery(rawTitle);
+    var isBib = norm.indexOf('bibliograph') !== -1;
+
+    // Astronomy
+    if (norm.indexOf('astronom') !== -1 || norm.indexOf('astrophysic') !== -1 || norm.indexOf('observatory') !== -1 || norm.indexOf('planet') !== -1) {
+      var isWorld = norm.indexOf('world') !== -1 || norm.indexOf('international') !== -1 || norm.indexOf('global') !== -1;
+      var isDir = norm.indexOf('director') !== -1 || norm.indexOf('handbook') !== -1 || norm.indexOf('guide') !== -1;
+      var isOrg = norm.indexOf('organ') !== -1 || norm.indexOf('institut') !== -1 || norm.indexOf('societ') !== -1 || norm.indexOf('associat') !== -1;
+
+      var u = '52';
+      var d = '520';
+      var ub = '52: Astronomy and Astrophysics';
+      var db = '520: Astronomy & allied sciences';
+
+      if (isOrg) {
+        u += ':061';
+        ub += '; :061: Organizations / Bodies';
+      }
+      if (isWorld) {
+        u += '(100)';
+        ub += '; (100): World / International';
+      }
+      if (isDir) {
+        u += '(058.7)';
+        d = '520.25';
+        ub += '; (058.7): Directories / Address books';
+        db = '520: Astronomy; T1--025: Directories of organizations';
+      } else if (isOrg && isWorld) {
+        d = '520.601';
+        db = '520: Astronomy; T1--0601: International organizations';
+      }
+
+      return {
+        udcNumber: u,
+        ddcNumber: d,
+        mainSubject: 'Astronomy / Physical Sciences',
+        subSubject: rawTitle,
+        udcBreakdown: ub,
+        ddcBreakdown: db
+      };
+    }
+
+    // Public Administration
+    if (norm.indexOf('public admin') !== -1 || norm.indexOf('administration') !== -1 || norm.indexOf('administrative') !== -1) {
+      var isReport = norm.indexOf('annual report') !== -1 || norm.indexOf('report') !== -1;
+      var isIndia = norm.indexOf('india') !== -1 || norm.indexOf('indian') !== -1;
+      var isInst = norm.indexOf('institute') !== -1 || norm.indexOf('institution') !== -1 || norm.indexOf('society') !== -1;
 
       var u = '35';
       var d = '351';
@@ -125,14 +172,14 @@
       };
     }
 
-    // 2. Scientists, Biographies, Speeches
-    if (t.indexOf('scientist') !== -1 || (t.indexOf('science') !== -1 && (t.indexOf('biograph') !== -1 || t.indexOf('speech') !== -1 || t.indexOf('life') !== -1))) {
-      var isSpeech = t.indexOf('speech') !== -1 || t.indexOf('lecture') !== -1 || t.indexOf('research') !== -1;
-      var placeU = t.indexOf('india') !== -1 ? '(540)' : '';
+    // Scientists / Biographies / Speeches
+    if (norm.indexOf('scientist') !== -1 || (norm.indexOf('science') !== -1 && (norm.indexOf('biograph') !== -1 || norm.indexOf('speech') !== -1 || norm.indexOf('life') !== -1))) {
+      var isSpeech = norm.indexOf('speech') !== -1 || norm.indexOf('lecture') !== -1 || norm.indexOf('research') !== -1;
+      var placeU = norm.indexOf('india') !== -1 ? '(540)' : '';
       var formU = isSpeech ? '(042)' : '';
       return {
         udcNumber: '929:5' + placeU + formU,
-        ddcNumber: t.indexOf('india') !== -1 ? '509.254' : '509.2',
+        ddcNumber: norm.indexOf('india') !== -1 ? '509.254' : '509.2',
         mainSubject: 'Science / Biographies of Scientists',
         subSubject: rawTitle,
         udcBreakdown: ('929: Biography; :5: Pure Science; ' + (placeU ? placeU + ': India; ' : '') + (formU ? formU + ': Speeches' : '')).trim(),
@@ -140,9 +187,9 @@
       };
     }
 
-    // 3. Manuscripts, Library Preservation, Libraries
-    if (t.indexOf('manuscript') !== -1 || t.indexOf('preservation') !== -1 || t.indexOf('library') !== -1 || t.indexOf('librar') !== -1) {
-      if (t.indexOf('preservation') !== -1 || t.indexOf('manuscript') !== -1) {
+    // Manuscripts / Preservation
+    if (norm.indexOf('manuscript') !== -1 || norm.indexOf('preservation') !== -1 || norm.indexOf('library') !== -1) {
+      if (norm.indexOf('preservation') !== -1 || norm.indexOf('manuscript') !== -1) {
         return {
           udcNumber: '025.85:091:027.7',
           ddcNumber: '025.84',
@@ -162,10 +209,10 @@
       };
     }
 
-    // 4. Punjabi Language
-    if (t.indexOf('punjabi') !== -1 || t.indexOf('panjabi') !== -1) {
+    // Punjabi Language
+    if (norm.indexOf('punjabi') !== -1 || norm.indexOf('panjabi') !== -1) {
       var u = '809.142.2', d = '491.42', m = 'Punjabi Language';
-      if (t.indexOf('welfare') !== -1 || t.indexOf('social') !== -1) {
+      if (norm.indexOf('welfare') !== -1 || norm.indexOf('social') !== -1) {
         u += ':36'; m += ' and Social Welfare';
       }
       return {
@@ -178,8 +225,8 @@
       };
     }
 
-    // 5. Social Welfare
-    if (t.indexOf('social welfare') !== -1 || t.indexOf('welfare') !== -1 || t.indexOf('social service') !== -1) {
+    // Social Welfare
+    if (norm.indexOf('social welfare') !== -1 || norm.indexOf('welfare') !== -1) {
       return {
         udcNumber: isBib ? '016:36' : '36',
         ddcNumber: isBib ? '016.361' : '361',
@@ -190,13 +237,13 @@
       };
     }
 
-    // 6. Hindi Literature / Novels
-    if (t.indexOf('hindi') !== -1 || t.indexOf('karam') !== -1 || t.indexOf('madhushala') !== -1 || t.indexOf('prem') !== -1) {
-      var isNovel = t.indexOf('novel') !== -1 || t.indexOf('fiction') !== -1 || t.indexOf('karam') !== -1;
+    // Hindi Literature / Novels
+    if (norm.indexOf('hindi') !== -1 || norm.indexOf('karam') !== -1 || norm.indexOf('madhushala') !== -1 || norm.indexOf('prem') !== -1) {
+      var isNovel = norm.indexOf('novel') !== -1 || norm.indexOf('fiction') !== -1 || norm.indexOf('karam') !== -1;
       var formU = isNovel ? '-31' : '-1';
       var formD = isNovel ? '3' : '1';
-      var author = (t.indexOf('prem chand') !== -1 || t.indexOf('premchand') !== -1 || t.indexOf('karam') !== -1) ? 'Premchand' : (t.indexOf('bachchan') !== -1 ? 'Bachchan' : '');
-      var work = (t.indexOf('karam') !== -1 || t.indexOf('bhumi') !== -1) ? '"Karmabhumi"' : (t.indexOf('madhu') !== -1 ? '"Madhushala"' : '');
+      var author = (norm.indexOf('prem chand') !== -1 || norm.indexOf('premchand') !== -1 || norm.indexOf('karam') !== -1) ? 'Premchand' : (norm.indexOf('bachchan') !== -1 ? 'Bachchan' : '');
+      var work = (norm.indexOf('karam') !== -1 || norm.indexOf('bhumi') !== -1) ? '"Karmabhumi"' : (norm.indexOf('madhu') !== -1 ? '"Madhushala"' : '');
       return {
         udcNumber: '891.43' + formU + author + work,
         ddcNumber: '891.43' + formD,
@@ -207,9 +254,9 @@
       };
     }
 
-    // 7. Agriculture / Crops
-    if (t.indexOf('wheat') !== -1 || t.indexOf('maize') !== -1 || t.indexOf('harvest') !== -1 || t.indexOf('agricultur') !== -1 || t.indexOf('crop') !== -1) {
-      if (t.indexOf('wheat') !== -1 || t.indexOf('maize') !== -1 || t.indexOf('harvest') !== -1) {
+    // Agriculture / Crops
+    if (norm.indexOf('wheat') !== -1 || norm.indexOf('maize') !== -1 || norm.indexOf('harvest') !== -1 || norm.indexOf('crop') !== -1 || norm.indexOf('agricultur') !== -1) {
+      if (norm.indexOf('wheat') !== -1 || norm.indexOf('maize') !== -1 || norm.indexOf('harvest') !== -1) {
         return {
           udcNumber: '633.11+633.15:631.55',
           ddcNumber: '633.1045',
@@ -224,77 +271,15 @@
         ddcNumber: '630',
         mainSubject: 'Agriculture',
         subSubject: rawTitle,
-        udcBreakdown: '63: Agriculture, Forestry, Stockbreeding',
-        ddcBreakdown: '630: Agriculture and related technologies'
+        udcBreakdown: '63: Agriculture, Forestry, Fisheries',
+        ddcBreakdown: '630: Agriculture & related technologies'
       };
     }
 
-    // 8. Computers & Programming
-    if (t.indexOf('computer') !== -1 || t.indexOf('software') !== -1 || t.indexOf('programm') !== -1) {
-      return {
-        udcNumber: '681.3.06',
-        ddcNumber: '005.1',
-        mainSubject: 'Computer Science',
-        subSubject: rawTitle,
-        udcBreakdown: '681.3: Computers; .06: Programs/Software',
-        ddcBreakdown: '005.1: Computer programming (DDC 23)'
-      };
-    }
-
-    // 9. Economics & Commerce
-    if (t.indexOf('economic') !== -1 || t.indexOf('finance') !== -1 || t.indexOf('commerce') !== -1 || t.indexOf('trade') !== -1) {
-      return {
-        udcNumber: '33',
-        ddcNumber: '330',
-        mainSubject: 'Economics',
-        subSubject: rawTitle,
-        udcBreakdown: '33: Political Economy, Economics',
-        ddcBreakdown: '330: Economics'
-      };
-    }
-
-    // 10. Education
-    if (t.indexOf('educat') !== -1 || t.indexOf('school') !== -1 || t.indexOf('teach') !== -1 || t.indexOf('universit') !== -1) {
-      return {
-        udcNumber: '37',
-        ddcNumber: '370',
-        mainSubject: 'Education',
-        subSubject: rawTitle,
-        udcBreakdown: '37: Education, Teaching',
-        ddcBreakdown: '370: Education'
-      };
-    }
-
-    // 11. Law
-    if (t.indexOf('law') !== -1 || t.indexOf('legal') !== -1 || t.indexOf('court') !== -1) {
-      return {
-        udcNumber: '34',
-        ddcNumber: '340',
-        mainSubject: 'Law',
-        subSubject: rawTitle,
-        udcBreakdown: '34: Jurisprudence, Law',
-        ddcBreakdown: '340: Law'
-      };
-    }
-
-    // 12. Philosophy, Logic, Ethics
-    if (t.indexOf('philosoph') !== -1 || t.indexOf('logic') !== -1 || t.indexOf('ethic') !== -1) {
-      var u = t.indexOf('logic') !== -1 ? '16' : (t.indexOf('ethic') !== -1 ? '17' : '1');
-      var d = t.indexOf('logic') !== -1 ? '160' : (t.indexOf('ethic') !== -1 ? '170' : '100');
-      return {
-        udcNumber: u,
-        ddcNumber: d,
-        mainSubject: 'Philosophy',
-        subSubject: rawTitle,
-        udcBreakdown: u + ': Philosophy / Systematic concepts',
-        ddcBreakdown: d + ': Philosophy & related disciplines'
-      };
-    }
-
-    // 13. Biography
-    if (t.indexOf('biograph') !== -1 || t.indexOf('prominent') !== -1) {
-      var placeU = t.indexOf('india') !== -1 ? '(540)' : '';
-      var timeU = (t.indexOf('20th') !== -1 || t.indexOf('twentieth') !== -1) ? '"19"' : '';
+    // Biography
+    if (norm.indexOf('biograph') !== -1 || norm.indexOf('prominent') !== -1) {
+      var placeU = norm.indexOf('india') !== -1 ? '(540)' : '';
+      var timeU = (norm.indexOf('20th') !== -1 || norm.indexOf('twentieth') !== -1) ? '"19"' : '';
       return {
         udcNumber: '929' + placeU + timeU,
         ddcNumber: placeU ? '920.054' : '920',
@@ -305,26 +290,13 @@
       };
     }
 
-    // 14. History
-    if (t.indexOf('history') !== -1 || t.indexOf('war') !== -1 || t.indexOf('revolut') !== -1) {
-      var placeU = t.indexOf('india') !== -1 ? '(540)' : '';
-      return {
-        udcNumber: '93/99' + placeU,
-        ddcNumber: placeU ? '954' : '900',
-        mainSubject: 'History',
-        subSubject: rawTitle,
-        udcBreakdown: '93/99: History; ' + (placeU ? placeU + ': India' : ''),
-        ddcBreakdown: placeU ? '954: History of India' : '900: History'
-      };
-    }
-
     return {
       udcNumber: '0/9',
       ddcNumber: '000',
       mainSubject: 'General & Interdisciplinary Works',
       subSubject: rawTitle,
       udcBreakdown: '0/9: Universal classification',
-      ddcBreakdown: '000: Computer science, information & general works'
+      ddcBreakdown: '000: General Knowledge & Systems'
     };
   }
 
@@ -352,16 +324,16 @@
 
     var answered = false;
 
-    // Fast client fallback within 1 second to prevent hanging
+    // Fast client fallback if server takes > 1.2s
     var fallbackTimer = setTimeout(function() {
       if (!answered) {
         answered = true;
-        var localData = clientSideRuleEngine(text);
+        var localData = clientScheduleEngine(text);
         displayResult(localData, text);
         btn.innerText = "CLASSIFY NOW";
         btn.disabled = false;
       }
-    }, 1000);
+    }, 1200);
 
     fetch('/api/classify', {
       method: 'POST',
@@ -376,8 +348,8 @@
     .then(function(data) {
       if (!answered) {
         answered = true;
-        if (data.udcNumber === '001' || data.udcNumber === '0/9') {
-          var localAttempt = clientSideRuleEngine(text);
+        if (data.udcNumber === '0/9' || data.udcNumber === '001') {
+          var localAttempt = clientScheduleEngine(text);
           if (localAttempt.udcNumber !== '0/9') {
             displayResult(localAttempt, text);
             btn.innerText = "CLASSIFY NOW";
@@ -394,7 +366,7 @@
       clearTimeout(fallbackTimer);
       if (!answered) {
         answered = true;
-        displayResult(clientSideRuleEngine(text), text);
+        displayResult(clientScheduleEngine(text), text);
         btn.innerText = "CLASSIFY NOW";
         btn.disabled = false;
       }
