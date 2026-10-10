@@ -3,10 +3,10 @@ const https = require('https');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// --- STRICT AI Function ---
+// --- AI Function with Short Audit & Safe Parsing ---
 function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        // STRICT PROMPT: Forces AI to use exact UDC 1961 and DDC 23 rules
+        // We added: "Keep the audit VERY SHORT (max 2 lines)."
         const prompt = `You are an expert librarian with deep knowledge of UDC 1961 and DDC 23 classification systems. 
         Analyze the COMPLETE text carefully. Do NOT ignore any word or part of the sentence.
         
@@ -14,17 +14,17 @@ function getAIClassification(query) {
         
         CRITICAL INSTRUCTIONS:
         1. Identify ALL key concepts: Subject, Organization/Institute, Form (Report, Journal, etc.), Place, and Language.
-        2. For UDC 1961: You MUST combine the main subject with the Form (e.g., 047.3 for Annual Reports) and Place (e.g., 540 for India) using the correct punctuation (+, /, :, ::, (), =). Do NOT just give a generic number. Be specific to the 1961 edition rules.
-        3. For DDC 23: You MUST combine the main subject with the Standard Subdivisions (e.g., -05 for serials, -54 for India) using the correct DDC 23 tables. If it's an organization's report, use the appropriate number for that organization's field.
-        4. Be precise. If the exact number doesn't exist, give the closest valid UDC/DDC number according to the rules.
+        2. For UDC 1961: You MUST combine the main subject with the Form (e.g., 047.3 for Annual Reports) and Place (e.g., 540 for India) using the correct punctuation. 
+        3. For DDC 23: You MUST combine the main subject with the Standard Subdivisions using the correct DDC 23 tables.
+        4. Keep the "audit" field VERY SHORT. Maximum 2 lines. Do NOT write a long paragraph.
         
         Respond ONLY in this exact JSON format without any other text:
-        {"udc": "number", "ddc": "number", "audit": "detailed explanation of every part, including which UDC/DDC table you used."}`;
+        {"udc": "number", "ddc": "number", "audit": "short 2 line explanation"}`;
 
         const postData = JSON.stringify({
             model: "deepseek-chat",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.0 // Keep it 0.0 for maximum accuracy
+            temperature: 0.0
         });
 
         const options = {
@@ -46,13 +46,34 @@ function getAIClassification(query) {
                     const json = JSON.parse(data);
                     if (json.choices && json.choices[0]) {
                         let content = json.choices[0].message.content;
+                        // Clean markdown formatting
                         content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-                        resolve(JSON.parse(content));
+                        
+                        // SAFE PARSING: Try to parse JSON safely
+                        try {
+                            resolve(JSON.parse(content));
+                        } catch (parseError) {
+                            // If JSON fails, try to extract just the numbers using Regex
+                            console.log("JSON Parse failed, trying Regex...");
+                            const udcMatch = content.match(/"udc"\s*:\s*"([^"]+)"/);
+                            const ddcMatch = content.match(/"ddc"\s*:\s*"([^"]+)"/);
+                            const auditMatch = content.match(/"audit"\s*:\s*"([^"]+)"/);
+                            
+                            if (udcMatch && ddcMatch) {
+                                resolve({
+                                    udc: udcMatch[1],
+                                    ddc: ddcMatch[1],
+                                    audit: auditMatch ? auditMatch[1] : "Extracted from AI response."
+                                });
+                            } else {
+                                reject(new Error("Could not parse AI response."));
+                            }
+                        }
                     } else {
-                        reject(new Error("AI Error: " + data));
+                        reject(new Error("AI did not respond correctly."));
                     }
                 } catch (e) {
-                    reject(new Error("Parse Error: " + e.message));
+                    reject(new Error("Network Error: " + e.message));
                 }
             });
         });
@@ -140,7 +161,6 @@ const server = http.createServer(async (req, res) => {
             </div>
 
             <script>
-                // Loading Animation on Submit
                 document.getElementById('classifyForm').addEventListener('submit', function() {
                     const btn = document.getElementById('submitBtn');
                     btn.innerHTML = 'Analyzing... ⏳';
