@@ -6,49 +6,50 @@ app.use(express.json());
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "YOUR_API_KEY_HERE";
 
-// --- Embedded UDC 1961 + DDC 23 Rules ---
-const CLASSIFICATION_RULES = `
-=== UDC 1961 ABRIDGED EDITION (KEY RULES) ===
+// --- Strict UDC 1961 + DDC 23 Library Science Rules ---
+const LIBRARY_RULES = `
+You are a senior Library Science professor and cataloguer.
+You must give 100% accurate classification using UDC 1961 Abridged Edition and DDC 23.
+
+=== UDC 1961 ABRIDGED EDITION RULES ===
+- 02 = Library and information science
 - 028 = Reading and advice for readers
 - 028.9 = Reading interests and habits
-- 02 = Library and information science
 - 05 = Serial publications / Newspapers / Journalism / Periodicals
 - 37 = Education
+- 37.047 = Educational testing / aptitude tests
 - 378 = Higher education / Universities
+- 61 = Medicine and health
 - 316 = Sociology
 - 659 = Advertising / public relations
 - 681.3 = Data processing / computer science
-- -055.2 = Women (auxiliary) — authorized in 1961 abridged edition
-- (540) = India (common auxiliary of place) — authorized in 1961 abridged edition
+- -055.2 = Women (authorized auxiliary in 1961 abridged edition)
+- (540) = India (authorized common auxiliary of place)
 - Colon (:) = Relation indicator linking two subjects
-- Always give the SHORTEST correct UDC number from the 1961 abridged edition.
-- If a title mentions newspaper, article, journal, magazine, serial or periodical, you MUST add 05 as an additional facet using the colon.
+- ALWAYS give the SHORTEST correct UDC number.
+- If the title mentions newspaper, article, journal, magazine, serial or periodical, you MUST add 05 using the colon.
 
-=== DDC 23 (DEWEY DECIMAL CLASSIFICATION 23rd EDITION - KEY RULES) ===
+=== DDC 23 RULES ===
 - 028 = Reading and use of other information media
 - 028.9 = Reading interests and habits
 - 070 = News media / Newspapers / Journalism
 - 371 = Schools and their activities
+- 371.26 = Examinations and tests / aptitude testing
 - 378 = Higher education
 - 305 = Social groups (including women)
+- 610 = Medicine and health
 - 954 = India / South Asia
-- Standard subdivisions: -09, -093, -091, etc. are allowed
-- Always give the SHORTEST correct DDC 23 number.
-- If a title mentions newspaper, article, journal, magazine, serial or periodical, use 070 for news media.
+- ALWAYS give the SHORTEST correct DDC 23 number.
+- If the title mentions newspaper, article, journal, magazine, serial or periodical, use 070 for news media.
 
 === DUAL CLASSIFIER OUTPUT RULES ===
 - Provide BOTH UDC 1961 and DDC 23 numbers for every title.
-- For UDC: use colon to link main subject with newspaper/article code 05 if applicable.
-- For DDC: use 070 for newspaper articles if applicable.
-- Never guess. Never add unauthorized auxiliaries.
-- Output must be complete, no truncation.
+- Be 100% accurate. Do not guess. Do not add unauthorized auxiliaries.
+- Output must be complete JSON with no truncation.
 `;
 
 async function getClassification(title) {
-    const systemPrompt = `You are an expert librarian specialized in UDC (Universal Decimal Classification) 1961 abridged edition AND DDC 23 (Dewey Decimal Classification 23rd edition).
-Your job is to provide BOTH UDC and DDC numbers in a detailed Dual Classifier report.
-
-${CLASSIFICATION_RULES}
+    const systemPrompt = `${LIBRARY_RULES}
 
 STRICT OUTPUT FORMAT (JSON only, no extra text):
 {
@@ -67,7 +68,7 @@ STRICT OUTPUT FORMAT (JSON only, no extra text):
 
     const userPrompt = `Find BOTH the exact UDC 1961 Abridged Edition notation AND DDC 23 notation with FULL DETAILS for this title: "${title}".
 If this title is a newspaper article or published in a newspaper/journal, include the UDC 05 code and the DDC 070 code.
-Output must be complete JSON as per the format.`;
+Output must be complete JSON.`;
 
     try {
         const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -93,17 +94,10 @@ Output must be complete JSON as per the format.`;
     } catch (error) {
         console.error("AI Error:", error);
         return {
-            udc: "ERROR",
-            ddc: "ERROR",
-            mainSubject: "-",
-            subSubject: "-",
-            udcBreakdown: "API call failed",
-            ddcBreakdown: "API call failed",
-            confidence: "low",
-            audit: "API call failed",
-            newspaperArticle: false,
-            newspaperNumberUDC: "N/A",
-            newspaperNumberDDC: "N/A"
+            udc: "ERROR", ddc: "ERROR", mainSubject: "-", subSubject: "-",
+            udcBreakdown: "API call failed", ddcBreakdown: "API call failed",
+            confidence: "low", audit: "API call failed",
+            newspaperArticle: false, newspaperNumberUDC: "N/A", newspaperNumberDDC: "N/A"
         };
     }
 }
