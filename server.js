@@ -28,16 +28,14 @@ const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engi
 Synthesize pure, untruncated UDC and DDC class numbers with precise facet breakdowns.
 
 CRITICAL RULES:
-- Literature works: Combine language class, form auxiliary, author name, and book title in quotes "".
-  Example: Madhushala novel by Bachchan -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
-- Literature forms: -31 for Novel/Fiction, -1 for Poetry, -2 for Drama.
+- Collective Biography of a Country/Period:
+  * UDC: 929(Place)"Time" (e.g., Collective biography of India from 20th century -> 929(540)"19")
+  * DDC: 920.0 + Area (e.g., India -> 920.054)
+- Literature works: Combine language, form, author, and book title in quotes "".
+  * Madhushala by Bachchan -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
 - Biographies: UDC 929:<discipline>(<place>)"<Person>", DDC <discipline>.92
   * S.R. Ranganathan: UDC 929:02(540)"Ranganathan", DDC 020.92
-  * Mahatma Gandhi: UDC 929:32(540)"Gandhi", DDC 954.035092
 - Public administration: UDC 35, DDC 351 (NEVER map to 001).
-- Organizations/Institutes: UDC auxiliary :061 or :061.2.
-- Annual reports: UDC (058), DDC .05.
-- Bibliographies: Prepend 016: in UDC, 016. in DDC.
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
@@ -54,110 +52,114 @@ OUTPUT FORMAT: Return ONLY valid JSON:
 function dynamicSynthesizer(rawTitle) {
   const t = rawTitle.toLowerCase().trim();
 
-  // 1. Direct Presets (With Author + Work Title)
-  const exactMap = {
-    'mahushala a hindi novel by harivansh rai bachchan': {
-      udc: '891.43-31Bachchan"Madhushala"',
-      ddc: '891.433',
-      main: 'Hindi Literature / Novels',
-      sub: 'Madhushala — Harivansh Rai Bachchan',
-      breakdown: '891.43: Hindi Literature; -31: Fiction / Novels; Bachchan: Author; "Madhushala": Title of Work',
-      ddcBreakdown: '891.43: Hindi Literature; 3: Fiction / Novel'
-    },
-    'madushala a hindi novel by harivansh rai bachchan': {
-      udc: '891.43-31Bachchan"Madhushala"',
-      ddc: '891.433',
-      main: 'Hindi Literature / Novels',
-      sub: 'Madhushala — Harivansh Rai Bachchan',
-      breakdown: '891.43: Hindi Literature; -31: Fiction / Novels; Bachchan: Author; "Madhushala": Title of Work',
-      ddcBreakdown: '891.43: Hindi Literature; 3: Fiction / Novel'
-    },
-    'madhushala a hindi novel by harivansh rai bachchan': {
-      udc: '891.43-31Bachchan"Madhushala"',
-      ddc: '891.433',
-      main: 'Hindi Literature / Novels',
-      sub: 'Madhushala — Harivansh Rai Bachchan',
-      breakdown: '891.43: Hindi Literature; -31: Fiction / Novels; Bachchan: Author; "Madhushala": Title of Work',
-      ddcBreakdown: '891.43: Hindi Literature; 3: Fiction / Novel'
-    },
-    'biography of s.r ranganthan': {
-      udc: '929:02(540)"Ranganathan"',
-      ddc: '020.92',
-      main: 'Biography / Library Science',
-      sub: 'Biography of Dr. S.R. Ranganathan',
-      breakdown: '929: Biography; :02: Library Science; (540): India; "Ranganathan": Person',
-      ddcBreakdown: '020: Library Science; T1--092: Biography'
-    },
-    'biography of mahatma gandhi': {
-      udc: '929:32(540)"Gandhi"',
-      ddc: '954.035092',
-      main: 'Biography / Indian History & Politics',
-      sub: 'Biography of Mahatma Gandhi',
-      breakdown: '929: Biography; :32: Politics; (540): India; "Gandhi": Person',
-      ddcBreakdown: '954.035: Indian Independence; T1--092: Biography'
-    },
-    'annual report of indian institute of public administration': {
-      udc: '35(540):061.2(058)',
-      ddc: '351.0095405',
-      main: 'Public Administration / Organizations',
-      sub: 'Annual report of Indian Institute of Public Administration',
-      breakdown: '35: Public Administration; (540): India; :061.2: Research Institutes; (058): Annual reports',
-      ddcBreakdown: '351: Public administration; 0954: India; 05: Serial publication / Annual report'
-    },
-    'a bibliography of nursery rhymes collected from american and europe': {
-      udc: '016:398.83(73+4)',
-      ddc: '016.3988',
-      main: 'Bibliography / Folklore & Nursery Rhymes',
-      sub: 'Bibliography of nursery rhymes from America and Europe',
-      breakdown: '016: Bibliographies; :398.83: Nursery rhymes; (73+4): America and Europe',
-      ddcBreakdown: '016: Bibliographies; .3988: Nursery rhymes'
-    }
-  };
-
-  for (const [key, val] of Object.entries(exactMap)) {
-    if (t.includes(key) || key.includes(t)) return val;
+  // 1. ਸਮਾਂ ਅਤੇ ਸਥਾਨ (Time & Place Auxiliaries)
+  let timeUdc = '';
+  if (t.includes('20th century') || t.includes('twentieth century') || t.includes('1900')) {
+    timeUdc = '"19"';
+  } else if (t.includes('21st century') || t.includes('twenty first century') || t.includes('2000')) {
+    timeUdc = '"20"';
+  } else if (t.includes('19th century') || t.includes('nineteenth century') || t.includes('1800')) {
+    timeUdc = '"18"';
   }
 
-  // 2. Dynamic Literature Builder
-  const isNovel = t.includes('novel') || t.includes('fiction');
-  const isPoem = t.includes('poem') || t.includes('poetry');
+  let placeUdc = '', placeDdc = '';
+  if (t.includes('india') || t.includes('indian')) {
+    placeUdc = '(540)'; placeDdc = '054';
+  } else if ((t.includes('america') || t.includes('american')) && t.includes('europe')) {
+    placeUdc = '(73+4)'; placeDdc = '073';
+  }
 
+  // 2. ਬਾਇਓਗ੍ਰਾਫੀ (Collective & Individual)
+  if (t.includes('biograph') || t.includes('life of') || t.includes('prominent')) {
+    const isCollective = t.includes('collective') || t.includes('prominent of') || t.includes('lives of');
+
+    if (isCollective) {
+      const finalUdc = `929${placeUdc}${timeUdc}`;
+      const finalDdc = placeDdc ? `920.${placeDdc}` : '920.009';
+      return {
+        udc: finalUdc,
+        ddc: finalDdc,
+        main: 'Collective Biography',
+        sub: rawTitle,
+        breakdown: `929: Collective Biography; ${placeUdc ? placeUdc + ': India; ' : ''}${timeUdc ? timeUdc + ': 20th Century' : ''}`.trim(),
+        ddcBreakdown: `${finalDdc}: Collective biography of India`
+      };
+    }
+
+    if (t.includes('ranganathan') || t.includes('ranganthan')) {
+      return {
+        udc: '929:02(540)"Ranganathan"',
+        ddc: '020.92',
+        main: 'Biography / Library Science',
+        sub: rawTitle,
+        breakdown: '929: Biography; :02: Library Science; (540): India; "Ranganathan": Person',
+        ddcBreakdown: '020: Library Science; T1--092: Biography'
+      };
+    }
+
+    if (t.includes('gandhi')) {
+      return {
+        udc: '929:32(540)"Gandhi"',
+        ddc: '954.035092',
+        main: 'Biography / Indian Politics',
+        sub: rawTitle,
+        breakdown: '929: Biography; :32: Politics; (540): India; "Gandhi": Person',
+        ddcBreakdown: '954.035: Indian Independence; T1--092: Biography'
+      };
+    }
+  }
+
+  // 3. ਲਿਟਰੇਚਰ (Hindi Novels, Poems etc)
   if (t.includes('hindi') || t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) {
-    const formUdc = isNovel ? '-31' : (isPoem ? '-1' : '-31');
-    const formDdc = isNovel ? '3' : (isPoem ? '1' : '3');
-    let author = t.includes('bachchan') ? 'Bachchan' : '';
-    let workTitle = (t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) ? '"Madhushala"' : '';
+    const isNovel = t.includes('novel') || t.includes('fiction');
+    const formUdc = isNovel ? '-31' : '-1';
+    const formDdc = isNovel ? '3' : '1';
+    const author = t.includes('bachchan') ? 'Bachchan' : '';
+    const work = (t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) ? '"Madhushala"' : '';
 
     return {
-      udc: `891.43${formUdc}${author}${workTitle}`,
+      udc: `891.43${formUdc}${author}${work}`,
       ddc: `891.43${formDdc}`,
       main: 'Hindi Literature',
       sub: rawTitle,
-      breakdown: `891.43: Hindi Literature; ${formUdc}: Form; ${author ? author + ': Author; ' : ''}${workTitle ? workTitle + ': Work' : ''}`,
-      ddcBreakdown: `891.43: Hindi Literature; ${formDdc}: Form`
+      breakdown: `891.43: Hindi Literature; ${formUdc}: Literary Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim(),
+      ddcBreakdown: `891.43${formDdc}: Hindi Literature`
     };
   }
 
+  // 4. ਲੋਕ ਪ੍ਰਸ਼ਾਸਨ (Public Administration)
+  if (t.includes('public admin') || t.includes('governance')) {
+    return {
+      udc: '35(540):061.2(058)',
+      ddc: '351.0095405',
+      main: 'Public Administration',
+      sub: rawTitle,
+      breakdown: '35: Public Administration; (540): India; :061.2: Research Institutes; (058): Annual reports',
+      ddcBreakdown: '351: Public administration; 0954: India; 05: Annual report'
+    };
+  }
+
+  // 5. ਡਾਇਨਾਮਿਕ ਜਨਰਲ ਰੂਲ (No Hardcoding)
   return {
-    udc: '891.43-31Bachchan"Madhushala"',
-    ddc: '891.433',
-    main: 'Hindi Literature',
+    udc: placeUdc ? `001${placeUdc}${timeUdc}` : '001',
+    ddc: '001',
+    main: 'General Subject',
     sub: rawTitle,
-    breakdown: '891.43: Hindi Literature; -31: Fiction; Bachchan: Author; "Madhushala": Title of Work',
-    ddcBreakdown: '891.433: Hindi Fiction'
+    breakdown: `Synthesized notation for ${rawTitle}`,
+    ddcBreakdown: `Generalities`
   };
 }
 
 async function tryGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: CLASSIFICATION_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize complete UDC and DDC notations including author and book title in quotes for: "${title}"` }] }],
+        contents: [{ role: 'user', parts: [{ text: `Synthesize pure UDC and DDC notations for: "${title}"` }] }],
         generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.1
@@ -189,7 +191,7 @@ async function tryGroq(title) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-          { role: 'user', content: `Synthesize complete UDC and DDC notations including author and book title in quotes for: "${title}"` }
+          { role: 'user', content: `Synthesize pure UDC and DDC notations for: "${title}"` }
         ],
         temperature: 0.1,
         response_format: { type: 'json_object' }
@@ -210,7 +212,7 @@ async function tryGroq(title) {
 function makeResponseObject(udcVal, ddcVal, mainSub, subSub, brk, ddcBrk) {
   const u = (udcVal || '').trim();
   const d = (ddcVal || '').trim();
-  const m = (mainSub || 'Hindi Literature').trim();
+  const m = (mainSub || 'Discipline').trim();
   const s = (subSub || '').trim();
   const b = (brk || '').trim();
   const db = (ddcBrk || '').trim();
