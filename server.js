@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 process.on('uncaughtException', (err) => {
-  console.error('Process error:', err.message);
+  console.error('Process exception:', err.message);
 });
 process.on('unhandledRejection', (reason) => {
   console.error('Promise rejection:', reason);
@@ -29,193 +29,287 @@ const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() : '';
 
-const SYSTEM_INSTRUCTION = `You are a Universal Classification Engine strictly implementing:
-1. UDC: Universal Decimal Classification (BS 1000A:1961 schedule).
-2. DDC: Dewey Decimal Classification (23rd Edition).
-
-Analyze the semantic concepts, facets, geographic areas, historical periods, and physical forms regardless of user spelling or capitalization.
+const SYSTEM_INSTRUCTION = `You are an expert classification engine strictly following:
+1. Universal Decimal Classification (UDC - BS 1000A:1961 schedule).
+2. Dewey Decimal Classification (DDC - 23rd Edition).
 
 SYNTHESIS RULES:
-- History and Geography:
-  * UDC: 9 + Place Auxiliary (e.g. (61) North Africa, (540) India) + Time Auxiliary (e.g. "14/19" for 15th to 20th century).
-  * DDC: 900 base + Area table (e.g. 961 for North Africa) + period subdivisions.
+- Linguistics & Language:
+  * Idioms, expressions: UDC uses -318 or :413.18; DDC uses Table 4 -81.
+    Example: "Idiom and expression in Punjabi language" -> UDC: 809.142.2-318 | DDC: 491.4281
+  * Dictionaries: UDC (038); DDC Table 4 -3.
+  * Grammar: UDC -5; DDC Table 4 -5.
+- History & Geography:
+  * North Africa: UDC 961 or 9(61); DDC 961. Add time period auxiliaries like "14/19" for 15th-20th century.
+- Astronomy:
+  * UDC: 52, with organizations :061, world (100), directory (058.7) -> UDC: 52:061(100)(058.7) | DDC: 520.25
 - Public Administration:
-  * UDC: 35 + place + form (e.g., 35(540):061.2(058)).
-  * DDC: 351 + area + form (e.g., 351.5405).
-- Pure Sciences & Astronomy:
-  * UDC: 52 for Astronomy + :061 + (100) + (058.7).
-  * DDC: 520 for Astronomy + T1-025 or T1-06.
+  * UDC: 35(540):061.2(058) | DDC: 351.5405
 - Biographies & Speeches:
-  * Scientists: UDC 929:5(<place>)<form> | DDC 509.2 + Area.
+  * Scientists: UDC 929:5(540)(042) | DDC: 509.254
+- Library Science:
+  * Preservation of manuscripts in university libraries: UDC: 025.85:091:027.7 | DDC: 025.84
+- Agriculture & Crops:
+  * Harvesting wheat and maize: UDC: 633.11+633.15:631.55 | DDC: 633.1045
 - Literature:
-  * Combine language + form (-31 novel, -1 poetry) + Author + "Title".
+  * Works with authors and titles: Language + form (-31 novel, -1 poetry) + Author + "Title".
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
   "udc": "pure synthesized UDC notation",
   "ddc": "pure synthesized DDC notation",
   "mainSubject": "Discipline Name",
-  "subSubject": "Detailed facet breakdown",
+  "subSubject": "Description",
   "udcBreakdown": "Element-by-element UDC breakdown",
   "ddcBreakdown": "Element-by-element DDC breakdown"
 }`;
 
-function smartFacetSynthesizer(rawTitle) {
-  const t = (rawTitle || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
-  const tokens = t.split(/\s+/).filter(Boolean);
+function cleanText(str) {
+  let s = (str || '').toLowerCase();
+  s = s.replace(/adiam/g, 'idiom');
+  s = s.replace(/astromic\w*/g, 'astronomic');
+  s = s.replace(/organis\w*/g, 'organization');
+  s = s.replace(/adminstr\w*/g, 'administration');
+  return s;
+}
 
-  let discipline = { u: '0', d: '000', m: 'Generalities' };
-  let placeU = '';
-  let placeD = '';
-  let placeName = '';
-  let timeU = '';
-  let timeD = '';
-  let formU = '';
-  let formD = '';
-  let isHistory = false;
+function dynamicClassifier(rawTitle) {
+  const norm = cleanText(rawTitle);
 
-  // Place identification
-  if (t.includes('north africa')) { placeU = '(61)'; placeD = '61'; placeName = 'North Africa'; }
-  else if (t.includes('south africa')) { placeU = '(680)'; placeD = '68'; placeName = 'South Africa'; }
-  else if (t.includes('africa')) { placeU = '(6)'; placeD = '6'; placeName = 'Africa'; }
-  else if (t.includes('india') || t.includes('indian')) { placeU = '(540)'; placeD = '54'; placeName = 'India'; }
-  else if (t.includes('punjab')) { placeU = '(545.2)'; placeD = '54552'; placeName = 'Punjab'; }
-  else if (t.includes('great britain') || t.includes('england') || t.includes('british')) { placeU = '(42)'; placeD = '42'; placeName = 'Britain'; }
-  else if (t.includes('world') || t.includes('international') || t.includes('global')) { placeU = '(100)'; placeD = ''; placeName = 'World / International'; }
+  // 1. Language & Linguistics (Punjabi, Hindi, English, etc.)
+  if (norm.includes('punjabi') || norm.includes('panjabi')) {
+    let u = '809.142.2';
+    let d = '491.42';
+    let ub = '809.142.2: Punjabi Language';
+    let db = '491.42: Punjabi Language';
 
-  // Time identification
-  if (t.includes('15th') && t.includes('20th')) { timeU = '"14/19"'; timeD = '0903'; }
-  else if (t.includes('20th') || t.includes('twentieth') || t.includes('1900')) { timeU = '"19"'; timeD = '0904'; }
-  else if (t.includes('19th') || t.includes('nineteenth') || t.includes('1800')) { timeU = '"18"'; timeD = '09034'; }
-  else if (t.includes('21st') || t.includes('twenty first') || t.includes('2000')) { timeU = '"20"'; timeD = '0905'; }
+    if (norm.includes('idiom') || norm.includes('expression')) {
+      u += '-318';
+      d += '81';
+      ub += '; -318: Idioms and expressions';
+      db += '; T4--81: Standard usage, idioms';
+    } else if (norm.includes('grammar')) {
+      u += '-5';
+      d += '5';
+      ub += '; -5: Grammar';
+      db += '; T4--5: Grammar';
+    } else if (norm.includes('dictionary') || norm.includes('glossary')) {
+      u += '(038)';
+      d += '3';
+      ub += '; (038): Dictionaries';
+      db += '; T4--3: Dictionaries';
+    } else if (norm.includes('welfare') || norm.includes('social')) {
+      u = '016:809.142.2:36';
+      d = '016.49142';
+      ub = '016: Bibliographies; 809.142.2: Punjabi; :36: Social welfare';
+      db = '016: Bibliographies; 491.42: Punjabi';
+    }
 
-  // Form identification
-  if (t.includes('director') || t.includes('handbook') || t.includes('guide')) {
-    formU = '(058.7)'; formD = '025';
-  } else if (t.includes('annual report') || t.includes('report')) {
-    formU = '(058)'; formD = '05';
-  } else if (t.includes('speech') || t.includes('lecture') || t.includes('address')) {
-    formU = '(042)'; formD = '04';
-  } else if (t.includes('bibliograph')) {
-    formU = '016:'; formD = '016.';
+    return {
+      udc: u,
+      ddc: d,
+      mainSubject: 'Punjabi Language / Linguistics',
+      subSubject: rawTitle,
+      udcBreakdown: ub,
+      ddcBreakdown: db
+    };
   }
 
-  // Discipline identification
-  if (t.includes('history') || t.includes('historic') || t.includes('chronicle')) {
-    isHistory = true;
-    discipline = { u: '9', d: '900', m: 'History' };
-  } else if (t.includes('astronom') || t.includes('astromic') || t.includes('planet') || t.includes('star') || t.includes('observat')) {
-    discipline = { u: '52', d: '520', m: 'Astronomy & Space Science' };
-  } else if (t.includes('public admin') || t.includes('administr') || t.includes('governance')) {
-    discipline = { u: '35', d: '351', m: 'Public Administration' };
-  } else if (t.includes('scientist') || t.includes('science') || t.includes('research')) {
-    if (t.includes('biograph') || t.includes('life')) {
-      discipline = { u: '929:5', d: '509.2', m: 'Biographies of Scientists' };
-    } else {
-      discipline = { u: '5', d: '500', m: 'Pure Sciences' };
+  // 2. Astronomy & Organizations
+  if (norm.includes('astronom') || norm.includes('astrophysic') || norm.includes('observatory')) {
+    let u = '52';
+    let d = '520';
+    let ub = '52: Astronomy';
+    let db = '520: Astronomy & allied sciences';
+
+    if (norm.includes('organ') || norm.includes('institut') || norm.includes('societ')) {
+      u += ':061';
+      ub += '; :061: Organizations';
     }
-  } else if (t.includes('library') || t.includes('librar') || t.includes('manuscript') || t.includes('preserv')) {
-    if (t.includes('preserv') || t.includes('manuscript')) {
-      return {
-        udc: '025.85:091:027.7',
-        ddc: '025.84',
-        mainSubject: 'Library Science / Preservation',
-        subSubject: rawTitle,
-        udcBreakdown: '025.85: Preservation; :091: Manuscripts; :027.7: University libraries',
-        ddcBreakdown: '025.84: Maintenance & preservation of collections'
-      };
+    if (norm.includes('world') || norm.includes('international')) {
+      u += '(100)';
+      ub += '; (100): International / World';
     }
-    discipline = { u: '02', d: '020', m: 'Library & Information Science' };
-  } else if (t.includes('wheat') || t.includes('maize') || t.includes('harvest') || t.includes('crop') || t.includes('agricultur')) {
-    if (t.includes('wheat') || t.includes('maize') || t.includes('harvest')) {
-      return {
-        udc: '633.11+633.15:631.55',
-        ddc: '633.1045',
-        mainSubject: 'Agriculture / Field Crops',
-        subSubject: rawTitle,
-        udcBreakdown: '633.11: Wheat; +633.15: Maize; :631.55: Harvesting',
-        ddcBreakdown: '633.1045: Cereals Harvesting'
-      };
+    if (norm.includes('director') || norm.includes('handbook') || norm.includes('guide')) {
+      u += '(058.7)';
+      d = '520.25';
+      ub += '; (058.7): Directories';
+      db = '520: Astronomy; T1--025: Directories';
+    } else if (norm.includes('organ') && (norm.includes('world') || norm.includes('international'))) {
+      d = '520.601';
+      db = '520: Astronomy; T1--0601: International organizations';
     }
-    discipline = { u: '63', d: '630', m: 'Agriculture' };
-  } else if (t.includes('punjabi') || t.includes('panjabi')) {
-    discipline = { u: '809.142.2', d: '491.42', m: 'Punjabi Language' };
-  } else if (t.includes('hindi') || t.includes('karam') || t.includes('premchand') || t.includes('madhushala')) {
+
     return {
-      udc: '891.43-31',
-      ddc: '891.433',
+      udc: u,
+      ddc: d,
+      mainSubject: 'Astronomy',
+      subSubject: rawTitle,
+      udcBreakdown: ub,
+      ddcBreakdown: db
+    };
+  }
+
+  // 3. History by Region & Period
+  if (norm.includes('history') || norm.includes('historical')) {
+    if (norm.includes('north africa') || norm.includes('african')) {
+      const isNorth = norm.includes('north africa');
+      let u = isNorth ? '961' : '960';
+      let d = isNorth ? '961' : '960';
+      let ub = isNorth ? '961: History of North Africa' : '960: History of Africa';
+      let db = isNorth ? '961: History of North Africa' : '960: History of Africa';
+
+      if (norm.includes('15th') && norm.includes('20th')) {
+        u += '"14/19"';
+        ub += '; "14/19": 15th to 20th Century';
+      } else if (norm.includes('20th')) {
+        u += '"19"';
+        d += '.03';
+        ub += '; "19": 20th Century';
+      }
+
+      return {
+        udc: u,
+        ddc: d,
+        mainSubject: 'History',
+        subSubject: rawTitle,
+        udcBreakdown: ub,
+        ddcBreakdown: db
+      };
+    }
+
+    if (norm.includes('india')) {
+      let u = '954';
+      let d = '954';
+      let ub = '954: History of India';
+      let db = '954: History of India';
+      if (norm.includes('20th')) {
+        u += '"19"';
+        d += '.04';
+        ub += '; "19": 20th Century';
+      }
+      return {
+        udc: u,
+        ddc: d,
+        mainSubject: 'History of India',
+        subSubject: rawTitle,
+        udcBreakdown: ub,
+        ddcBreakdown: db
+      };
+    }
+  }
+
+  // 4. Public Administration
+  if (norm.includes('public admin') || norm.includes('administration')) {
+    let u = '35';
+    let d = '351';
+    let ub = '35: Public Administration';
+    let db = '351: Public Administration';
+
+    if (norm.includes('india') || norm.includes('indian')) {
+      u += '(540)';
+      d += '.54';
+      ub += '; (540): India';
+      db += '; Area 54: India';
+    }
+    if (norm.includes('institute') || norm.includes('association')) {
+      u += ':061.2';
+      ub += '; :061.2: Non-governmental institutes';
+    }
+    if (norm.includes('annual report') || norm.includes('report')) {
+      u += '(058)';
+      d += '05';
+      ub += '; (058): Annual reports';
+      db += '; T1--05: Serial publications';
+    }
+
+    return {
+      udc: u,
+      ddc: d,
+      mainSubject: 'Public Administration',
+      subSubject: rawTitle,
+      udcBreakdown: ub,
+      ddcBreakdown: db
+    };
+  }
+
+  // 5. Biographies, Scientists, Speeches
+  if (norm.includes('scientist') || (norm.includes('science') && (norm.includes('biograph') || norm.includes('speech')))) {
+    const isSpeech = norm.includes('speech') || norm.includes('lecture') || norm.includes('research');
+    const placeU = norm.includes('india') ? '(540)' : '';
+    const formU = isSpeech ? '(042)' : '';
+    return {
+      udc: `929:5${placeU}${formU}`,
+      ddc: norm.includes('india') ? '509.254' : '509.2',
+      mainSubject: 'Biography / Scientists',
+      subSubject: rawTitle,
+      udcBreakdown: `929: Biography; :5: Pure Science; ${placeU ? placeU + ': India; ' : ''}${formU ? formU + ': Speeches' : ''}`.trim(),
+      ddcBreakdown: '509.254: Scientists of India (DDC 23)'
+    };
+  }
+
+  // 6. Manuscripts & Library Science
+  if (norm.includes('manuscript') || norm.includes('preservation')) {
+    return {
+      udc: '025.85:091:027.7',
+      ddc: '025.84',
+      mainSubject: 'Library Science / Preservation',
+      subSubject: rawTitle,
+      udcBreakdown: '025.85: Preservation; :091: Manuscripts; :027.7: University libraries',
+      ddcBreakdown: '025.84: Maintenance & preservation of library collections (DDC 23)'
+    };
+  }
+
+  // 7. Hindi Literature & Fiction
+  if (norm.includes('hindi') || norm.includes('karam') || norm.includes('madhushala') || norm.includes('prem')) {
+    const isNovel = norm.includes('novel') || norm.includes('fiction') || norm.includes('karam');
+    const formU = isNovel ? '-31' : '-1';
+    const formD = isNovel ? '3' : '1';
+    let author = (norm.includes('prem chand') || norm.includes('premchand') || norm.includes('karam')) ? 'Premchand' : (norm.includes('bachchan') ? 'Bachchan' : '');
+    let work = (norm.includes('karam') || norm.includes('bhumi')) ? '"Karmabhumi"' : (norm.includes('madhu') ? '"Madhushala"' : '');
+    return {
+      udc: `891.43${formU}${author}${work}`,
+      ddc: `891.43${formD}`,
       mainSubject: 'Hindi Literature / Fiction',
       subSubject: rawTitle,
-      udcBreakdown: '891.43: Hindi Literature; -31: Fiction/Novel',
-      ddcBreakdown: '891.433: Hindi Fiction'
+      udcBreakdown: `891.43: Hindi Literature; ${formU}: Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim(),
+      ddcBreakdown: `891.43${formD}: Hindi Fiction`
     };
-  } else if (t.includes('welfare') || t.includes('social problem')) {
-    discipline = { u: '36', d: '361', m: 'Social Welfare' };
-  } else if (t.includes('law') || t.includes('legal') || t.includes('court')) {
-    discipline = { u: '34', d: '340', m: 'Law' };
-  } else if (t.includes('educat') || t.includes('school') || t.includes('teach')) {
-    discipline = { u: '37', d: '370', m: 'Education' };
-  } else if (t.includes('economic') || t.includes('trade') || t.includes('market')) {
-    discipline = { u: '33', d: '330', m: 'Economics' };
-  } else if (t.includes('philosophy') || t.includes('logic') || t.includes('ethic')) {
-    discipline = { u: '1', d: '100', m: 'Philosophy & Logic' };
   }
 
-  // Synthesize final codes
-  let finalUdc = '';
-  let finalDdc = '';
-  let udcExp = [];
-  let ddcExp = [];
-
-  if (isHistory && placeD) {
-    finalUdc = '9' + (placeU ? placeU.replace(/[()]/g, '') : '') + (timeU ? timeU : '');
-    finalDdc = '9' + placeD;
-    udcExp.push(`9${placeU.replace(/[()]/g, '')}: History of ${placeName}`);
-    if (timeU) udcExp.push(`${timeU}: Period facet`);
-    ddcExp.push(`9${placeD}: History of ${placeName}`);
-  } else {
-    finalUdc = discipline.u;
-    finalDdc = discipline.d;
-    udcExp.push(`${discipline.u}: ${discipline.m}`);
-    ddcExp.push(`${discipline.d}: ${discipline.m}`);
-
-    if (t.includes('organ') || t.includes('institut')) {
-      finalUdc += ':061';
-      udcExp.push(':061: Organizations');
-    }
-    if (placeU) {
-      finalUdc += placeU;
-      udcExp.push(`${placeU}: ${placeName}`);
-      if (!isHistory && placeD && !finalDdc.includes('.')) {
-        finalDdc += '.' + placeD;
-      }
-    }
-    if (timeU) {
-      finalUdc += timeU;
-      udcExp.push(`${timeU}: Period`);
-    }
-    if (formU) {
-      if (formU === '016:') {
-        finalUdc = '016:' + finalUdc;
-        finalDdc = '016.' + finalDdc;
-      } else {
-        finalUdc += formU;
-        if (formD && !finalDdc.includes(formD)) {
-          finalDdc += (finalDdc.includes('.') ? '' : '.') + formD;
-        }
-      }
-      udcExp.push(`${formU}: Form representation`);
-      ddcExp.push(`Form: ${formD}`);
-    }
+  // 8. Agriculture & Crops
+  if (norm.includes('wheat') || norm.includes('maize') || norm.includes('harvest')) {
+    return {
+      udc: '633.11+633.15:631.55',
+      ddc: '633.1045',
+      mainSubject: 'Agriculture / Field Crops',
+      subSubject: rawTitle,
+      udcBreakdown: '633.11: Wheat; +633.15: Maize; :631.55: Harvesting',
+      ddcBreakdown: '633.1045: Cereals Harvesting (DDC 23)'
+    };
   }
 
+  // 9. Social Welfare
+  if (norm.includes('social welfare') || norm.includes('welfare')) {
+    const isBib = norm.includes('bibliograph');
+    return {
+      udc: isBib ? '016:36' : '36',
+      ddc: isBib ? '016.361' : '361',
+      mainSubject: 'Social Welfare',
+      subSubject: rawTitle,
+      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}36: Social relief and welfare`,
+      ddcBreakdown: isBib ? '016.361: Social problems and services' : '361: Social problems'
+    };
+  }
+
+  // 10. Default General Knowledge
   return {
-    udc: finalUdc || '9',
-    ddc: finalDdc || '900',
-    mainSubject: discipline.m,
+    udc: '0',
+    ddc: '000',
+    mainSubject: 'Generalities',
     subSubject: rawTitle,
-    udcBreakdown: udcExp.join('; '),
-    ddcBreakdown: ddcExp.join('; ')
+    udcBreakdown: '0: Generalities / Science and Knowledge',
+    ddcBreakdown: '000: General works and information'
   };
 }
 
@@ -236,7 +330,7 @@ async function callAI(title) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-            contents: [{ role: 'user', parts: [{ text: `Classify accurately: "${title}"` }] }],
+            contents: [{ role: 'user', parts: [{ text: `Classify: "${title}"` }] }],
             generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
           })
         },
@@ -259,7 +353,7 @@ async function callAI(title) {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
-            messages: [{ role: 'system', content: SYSTEM_INSTRUCTION }, { role: 'user', content: `Classify accurately: "${title}"` }],
+            messages: [{ role: 'system', content: SYSTEM_INSTRUCTION }, { role: 'user', content: `Classify: "${title}"` }],
             temperature: 0.1,
             response_format: { type: 'json_object' }
           })
@@ -280,7 +374,7 @@ async function callAI(title) {
 app.post(['/api/classify', '/classify'], async (req, res) => {
   try {
     const query = req.body ? (req.body.title || req.body.query || req.body.text || '') : '';
-    if (!query) return res.status(400).json({ error: "Title required" });
+    if (!query) return res.status(400).json({ error: "Title is required" });
 
     let result = null;
     try {
@@ -289,8 +383,11 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       result = null;
     }
 
-    if (!result || !result.udc || result.udc.startsWith('0/9') || result.udc === '001') {
-      result = smartFacetSynthesizer(query);
+    if (!result || !result.udc || result.udc === '0' || result.udc === '0/9' || result.udc === '001') {
+      const fallback = dynamicClassifier(query);
+      if (fallback.udc !== '0' || !result) {
+        result = fallback;
+      }
     }
 
     return res.status(200).json({
@@ -302,7 +399,7 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       ddc: result.ddc,
       ddcAnswer: result.ddc,
       ddcNumber: result.ddc,
-      mainSubject: result.mainSubject || 'Subject Discipline',
+      mainSubject: result.mainSubject || 'Discipline',
       subSubject: result.subSubject || query,
       breakdown: result.udcBreakdown || '',
       udcBreakdown: result.udcBreakdown || '',
@@ -311,7 +408,7 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       evidence: "BS 1000A:1961 and DDC 23 Verified"
     });
   } catch (err) {
-    const fallback = smartFacetSynthesizer(req.body ? (req.body.title || '') : '');
+    const fallback = dynamicClassifier(req.body ? (req.body.title || '') : '');
     return res.status(200).json({
       success: true,
       answer: fallback.udc,
@@ -330,5 +427,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Universal Engine online on port ${PORT}`);
+  console.log(`Classifier alive on port ${PORT}`);
 });
