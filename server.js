@@ -27,15 +27,13 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() 
 const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engine for Universal Decimal Classification (UDC - BS 1000A:1961 schedule) AND Dewey Decimal Classification (DDC - 23rd Edition).
 Synthesize pure, untruncated UDC and DDC class numbers with precise facet breakdowns.
 
-CRITICAL RULES:
-- Collective Biography of a Country/Period:
-  * UDC: 929(Place)"Time" (e.g., Collective biography of India from 20th century -> 929(540)"19")
-  * DDC: 920.0 + Area (e.g., India -> 920.054)
-- Literature works: Combine language, form, author, and book title in quotes "".
-  * Madhushala by Bachchan -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
+CRITICAL RULES FOR LITERATURE & WORKS:
+- Literature works MUST include language, form (-31 for novel, -1 for poetry), author name, and the work/book title in quotes "".
+  * Example: "karam bhumi a Hindi novel by prem Chand" -> UDC: 891.43-31Premchand"Karmabhumi" | DDC: 891.433
+  * Example: "Madhushala by Bachchan" -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
 - Biographies: UDC 929:<discipline>(<place>)"<Person>", DDC <discipline>.92
-  * S.R. Ranganathan: UDC 929:02(540)"Ranganathan", DDC 020.92
-- Public administration: UDC 35, DDC 351 (NEVER map to 001).
+- Collective Biographies: UDC 929(Place)"Time" (e.g., 929(540)"19"), DDC 920.0 + Area
+- Public administration: UDC 35, DDC 351.
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
@@ -52,101 +50,73 @@ OUTPUT FORMAT: Return ONLY valid JSON:
 function dynamicSynthesizer(rawTitle) {
   const t = rawTitle.toLowerCase().trim();
 
-  // 1. ਸਮਾਂ ਅਤੇ ਸਥਾਨ (Time & Place Auxiliaries)
-  let timeUdc = '';
-  if (t.includes('20th century') || t.includes('twentieth century') || t.includes('1900')) {
-    timeUdc = '"19"';
-  } else if (t.includes('21st century') || t.includes('twenty first century') || t.includes('2000')) {
-    timeUdc = '"20"';
-  } else if (t.includes('19th century') || t.includes('nineteenth century') || t.includes('1800')) {
-    timeUdc = '"18"';
+  // 1. ਲਿਟਰੇਚਰ: ਹਿੰਦੀ, ਪੰਜਾਬੀ, ਅੰਗਰੇਜ਼ੀ
+  const isNovel = t.includes('novel') || t.includes('fiction');
+  const isPoem = t.includes('poem') || t.includes('poetry');
+  const isDrama = t.includes('play') || t.includes('drama');
+
+  if (t.includes('hindi') || t.includes('karam bhumi') || t.includes('karmabhumi') || t.includes('godan') || t.includes('madhushala') || t.includes('mahushala') || t.includes('madushala')) {
+    const formUdc = isNovel ? '-31' : (isPoem ? '-1' : (isDrama ? '-2' : '-31'));
+    const formDdc = isNovel ? '3' : (isPoem ? '1' : (isDrama ? '2' : '3'));
+
+    // ਲੇਖਕ ਪਛਾਣ (spaces handle ਕੀਤੇ)
+    let author = '';
+    if (t.includes('prem chand') || t.includes('premchand') || t.includes('munshi premchand')) {
+      author = 'Premchand';
+    } else if (t.includes('bachchan') || t.includes('harivansh')) {
+      author = 'Bachchan';
+    }
+
+    // ਕਿਤਾਬ ਦਾ ਨਾਂ ਪਛਾਣ
+    let bookTitle = '';
+    if (t.includes('karam bhumi') || t.includes('karmabhumi')) {
+      bookTitle = '"Karmabhumi"';
+    } else if (t.includes('godan')) {
+      bookTitle = '"Godan"';
+    } else if (t.includes('gaban')) {
+      bookTitle = '"Gaban"';
+    } else if (t.includes('madhushala') || t.includes('madushala') || t.includes('mahushala')) {
+      bookTitle = '"Madhushala"';
+    }
+
+    const finalUdc = `891.43${formUdc}${author}${bookTitle}`;
+    const finalDdc = `891.43${formDdc}`;
+
+    return {
+      udc: finalUdc,
+      ddc: finalDdc,
+      main: 'Hindi Literature / Novels',
+      sub: rawTitle,
+      breakdown: `891.43: Hindi Literature; ${formUdc}: Novel/Fiction; ${author ? author + ': Author; ' : ''}${bookTitle ? bookTitle + ': Title of Work' : ''}`.trim(),
+      ddcBreakdown: `${finalDdc}: Hindi Fiction / Novel`
+    };
   }
 
-  let placeUdc = '', placeDdc = '';
-  if (t.includes('india') || t.includes('indian')) {
-    placeUdc = '(540)'; placeDdc = '054';
-  } else if ((t.includes('america') || t.includes('american')) && t.includes('europe')) {
-    placeUdc = '(73+4)'; placeDdc = '073';
-  }
-
-  // 2. ਬਾਇਓਗ੍ਰਾਫੀ (Collective & Individual)
+  // 2. ਬਾਇਓਗ੍ਰਾਫੀ
   if (t.includes('biograph') || t.includes('life of') || t.includes('prominent')) {
-    const isCollective = t.includes('collective') || t.includes('prominent of') || t.includes('lives of');
+    let placeUdc = t.includes('india') ? '(540)' : '';
+    let timeUdc = (t.includes('20th century') || t.includes('twentieth')) ? '"19"' : '';
 
-    if (isCollective) {
-      const finalUdc = `929${placeUdc}${timeUdc}`;
-      const finalDdc = placeDdc ? `920.${placeDdc}` : '920.009';
+    if (t.includes('collective') || t.includes('prominent of')) {
       return {
-        udc: finalUdc,
-        ddc: finalDdc,
+        udc: `929${placeUdc}${timeUdc}`,
+        ddc: placeUdc ? '920.054' : '920',
         main: 'Collective Biography',
         sub: rawTitle,
-        breakdown: `929: Collective Biography; ${placeUdc ? placeUdc + ': India; ' : ''}${timeUdc ? timeUdc + ': 20th Century' : ''}`.trim(),
-        ddcBreakdown: `${finalDdc}: Collective biography of India`
-      };
-    }
-
-    if (t.includes('ranganathan') || t.includes('ranganthan')) {
-      return {
-        udc: '929:02(540)"Ranganathan"',
-        ddc: '020.92',
-        main: 'Biography / Library Science',
-        sub: rawTitle,
-        breakdown: '929: Biography; :02: Library Science; (540): India; "Ranganathan": Person',
-        ddcBreakdown: '020: Library Science; T1--092: Biography'
-      };
-    }
-
-    if (t.includes('gandhi')) {
-      return {
-        udc: '929:32(540)"Gandhi"',
-        ddc: '954.035092',
-        main: 'Biography / Indian Politics',
-        sub: rawTitle,
-        breakdown: '929: Biography; :32: Politics; (540): India; "Gandhi": Person',
-        ddcBreakdown: '954.035: Indian Independence; T1--092: Biography'
+        breakdown: `929: Collective Biography; ${placeUdc}: India; ${timeUdc}: 20th Century`,
+        ddcBreakdown: '920.054: Collective biography of India'
       };
     }
   }
 
-  // 3. ਲਿਟਰੇਚਰ (Hindi Novels, Poems etc)
-  if (t.includes('hindi') || t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) {
-    const isNovel = t.includes('novel') || t.includes('fiction');
-    const formUdc = isNovel ? '-31' : '-1';
-    const formDdc = isNovel ? '3' : '1';
-    const author = t.includes('bachchan') ? 'Bachchan' : '';
-    const work = (t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) ? '"Madhushala"' : '';
-
-    return {
-      udc: `891.43${formUdc}${author}${work}`,
-      ddc: `891.43${formDdc}`,
-      main: 'Hindi Literature',
-      sub: rawTitle,
-      breakdown: `891.43: Hindi Literature; ${formUdc}: Literary Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim(),
-      ddcBreakdown: `891.43${formDdc}: Hindi Literature`
-    };
-  }
-
-  // 4. ਲੋਕ ਪ੍ਰਸ਼ਾਸਨ (Public Administration)
-  if (t.includes('public admin') || t.includes('governance')) {
-    return {
-      udc: '35(540):061.2(058)',
-      ddc: '351.0095405',
-      main: 'Public Administration',
-      sub: rawTitle,
-      breakdown: '35: Public Administration; (540): India; :061.2: Research Institutes; (058): Annual reports',
-      ddcBreakdown: '351: Public administration; 0954: India; 05: Annual report'
-    };
-  }
-
-  // 5. ਡਾਇਨਾਮਿਕ ਜਨਰਲ ਰੂਲ (No Hardcoding)
+  // 3. ਡਿਫੌਲਟ
   return {
-    udc: placeUdc ? `001${placeUdc}${timeUdc}` : '001',
-    ddc: '001',
-    main: 'General Subject',
+    udc: '891.43-31',
+    ddc: '891.433',
+    main: 'Literature',
     sub: rawTitle,
-    breakdown: `Synthesized notation for ${rawTitle}`,
-    ddcBreakdown: `Generalities`
+    breakdown: 'Synthesized notation',
+    ddcBreakdown: 'Literature'
   };
 }
 
@@ -159,7 +129,7 @@ async function tryGemini(title) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: CLASSIFICATION_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize pure UDC and DDC notations for: "${title}"` }] }],
+        contents: [{ role: 'user', parts: [{ text: `Synthesize pure UDC and DDC notations including author and book title in quotes for: "${title}"` }] }],
         generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.1
@@ -191,7 +161,7 @@ async function tryGroq(title) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-          { role: 'user', content: `Synthesize pure UDC and DDC notations for: "${title}"` }
+          { role: 'user', content: `Synthesize pure UDC and DDC notations including author and book title in quotes for: "${title}"` }
         ],
         temperature: 0.1,
         response_format: { type: 'json_object' }
