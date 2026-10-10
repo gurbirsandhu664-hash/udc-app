@@ -3,19 +3,29 @@ const https = require('https');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// --- AI Function ---
+// --- AI Function with Full Sentence Reading ---
 function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        const prompt = `You are an expert librarian. Give the most accurate UDC 1961 (Universal Decimal Classification) and DDC 23 (Dewey Decimal Classification) numbers for the following query:
-        Query: ${query}
+        // Improved Prompt: AI will read every word of the sentence
+        const prompt = `You are an expert librarian and classifier. 
+        Analyze the COMPLETE text below carefully. Do NOT ignore any word or part of the sentence.
+        
+        Text to classify: "${query}"
+        
+        Instructions:
+        1. Identify ALL key concepts in the text (language, subject, topic, format, etc.).
+        2. Combine them to form the most accurate UDC 1961 (Universal Decimal Classification) number.
+        3. Combine them to form the most accurate DDC 23 (Dewey Decimal Classification) number.
+        4. If the text mentions a specific language, use the correct language code.
+        5. Be precise and cover every word.
         
         Respond ONLY in this exact JSON format without any other text:
-        {"udc": "number", "ddc": "number", "audit": "short 1 line explanation"}`;
+        {"udc": "number", "ddc": "number", "audit": "detailed explanation of every part"}`;
 
         const postData = JSON.stringify({
             model: "deepseek-chat",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.1
+            temperature: 0.0 // 0.0 means AI will give the most accurate answer, no guessing
         });
 
         const options = {
@@ -58,8 +68,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    // ਇੱਕੋ ਕਵੈਰੀ (Query) ਲਵੋ, ਜੇਕਰ ਖਾਲੀ ਹੈ ਤਾਂ ਡਿਫਾਲਟ ਲਵੋ
-    const query = url.searchParams.get('query') || 'Medicine Aptitude Test';
+    const query = url.searchParams.get('query') || 'Idioms and expression in Punjabi';
 
     let result;
     let errorMsg = "";
@@ -71,7 +80,7 @@ const server = http.createServer(async (req, res) => {
         result = { udc: "N/A", ddc: "N/A", audit: "API Error" };
     }
 
-    // --- PROFESSIONAL DESIGN WITH ONE INPUT BOX ---
+    // --- PROFESSIONAL DESIGN ---
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
         <!DOCTYPE html>
@@ -101,7 +110,7 @@ const server = http.createServer(async (req, res) => {
                 .result-box { margin-top: 30px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; }
                 .result-item { margin-bottom: 15px; }
                 .result-item strong { display: block; font-size: 12px; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
-                .result-item span { font-size: 22px; font-weight: 700; color: #2d3748; }
+                .result-item span { font-size: 22px; font-weight: 700; color: #2d3748; text-decoration: none; }
                 .audit { font-size: 13px; color: #4a5568; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e0; line-height: 1.5; }
                 .error { color: #e53e3e; font-size: 13px; margin-top: 15px; text-align: center; }
             </style>
@@ -115,8 +124,8 @@ const server = http.createServer(async (req, res) => {
                 
                 <form method="GET" action="/" id="classifyForm">
                     <div class="form-group">
-                        <label>Enter Your Query</label>
-                        <input type="text" name="query" placeholder="e.g., Medicine Aptitude Test, History, Law" value="${query}" required>
+                        <label>Enter Your Full Query</label>
+                        <input type="text" name="query" placeholder="e.g., Idioms and expression in Punjabi" value="${query}" required>
                     </div>
                     <button type="submit" id="submitBtn">Get Live Classification</button>
                 </form>
