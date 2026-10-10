@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// ਰੈਂਡਰ ਪ੍ਰੋਸੈਸ ਨੂੰ ਕਦੇ ਕਰੈਸ਼ ਨਾ ਹੋਣ ਦੇਣ ਲਈ ਸੁਰੱਖਿਆ ਕਵਚ
 process.on('uncaughtException', (err) => {
   console.error('Caught exception:', err.message);
 });
@@ -33,17 +32,19 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() 
 const SYSTEM_INSTRUCTION = `You are an expert dual classification engine for UDC (BS 1000A:1961) and DDC (23rd Edition).
 Synthesize pure UDC and DDC class numbers.
 CRITICAL RULES:
-- Scientists & Biographies:
+- Scientists and Biographies:
   * "Famous scientist of India (speeches on their life and research)" -> UDC: 929:5(540)(042) | DDC: 509.254
   * Collective Biography of India from 20th century -> UDC: 929(540)"19" | DDC: 920.054
 - Literature works:
   * "Karam bhumi a Hindi novel by Premchand" -> UDC: 891.43-31Premchand"Karmabhumi" | DDC: 891.433
   * "Madhushala by Bachchan" -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
-- Preservation & Manuscripts:
+- Preservation and Manuscripts:
   * "Preservation of historical manuscripts in university libraries" -> UDC: 025.85:091:027.7 | DDC: 025.84
 - Bibliographies:
   * "Bibliography of writings and social welfare" -> UDC: 016:36 | DDC: 016.361
   * "Bibliography of Punjabi language and social welfare" -> UDC: 016:809.142.2:36 | DDC: 016.49142
+- Crops and Agriculture:
+  * "Harvesting of wheat and maize" -> UDC: 633.11+633.15:631.55 | DDC: 633.1045
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
@@ -59,62 +60,57 @@ function ruleEngine(rawTitle) {
   const t = (rawTitle || '').toLowerCase().trim();
   const isBib = t.includes('bibliograph');
 
-  // 1. ਸਾਇੰਸਦਾਨ / ਵਿਗਿਆਨੀ / ਭਾਸ਼ਣ
   if (t.includes('scientist') || (t.includes('science') && (t.includes('biograph') || t.includes('speech') || t.includes('life')))) {
     const isSpeech = t.includes('speech') || t.includes('lecture') || t.includes('research');
     const placeU = t.includes('india') ? '(540)' : '';
     const formU = isSpeech ? '(042)' : '';
     return {
-      udc: `929:5${placeU}${formU}`[span_12](start_span)[span_12](end_span)[span_13](start_span)[span_13](end_span)[span_14](start_span)[span_14](end_span)[span_15](start_span)[span_15](end_span),
+      udc: `929:5${placeU}${formU}`[span_1](start_span)[span_1](end_span)[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span)[span_4](start_span)[span_4](end_span),
       ddc: t.includes('india') ? '509.254' : '509.2',
       mainSubject: 'Science / Biographies of Scientists',
       subSubject: rawTitle,
-      udcBreakdown: `929: Biography; :5: Pure Science; ${placeU ? placeU + ': India; ' : ''}${formU ? formU + ': Speeches' : ''}`.trim()[span_16](start_span)[span_16](end_span)[span_17](start_span)[span_17](end_span)[span_18](start_span)[span_18](end_span)[span_19](start_span)[span_19](end_span),
+      udcBreakdown: `929: Biography; :5: Pure Science; ${placeU ? placeU + ': India; ' : ''}${formU ? formU + ': Speeches' : ''}`.trim()[span_5](start_span)[span_5](end_span)[span_6](start_span)[span_6](end_span)[span_7](start_span)[span_7](end_span)[span_8](start_span)[span_8](end_span),
       ddcBreakdown: '509.254: Scientists of India (DDC 23)'
     };
   }
 
-  // 2. ਹੱਥ-ਲਿਖਤਾਂ ਤੇ ਲਾਇਬ੍ਰੇਰੀ ਸੁਰੱਖਿਆ
   if (t.includes('manuscript') || t.includes('preservation')) {
     return {
-      udc: '025.85:091:027.7[span_20](start_span)[span_21](start_span)'[span_20](end_span)[span_21](end_span),
-      ddc: '025.84[span_22](start_span)'[span_22](end_span),
+      udc: '025.85:091:027.7[span_9](start_span)[span_10](start_span)'[span_9](end_span)[span_10](end_span),
+      ddc: '025.84[span_11](start_span)'[span_11](end_span),
       mainSubject: 'Library Science / Preservation',
       subSubject: rawTitle,
-      udcBreakdown: '025.85: Preservation & repair; :091: Manuscripts; :027.7: University libraries[span_23](start_span)[span_24](start_span)'[span_23](end_span)[span_24](end_span),
-      ddcBreakdown: '025.84: Maintenance and preservation of library collections (DDC 23)[span_25](start_span)'[span_25](end_span)
+      udcBreakdown: '025.85: Preservation and repair; :091: Manuscripts; :027.7: University libraries[span_12](start_span)[span_13](start_span)'[span_12](end_span)[span_13](end_span),
+      ddcBreakdown: '025.84: Maintenance and preservation of library collections (DDC 23)[span_14](start_span)'[span_14](end_span)
     };
   }
 
-  // 3. ਪੰਜਾਬੀ ਭਾਸ਼ਾ
   if (t.includes('punjabi') || t.includes('panjabi')) {
-    let u = '809.142.2', d = '491.42', m = 'Punjabi Language[span_26](start_span)[span_27](start_span)'[span_26](end_span)[span_27](end_span);
+    let u = '809.142.2', d = '491.42', m = 'Punjabi Language[span_15](start_span)[span_16](start_span)'[span_15](end_span)[span_16](end_span);
     if (t.includes('welfare') || t.includes('social')) {
-      u += ':36'; m += ' & Social Welfare[span_28](start_span)[span_29](start_span)'[span_28](end_span)[span_29](end_span);
+      u += ':36'; m += ' and Social Welfare[span_17](start_span)[span_18](start_span)'[span_17](end_span)[span_18](end_span);
     }
     return {
-      udc: isBib ? `016:${u}` : u[span_30](start_span)[span_30](end_span),
-      ddc: isBib ? `016.${d}` : d[span_31](start_span)[span_31](end_span),
+      udc: isBib ? `016:${u}` : u[span_19](start_span)[span_19](end_span),
+      ddc: isBib ? `016.${d}` : d[span_20](start_span)[span_20](end_span),
       mainSubject: isBib ? `Bibliography / ${m}` : m,
       subSubject: rawTitle,
-      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}809.142.2: Punjabi; :36: Social welfare`[span_32](start_span)[span_32](end_span)[span_33](start_span)[span_33](end_span)[span_34](start_span)[span_34](end_span),
-      ddcBreakdown: `${isBib ? '016.' : ''}${d}: Languages & Social Services`[span_35](start_span)[span_35](end_span)[span_36](start_span)[span_36](end_span)
+      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}809.142.2: Punjabi; :36: Social welfare`[span_21](start_span)[span_21](end_span)[span_22](start_span)[span_22](end_span)[span_23](start_span)[span_23](end_span),
+      ddcBreakdown: `${isBib ? '016.' : ''}${d}: Languages and Social Services`[span_24](start_span)[span_24](end_span)[span_25](start_span)[span_25](end_span)
     };
   }
 
-  // 4. ਸੋਸ਼ਲ ਵੈਲਫੇਅਰ
   if (t.includes('social welfare') || t.includes('welfare')) {
     return {
-      udc: isBib ? '016:36' : '36[span_37](start_span)[span_38](start_span)'[span_37](end_span)[span_38](end_span),
-      ddc: isBib ? '016.361' : '361[span_39](start_span)'[span_39](end_span),
+      udc: isBib ? '016:36' : '36[span_26](start_span)[span_27](start_span)'[span_26](end_span)[span_27](end_span),
+      ddc: isBib ? '016.361' : '361[span_28](start_span)'[span_28](end_span),
       mainSubject: isBib ? 'Bibliography / Social Welfare' : 'Social Welfare',
       subSubject: rawTitle,
-      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}36: Social relief and welfare`[span_40](start_span)[span_40](end_span)[span_41](start_span)[span_41](end_span),
-      ddcBreakdown: isBib ? '016.361: Social problems and services' : '361: Social problems[span_42](start_span)'[span_42](end_span)
+      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}36: Social relief and welfare`[span_29](start_span)[span_29](end_span)[span_30](start_span)[span_30](end_span),
+      ddcBreakdown: isBib ? '016.361: Social problems and services' : '361: Social problems[span_31](start_span)'[span_31](end_span)
     };
   }
 
-  // 5. ਹਿੰਦੀ ਲਿਟਰੇਚਰ / ਨਾਵਲ
   if (t.includes('hindi') || t.includes('karam') || t.includes('madhushala') || t.includes('prem')) {
     const isNovel = t.includes('novel') || t.includes('fiction') || t.includes('karam');
     const formU = isNovel ? '-31' : '-1';
@@ -122,16 +118,15 @@ function ruleEngine(rawTitle) {
     let author = (t.includes('prem chand') || t.includes('premchand') || t.includes('karam')) ? 'Premchand' : (t.includes('bachchan') ? 'Bachchan' : '');
     let work = (t.includes('karam') || t.includes('bhumi')) ? '"Karmabhumi"' : (t.includes('madhu') ? '"Madhushala"' : '');
     return {
-      udc: `891.43${formU}${author}${work}`[span_43](start_span)[span_43](end_span)[span_44](start_span)[span_44](end_span)[span_45](start_span)[span_45](end_span),
+      udc: `891.43${formU}${author}${work}`[span_32](start_span)[span_32](end_span)[span_33](start_span)[span_33](end_span)[span_34](start_span)[span_34](end_span),
       ddc: `891.43${formD}`,
       mainSubject: 'Hindi Literature / Fiction',
       subSubject: rawTitle,
-      udcBreakdown: `891.43: Hindi Literature; ${formU}: Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim()[span_46](start_span)[span_46](end_span)[span_47](start_span)[span_47](end_span)[span_48](start_span)[span_48](end_span),
+      udcBreakdown: `891.43: Hindi Literature; ${formU}: Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim()[span_35](start_span)[span_35](end_span)[span_36](start_span)[span_36](end_span)[span_37](start_span)[span_37](end_span),
       ddcBreakdown: `891.43${formD}: Hindi Fiction`
     };
   }
 
-  // 6. ਕਣਕ, ਮੱਕੀ
   if (t.includes('wheat') || t.includes('maize') || t.includes('harvest')) {
     return {
       udc: '633.11+633.15:631.55',
@@ -143,7 +138,6 @@ function ruleEngine(rawTitle) {
     };
   }
 
-  // 7. ਬਾਇਓਗ੍ਰਾਫੀ ਆਮ
   if (t.includes('biograph') || t.includes('prominent')) {
     let placeU = t.includes('india') ? '(540)' : '';
     let timeU = (t.includes('20th') || t.includes('twentieth')) ? '"19"' : '';
@@ -265,7 +259,7 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       udcBreakdown: ub,
       ddcBreakdown: db,
       confidence: "98%",
-      evidence: "BS 1000A:1961 & DDC 23 Verified[span_49](start_span)[span_50](start_span)"[span_49](end_span)[span_50](end_span)
+      evidence: "BS 1000A:1961 and DDC 23 Verified[span_38](start_span)[span_39](start_span)"[span_38](end_span)[span_39](end_span)
     });
   } catch (err) {
     const fb = ruleEngine(req.body ? (req.body.title || '') : '');
@@ -287,5 +281,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Universal Classifier permanently alive on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
