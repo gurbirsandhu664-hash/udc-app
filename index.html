@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UDC (1961) + DDC (23) Universal Classifier</title>
+  <title>UDC (1961) + DDC (23) Dual Classifier</title>
   <style>
     :root {
       --primary: #2563eb;
@@ -33,7 +33,6 @@
     .item { background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #f1f5f9; }
     .item-label { font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; }
     .item-value { font-size: 0.9rem; font-weight: 600; color: #1e293b; margin-top: 4px; }
-    .status-msg { font-size: 0.85rem; color: #64748b; text-align: center; min-height: 1.2rem; }
   </style>
 </head>
 <body>
@@ -47,7 +46,6 @@
   <div class="input-box">
     <textarea id="titleInput" rows="3" placeholder="Enter book or document title here..."></textarea>
     <button id="classifyBtn" onclick="classify()">CLASSIFY NOW</button>
-    <div id="statusMsg" class="status-msg"></div>
   </div>
 
   <div id="resultCard" class="result-card">
@@ -105,10 +103,8 @@
     }
 
     var btn = document.getElementById('classifyBtn');
-    var status = document.getElementById('statusMsg');
-    btn.innerText = "READING & ANALYZING TITLE...";
+    btn.innerText = "CLASSIFYING VIA GEMINI SPARK...";
     btn.disabled = true;
-    status.innerText = "Analyzing subject facets and schedules...";
 
     fetch('/api/classify', {
       method: 'POST',
@@ -117,14 +113,12 @@
     })
     .then(function(res) {
       if (res.ok) return res.json();
-      throw new Error('Server status ' + res.status);
+      throw new Error('Server returned ' + res.status);
     })
     .then(function(data) {
-      status.innerText = "";
       displayResult(data, text);
     })
     .catch(function(err) {
-      status.innerText = "";
       alert("Error: " + err.message);
     })
     .finally(function() {
