@@ -3,59 +3,51 @@ const https = require('https');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// --- MLISc LEVEL SMART AI FUNCTION ---
+// --- ACCURATE AI FUNCTION (MLISc Exam Standard) ---
 function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        // PROFESSIONAL PROMPT FOR MLISC (UDC 1961 + DDC 23)
-        const prompt = `You are a highly intelligent librarian with deep, strict knowledge of UDC 1961 (Abridged Edition) and DDC 23 classification rules.
+        // STRICT UDC 1961 + DDC 23 PROMPT
+        const prompt = `You are a highly intelligent librarian with expert, strict knowledge of the actual UDC 1961 (B.S. 1000A) Abridged Edition and DDC 23 schedules.
         You are specifically trained for the Master of Library and Information Science (MLISc) exam pattern.
         
         Text to classify: "${query}"
         
-        CRITICAL RULES (Follow strictly for Exam Standard):
+        CRITICAL RULES (Follow strictly, DO NOT GUESS):
         
         --- FOR UDC 1961 ---
-        1. Apply Common Auxiliaries correctly:
-           - Language: = (e.g., =214.21 for Hindi)
-           - Form: (0...) (e.g., (047.3) for Annual Reports)
-           - Place: (1/9) (e.g., (540) for India)
-           - Race/Nationality: (=...) 
-           - Time: "..." 
-           - Point of View: .00
-           - Materials: -03
+        1. Follow the EXACT UDC 1961 schedule. Do NOT add extra subdivisions unless the title specifically demands it.
+        2. Common Auxiliaries to use correctly:
+           - Language: = (e.g., =111 for English)
+           - Form: (0...) (e.g., (016) for Bibliography, (047.3) for Annual Reports)
+           - Place: (1/9) (e.g., (540) for India, (61) for North Africa). Do NOT add extra countries unless mentioned.
+           - Time: "..." (e.g., "14/19" for 15th to 20th Century)
            - Relation: : (e.g., 61:37 for Medicine and Education)
            - Addition: + (e.g., 622+669 for Mining and Metallurgy)
-           - Extension: / (e.g., 592/599 for Invertebrates)
-           - Grouping: [] (e.g., 63:636[633.1:636.5])
-           
-        2. Apply Special Auxiliaries correctly:
-           - Hyphen series: -1/-9 (e.g., -31 for Novel)
-           - Point Zero series: .01/.09 (e.g., .047.3 for Report)
-           - Apostrophe series: '1/'9 (e.g., '373.72 for Idioms)
-           
-        3. For Hindi Literature: Use 891.43 (Hindi) + -31 (Novel) + '373.72 (Idioms if applicable). If author is Prem Chand, append PRE.
+        3. Apply Special Auxiliaries correctly: -1/-9, .01/.09, '1/'9
+        4. For Hindi Literature: Use 891.43 + -31. If author is Prem Chand, append PRE.
         
-        --- FOR DDC 23 ---
-        1. Apply Standard Subdivisions correctly:
-           - -01 to -09 (e.g., -05 for Serial Publications, -09 for History)
-           - Area Notation: -1/-9 (e.g., -54 for India)
-           - Language: -1/-9 (e.g., -914.3 for Hindi)
-           - Race: -1/-9
-           
-        2. Apply Multiple Syntheses correctly:
-           - Use T1--T9 tables for complex subjects.
-           - For Hindi Fiction: Use 891.433 (Hindi fiction) and NOT 891.4335.
-           - For Report: Use -05 as standard subdivision if needed.
+        --- FOR DDC 23 (STRICT RULES) ---
+        1. Use ONLY the official DDC 23 schedule. 
+        2. For Bibliography, use 016 (NOT 016.3988). 
+           - If it's a bibliography of a specific subject, add the subject number after 016. 
+           - Example: Bibliography of Nursery Rhymes = 016.3988 (This is correct in DDC 23).
+        3. For Hindi Fiction/Novels: Use 891.433 ONLY. Do NOT add 5 or any other number.
+        4. Apply Standard Subdivisions correctly: -01 to -09 (e.g., -05 for Serial Publications, -09 for History).
+        5. Apply Area Notation correctly: -1/-9 (e.g., -54 for India).
+        6. Do NOT add extra digits if not required. Be precise.
         
-        IMPORTANT: Be precise. If the exact number doesn't exist, give the closest valid UDC/DDC number according to the official schedule.
+        IMPORTANT: 
+        - If the title is "A bibliography of nursery rhymes", the correct UDC should be 016:398.8. 
+        - The correct DDC should be 016.3988. 
+        - Do NOT add extra numbers or subdivisions unless they are from the official schedule.
         
         Respond ONLY in this exact JSON format without any other text:
-        {"udc": "number", "ddc": "number", "audit": "short 2 line explanation of auxiliaries used"}`;
+        {"udc": "number", "ddc": "number", "audit": "detailed explanation of exactly which UDC/DDC schedule and auxiliaries were used."}`;
 
         const postData = JSON.stringify({
             model: "deepseek-chat",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.0 // Maximum accuracy
+            temperature: 0.0 // Maximum accuracy, no guessing
         });
 
         const options = {
@@ -117,7 +109,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const query = url.searchParams.get('query') || 'karam bhumi a Hindi novel by prem chand';
+    const query = url.searchParams.get('query') || 'A bibliography of nursery rhymes';
 
     let result;
     let errorMsg = "";
@@ -181,7 +173,7 @@ const server = http.createServer(async (req, res) => {
                 <form method="GET" action="/" id="classifyForm">
                     <div class="form-group">
                         <label>Enter Your Full Query</label>
-                        <input type="text" name="query" placeholder="e.g., Karam Bhumi a Hindi novel by Prem Chand" value="${query}" required>
+                        <input type="text" name="query" placeholder="e.g., A bibliography of nursery rhymes" value="${query}" required>
                     </div>
                     <button type="submit" id="submitBtn">Get Live Classification</button>
                 </form>
