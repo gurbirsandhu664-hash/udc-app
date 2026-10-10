@@ -3,20 +3,20 @@ const https = require('https');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// --- AI Function with Short Audit & Safe Parsing ---
+// --- TAGRRA AI FUNCTION ---
 function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        // We added: "Keep the audit VERY SHORT (max 2 lines)."
+        // STRICT + ADVANCED PROMPT
         const prompt = `You are an expert librarian with deep knowledge of UDC 1961 and DDC 23 classification systems. 
-        Analyze the COMPLETE text carefully. Do NOT ignore any word or part of the sentence.
+        Analyze the COMPLETE text carefully.
         
         Text to classify: "${query}"
         
-        CRITICAL INSTRUCTIONS:
-        1. Identify ALL key concepts: Subject, Organization/Institute, Form (Report, Journal, etc.), Place, and Language.
-        2. For UDC 1961: You MUST combine the main subject with the Form (e.g., 047.3 for Annual Reports) and Place (e.g., 540 for India) using the correct punctuation. 
-        3. For DDC 23: You MUST combine the main subject with the Standard Subdivisions using the correct DDC 23 tables.
-        4. Keep the "audit" field VERY SHORT. Maximum 2 lines. Do NOT write a long paragraph.
+        CRITICAL RULES:
+        1. For UDC 1961: Use ONLY the official UDC 1961 schedule. For literature, use 821.214.21 for Hindi, and -31 for Novel. If an author's name is mentioned, append the first 3 letters of the author's name in CAPITAL letters after the form (e.g., 821.214.21-31PRE for Prem Chand). 
+        2. For DDC 23: Use ONLY the official DDC 23 schedule. Do NOT add extra digits if not required. For Hindi fiction, use 891.433, NOT 891.4335.
+        3. If the text mentions an author, do NOT add their century to the DDC number. Just classify the book's subject.
+        4. Keep the "audit" field VERY SHORT. Maximum 2 lines.
         
         Respond ONLY in this exact JSON format without any other text:
         {"udc": "number", "ddc": "number", "audit": "short 2 line explanation"}`;
@@ -24,7 +24,7 @@ function getAIClassification(query) {
         const postData = JSON.stringify({
             model: "deepseek-chat",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.0
+            temperature: 0.0 // For maximum accuracy
         });
 
         const options = {
@@ -46,15 +46,14 @@ function getAIClassification(query) {
                     const json = JSON.parse(data);
                     if (json.choices && json.choices[0]) {
                         let content = json.choices[0].message.content;
-                        // Clean markdown formatting
+                        // Clean markdown
                         content = content.replace(/```json/g, '').replace(/```/g, '').trim();
                         
-                        // SAFE PARSING: Try to parse JSON safely
+                        // SAFE PARSING
                         try {
                             resolve(JSON.parse(content));
                         } catch (parseError) {
-                            // If JSON fails, try to extract just the numbers using Regex
-                            console.log("JSON Parse failed, trying Regex...");
+                            // Regex Fallback if JSON breaks
                             const udcMatch = content.match(/"udc"\s*:\s*"([^"]+)"/);
                             const ddcMatch = content.match(/"ddc"\s*:\s*"([^"]+)"/);
                             const auditMatch = content.match(/"audit"\s*:\s*"([^"]+)"/);
@@ -88,7 +87,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const query = url.searchParams.get('query') || 'Annual report of Indian institute of public administration';
+    const query = url.searchParams.get('query') || 'karam bhumi a Hindi novel by prem chand';
 
     let result;
     let errorMsg = "";
@@ -100,7 +99,7 @@ const server = http.createServer(async (req, res) => {
         result = { udc: "N/A", ddc: "N/A", audit: "API Error" };
     }
 
-    // --- PROFESSIONAL DESIGN ---
+    // --- ADVANCED PROFESSIONAL DESIGN (TAGRA LOOK) ---
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
         <!DOCTYPE html>
@@ -109,26 +108,37 @@ const server = http.createServer(async (req, res) => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>DeepSeek AI Classifier</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; }
-                body { font-family: 'Inter', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-                .card { background: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 550px; padding: 40px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header h1 { font-size: 26px; font-weight: 700; color: #1a202c; margin-bottom: 8px; }
-                .header p { color: #718096; font-size: 14px; font-weight: 400; }
-                .form-group { margin-bottom: 20px; }
-                label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-                input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; transition: all 0.2s; outline: none; font-family: 'Inter', sans-serif; }
-                input:focus { border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1); }
-                button { width: 100%; padding: 16px; background: #3182ce; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 10px; font-family: 'Inter', sans-serif; }
-                button:hover { background: #2b6cb0; }
-                .result-box { margin-top: 30px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; }
-                .result-item { margin-bottom: 15px; }
-                .result-item strong { display: block; font-size: 12px; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
-                .result-item span { font-size: 22px; font-weight: 700; color: #2d3748; text-decoration: none; }
-                .audit { font-size: 13px; color: #4a5568; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e0; line-height: 1.5; }
-                .error { color: #e53e3e; font-size: 13px; margin-top: 15px; text-align: center; }
+                body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+                .card { background: #ffffff; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 100%; max-width: 580px; padding: 45px; transition: all 0.3s ease; }
+                .card:hover { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+                
+                .header { text-align: center; margin-bottom: 35px; }
+                .header h1 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+                .header p { color: #718096; font-size: 14px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+                
+                .form-group { margin-bottom: 25px; }
+                label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+                input { width: 100%; padding: 16px 18px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; transition: all 0.3s; outline: none; font-family: 'Inter', sans-serif; background: #f8fafc; }
+                input:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15); background: #ffffff; }
+                
+                button { width: 100%; padding: 18px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 10px; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+                button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5); }
+                button:active { transform: translateY(0); }
+                
+                .result-box { margin-top: 35px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 30px; }
+                .result-item { margin-bottom: 20px; }
+                .result-item strong { display: block; font-size: 12px; color: #718096; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; letter-spacing: 1px; }
+                .result-item span { font-size: 24px; font-weight: 700; color: #1a202c; text-decoration: none; font-family: 'Inter', sans-serif; }
+                .audit { font-size: 14px; color: #4a5568; margin-top: 25px; padding-top: 20px; border-top: 2px dashed #cbd5e0; line-height: 1.6; }
+                .error { color: #e53e3e; font-size: 14px; margin-top: 20px; text-align: center; font-weight: 500; }
+                
+                @media (max-width: 480px) {
+                    .card { padding: 30px 20px; }
+                    .header h1 { font-size: 24px; }
+                }
             </style>
         </head>
         <body>
@@ -141,7 +151,7 @@ const server = http.createServer(async (req, res) => {
                 <form method="GET" action="/" id="classifyForm">
                     <div class="form-group">
                         <label>Enter Your Full Query</label>
-                        <input type="text" name="query" placeholder="e.g., Annual report of Indian institute of public administration" value="${query}" required>
+                        <input type="text" name="query" placeholder="e.g., Karam Bhumi a Hindi novel by Prem Chand" value="${query}" required>
                     </div>
                     <button type="submit" id="submitBtn">Get Live Classification</button>
                 </form>
@@ -164,7 +174,7 @@ const server = http.createServer(async (req, res) => {
                 document.getElementById('classifyForm').addEventListener('submit', function() {
                     const btn = document.getElementById('submitBtn');
                     btn.innerHTML = 'Analyzing... ⏳';
-                    btn.style.backgroundColor = '#a0aec0';
+                    btn.style.background = '#a0aec0';
                     btn.disabled = true;
                 });
             </script>
