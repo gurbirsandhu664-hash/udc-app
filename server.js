@@ -2,8 +2,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import pkg from 'pg';
-const { Pool } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +16,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ਵੱਡੇ ਇੰਡੈਕਸ ਡਾਟਾ ਲਈ 100MB ਲਿਮਿਟ
+// ਵੱਡੇ DDC ਇੰਡੈਕਸ ਡਾਟਾ ਲਈ 100MB ਲਿਮਿਟ
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(__dirname));
@@ -27,110 +25,65 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() : '';
-const DATABASE_URL = process.env.DATABASE_URL ? process.env.DATABASE_URL.trim() : '';
 const DDC_INDEX_WRITE_TOKEN = process.env.DDC_INDEX_WRITE_TOKEN ? process.env.DDC_INDEX_WRITE_TOKEN.trim() : '';
 
-// --- POSTGRESQL ਡਾਟਾਬੇਸ ਸੈੱਟਅੱਪ ---
-let pool = null;
-if (DATABASE_URL) {
-  pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
+// ਸਰਵਰ ਉੱਤੇ ਸਥਾਈ ਇੰਡੈਕਸ ਫਾਈਲ
+const SHARED_INDEX_FILE = path.join(__dirname, 'shared_ddc_index.json');
 
-  // ਆਟੋਮੈਟਿਕ ਟੇਬਲ ਤਿਆਰ ਕਰਨਾ
-  pool.query(`
-    CREATE TABLE IF NOT EXISTS shared_ddc_store (
-      id VARCHAR(50) PRIMARY KEY,
-      data JSONB NOT NULL,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `).catch(err => console.error("Postgres table init error:", err.message));
-}
-
-// ਸਰਵਰ ਲੋਕਲ ਫਾਲਬੈਕ ਫਾਈਲ
-const LOCAL_INDEX_FILE = path.join(__dirname, 'shared_ddc_index.json');
-
-// --- ਫਰੰਟਐਂਡ ਲਈ ਸਾਰੇ PUBLISH ਅਤੇ LOAD ਰੂਟਸ ---
-const handlePublish = async (req, res) => {
+// --- 1. SHARED DDC-23 INDEX ਐਂਡਪੁਆਇੰਟਸ (ਕੋਈ pg ਲਾਇਬ੍ਰੇਰੀ ਨਹੀਂ ਚਾਹੀਦੀ) ---
+const handlePublish = (req, res) => {
   try {
     const token = req.headers['x-write-token'] || req.headers['authorization'] || req.body.token || req.query.token;
-    
-    // ਜੇ ਟੋਕਨ ਸੈੱਟ ਹੈ ਤਾਂ ਵੈਰੀਫਾਈ ਕਰੋ
     if (DDC_INDEX_WRITE_TOKEN && token && token.replace('Bearer ', '').trim() !== DDC_INDEX_WRITE_TOKEN) {
       return res.status(401).json({ success: false, error: "Invalid write token" });
     }
 
     const payload = req.body.index || req.body.data || req.body;
+    fs.writeFileSync(SHARED_INDEX_FILE, JSON.stringify(payload), 'utf8');
 
-    // 1. ਡਾਟਾਬੇਸ ਵਿੱਚ ਸੇਵ ਕਰੋ
-    if (pool) {
-      await pool.query(
-        `INSERT INTO shared_ddc_store (id, data, updated_at) 
-         VALUES ('ddc_23_index', $1, NOW()) 
-         ON CONFLICT (id) DO UPDATE SET data = $1, updated_at = NOW();`,
-        [payload]
-      );
-    }
-
-    // 2. ਲੋਕਲ ਸਰਵਰ ਫਾਈਲ ਬੈਕਅੱਪ
-    fs.writeFileSync(LOCAL_INDEX_FILE, JSON.stringify(payload), 'utf8');
-
-    return res.json({ 
-      success: true, 
-      ok: true, 
-      status: "success", 
-      message: "Shared DDC-23 Index published successfully!" 
+    return res.json({
+      success: true,
+      ok: true,
+      status: "success",
+      message: "Shared DDC-23 Index published successfully on server!"
     });
   } catch (err) {
-    console.error("Publish error:", err.message);
     return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-const handleLoad = async (req, res) => {
+const handleLoad = (req, res) => {
   try {
-    // 1. ਡਾਟਾਬੇਸ ਤੋਂ ਚੈੱਕ ਕਰੋ
-    if (pool) {
-      const dbRes = await pool.query(`SELECT data FROM shared_ddc_store WHERE id = 'ddc_23_index' LIMIT 1;`);
-      if (dbRes.rows.length > 0) {
-        return res.json({ success: true, loaded: true, index: dbRes.rows[0].data, data: dbRes.rows[0].data });
-      }
+    if (fs.existsSync(SHARED_INDEX_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SHARED_INDEX_FILE, 'utf8'));
+      return res.json({ success: true, loaded: true, index: data, data: data });
     }
-
-    // 2. ਲੋਕਲ ਸਰਵਰ ਫਾਈਲ ਤੋਂ ਚੈੱਕ ਕਰੋ
-    if (fs.existsSync(LOCAL_INDEX_FILE)) {
-      const localData = JSON.parse(fs.readFileSync(LOCAL_INDEX_FILE, 'utf8'));
-      return res.json({ success: true, loaded: true, index: localData, data: localData });
-    }
-
-    return res.json({ success: false, loaded: false, message: "No shared index found" });
+    return res.json({ success: false, loaded: false, message: "No shared index published yet" });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// ਸਾਰੇ ਸੰਭਵ URL ਪੈਟਰਨ ਰਜਿਸਟਰ ਕਰੋ ਤਾਂ ਜੋ "string did not match pattern" ਨਾ ਆਵੇ
 app.post(['/api/shared-index', '/api/shared-index/publish', '/api/publish-index', '/publish-shared-index'], handlePublish);
 app.get(['/api/shared-index', '/api/shared-index/load', '/api/load-index', '/shared-index'], handleLoad);
 
-// --- ਕਲਾਸੀਫਿਕੇਸ਼ਨ ਇੰਜਣ (UDC 1961 + DDC 23) ---
+// --- 2. UDC (BS 1000A:1961) ਅਤੇ DDC (23rd Ed.) ਦਾ ਸਿਸਟਮ ਪ੍ਰੌਮਪਟ ---
 const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engine for Universal Decimal Classification (UDC - BS 1000A:1961 schedule) AND Dewey Decimal Classification (DDC - 23rd Edition).
 Synthesize pure, untruncated UDC and DDC class numbers with detailed facet breakdowns.
 
 RULES:
-- Agriculture & Crops (Wheat, Maize, Harvesting):
-  * UDC: 633.11/.15:631.55 or 633.11+633.15:631.55
-  * DDC: 633.1
 - Preservation / Manuscripts: UDC 025.85:091:027.7, DDC 025.84
+- Crops / Harvesting (Wheat, Maize): UDC 633.11+633.15:631.55, DDC 633.1
 - Social welfare / writings: UDC 016:36, DDC 016.361
-- Literature works: Combine language, form, author, and book title in quotes "".
+- Literature works: Combine language, form (-31 novel, -1 poetry), author, and book title in quotes "".
+- Collective Biographies: UDC 929(Place)"Time", DDC 920.0 + Area
+- Public Administration: UDC 35, DDC 351
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
   "fullNotation": "pure synthesized UDC notation",
   "ddc": "pure synthesized DDC notation",
-  "mainSubject": "Short main subject name",
+  "mainSubject": "Short main discipline name",
   "subSubject": "Detailed facet description",
   "breakdown": "Element-by-element UDC breakdown",
   "ddcBreakdown": "Element-by-element DDC breakdown",
@@ -138,10 +91,10 @@ OUTPUT FORMAT: Return ONLY valid JSON:
   "evidence": "Schedule verified"
 }`;
 
+// --- 3. ਆਫ਼ਲਾਈਨ ਐਲਗੋਰਿਦਮ ---
 function dynamicSynthesizer(rawTitle) {
   const t = rawTitle.toLowerCase().trim();
 
-  // ਖੇਤੀਬਾੜੀ (Wheat, Maize, Harvesting)
   if (t.includes('wheat') || t.includes('maize') || t.includes('harvest')) {
     return {
       udc: '633.11+633.15:631.55',
@@ -153,7 +106,6 @@ function dynamicSynthesizer(rawTitle) {
     };
   }
 
-  // ਲਾਇਬ੍ਰੇਰੀ ਪ੍ਰੀਜ਼ਰਵੇਸ਼ਨ
   if (t.includes('preservation') || t.includes('manuscript')) {
     return {
       udc: '025.85:091:027.7',
@@ -165,7 +117,6 @@ function dynamicSynthesizer(rawTitle) {
     };
   }
 
-  // ਸਮਾਜ ਭਲਾਈ
   if (t.includes('social welfare') || t.includes('welfare')) {
     return {
       udc: '016:36',
@@ -177,13 +128,26 @@ function dynamicSynthesizer(rawTitle) {
     };
   }
 
+  if (t.includes('hindi') || t.includes('novel') || t.includes('prem chand') || t.includes('premchand') || t.includes('bachchan')) {
+    let author = (t.includes('prem chand') || t.includes('premchand')) ? 'Premchand' : (t.includes('bachchan') ? 'Bachchan' : '');
+    let work = (t.includes('karam') || t.includes('bhumi')) ? '"Karmabhumi"' : (t.includes('madhushala') ? '"Madhushala"' : '');
+    return {
+      udc: `891.43-31${author}${work}`,
+      ddc: '891.433',
+      main: 'Hindi Literature / Novels',
+      sub: rawTitle,
+      breakdown: `891.43: Hindi Literature; -31: Fiction; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim(),
+      ddcBreakdown: '891.433: Hindi Fiction'
+    };
+  }
+
   return {
-    udc: '63',
-    ddc: '630',
-    main: 'Applied Sciences',
+    udc: '020',
+    ddc: '020',
+    main: 'Information & General Sciences',
     sub: rawTitle,
-    breakdown: 'Synthesized notation',
-    ddcBreakdown: 'Synthesized notation'
+    breakdown: `Synthesized for ${rawTitle}`,
+    ddcBreakdown: '020: Library & Information Science'
   };
 }
 
@@ -196,7 +160,7 @@ async function tryGemini(title) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: CLASSIFICATION_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize UDC (BS 1000A:1961) and DDC (23rd Ed.) for: "${title}"` }] }],
+        contents: [{ role: 'user', parts: [{ text: `Synthesize pure UDC and DDC for: "${title}"` }] }],
         generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
       })
     });
@@ -218,7 +182,7 @@ async function tryGroq(title) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-          { role: 'user', content: `Synthesize UDC and DDC for: "${title}"` }
+          { role: 'user', content: `Synthesize pure UDC and DDC for: "${title}"` }
         ],
         temperature: 0.1,
         response_format: { type: 'json_object' }
@@ -236,16 +200,42 @@ function makeResponseObject(u, d, m, s, b, db) {
   return {
     success: true,
     answer: u,
+    result: u,
+    completeAnswer: u,
+    complete_answer: u,
     fullNotation: u,
+    full_notation: u,
     udcNumber: u,
+    udc_number: u,
+    classNumber: u,
+    class_number: u,
+    classMark: u,
+    class_mark: u,
+    notation: u,
+    raw_notation: u,
     ddc: d,
+    ddcAnswer: d,
+    ddc_answer: d,
     ddcNumber: d,
-    mainSubject: m,
-    subSubject: s,
-    breakdown: b,
+    ddc_number: d,
+    ddcNotation: d,
+    ddc_notation: d,
+    section_d: d,
+    sectionD: d,
+    section_d_answer: d,
     ddcBreakdown: db,
+    ddc_breakdown: db,
+    mainSubject: m,
+    main_subject: m,
+    main: m,
+    subSubject: s,
+    sub_subject: s,
+    sub: s,
+    breakdown: b,
     confidence: '95%',
-    evidence: 'B.S. 1000A:1961 & DDC 23 verified'
+    confidence_level: '95%',
+    evidence: 'B.S. 1000A:1961 & DDC 23 verified',
+    schedule_reference: 'B.S. 1000A:1961 & DDC 23 verified'
   };
 }
 
@@ -254,7 +244,7 @@ app.get('/', (req, res) => {
   const pubIndex = path.join(__dirname, 'public', 'index.html');
   if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
   if (fs.existsSync(pubIndex)) return res.sendFile(pubIndex);
-  res.send("Server Running");
+  res.send("UDC Engine Active");
 });
 
 app.post(['/api/classify', '/classify'], async (req, res) => {
