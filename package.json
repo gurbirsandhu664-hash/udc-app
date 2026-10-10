@@ -1,11 +1,12 @@
 {
-  "name": "udc-ddc-deepseek-reference-classifier",
-  "version": "99.0.0",
-  "type": "module",
+  "name": "udc-app",
+  "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.2"
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   }
 }
