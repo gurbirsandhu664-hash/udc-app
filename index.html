@@ -83,10 +83,49 @@
 </div>
 
 <script>
-  function localRuleClassifier(rawTitle) {
+  function clientSideRuleEngine(rawTitle) {
     var t = (rawTitle || '').toLowerCase().trim();
     var isBib = t.indexOf('bibliograph') !== -1;
 
+    // 1. Public Administration
+    if (t.indexOf('public admin') !== -1 || t.indexOf('administration') !== -1 || t.indexOf('administrative') !== -1) {
+      var isReport = t.indexOf('annual report') !== -1 || t.indexOf('report') !== -1;
+      var isIndia = t.indexOf('india') !== -1 || t.indexOf('indian') !== -1;
+      var isInst = t.indexOf('institute') !== -1 || t.indexOf('institution') !== -1 || t.indexOf('society') !== -1;
+
+      var u = '35';
+      var d = '351';
+      var ub = '35: Public Administration';
+      var db = '351: Public Administration';
+
+      if (isIndia) {
+        u += '(540)';
+        d += '.54';
+        ub += '; (540): India';
+        db += '; Area 54: India';
+      }
+      if (isInst) {
+        u += ':061.2';
+        ub += '; :061.2: Institutes / Non-governmental organizations';
+      }
+      if (isReport) {
+        u += '(058)';
+        d += '05';
+        ub += '; (058): Annual report / Yearbooks';
+        db += '; T1--05: Serial publications / Reports';
+      }
+
+      return {
+        udcNumber: u,
+        ddcNumber: d,
+        mainSubject: 'Public Administration',
+        subSubject: rawTitle,
+        udcBreakdown: ub,
+        ddcBreakdown: db
+      };
+    }
+
+    // 2. Scientists, Biographies, Speeches
     if (t.indexOf('scientist') !== -1 || (t.indexOf('science') !== -1 && (t.indexOf('biograph') !== -1 || t.indexOf('speech') !== -1 || t.indexOf('life') !== -1))) {
       var isSpeech = t.indexOf('speech') !== -1 || t.indexOf('lecture') !== -1 || t.indexOf('research') !== -1;
       var placeU = t.indexOf('india') !== -1 ? '(540)' : '';
@@ -101,17 +140,29 @@
       };
     }
 
-    if (t.indexOf('manuscript') !== -1 || t.indexOf('preservation') !== -1) {
+    // 3. Manuscripts, Library Preservation, Libraries
+    if (t.indexOf('manuscript') !== -1 || t.indexOf('preservation') !== -1 || t.indexOf('library') !== -1 || t.indexOf('librar') !== -1) {
+      if (t.indexOf('preservation') !== -1 || t.indexOf('manuscript') !== -1) {
+        return {
+          udcNumber: '025.85:091:027.7',
+          ddcNumber: '025.84',
+          mainSubject: 'Library Science / Preservation',
+          subSubject: rawTitle,
+          udcBreakdown: '025.85: Preservation and repair; :091: Manuscripts; :027.7: University libraries',
+          ddcBreakdown: '025.84: Maintenance and preservation of library collections (DDC 23)'
+        };
+      }
       return {
-        udcNumber: '025.85:091:027.7',
-        ddcNumber: '025.84',
-        mainSubject: 'Library Science / Preservation',
+        udcNumber: '02',
+        ddcNumber: '020',
+        mainSubject: 'Library & Information Science',
         subSubject: rawTitle,
-        udcBreakdown: '025.85: Preservation and repair; :091: Manuscripts; :027.7: University libraries',
-        ddcBreakdown: '025.84: Maintenance and preservation of library collections (DDC 23)'
+        udcBreakdown: '02: Librarianship',
+        ddcBreakdown: '020: Library & information sciences'
       };
     }
 
+    // 4. Punjabi Language
     if (t.indexOf('punjabi') !== -1 || t.indexOf('panjabi') !== -1) {
       var u = '809.142.2', d = '491.42', m = 'Punjabi Language';
       if (t.indexOf('welfare') !== -1 || t.indexOf('social') !== -1) {
@@ -127,7 +178,8 @@
       };
     }
 
-    if (t.indexOf('social welfare') !== -1 || t.indexOf('welfare') !== -1) {
+    // 5. Social Welfare
+    if (t.indexOf('social welfare') !== -1 || t.indexOf('welfare') !== -1 || t.indexOf('social service') !== -1) {
       return {
         udcNumber: isBib ? '016:36' : '36',
         ddcNumber: isBib ? '016.361' : '361',
@@ -138,6 +190,7 @@
       };
     }
 
+    // 6. Hindi Literature / Novels
     if (t.indexOf('hindi') !== -1 || t.indexOf('karam') !== -1 || t.indexOf('madhushala') !== -1 || t.indexOf('prem') !== -1) {
       var isNovel = t.indexOf('novel') !== -1 || t.indexOf('fiction') !== -1 || t.indexOf('karam') !== -1;
       var formU = isNovel ? '-31' : '-1';
@@ -154,17 +207,91 @@
       };
     }
 
-    if (t.indexOf('wheat') !== -1 || t.indexOf('maize') !== -1 || t.indexOf('harvest') !== -1) {
+    // 7. Agriculture / Crops
+    if (t.indexOf('wheat') !== -1 || t.indexOf('maize') !== -1 || t.indexOf('harvest') !== -1 || t.indexOf('agricultur') !== -1 || t.indexOf('crop') !== -1) {
+      if (t.indexOf('wheat') !== -1 || t.indexOf('maize') !== -1 || t.indexOf('harvest') !== -1) {
+        return {
+          udcNumber: '633.11+633.15:631.55',
+          ddcNumber: '633.1045',
+          mainSubject: 'Agriculture / Field Crops',
+          subSubject: rawTitle,
+          udcBreakdown: '633.11: Wheat; +633.15: Maize; :631.55: Harvesting',
+          ddcBreakdown: '633.1045: Cereals Harvesting (DDC 23)'
+        };
+      }
       return {
-        udcNumber: '633.11+633.15:631.55',
-        ddcNumber: '633.1045',
-        mainSubject: 'Agriculture / Field Crops',
+        udcNumber: '63',
+        ddcNumber: '630',
+        mainSubject: 'Agriculture',
         subSubject: rawTitle,
-        udcBreakdown: '633.11: Wheat; +633.15: Maize; :631.55: Harvesting',
-        ddcBreakdown: '633.1045: Cereals Harvesting (DDC 23)'
+        udcBreakdown: '63: Agriculture, Forestry, Stockbreeding',
+        ddcBreakdown: '630: Agriculture and related technologies'
       };
     }
 
+    // 8. Computers & Programming
+    if (t.indexOf('computer') !== -1 || t.indexOf('software') !== -1 || t.indexOf('programm') !== -1) {
+      return {
+        udcNumber: '681.3.06',
+        ddcNumber: '005.1',
+        mainSubject: 'Computer Science',
+        subSubject: rawTitle,
+        udcBreakdown: '681.3: Computers; .06: Programs/Software',
+        ddcBreakdown: '005.1: Computer programming (DDC 23)'
+      };
+    }
+
+    // 9. Economics & Commerce
+    if (t.indexOf('economic') !== -1 || t.indexOf('finance') !== -1 || t.indexOf('commerce') !== -1 || t.indexOf('trade') !== -1) {
+      return {
+        udcNumber: '33',
+        ddcNumber: '330',
+        mainSubject: 'Economics',
+        subSubject: rawTitle,
+        udcBreakdown: '33: Political Economy, Economics',
+        ddcBreakdown: '330: Economics'
+      };
+    }
+
+    // 10. Education
+    if (t.indexOf('educat') !== -1 || t.indexOf('school') !== -1 || t.indexOf('teach') !== -1 || t.indexOf('universit') !== -1) {
+      return {
+        udcNumber: '37',
+        ddcNumber: '370',
+        mainSubject: 'Education',
+        subSubject: rawTitle,
+        udcBreakdown: '37: Education, Teaching',
+        ddcBreakdown: '370: Education'
+      };
+    }
+
+    // 11. Law
+    if (t.indexOf('law') !== -1 || t.indexOf('legal') !== -1 || t.indexOf('court') !== -1) {
+      return {
+        udcNumber: '34',
+        ddcNumber: '340',
+        mainSubject: 'Law',
+        subSubject: rawTitle,
+        udcBreakdown: '34: Jurisprudence, Law',
+        ddcBreakdown: '340: Law'
+      };
+    }
+
+    // 12. Philosophy, Logic, Ethics
+    if (t.indexOf('philosoph') !== -1 || t.indexOf('logic') !== -1 || t.indexOf('ethic') !== -1) {
+      var u = t.indexOf('logic') !== -1 ? '16' : (t.indexOf('ethic') !== -1 ? '17' : '1');
+      var d = t.indexOf('logic') !== -1 ? '160' : (t.indexOf('ethic') !== -1 ? '170' : '100');
+      return {
+        udcNumber: u,
+        ddcNumber: d,
+        mainSubject: 'Philosophy',
+        subSubject: rawTitle,
+        udcBreakdown: u + ': Philosophy / Systematic concepts',
+        ddcBreakdown: d + ': Philosophy & related disciplines'
+      };
+    }
+
+    // 13. Biography
     if (t.indexOf('biograph') !== -1 || t.indexOf('prominent') !== -1) {
       var placeU = t.indexOf('india') !== -1 ? '(540)' : '';
       var timeU = (t.indexOf('20th') !== -1 || t.indexOf('twentieth') !== -1) ? '"19"' : '';
@@ -178,13 +305,26 @@
       };
     }
 
+    // 14. History
+    if (t.indexOf('history') !== -1 || t.indexOf('war') !== -1 || t.indexOf('revolut') !== -1) {
+      var placeU = t.indexOf('india') !== -1 ? '(540)' : '';
+      return {
+        udcNumber: '93/99' + placeU,
+        ddcNumber: placeU ? '954' : '900',
+        mainSubject: 'History',
+        subSubject: rawTitle,
+        udcBreakdown: '93/99: History; ' + (placeU ? placeU + ': India' : ''),
+        ddcBreakdown: placeU ? '954: History of India' : '900: History'
+      };
+    }
+
     return {
-      udcNumber: '001',
-      ddcNumber: '001',
-      mainSubject: 'General Works',
+      udcNumber: '0/9',
+      ddcNumber: '000',
+      mainSubject: 'General & Interdisciplinary Works',
       subSubject: rawTitle,
-      udcBreakdown: '001: Generalities',
-      ddcBreakdown: '001: Knowledge and systems'
+      udcBreakdown: '0/9: Universal classification',
+      ddcBreakdown: '000: Computer science, information & general works'
     };
   }
 
@@ -212,16 +352,16 @@
 
     var answered = false;
 
-    // Fast client fallback within 1.2s to prevent hanging
+    // Fast client fallback within 1 second to prevent hanging
     var fallbackTimer = setTimeout(function() {
       if (!answered) {
         answered = true;
-        var localData = localRuleClassifier(text);
+        var localData = clientSideRuleEngine(text);
         displayResult(localData, text);
         btn.innerText = "CLASSIFY NOW";
         btn.disabled = false;
       }
-    }, 1200);
+    }, 1000);
 
     fetch('/api/classify', {
       method: 'POST',
@@ -236,6 +376,15 @@
     .then(function(data) {
       if (!answered) {
         answered = true;
+        if (data.udcNumber === '001' || data.udcNumber === '0/9') {
+          var localAttempt = clientSideRuleEngine(text);
+          if (localAttempt.udcNumber !== '0/9') {
+            displayResult(localAttempt, text);
+            btn.innerText = "CLASSIFY NOW";
+            btn.disabled = false;
+            return;
+          }
+        }
         displayResult(data, text);
         btn.innerText = "CLASSIFY NOW";
         btn.disabled = false;
@@ -245,7 +394,7 @@
       clearTimeout(fallbackTimer);
       if (!answered) {
         answered = true;
-        displayResult(localRuleClassifier(text), text);
+        displayResult(clientSideRuleEngine(text), text);
         btn.innerText = "CLASSIFY NOW";
         btn.disabled = false;
       }
