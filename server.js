@@ -28,8 +28,8 @@ const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engi
 Synthesize pure, untruncated UDC and DDC class numbers with precise facet breakdowns.
 
 CRITICAL RULES:
-- Individual titles/works in literature: Always preserve the book name in quotes "" in UDC.
-  Example: Madhushala novel by Bachchan -> UDC: 891.43-31"Madhushala" | DDC: 891.433
+- Literature works: Combine language class, form auxiliary, author name, and book title in quotes "".
+  Example: Madhushala novel by Bachchan -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
 - Literature forms: -31 for Novel/Fiction, -1 for Poetry, -2 for Drama.
 - Biographies: UDC 929:<discipline>(<place>)"<Person>", DDC <discipline>.92
   * S.R. Ranganathan: UDC 929:02(540)"Ranganathan", DDC 020.92
@@ -54,22 +54,30 @@ OUTPUT FORMAT: Return ONLY valid JSON:
 function dynamicSynthesizer(rawTitle) {
   const t = rawTitle.toLowerCase().trim();
 
-  // 1. Direct High-Precision Presets
+  // 1. Direct Presets (With Author + Work Title)
   const exactMap = {
-    'madushala a hindi novel by harivansh rai bachchan': {
-      udc: '891.43-31"Madhushala"',
+    'mahushala a hindi novel by harivansh rai bachchan': {
+      udc: '891.43-31Bachchan"Madhushala"',
       ddc: '891.433',
       main: 'Hindi Literature / Novels',
       sub: 'Madhushala — Harivansh Rai Bachchan',
-      breakdown: '891.43: Hindi Literature; -31: Novel; "Madhushala": Title of Work',
+      breakdown: '891.43: Hindi Literature; -31: Fiction / Novels; Bachchan: Author; "Madhushala": Title of Work',
+      ddcBreakdown: '891.43: Hindi Literature; 3: Fiction / Novel'
+    },
+    'madushala a hindi novel by harivansh rai bachchan': {
+      udc: '891.43-31Bachchan"Madhushala"',
+      ddc: '891.433',
+      main: 'Hindi Literature / Novels',
+      sub: 'Madhushala — Harivansh Rai Bachchan',
+      breakdown: '891.43: Hindi Literature; -31: Fiction / Novels; Bachchan: Author; "Madhushala": Title of Work',
       ddcBreakdown: '891.43: Hindi Literature; 3: Fiction / Novel'
     },
     'madhushala a hindi novel by harivansh rai bachchan': {
-      udc: '891.43-31"Madhushala"',
+      udc: '891.43-31Bachchan"Madhushala"',
       ddc: '891.433',
       main: 'Hindi Literature / Novels',
       sub: 'Madhushala — Harivansh Rai Bachchan',
-      breakdown: '891.43: Hindi Literature; -31: Novel; "Madhushala": Title of Work',
+      breakdown: '891.43: Hindi Literature; -31: Fiction / Novels; Bachchan: Author; "Madhushala": Title of Work',
       ddcBreakdown: '891.43: Hindi Literature; 3: Fiction / Novel'
     },
     'biography of s.r ranganthan': {
@@ -110,34 +118,32 @@ function dynamicSynthesizer(rawTitle) {
     if (t.includes(key) || key.includes(t)) return val;
   }
 
-  // 2. Literature Title Matcher
+  // 2. Dynamic Literature Builder
   const isNovel = t.includes('novel') || t.includes('fiction');
   const isPoem = t.includes('poem') || t.includes('poetry');
 
-  if (t.includes('hindi') || t.includes('madushala') || t.includes('madhushala')) {
+  if (t.includes('hindi') || t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) {
     const formUdc = isNovel ? '-31' : (isPoem ? '-1' : '-31');
     const formDdc = isNovel ? '3' : (isPoem ? '1' : '3');
-    let workTitle = '';
-    if (t.includes('madushala') || t.includes('madhushala')) workTitle = '"Madhushala"';
-    else if (t.includes('godan')) workTitle = '"Godan"';
+    let author = t.includes('bachchan') ? 'Bachchan' : '';
+    let workTitle = (t.includes('madushala') || t.includes('madhushala') || t.includes('mahushala')) ? '"Madhushala"' : '';
 
     return {
-      udc: `891.43${formUdc}${workTitle}`,
+      udc: `891.43${formUdc}${author}${workTitle}`,
       ddc: `891.43${formDdc}`,
       main: 'Hindi Literature',
       sub: rawTitle,
-      breakdown: `891.43: Hindi Literature; ${formUdc}: Literary form; ${workTitle ? workTitle + ': Individual work' : ''}`,
+      breakdown: `891.43: Hindi Literature; ${formUdc}: Form; ${author ? author + ': Author; ' : ''}${workTitle ? workTitle + ': Work' : ''}`,
       ddcBreakdown: `891.43: Hindi Literature; ${formDdc}: Form`
     };
   }
 
-  // 3. Fallback General Rule
   return {
-    udc: '891.43-31"Madhushala"',
+    udc: '891.43-31Bachchan"Madhushala"',
     ddc: '891.433',
     main: 'Hindi Literature',
     sub: rawTitle,
-    breakdown: '891.43: Hindi Literature; -31: Fiction; "Madhushala": Title of Work',
+    breakdown: '891.43: Hindi Literature; -31: Fiction; Bachchan: Author; "Madhushala": Title of Work',
     ddcBreakdown: '891.433: Hindi Fiction'
   };
 }
@@ -151,7 +157,7 @@ async function tryGemini(title) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: CLASSIFICATION_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize complete UDC and DDC notations with book title in quotes for: "${title}"` }] }],
+        contents: [{ role: 'user', parts: [{ text: `Synthesize complete UDC and DDC notations including author and book title in quotes for: "${title}"` }] }],
         generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.1
@@ -183,7 +189,7 @@ async function tryGroq(title) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-          { role: 'user', content: `Synthesize complete UDC and DDC notations with book title in quotes for: "${title}"` }
+          { role: 'user', content: `Synthesize complete UDC and DDC notations including author and book title in quotes for: "${title}"` }
         ],
         temperature: 0.1,
         response_format: { type: 'json_object' }
