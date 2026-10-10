@@ -83,36 +83,54 @@
 </div>
 
 <script>
-  async function classify() {
-    const text = document.getElementById('titleInput').value.trim();
-    if (!text) return alert("ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਟਾਈਟਲ ਭਰੋ!");
+  function classify() {
+    var inputElem = document.getElementById('titleInput');
+    var text = inputElem ? inputElem.value.trim() : '';
+    if (!text) {
+      alert("ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਟਾਈਟਲ ਭਰੋ!");
+      return;
+    }
 
-    const btn = document.getElementById('classifyBtn');
+    var btn = document.getElementById('classifyBtn');
     btn.innerText = "CLASSIFYING...";
     btn.disabled = true;
 
-    try {
-      const res = await fetch('/api/classify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: text })
-      });
-      const data = await res.json();
+    // Safari/iOS-safe absolute endpoint
+    var targetUrl = window.location.protocol + '//' + window.location.host + '/api/classify';
 
-      document.getElementById('recognizedTitle').innerText = text;
-      document.getElementById('udcValue').innerText = data.udcNumber || data.fullNotation || '-';
-      document.getElementById('udcBreakdown').innerText = data.udcBreakdown || data.breakdown || '';
-      document.getElementById('ddcValue').innerText = data.ddcNumber || data.ddc || '-';
-      document.getElementById('ddcBreakdown').innerText = data.ddcBreakdown || '';
-      document.getElementById('mainSubject').innerText = data.mainSubject || '-';
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", targetUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
-      document.getElementById('resultCard').style.display = 'flex';
-    } catch (err) {
-      alert("Error: " + err.message);
-    } finally {
+    xhr.onload = function() {
       btn.innerText = "CLASSIFY NOW";
       btn.disabled = false;
-    }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          document.getElementById('recognizedTitle').innerText = text;
+          document.getElementById('udcValue').innerText = data.udcNumber || data.fullNotation || data.answer || '-';
+          document.getElementById('udcBreakdown').innerText = data.udcBreakdown || data.breakdown || '';
+          document.getElementById('ddcValue').innerText = data.ddcNumber || data.ddc || '-';
+          document.getElementById('ddcBreakdown').innerText = data.ddcBreakdown || '';
+          document.getElementById('mainSubject').innerText = data.mainSubject || '-';
+          document.getElementById('resultCard').style.display = 'flex';
+        } catch (e) {
+          alert("Response parsing error: " + e.message);
+        }
+      } else {
+        alert("Server error (" + xhr.status + "): " + xhr.responseText);
+      }
+    };
+
+    xhr.onerror = function() {
+      btn.innerText = "CLASSIFY NOW";
+      btn.disabled = false;
+      alert("Network error: Server ਨਾਲ ਸੰਪਰਕ ਨਹੀਂ ਹੋ ਸਕਿਆ।");
+    };
+
+    xhr.send(JSON.stringify({ title: text }));
   }
 </script>
 
