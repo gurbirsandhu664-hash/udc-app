@@ -3,37 +3,59 @@ const https = require('https');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// --- SMART AI FUNCTION (The Genius Brain) ---
+// --- MLISc LEVEL SMART AI FUNCTION ---
 function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        // SMART & STRICT PROMPT
-        const prompt = `You are a highly intelligent librarian with deep, strict knowledge of UDC 1961 and DDC 23 classification rules.
-        Analyze the COMPLETE text carefully.
+        // PROFESSIONAL PROMPT FOR MLISC (UDC 1961 + DDC 23)
+        const prompt = `You are a highly intelligent librarian with deep, strict knowledge of UDC 1961 (Abridged Edition) and DDC 23 classification rules.
+        You are specifically trained for the Master of Library and Information Science (MLISc) exam pattern.
         
         Text to classify: "${query}"
         
-        CRITICAL RULES (Follow strictly):
-        1. For UDC 1961: 
-           - Use ONLY the official UDC 1961 schedule. 
-           - For Hindi Literature, use 891.43 (Hindi Literature) and for Novel form, use -31.
-           - Do NOT use 821 for Hindi. 821 is only for English Literature.
-           - If an author's name is mentioned, append the first 3 letters of the author's name in CAPITAL letters after the form (e.g., 891.43-31PRE for Prem Chand).
-           - Do NOT invent abbreviations, letters, or extra subdivisions unless absolutely necessary.
+        CRITICAL RULES (Follow strictly for Exam Standard):
         
-        2. For DDC 23: 
-           - Use ONLY the official DDC 23 schedule. 
-           - For Hindi fiction/novels, use 891.433 ONLY. Do NOT add 5 or any other number.
-           - If the text mentions an author, do NOT add their century to the DDC number.
+        --- FOR UDC 1961 ---
+        1. Apply Common Auxiliaries correctly:
+           - Language: = (e.g., =214.21 for Hindi)
+           - Form: (0...) (e.g., (047.3) for Annual Reports)
+           - Place: (1/9) (e.g., (540) for India)
+           - Race/Nationality: (=...) 
+           - Time: "..." 
+           - Point of View: .00
+           - Materials: -03
+           - Relation: : (e.g., 61:37 for Medicine and Education)
+           - Addition: + (e.g., 622+669 for Mining and Metallurgy)
+           - Extension: / (e.g., 592/599 for Invertebrates)
+           - Grouping: [] (e.g., 63:636[633.1:636.5])
+           
+        2. Apply Special Auxiliaries correctly:
+           - Hyphen series: -1/-9 (e.g., -31 for Novel)
+           - Point Zero series: .01/.09 (e.g., .047.3 for Report)
+           - Apostrophe series: '1/'9 (e.g., '373.72 for Idioms)
+           
+        3. For Hindi Literature: Use 891.43 (Hindi) + -31 (Novel) + '373.72 (Idioms if applicable). If author is Prem Chand, append PRE.
         
-        3. Keep the "audit" field VERY SHORT. Maximum 2 lines.
+        --- FOR DDC 23 ---
+        1. Apply Standard Subdivisions correctly:
+           - -01 to -09 (e.g., -05 for Serial Publications, -09 for History)
+           - Area Notation: -1/-9 (e.g., -54 for India)
+           - Language: -1/-9 (e.g., -914.3 for Hindi)
+           - Race: -1/-9
+           
+        2. Apply Multiple Syntheses correctly:
+           - Use T1--T9 tables for complex subjects.
+           - For Hindi Fiction: Use 891.433 (Hindi fiction) and NOT 891.4335.
+           - For Report: Use -05 as standard subdivision if needed.
+        
+        IMPORTANT: Be precise. If the exact number doesn't exist, give the closest valid UDC/DDC number according to the official schedule.
         
         Respond ONLY in this exact JSON format without any other text:
-        {"udc": "number", "ddc": "number", "audit": "short 2 line explanation"}`;
+        {"udc": "number", "ddc": "number", "audit": "short 2 line explanation of auxiliaries used"}`;
 
         const postData = JSON.stringify({
             model: "deepseek-chat",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.0 // For maximum accuracy, no guessing
+            temperature: 0.0 // Maximum accuracy
         });
 
         const options = {
