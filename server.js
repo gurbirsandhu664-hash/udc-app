@@ -3,20 +3,29 @@ const https = require('https');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// --- TAGRRA AI FUNCTION ---
+// --- SMART AI FUNCTION (The Genius Brain) ---
 function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        // STRICT + ADVANCED PROMPT
-        const prompt = `You are an expert librarian with deep knowledge of UDC 1961 and DDC 23 classification systems. 
+        // SMART & STRICT PROMPT
+        const prompt = `You are a highly intelligent librarian with deep, strict knowledge of UDC 1961 and DDC 23 classification rules.
         Analyze the COMPLETE text carefully.
         
         Text to classify: "${query}"
         
-        CRITICAL RULES:
-        1. For UDC 1961: Use ONLY the official UDC 1961 schedule. For literature, use 821.214.21 for Hindi, and -31 for Novel. If an author's name is mentioned, append the first 3 letters of the author's name in CAPITAL letters after the form (e.g., 821.214.21-31PRE for Prem Chand). 
-        2. For DDC 23: Use ONLY the official DDC 23 schedule. Do NOT add extra digits if not required. For Hindi fiction, use 891.433, NOT 891.4335.
-        3. If the text mentions an author, do NOT add their century to the DDC number. Just classify the book's subject.
-        4. Keep the "audit" field VERY SHORT. Maximum 2 lines.
+        CRITICAL RULES (Follow strictly):
+        1. For UDC 1961: 
+           - Use ONLY the official UDC 1961 schedule. 
+           - Do NOT invent abbreviations, letters, or extra subdivisions unless absolutely necessary.
+           - For literature, use 821.214.21 for Hindi, and -31 for Novel. If an author's name is mentioned, append the first 3 letters of the author's name in CAPITAL letters after the form (e.g., 821.214.21-31PRE for Prem Chand).
+           - If the text is about an organization, just classify its main subject (e.g., Astronomy = 52). Do NOT add form subdivisions like (058.7) unless it is a directory specifically.
+        
+        2. For DDC 23: 
+           - Use ONLY the official DDC 23 schedule. 
+           - Do NOT add extra digits if not required. 
+           - For Hindi fiction/novels, use 891.433 ONLY. Do NOT add 5 or any other number.
+           - If the text mentions an author, do NOT add their century to the DDC number.
+        
+        3. Keep the "audit" field VERY SHORT. Maximum 2 lines.
         
         Respond ONLY in this exact JSON format without any other text:
         {"udc": "number", "ddc": "number", "audit": "short 2 line explanation"}`;
@@ -24,7 +33,7 @@ function getAIClassification(query) {
         const postData = JSON.stringify({
             model: "deepseek-chat",
             messages: [{ role: "user", content: prompt }],
-            temperature: 0.0 // For maximum accuracy
+            temperature: 0.0 // For maximum accuracy, no guessing
         });
 
         const options = {
@@ -46,14 +55,13 @@ function getAIClassification(query) {
                     const json = JSON.parse(data);
                     if (json.choices && json.choices[0]) {
                         let content = json.choices[0].message.content;
-                        // Clean markdown
                         content = content.replace(/```json/g, '').replace(/```/g, '').trim();
                         
                         // SAFE PARSING
                         try {
                             resolve(JSON.parse(content));
                         } catch (parseError) {
-                            // Regex Fallback if JSON breaks
+                            // Regex Fallback
                             const udcMatch = content.match(/"udc"\s*:\s*"([^"]+)"/);
                             const ddcMatch = content.match(/"ddc"\s*:\s*"([^"]+)"/);
                             const auditMatch = content.match(/"audit"\s*:\s*"([^"]+)"/);
@@ -87,7 +95,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const query = url.searchParams.get('query') || 'karam bhumi a Hindi novel by prem chand';
+    const query = url.searchParams.get('query') || 'World directory of Astronomical organisation';
 
     let result;
     let errorMsg = "";
@@ -99,7 +107,7 @@ const server = http.createServer(async (req, res) => {
         result = { udc: "N/A", ddc: "N/A", audit: "API Error" };
     }
 
-    // --- ADVANCED PROFESSIONAL DESIGN (TAGRA LOOK) ---
+    // --- ADVANCED PROFESSIONAL DESIGN ---
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
         <!DOCTYPE html>
