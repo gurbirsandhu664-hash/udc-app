@@ -1,40 +1,41 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(__dirname));
 
-// 1. Load Local Reference Index
+// Load local reference index file
 let udcIndex = [];
 try {
-  const indexRaw = fs.readFileSync(path.join(__dirname, 'udc-1961-reference-index.json'), 'utf8');
-  udcIndex = JSON.parse(indexRaw);
-  console.log(`Loaded ${udcIndex.length || Object.keys(udcIndex).length} entries from UDC 1961 index.`);
+  const indexPath = path.join(__dirname, 'udc-1961-reference-index.json');
+  if (fs.existsSync(indexPath)) {
+    const indexRaw = fs.readFileSync(indexPath, 'utf8');
+    udcIndex = JSON.parse(indexRaw);
+  }
 } catch (err) {
-  console.warn('Warning: Could not load udc-1961-reference-index.json. Continuing without local RAG fallback.', err.message);
+  console.warn('Index load error:', err.message);
 }
 
-// Helper: Find closest reference records using keyword matching
 function findMatchingReferenceEntries(query, limit = 8) {
   if (!Array.isArray(udcIndex)) return [];
   const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
-  
-  const matches = udcIndex.filter(entry => {
+  return udcIndex.filter(entry => {
     const text = `${entry.class_number || entry.code || ''} ${entry.description || entry.title || ''}`.toLowerCase();
     return terms.some(term => text.includes(term));
-  });
-
-  return matches.slice(0, limit);
+  }).slice(0, limit);
 }
 
-// 2. DeepSeek Query Route
 app.post('/api/classify', async (req, res) => {
   try {
     const { query } = req.body;
@@ -47,30 +48,26 @@ app.post('/api/classify', async (req, res) => {
       return res.status(500).json({ error: 'DEEPSEEK_API_KEY environment variable is not configured.' });
     }
 
-    // Step A: Retrieve relevant reference items
     const matchedEntries = findMatchingReferenceEntries(query);
     const referenceContext = matchedEntries.length > 0 
       ? `Relevant Reference Entries from UDC 1961 Index:\n${JSON.stringify(matchedEntries, null, 2)}` 
       : 'No exact keyword matches found in local index. Construct using standard UDC 1961 classification principles.';
 
-    // Step B: Formulate system prompt in English
     const systemPrompt = `You are an authoritative classifier specializing in the Universal Decimal Classification (UDC - 1961 Edition).
-Task:
-Assign the most precise, synthesized UDC class mark according to UDC 1961 rules for the given subject or title.
+Task: Assign the most precise, synthesized UDC class mark according to UDC 1961 rules for the given subject or title.
 
 Strict Rules:
-1. Ground your synthesis in the verified UDC 1961 reference records provided below whenever relevant.
+1. Ground your synthesis in verified UDC 1961 reference records whenever relevant.
 2. Use valid 1961 standard connecting symbols and auxiliaries:
-   - '+' (Addition / coordination)
-   - '/' (Consecutive extension)
-   - ':' (Relation / synthesis)
-   - '=' (Language auxiliary)
-   - '(0...)' (Form auxiliary)
-   - '(1/9)' (Place auxiliary)
-   - '(=...)' (Race / nationality auxiliary)
-   - '""' (Time auxiliary)
+   - '+' (Addition)
+   - '/' (Extension)
+   - ':' (Relation)
+   - '=' (Language)
+   - '(0...)' (Form)
+   - '(1/9)' (Place)
+   - '""' (Time)
    - '-0...' or '.0...' (Special analytical auxiliaries)
-3. Do not invent or guess modern UDC revisions not present in the 1961 framework.
+3. Do not invent modern notations not in the 1961 framework.
 4. Output MUST be a valid JSON object matching this schema:
 {
   "class_number": "<Synthesized UDC number>",
@@ -85,7 +82,6 @@ Strict Rules:
 
 ${referenceContext}`;
 
-    // Step C: Call DeepSeek API
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
@@ -113,9 +109,8 @@ ${referenceContext}`;
     const rawContent = data.choices?.[0]?.message?.content;
     const parsedResult = JSON.parse(rawContent);
 
-    // Step D: Validate output structure
     if (!parsedResult.class_number) {
-      throw new Error('DeepSeek returned an invalid payload missing "class_number".');
+      throw new Error('DeepSeek returned an invalid payload missing class_number.');
     }
 
     return res.json({
@@ -127,7 +122,6 @@ ${referenceContext}`;
   } catch (error) {
     console.error('Classification error:', error);
     
-    // Fallback: If AI call fails, return top local match if available
     const fallbackMatches = findMatchingReferenceEntries(req.body?.query || '', 1);
     if (fallbackMatches.length > 0) {
       const fallback = fallbackMatches[0];
