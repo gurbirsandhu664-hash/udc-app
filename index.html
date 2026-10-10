@@ -112,13 +112,13 @@
     })
     .then(function(res) {
       if (res.ok) return res.json();
-      throw new Error('Server response not ok');
+      throw new Error('Server response was not ok');
     })
     .then(function(data) {
       displayResult(data, text);
     })
     .catch(function(err) {
-      alert("Error: " + err.message);
+      alert("Classification Error: " + err.message);
     })
     .finally(function() {
       btn.innerText = "CLASSIFY NOW";
