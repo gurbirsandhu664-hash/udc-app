@@ -16,33 +16,62 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+// JSON ਪੇਲੋਡ ਲਿਮਿਟ ਵਧਾਈ ਗਈ ਹੈ ਤਾਂ ਜੋ ਵੱਡਾ DDC ਇੰਡੈਕਸ ਆਸਾਨੀ ਨਾਲ ਸੇਵ ਹੋ ਸਕੇ
+app.use(express.json({ limit: '60mb' }));
+app.use(express.urlencoded({ limit: '60mb', extended: true }));
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() : '';
+const SHARED_INDEX_FILE = path.join(__dirname, 'shared_ddc_index.json');
 
-const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engine for Universal Decimal Classification (UDC - BS 1000A:1961 schedule) AND Dewey Decimal Classification (DDC - 23rd Edition).
-Synthesize pure, untruncated UDC and DDC class numbers with detailed facet breakdowns.
+// --- 1. SHARED DDC-23 INDEX ਆਟੋ-ਲੋਡ ਸਿਸਟਮ ---
+app.get('/api/shared-index/load', (req, res) => {
+  try {
+    if (fs.existsSync(SHARED_INDEX_FILE)) {
+      const data = fs.readFileSync(SHARED_INDEX_FILE, 'utf8');
+      return res.json({ success: true, loaded: true, index: JSON.parse(data) });
+    }
+    return res.json({ success: false, loaded: false, message: 'No index published yet' });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-CRITICAL DISCIPLINE RULES:
-- Social Welfare / Relief / Social Aid: UDC 36 (or 364), DDC 361 (or 362).
-  * "A bibliography of writings and social welfare" -> UDC: 016:36 | DDC: 016.361
-- Subject Bibliographies: ALWAYS prepend 016: in UDC, and 016. in DDC.
-- Punjabi language & writings: 811.214.22 (or 809.142.2).
-- Hindi novels: UDC 891.43-31<Author>"<Title>", DDC 891.433.
-- Biographies: UDC 929:<discipline>(<place>)"<Person>", DDC <discipline>.92.
-- Collective Biographies: UDC 929(Place)"Time" (e.g. 929(540)"19"), DDC 920.0 + Area.
+app.post('/api/shared-index/publish', (req, res) => {
+  try {
+    const payload = req.body.index || req.body.data || req.body;
+    fs.writeFileSync(SHARED_INDEX_FILE, JSON.stringify(payload), 'utf8');
+    return res.json({ success: true, message: 'Shared DDC-23 Index published & saved on server!' });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- 2. UDC (BS 1000A:1961) ਅਤੇ DDC (23rd Ed.) ਦਾ ਸਿਸਟਮ ਪ੍ਰੌਮਪਟ ---
+const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engine strictly following:
+1. Universal Decimal Classification (UDC - BS 1000A:1961 schedule).
+2. Dewey Decimal Classification (DDC - 23rd Edition).
+
+CRITICAL STANDARDS & PRESERVATION RULES:
+- Preservation / Conservation of documents & books: UDC 025.85, DDC 025.84.
+- Manuscripts: UDC 091, DDC 091.
+- Academic / University libraries: UDC 027.7, DDC 027.7.
+- Combined synthesis for "Preservation of historical manuscripts in university libraries":
+  * UDC: 025.85:091:027.7 (or 027.7:091:025.85)
+  * DDC: 025.84
+- Social welfare / writings: UDC 016:36, DDC 016.361.
+- Literature works: Combine language, form (-31 novel, -1 poetry), author, and book title in quotes "".
+- Collective Biographies: UDC 929(Place)"Time", DDC 920.0 + Area.
 - Public Administration: UDC 35, DDC 351.
-- Nursery rhymes: UDC 398.83, DDC 398.8.
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
   "fullNotation": "pure synthesized UDC notation",
   "ddc": "pure synthesized DDC notation",
-  "mainSubject": "Short main subject name",
+  "mainSubject": "Short main discipline name",
   "subSubject": "Detailed facet description",
   "breakdown": "Element-by-element UDC breakdown",
   "ddcBreakdown": "Element-by-element DDC breakdown",
@@ -50,128 +79,93 @@ OUTPUT FORMAT: Return ONLY valid JSON:
   "evidence": "Schedule verified"
 }`;
 
+// --- 3. ਡਾਇਨਾਮਿਕ ਆਫ਼ਲਾਈਨ ਐਲਗੋਰਿਦਮ (ਗਲਤ '3' ਦਾ ਬੱਗ ਖ਼ਤਮ) ---
 function dynamicSynthesizer(rawTitle) {
   const t = rawTitle.toLowerCase().trim();
-  const isBiblio = t.includes('bibliograph');
 
-  // 1. Social Welfare / Relief / Social Work
-  if (t.includes('social welfare') || t.includes('welfare') || t.includes('social relief') || t.includes('social aid')) {
-    let mainU = '36';
-    let mainD = '361';
-    let name = 'Social Welfare';
+  // A. Preservation / Manuscripts / University Libraries
+  if (t.includes('preservation') || t.includes('manuscript') || (t.includes('librar') && t.includes('historic'))) {
+    const isManuscript = t.includes('manuscript');
+    const isUniv = t.includes('university') || t.includes('academic');
+    const isPreserve = t.includes('preservation') || t.includes('conservation') || t.includes('repair');
 
-    if (t.includes('punjabi') || t.includes('panjabi')) {
-      mainU = '811.214.22:36';
-      mainD = '491.42';
-      name = 'Punjabi Language & Social Welfare';
+    let udc = '025.85';
+    if (isManuscript && isUniv) {
+      udc = '025.85:091:027.7';
+    } else if (isManuscript) {
+      udc = '025.85:091';
+    } else if (isUniv) {
+      udc = '027.7:025.85';
     }
 
-    const finalU = isBiblio ? `016:${mainU}` : mainU;
-    const finalD = isBiblio ? `016.${mainD}` : mainD;
+    const ddc = isPreserve ? '025.84' : (isUniv ? '027.7' : '020');
 
     return {
-      udc: finalU,
-      ddc: finalD,
-      main: isBiblio ? `Bibliography / ${name}` : name,
+      udc: udc,
+      ddc: ddc,
+      main: 'Library Science / Document Preservation',
       sub: rawTitle,
-      breakdown: isBiblio 
-        ? `016: Bibliographies; :36: Safeguarding mental and material necessities of life / Social welfare`
-        : `36: Social welfare and social aid`,
-      ddcBreakdown: `${finalD}: Social problems & social welfare services`
+      breakdown: '025.85: Preservation and repair; :091: Manuscripts; :027.7: University libraries',
+      ddcBreakdown: `${ddc}: Preservation and conservation of library collections (DDC 23)`
     };
   }
 
-  // 2. Punjabi Language & Linguistics
+  // B. Social Welfare / Bibliographies
+  if (t.includes('social welfare') || t.includes('welfare')) {
+    const isBib = t.includes('bibliograph');
+    return {
+      udc: isBib ? '016:36' : '36',
+      ddc: isBib ? '016.361' : '361',
+      main: isBib ? 'Bibliography / Social Welfare' : 'Social Welfare',
+      sub: rawTitle,
+      breakdown: `${isBib ? '016: Bibliographies; ' : ''}36: Social welfare and relief`,
+      ddcBreakdown: `${isBib ? '016.361' : '361'}: Social problems & social services`
+    };
+  }
+
+  // C. Punjabi Language / Linguistics
   if (t.includes('punjabi') || t.includes('panjabi')) {
-    const mainU = '811.214.22';
-    const mainD = '491.42';
-    const finalU = isBiblio ? `016:${mainU}` : mainU;
-    const finalD = isBiblio ? `016.${mainD}` : mainD;
-
+    const isBib = t.includes('bibliograph');
     return {
-      udc: finalU,
-      ddc: finalD,
-      main: isBiblio ? 'Bibliography / Punjabi Language' : 'Punjabi Language',
+      udc: isBib ? '016:811.214.22' : '811.214.22',
+      ddc: isBib ? '016.49142' : '491.42',
+      main: 'Punjabi Language',
       sub: rawTitle,
-      breakdown: `${isBiblio ? '016: Bibliographies; ' : ''}811.214.22: Punjabi language`,
-      ddcBreakdown: `${finalD}: Punjabi language and literature`
+      breakdown: '811.214.22: Punjabi language',
+      ddcBreakdown: '491.42: Punjabi'
     };
   }
 
-  // 3. Literature / Novels / Fiction
-  const isNovel = t.includes('novel') || t.includes('fiction') || t.includes('karam') || t.includes('bhumi');
-  const isPoem = t.includes('poem') || t.includes('poetry') || t.includes('rhyme');
-
-  if (t.includes('hindi') || t.includes('prem chand') || t.includes('premchand') || t.includes('bachchan') || t.includes('madhushala') || t.includes('karam bhumi')) {
-    const formUdc = isNovel ? '-31' : (isPoem ? '-1' : '-31');
-    const formDdc = isNovel ? '3' : (isPoem ? '1' : '3');
-
-    let author = '';
-    if (t.includes('prem chand') || t.includes('premchand')) author = 'Premchand';
-    else if (t.includes('bachchan') || t.includes('harivansh')) author = 'Bachchan';
-
-    let workTitle = '';
-    if (t.includes('karam bhumi') || t.includes('karmabhumi')) workTitle = '"Karmabhumi"';
-    else if (t.includes('madhushala') || t.includes('madushala') || t.includes('mahushala')) workTitle = '"Madhushala"';
-
-    const finalU = `891.43${formUdc}${author}${workTitle}`;
-    const finalD = `891.43${formDdc}`;
-
+  // D. Literature / Novels
+  if (t.includes('hindi') || t.includes('novel') || t.includes('prem chand') || t.includes('premchand') || t.includes('bachchan') || t.includes('karam bhumi')) {
+    let author = t.includes('prem') ? 'Premchand' : (t.includes('bachchan') ? 'Bachchan' : '');
+    let work = (t.includes('karam') || t.includes('bhumi')) ? '"Karmabhumi"' : ((t.includes('madhushala') || t.includes('mahushala')) ? '"Madhushala"' : '');
     return {
-      udc: finalU,
-      ddc: finalD,
-      main: 'Hindi Literature / Fiction',
+      udc: `891.43-31${author}${work}`,
+      ddc: '891.433',
+      main: 'Hindi Literature / Novels',
       sub: rawTitle,
-      breakdown: `891.43: Hindi Literature; ${formUdc}: Form; ${author ? author + ': Author; ' : ''}${workTitle ? workTitle + ': Title' : ''}`.trim(),
-      ddcBreakdown: `${finalD}: Hindi Literature`
+      breakdown: `891.43: Hindi Literature; -31: Fiction/Novel; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim(),
+      ddcBreakdown: '891.433: Hindi Fiction'
     };
   }
 
-  // 4. Biographies (Collective & Individual)
-  if (t.includes('biograph') || t.includes('prominent') || t.includes('life of')) {
-    const isColl = t.includes('collective') || t.includes('prominent');
-    let placeUdc = (t.includes('india') || t.includes('indian')) ? '(540)' : '';
-    let timeUdc = (t.includes('20th') || t.includes('twentieth')) ? '"19"' : '';
-
-    if (isColl) {
-      return {
-        udc: `929${placeUdc}${timeUdc}`,
-        ddc: placeUdc ? '920.054' : '920',
-        main: 'Collective Biography',
-        sub: rawTitle,
-        breakdown: `929: Collective Biography; ${placeUdc}: India; ${timeUdc}: 20th century`,
-        ddcBreakdown: '920.054: Collective biography of India'
-      };
-    }
-
-    if (t.includes('ranganathan') || t.includes('ranganthan')) {
-      return {
-        udc: '929:02(540)"Ranganathan"',
-        ddc: '020.92',
-        main: 'Biography / Library Science',
-        sub: rawTitle,
-        breakdown: '929: Biography; :02: Library Science; (540): India; "Ranganathan": Person',
-        ddcBreakdown: '020: Library Science; T1--092: Biography'
-      };
-    }
-  }
-
-  // 5. Nursery Rhymes
-  if (t.includes('nursery rhyme') || t.includes('folklore')) {
-    const finalU = isBiblio ? '016:398.83(73+4)' : '398.83';
-    const finalD = isBiblio ? '016.3988' : '398.8';
+  // E. Biographies
+  if (t.includes('biograph') || t.includes('prominent')) {
+    let place = t.includes('india') ? '(540)' : '';
+    let time = (t.includes('20th') || t.includes('twentieth')) ? '"19"' : '';
     return {
-      udc: finalU,
-      ddc: finalD,
-      main: 'Nursery Rhymes / Folklore',
+      udc: `929${place}${time}`,
+      ddc: place ? '920.054' : '920',
+      main: 'Collective Biography',
       sub: rawTitle,
-      breakdown: `${finalU} synthesized for folklore and rhymes`,
-      ddcBreakdown: `${finalD} synthesized`
+      breakdown: `929: Biography; ${place ? place + ': India; ' : ''}${time ? time + ': 20th Century' : ''}`.trim(),
+      ddcBreakdown: '920.054: Collective biography of India'
     };
   }
 
-  // 6. Public Administration
-  if (t.includes('public admin') || t.includes('governance')) {
+  // F. Public Administration
+  if (t.includes('public admin') || t.includes('administration')) {
     return {
       udc: '35(540):061.2(058)',
       ddc: '351.0095405',
@@ -182,16 +176,14 @@ function dynamicSynthesizer(rawTitle) {
     };
   }
 
-  // Default Fallback
-  const finalU = isBiblio ? '016:3' : '3';
-  const finalD = isBiblio ? '016.3' : '300';
+  // Default Subject Resolver (ਕਦੇ ਵੀ ਸਿਰਫ਼ '3' ਨਹੀਂ ਬਣੇਗਾ)
   return {
-    udc: finalU,
-    ddc: finalD,
-    main: isBiblio ? 'Bibliography / Social Sciences' : 'Social Sciences',
+    udc: '020',
+    ddc: '020',
+    main: 'Information Science & Library Systems',
     sub: rawTitle,
-    breakdown: `${finalU}: Synthesized classification for ${rawTitle}`,
-    ddcBreakdown: `${finalD}: Social Sciences`
+    breakdown: `020: Synthesized for ${rawTitle}`,
+    ddcBreakdown: '020: Library & Information Sciences'
   };
 }
 
@@ -204,7 +196,7 @@ async function tryGemini(title) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: CLASSIFICATION_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Synthesize pure, complete UDC and DDC notations for: "${title}"` }] }],
+        contents: [{ role: 'user', parts: [{ text: `Synthesize pure, complete UDC (BS 1000A:1961) and DDC (23rd Ed.) notations for: "${title}"` }] }],
         generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.1
@@ -236,7 +228,7 @@ async function tryGroq(title) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-          { role: 'user', content: `Synthesize pure, complete UDC and DDC notations for: "${title}"` }
+          { role: 'user', content: `Synthesize pure, complete UDC (BS 1000A:1961) and DDC (23rd Ed.) notations for: "${title}"` }
         ],
         temperature: 0.1,
         response_format: { type: 'json_object' }
