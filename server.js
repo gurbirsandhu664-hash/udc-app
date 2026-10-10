@@ -104,14 +104,17 @@ CRITICAL INSTRUCTIONS:
 
 ${referenceContext}`;
 
-    const apiRes = await fetch('https://api.deepseek.com/chat/completions', {
+    // OpenRouter API Call for DeepSeek
+    const apiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://udc-app.onrender.com',
+        'X-Title': 'UDC Classification App'
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'deepseek/deepseek-chat',
         temperature: 0.1,
         response_format: { type: 'json_object' },
         messages: [
@@ -122,7 +125,8 @@ ${referenceContext}`;
     });
 
     if (!apiRes.ok) {
-      throw new Error(`DeepSeek API error (${apiRes.status})`);
+      const errorText = await apiRes.text();
+      throw new Error(`OpenRouter API error (${apiRes.status}): ${errorText}`);
     }
 
     const data = await apiRes.json();
