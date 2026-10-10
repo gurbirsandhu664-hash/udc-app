@@ -1,12 +1,13 @@
 {
-  "name": "udc-ddc-v89-full-page-shared-index",
-  "version": "89.0.0",
+  "name": "udc-ddc-classifier",
+  "version": "2.0.0",
+  "description": "UDC 1961 and DDC 23 Classifier",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "pg": "^8.13.1"
+    "express": "^4.19.2"
   }
 }
