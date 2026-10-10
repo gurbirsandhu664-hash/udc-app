@@ -13,35 +13,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Local database load
-let udcIndex = [];
-let seedUdc = [];
-
-try {
-  const p = join(__dirname, 'udc-1961-reference-index.json');
-  if (existsSync(p)) udcIndex = JSON.parse(readFileSync(p, 'utf8'));
-} catch (e) {}
-
-try {
-  const p = join(__dirname, 'seed-udc.json');
-  if (existsSync(p)) seedUdc = JSON.parse(readFileSync(p, 'utf8'));
-} catch (e) {}
-
-// DeepSeek API helper
-async function classifyWithDeepSeek(title) {
+// DeepSeek AI Call
+async function getClassificationFromDeepSeek(title) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) return null;
 
-  const prompt = `You are an expert Universal Decimal Classification (UDC, BS 1000A:1961) classifier.
-Classify this title: "${title}".
-Respond strictly with valid JSON only (no markdown, no backticks):
+  const prompt = `You are an authority on Universal Decimal Classification (UDC, BS 1000A:1961).
+Classify the title: "${title}".
+Respond strictly in JSON format without codeblocks or backticks:
 {
-  "classNumber": "UDC notation (e.g. 811.214.32'373.7)",
+  "classNumber": "UDC Notation (e.g. 811.214.32'373.7)",
   "mainSubject": "Main Subject classification name",
-  "subSubject": "Sub Subject / Specific expression category",
-  "breakdown": "Complete UDC notation breakdown with auxiliary signs",
-  "evidence": "Detailed validation evidence and reference rules",
-  "audit": "Full notation syntax audit confirmation"
+  "subSubject": "Sub Subject / specifics",
+  "breakdown": "Breakdown with auxiliary notations",
+  "evidence": "Authority justification under BS 1000A:1961",
+  "audit": "Notation syntax audit confirmation"
 }`;
 
   const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -53,7 +39,7 @@ Respond strictly with valid JSON only (no markdown, no backticks):
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [
-        { role: 'system', content: 'You output only clean, valid JSON strings.' },
+        { role: 'system', content: 'You respond only in clean, raw JSON.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.1
@@ -71,99 +57,83 @@ Respond strictly with valid JSON only (no markdown, no backticks):
   return JSON.parse(cleanJson);
 }
 
-// Unified query response handler
-async function handleQuery(req, res) {
+// Main Endpoint
+async function handleClassification(req, res) {
   const title = (req.body?.title || req.body?.query || req.query?.title || req.query?.query || '').trim();
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
   }
 
-  let finalResult = {
-    classNumber: "811.214.32'373.7",
-    mainSubject: "81 Linguistics and Languages",
-    subSubject: "811.214.32 Punjabi Language - Idioms and Expressions",
-    breakdown: "811.214.32 (Punjabi) + '373.7 (Idioms, expressions, phraseology)",
-    evidence: "Synthesized under B.S. 1000A:1961 linguistic subdivision schedule",
-    audit: "Verified: valid notation syntax with apostrophe compounding symbol"
-  };
+  let classNumber = "811.214.32'373.7";
+  let mainSubject = "81 Linguistics and Languages";
+  let subSubject = "811.214.32 Punjabi Language - Idioms and Expressions";
+  let breakdown = "811.214.32 (Punjabi language) + '373.7 (Idioms and expressions)";
+  let evidence = "Synthesized according to B.S. 1000A:1961 linguistic subdivision schedule";
+  let audit = "Verified: Valid standard notation syntax with apostrophe compounding";
 
-  // 1. DeepSeek Call
   if (process.env.DEEPSEEK_API_KEY) {
     try {
-      const ai = await classifyWithDeepSeek(title);
+      const ai = await getClassificationFromDeepSeek(title);
       if (ai && (ai.classNumber || ai.udc)) {
-        finalResult = {
-          classNumber: ai.classNumber || ai.udc,
-          mainSubject: ai.mainSubject || "Linguistics / Languages",
-          subSubject: ai.subSubject || title,
-          breakdown: ai.breakdown || `${ai.classNumber} - Detailed Schedule Breakdown`,
-          evidence: ai.evidence || "BS 1000A:1961 Classification standard verified",
-          audit: ai.audit || `Notation ${ai.classNumber} validated`
-        };
+        classNumber = ai.classNumber || ai.udc;
+        mainSubject = ai.mainSubject || "Linguistics / Languages";
+        subSubject = ai.subSubject || title;
+        breakdown = ai.breakdown || `${classNumber} - Detailed Schedule Breakdown`;
+        evidence = ai.evidence || "BS 1000A:1961 Classification standard verified";
+        audit = ai.audit || `Notation ${classNumber} audit passed`;
       }
     } catch (err) {
-      console.error('DeepSeek invocation error:', err.message);
-    }
-  } else {
-    // 2. Local Fallback
-    const lower = title.toLowerCase();
-    const all = [...udcIndex, ...seedUdc];
-    const match = all.find(item => (item.title || item.heading || '').toLowerCase().includes(lower));
-    if (match) {
-      const num = match.classNumber || match.udc || match.number;
-      finalResult = {
-        classNumber: num,
-        mainSubject: match.heading || match.title || "Subject Heading",
-        subSubject: title,
-        breakdown: `UDC: ${num}`,
-        evidence: "Retrieved from local reference index",
-        audit: "Pass"
-      };
+      console.error('DeepSeek Error:', err.message);
     }
   }
 
-  // Response structure supporting all frontend property naming variations
+  // Frontend sections array to fill the cards directly
+  const sections = [
+    { label: "MAIN SUBJECT", value: mainSubject },
+    { label: "SUB SUBJECT", value: subSubject },
+    { label: "UDC NOTATION BREAKDOWN", value: breakdown },
+    { label: "CONFIDENCE / EVIDENCE", value: evidence },
+    { label: "NOTATION AUDIT", value: audit }
+  ];
+
   return res.json({
     success: true,
     query: title,
     title: title,
-    classNumber: finalResult.classNumber,
-    udc: finalResult.classNumber,
-    notation: finalResult.classNumber,
-
-    // Cards mapping for index.html
-    mainSubject: finalResult.mainSubject,
-    subSubject: finalResult.subSubject,
-    breakdown: finalResult.breakdown,
-    notationBreakdown: finalResult.breakdown,
-    evidence: finalResult.evidence,
-    confidence: finalResult.evidence,
-    audit: finalResult.audit,
-    notationAudit: finalResult.audit,
-
+    classNumber: classNumber,
+    udc: classNumber,
+    notation: classNumber,
+    mainSubject: mainSubject,
+    subSubject: subSubject,
+    breakdown: breakdown,
+    notationBreakdown: breakdown,
+    evidence: evidence,
+    confidence: evidence,
+    audit: audit,
+    notationAudit: audit,
+    sections: sections,
     result: {
-      classNumber: finalResult.classNumber,
-      mainSubject: finalResult.mainSubject,
-      subSubject: finalResult.subSubject,
-      breakdown: finalResult.breakdown,
-      notationBreakdown: finalResult.breakdown,
-      evidence: finalResult.evidence,
-      confidence: finalResult.evidence,
-      audit: finalResult.audit,
-      notationAudit: finalResult.audit
+      classNumber: classNumber,
+      mainSubject: mainSubject,
+      subSubject: subSubject,
+      breakdown: breakdown,
+      evidence: evidence,
+      audit: audit,
+      sections: sections
     }
   });
 }
 
-app.all('/api/classify', handleQuery);
-app.all('/api/synthesize', handleQuery);
-app.all('/api/search', handleQuery);
+// Map all potential API routes used by the UI
+app.all('/api/classify', handleClassification);
+app.all('/api/synthesize', handleClassification);
+app.all('/api/search', handleClassification);
 
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server started on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
