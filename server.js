@@ -6,59 +6,63 @@ app.use(express.json());
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "YOUR_API_KEY_HERE";
 
-// --- Strict UDC 1961 + DDC 23 Library Science Rules ---
-const LIBRARY_RULES = `
-You are a senior Library Science professor and cataloguer.
-You must give 100% accurate classification using UDC 1961 Abridged Edition and DDC 23.
+// --- DDC 23 Rules (from the official PDF) ---
+const DDC_RULES = `
+DDC 23 RULES (from the official PDF):
+- 028 = Reading and use of other information media
+- 028.9 = Reading interests and habits
+- 070 = News media, journalism, publishing
+- 371.26 = Examinations and tests, aptitude testing
+- 371.2 = School administration
+- 378 = Higher education
+- 305 = Groups of people
+- 305.4 = Women
+- 305.9 = People by occupation
+- 610 = Medicine and health
+- 610.76 = Medicine - examinations, tests
+- 371.26 = Examinations and tests
+- 371.264 = Academic prognosis and placement
+`;
 
-=== UDC 1961 ABRIDGED EDITION RULES ===
-- 02 = Library and information science
+// --- UDC 1961 Rules ---
+const UDC_RULES = `
+UDC 1961 ABRIDGED EDITION RULES:
 - 028 = Reading and advice for readers
 - 028.9 = Reading interests and habits
-- 05 = Serial publications / Newspapers / Journalism / Periodicals
+- 05 = Serial publications / Newspapers / Journalism
 - 37 = Education
 - 37.047 = Educational testing / aptitude tests
 - 378 = Higher education / Universities
-- 61 = Medicine and health
-- 316 = Sociology
-- 659 = Advertising / public relations
-- 681.3 = Data processing / computer science
 - -055.2 = Women (authorized auxiliary in 1961 abridged edition)
 - (540) = India (authorized common auxiliary of place)
-- Colon (:) = Relation indicator linking two subjects
-- ALWAYS give the SHORTEST correct UDC number.
-- If the title mentions newspaper, article, journal, magazine, serial or periodical, you MUST add 05 using the colon.
+- Colon (:) = Relation indicator
+- Always give the SHORTEST correct UDC number
+- If title mentions newspaper/article/journal, add 05 using colon.
+`;
+
+async function getClassification(title) {
+    const systemPrompt = `You are a senior Library Science professor and cataloguer.
+You must give 100% accurate classification using UDC 1961 Abridged Edition AND DDC 23.
+
+=== UDC 1961 RULES ===
+${UDC_RULES}
 
 === DDC 23 RULES ===
-- 028 = Reading and use of other information media
-- 028.9 = Reading interests and habits
-- 070 = News media / Newspapers / Journalism
-- 371 = Schools and their activities
-- 371.26 = Examinations and tests / aptitude testing
-- 378 = Higher education
-- 305 = Social groups (including women)
-- 610 = Medicine and health
-- 954 = India / South Asia
-- ALWAYS give the SHORTEST correct DDC 23 number.
-- If the title mentions newspaper, article, journal, magazine, serial or periodical, use 070 for news media.
+${DDC_RULES}
 
 === DUAL CLASSIFIER OUTPUT RULES ===
 - Provide BOTH UDC 1961 and DDC 23 numbers for every title.
 - Be 100% accurate. Do not guess. Do not add unauthorized auxiliaries.
 - Output must be complete JSON with no truncation.
-`;
 
-async function getClassification(title) {
-    const systemPrompt = `${LIBRARY_RULES}
-
-STRICT OUTPUT FORMAT (JSON only, no extra text):
+STRICT OUTPUT FORMAT (JSON only):
 {
   "udc": "full UDC 1961 number",
   "ddc": "full DDC 23 number",
   "mainSubject": "short main subject",
   "subSubject": "sub subject / context",
-  "udcBreakdown": "detailed UDC notation breakdown and rules used",
-  "ddcBreakdown": "detailed DDC 23 breakdown and rules used",
+  "udcBreakdown": "detailed UDC notation breakdown",
+  "ddcBreakdown": "detailed DDC 23 breakdown",
   "confidence": "high / medium / low",
   "audit": "notation audit notes for both UDC and DDC",
   "newspaperArticle": true or false,
@@ -102,14 +106,14 @@ Output must be complete JSON.`;
     }
 }
 
-// --- GET route (Browser-friendly, full Dual Classifier report) ---
+// --- Browser-friendly route ---
 app.get('/udc', async (req, res) => {
     const title = req.query.title;
     if (!title) {
         return res.send(`
             <html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
             <body style="font-family:Arial;padding:20px;background:#f4f4f4;">
-            <h2>Dual Classifier Tester (UDC 1961 + DDC 23)</h2>
+            <h2>Dual Classifier (UDC 1961 + DDC 23)</h2>
             <form method="GET" action="/udc">
                 <input type="text" name="title" placeholder="Enter title here..." style="width:80%;padding:10px;font-size:16px;" value="Reading habits of female university teachers in India An Article publish in Newspaper">
                 <button type="submit" style="padding:10px 20px;font-size:16px;">Get Report</button>
@@ -151,7 +155,7 @@ app.get('/udc', async (req, res) => {
     `);
 });
 
-// --- POST routes (API use) ---
+// --- POST routes for API use ---
 app.post('/get-udc', async (req, res) => {
     const { title } = req.body;
     if (!title) return res.status(400).json({ error: "Title is required" });
