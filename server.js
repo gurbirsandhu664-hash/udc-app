@@ -1,15 +1,13 @@
 const http = require('http');
 const https = require('https');
 
-// Get API Key from Render Environment Variables
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// Function to ask DeepSeek AI for UDC/DDC
-function getAIClassification(subject, topic) {
+// --- AI Function ---
+function getAIClassification(query) {
     return new Promise((resolve, reject) => {
-        const prompt = `You are an expert librarian. Give the most accurate UDC 1961 (Universal Decimal Classification) and DDC 23 (Dewey Decimal Classification) numbers for:
-        Subject: ${subject}
-        Topic: ${topic}
+        const prompt = `You are an expert librarian. Give the most accurate UDC 1961 (Universal Decimal Classification) and DDC 23 (Dewey Decimal Classification) numbers for the following query:
+        Query: ${query}
         
         Respond ONLY in this exact JSON format without any other text:
         {"udc": "number", "ddc": "number", "audit": "short 1 line explanation"}`;
@@ -38,17 +36,14 @@ function getAIClassification(subject, topic) {
                 try {
                     const json = JSON.parse(data);
                     if (json.choices && json.choices[0]) {
-                        // Extract JSON from AI response
                         let content = json.choices[0].message.content;
-                        // Clean if AI added ```json
                         content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-                        const result = JSON.parse(content);
-                        resolve(result);
+                        resolve(JSON.parse(content));
                     } else {
-                        reject(new Error("AI did not respond correctly: " + data));
+                        reject(new Error("AI Error: " + data));
                     }
                 } catch (e) {
-                    reject(new Error("Error parsing AI response: " + e.message));
+                    reject(new Error("Parse Error: " + e.message));
                 }
             });
         });
@@ -59,26 +54,24 @@ function getAIClassification(subject, topic) {
     });
 }
 
-// --- Server Setup ---
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const subject = url.searchParams.get('subject') || 'Medicine';
-    const topic = url.searchParams.get('topic') || 'Aptitude Test';
+    // ਇੱਕੋ ਕਵੈਰੀ (Query) ਲਵੋ, ਜੇਕਰ ਖਾਲੀ ਹੈ ਤਾਂ ਡਿਫਾਲਟ ਲਵੋ
+    const query = url.searchParams.get('query') || 'Medicine Aptitude Test';
 
     let result;
     let errorMsg = "";
 
     try {
-        // Get live answer from AI
-        result = await getAIClassification(subject, topic);
+        result = await getAIClassification(query);
     } catch (err) {
         errorMsg = "Error: " + err.message;
         result = { udc: "N/A", ddc: "N/A", audit: "API Error" };
     }
 
-    // --- HTML Design ---
+    // --- PROFESSIONAL DESIGN WITH ONE INPUT BOX ---
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
         <!DOCTYPE html>
@@ -86,48 +79,71 @@ const server = http.createServer(async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>DeepSeek UDC/DDC Classifier</title>
+            <title>DeepSeek AI Classifier</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
             <style>
-                body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-                .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-                h1 { text-align: center; color: #333; margin-bottom: 5px; }
-                .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 25px; }
-                .input-group { margin-bottom: 15px; }
-                label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; }
-                input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-                button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-                button:hover { background: #0056b3; }
-                .result-box { margin-top: 25px; padding: 20px; background: #e9f7ef; border-left: 5px solid #28a745; border-radius: 6px; }
-                .result-item { margin-bottom: 10px; font-size: 16px; }
-                .result-item strong { color: #155724; }
-                .audit { font-size: 13px; color: #666; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
-                .error { color: red; font-size: 12px; }
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: 'Inter', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+                .card { background: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 550px; padding: 40px; }
+                
+                .header { text-align: center; margin-bottom: 30px; }
+                .header h1 { font-size: 26px; font-weight: 700; color: #1a202c; margin-bottom: 8px; }
+                .header p { color: #718096; font-size: 14px; font-weight: 400; }
+                
+                .form-group { margin-bottom: 20px; }
+                label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+                input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; transition: all 0.2s; outline: none; font-family: 'Inter', sans-serif; }
+                input:focus { border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1); }
+                
+                button { width: 100%; padding: 16px; background: #3182ce; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 10px; font-family: 'Inter', sans-serif; }
+                button:hover { background: #2b6cb0; }
+                
+                .result-box { margin-top: 30px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; }
+                .result-item { margin-bottom: 15px; }
+                .result-item strong { display: block; font-size: 12px; color: #718096; text-transform: uppercase; margin-bottom: 4px; }
+                .result-item span { font-size: 22px; font-weight: 700; color: #2d3748; }
+                .audit { font-size: 13px; color: #4a5568; margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e0; line-height: 1.5; }
+                .error { color: #e53e3e; font-size: 13px; margin-top: 15px; text-align: center; }
             </style>
         </head>
         <body>
             <div class="card">
-                <h1>DeepSeek AI Classifier</h1>
-                <p class="subtitle">Live UDC 1961 & DDC 23 Standard</p>
+                <div class="header">
+                    <h1>DeepSeek AI Classifier</h1>
+                    <p>Live UDC 1961 & DDC 23 Standard</p>
+                </div>
                 
-                <form method="GET" action="/">
-                    <div class="input-group">
-                        <label>Subject (e.g., Medicine, History, Law)</label>
-                        <input type="text" name="subject" value="${subject}" required>
+                <form method="GET" action="/" id="classifyForm">
+                    <div class="form-group">
+                        <label>Enter Your Query</label>
+                        <input type="text" name="query" placeholder="e.g., Medicine Aptitude Test, History, Law" value="${query}" required>
                     </div>
-                    <div class="input-group">
-                        <label>Topic (e.g., Aptitude Test, General)</label>
-                        <input type="text" name="topic" value="${topic}" required>
-                    </div>
-                    <button type="submit">Get Live Classification</button>
+                    <button type="submit" id="submitBtn">Get Live Classification</button>
                 </form>
 
                 <div class="result-box">
-                    <div class="result-item"><strong>UDC 1961:</strong> ${result.udc}</div>
-                    <div class="result-item"><strong>DDC 23:</strong> ${result.ddc}</div>
+                    <div class="result-item">
+                        <strong>UDC 1961</strong>
+                        <span>${result.udc}</span>
+                    </div>
+                    <div class="result-item">
+                        <strong>DDC 23</strong>
+                        <span>${result.ddc}</span>
+                    </div>
                     <div class="audit"><strong>Audit:</strong> ${result.audit}</div>
                     ${errorMsg ? `<div class="error">${errorMsg}</div>` : ''}
                 </div>
             </div>
+
+            <script>
+                // Loading Animation on Submit
+                document.getElementById('classifyForm').addEventListener('submit', function() {
+                    const btn = document.getElementById('submitBtn');
+                    btn.innerHTML = 'Analyzing... ⏳';
+                    btn.style.backgroundColor = '#a0aec0';
+                    btn.disabled = true;
+                });
+            </script>
         </body>
         </html>
     `);
