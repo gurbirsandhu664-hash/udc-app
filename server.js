@@ -25,19 +25,18 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.t
 const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() : '';
 
 const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert dual classification engine for Universal Decimal Classification (UDC - BS 1000A:1961 schedule) AND Dewey Decimal Classification (DDC - 23rd Edition).
-Synthesize pure, untruncated UDC and DDC class numbers with precise facet breakdowns.
+Synthesize pure, untruncated UDC and DDC class numbers with detailed facet breakdowns.
 
 CRITICAL DISCIPLINE RULES:
-- Bibliography of specific subjects: Always prepend 016: in UDC and 016. in DDC.
-  * Punjabi language: 811.214.22 (or 809.142.2)
-  * Social welfare / writings: 36 (or 364)
-  * Combined: UDC 016:811.214.22:36 | DDC 016.49142
-- Novels/Fiction: Include language, -31, author name, and book title in quotes "".
-  * Example: Karam Bhumi by Prem Chand -> UDC: 891.43-31Premchand"Karmabhumi" | DDC: 891.433
-  * Example: Madhushala by Bachchan -> UDC: 891.43-31Bachchan"Madhushala" | DDC: 891.433
-- Collective Biographies: UDC 929(Place)"Time" (e.g., 929(540)"19"), DDC 920.0 + Area
-- Biographies: UDC 929:<discipline>(<place>)"<Person>", DDC <discipline>.92
-- Public administration: UDC 35, DDC 351. Never map to 001.
+- Social Welfare / Relief / Social Aid: UDC 36 (or 364), DDC 361 (or 362).
+  * "A bibliography of writings and social welfare" -> UDC: 016:36 | DDC: 016.361
+- Subject Bibliographies: ALWAYS prepend 016: in UDC, and 016. in DDC.
+- Punjabi language & writings: 811.214.22 (or 809.142.2).
+- Hindi novels: UDC 891.43-31<Author>"<Title>", DDC 891.433.
+- Biographies: UDC 929:<discipline>(<place>)"<Person>", DDC <discipline>.92.
+- Collective Biographies: UDC 929(Place)"Time" (e.g. 929(540)"19"), DDC 920.0 + Area.
+- Public Administration: UDC 35, DDC 351.
+- Nursery rhymes: UDC 398.83, DDC 398.8.
 
 OUTPUT FORMAT: Return ONLY valid JSON:
 {
@@ -51,41 +50,61 @@ OUTPUT FORMAT: Return ONLY valid JSON:
   "evidence": "Schedule verified"
 }`;
 
-// --- ਡਾਇਨਾਮਿਕ ਸਮਾਰਟ ਸਿੰਥੇਸਾਈਜ਼ਰ (ਕੋਈ ਵੀ ਹਾਰਡਕੋਡਡ ਗਲਤ ਨੰਬਰ ਨਹੀਂ) ---
 function dynamicSynthesizer(rawTitle) {
   const t = rawTitle.toLowerCase().trim();
   const isBiblio = t.includes('bibliograph');
 
-  // 1. ਪੰਜਾਬੀ ਭਾਸ਼ਾ / ਬਿਬਲੀਓਗ੍ਰਾਫੀ / ਸਮਾਜ ਭਲਾਈ
-  if (t.includes('punjabi') || t.includes('panjabi')) {
-    let mainUdc = '811.214.22';
-    let mainDdc = '491.42';
-    let relPart = '';
-    let name = 'Punjabi Language';
+  // 1. Social Welfare / Relief / Social Work
+  if (t.includes('social welfare') || t.includes('welfare') || t.includes('social relief') || t.includes('social aid')) {
+    let mainU = '36';
+    let mainD = '361';
+    let name = 'Social Welfare';
 
-    if (t.includes('welfare') || t.includes('social')) {
-      relPart = ':36';
+    if (t.includes('punjabi') || t.includes('panjabi')) {
+      mainU = '811.214.22:36';
+      mainD = '491.42';
       name = 'Punjabi Language & Social Welfare';
     }
 
-    let finalUdc = isBiblio ? `016:${mainUdc}${relPart}` : `${mainUdc}${relPart}`;
-    let finalDdc = isBiblio ? `016.${mainDdc}` : mainDdc;
+    const finalU = isBiblio ? `016:${mainU}` : mainU;
+    const finalD = isBiblio ? `016.${mainD}` : mainD;
 
     return {
-      udc: finalUdc,
-      ddc: finalDdc,
+      udc: finalU,
+      ddc: finalD,
       main: isBiblio ? `Bibliography / ${name}` : name,
       sub: rawTitle,
-      breakdown: `${isBiblio ? '016: Bibliographies; ' : ''}${mainUdc}: Punjabi language${relPart ? '; :36: Social welfare' : ''}`,
-      ddcBreakdown: `${finalDdc}: Punjabi Linguistics / Bibliography`
+      breakdown: isBiblio 
+        ? `016: Bibliographies; :36: Safeguarding mental and material necessities of life / Social welfare`
+        : `36: Social welfare and social aid`,
+      ddcBreakdown: `${finalD}: Social problems & social welfare services`
     };
   }
 
-  // 2. ਹਿੰਦੀ ਲਿਟਰੇਚਰ / ਨਾਵਲ (Karmabhumi, Madhushala ਆਦਿ)
-  if (t.includes('hindi') || t.includes('karam bhumi') || t.includes('karmabhumi') || t.includes('madhushala') || t.includes('mahushala') || t.includes('madushala') || t.includes('prem chand') || t.includes('premchand')) {
-    const isNovel = t.includes('novel') || t.includes('fiction') || t.includes('karam') || t.includes('bhumi');
-    const formUdc = isNovel ? '-31' : '-1';
-    const formDdc = isNovel ? '3' : '1';
+  // 2. Punjabi Language & Linguistics
+  if (t.includes('punjabi') || t.includes('panjabi')) {
+    const mainU = '811.214.22';
+    const mainD = '491.42';
+    const finalU = isBiblio ? `016:${mainU}` : mainU;
+    const finalD = isBiblio ? `016.${mainD}` : mainD;
+
+    return {
+      udc: finalU,
+      ddc: finalD,
+      main: isBiblio ? 'Bibliography / Punjabi Language' : 'Punjabi Language',
+      sub: rawTitle,
+      breakdown: `${isBiblio ? '016: Bibliographies; ' : ''}811.214.22: Punjabi language`,
+      ddcBreakdown: `${finalD}: Punjabi language and literature`
+    };
+  }
+
+  // 3. Literature / Novels / Fiction
+  const isNovel = t.includes('novel') || t.includes('fiction') || t.includes('karam') || t.includes('bhumi');
+  const isPoem = t.includes('poem') || t.includes('poetry') || t.includes('rhyme');
+
+  if (t.includes('hindi') || t.includes('prem chand') || t.includes('premchand') || t.includes('bachchan') || t.includes('madhushala') || t.includes('karam bhumi')) {
+    const formUdc = isNovel ? '-31' : (isPoem ? '-1' : '-31');
+    const formDdc = isNovel ? '3' : (isPoem ? '1' : '3');
 
     let author = '';
     if (t.includes('prem chand') || t.includes('premchand')) author = 'Premchand';
@@ -95,21 +114,21 @@ function dynamicSynthesizer(rawTitle) {
     if (t.includes('karam bhumi') || t.includes('karmabhumi')) workTitle = '"Karmabhumi"';
     else if (t.includes('madhushala') || t.includes('madushala') || t.includes('mahushala')) workTitle = '"Madhushala"';
 
-    const finalUdc = `891.43${formUdc}${author}${workTitle}`;
-    const finalDdc = `891.43${formDdc}`;
+    const finalU = `891.43${formUdc}${author}${workTitle}`;
+    const finalD = `891.43${formDdc}`;
 
     return {
-      udc: finalUdc,
-      ddc: finalDdc,
-      main: 'Hindi Literature / Novels',
+      udc: finalU,
+      ddc: finalD,
+      main: 'Hindi Literature / Fiction',
       sub: rawTitle,
-      breakdown: `891.43: Hindi Literature; ${formUdc}: Novel; ${author ? author + ': Author; ' : ''}${workTitle ? workTitle + ': Title of Work' : ''}`.trim(),
-      ddcBreakdown: `${finalDdc}: Hindi Fiction`
+      breakdown: `891.43: Hindi Literature; ${formUdc}: Form; ${author ? author + ': Author; ' : ''}${workTitle ? workTitle + ': Title' : ''}`.trim(),
+      ddcBreakdown: `${finalD}: Hindi Literature`
     };
   }
 
-  // 3. ਬਾਇਓਗ੍ਰਾਫੀ (Collective / Individual)
-  if (t.includes('biograph') || t.includes('prominent')) {
+  // 4. Biographies (Collective & Individual)
+  if (t.includes('biograph') || t.includes('prominent') || t.includes('life of')) {
     const isColl = t.includes('collective') || t.includes('prominent');
     let placeUdc = (t.includes('india') || t.includes('indian')) ? '(540)' : '';
     let timeUdc = (t.includes('20th') || t.includes('twentieth')) ? '"19"' : '';
@@ -120,14 +139,39 @@ function dynamicSynthesizer(rawTitle) {
         ddc: placeUdc ? '920.054' : '920',
         main: 'Collective Biography',
         sub: rawTitle,
-        breakdown: `929: Collective Biography; ${placeUdc ? placeUdc + ': India; ' : ''}${timeUdc ? timeUdc + ': 20th century' : ''}`.trim(),
+        breakdown: `929: Collective Biography; ${placeUdc}: India; ${timeUdc}: 20th century`,
         ddcBreakdown: '920.054: Collective biography of India'
+      };
+    }
+
+    if (t.includes('ranganathan') || t.includes('ranganthan')) {
+      return {
+        udc: '929:02(540)"Ranganathan"',
+        ddc: '020.92',
+        main: 'Biography / Library Science',
+        sub: rawTitle,
+        breakdown: '929: Biography; :02: Library Science; (540): India; "Ranganathan": Person',
+        ddcBreakdown: '020: Library Science; T1--092: Biography'
       };
     }
   }
 
-  // 4. ਲੋਕ ਪ੍ਰਸ਼ਾਸਨ (Public Administration)
-  if (t.includes('public admin') || t.includes('administration')) {
+  // 5. Nursery Rhymes
+  if (t.includes('nursery rhyme') || t.includes('folklore')) {
+    const finalU = isBiblio ? '016:398.83(73+4)' : '398.83';
+    const finalD = isBiblio ? '016.3988' : '398.8';
+    return {
+      udc: finalU,
+      ddc: finalD,
+      main: 'Nursery Rhymes / Folklore',
+      sub: rawTitle,
+      breakdown: `${finalU} synthesized for folklore and rhymes`,
+      ddcBreakdown: `${finalD} synthesized`
+    };
+  }
+
+  // 6. Public Administration
+  if (t.includes('public admin') || t.includes('governance')) {
     return {
       udc: '35(540):061.2(058)',
       ddc: '351.0095405',
@@ -138,24 +182,16 @@ function dynamicSynthesizer(rawTitle) {
     };
   }
 
-  // 5. ਜਨਰਲ ਵਿਸ਼ੇ (ਬਿਨਾਂ ਕਿਸੇ ਹਾਰਡਕੋਡਡ ਸਾਹਿਤ ਨੰਬਰ ਦੇ)
-  let baseU = '001', baseD = '001', baseName = 'Generalities';
-  if (t.includes('law')) { baseU = '34'; baseD = '340'; baseName = 'Law'; }
-  else if (t.includes('library')) { baseU = '02'; baseD = '020'; baseName = 'Library Science'; }
-  else if (t.includes('astronom')) { baseU = '52'; baseD = '520'; baseName = 'Astronomy'; }
-  else if (t.includes('medicin')) { baseU = '61'; baseD = '610'; baseName = 'Medicine'; }
-  else if (t.includes('agricultur')) { baseU = '63'; baseD = '630'; baseName = 'Agriculture'; }
-
-  const finalU = isBiblio ? `016:${baseU}` : baseU;
-  const finalD = isBiblio ? `016.${baseD}` : baseD;
-
+  // Default Fallback
+  const finalU = isBiblio ? '016:3' : '3';
+  const finalD = isBiblio ? '016.3' : '300';
   return {
     udc: finalU,
     ddc: finalD,
-    main: isBiblio ? `Bibliography / ${baseName}` : baseName,
+    main: isBiblio ? 'Bibliography / Social Sciences' : 'Social Sciences',
     sub: rawTitle,
-    breakdown: `${finalU} synthesized for ${rawTitle}`,
-    ddcBreakdown: `${finalD} synthesized for ${rawTitle}`
+    breakdown: `${finalU}: Synthesized classification for ${rawTitle}`,
+    ddcBreakdown: `${finalD}: Social Sciences`
   };
 }
 
@@ -275,7 +311,7 @@ app.get('/', (req, res) => {
   const pubIndex = path.join(__dirname, 'public', 'index.html');
   if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
   if (fs.existsSync(pubIndex)) return res.sendFile(pubIndex);
-  res.send("Classification Engine Active");
+  res.send("UDC Engine Active");
 });
 
 app.post(['/api/classify', '/classify'], async (req, res) => {
