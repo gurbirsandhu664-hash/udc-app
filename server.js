@@ -15,13 +15,13 @@ function getAIClassification(query) {
         CRITICAL RULES (Follow strictly):
         1. For UDC 1961: 
            - Use ONLY the official UDC 1961 schedule. 
+           - For Hindi Literature, use 891.43 (Hindi Literature) and for Novel form, use -31.
+           - Do NOT use 821 for Hindi. 821 is only for English Literature.
+           - If an author's name is mentioned, append the first 3 letters of the author's name in CAPITAL letters after the form (e.g., 891.43-31PRE for Prem Chand).
            - Do NOT invent abbreviations, letters, or extra subdivisions unless absolutely necessary.
-           - For literature, use 821.214.21 for Hindi, and -31 for Novel. If an author's name is mentioned, append the first 3 letters of the author's name in CAPITAL letters after the form (e.g., 821.214.21-31PRE for Prem Chand).
-           - If the text is about an organization, just classify its main subject (e.g., Astronomy = 52). Do NOT add form subdivisions like (058.7) unless it is a directory specifically.
         
         2. For DDC 23: 
            - Use ONLY the official DDC 23 schedule. 
-           - Do NOT add extra digits if not required. 
            - For Hindi fiction/novels, use 891.433 ONLY. Do NOT add 5 or any other number.
            - If the text mentions an author, do NOT add their century to the DDC number.
         
@@ -95,7 +95,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const query = url.searchParams.get('query') || 'World directory of Astronomical organisation';
+    const query = url.searchParams.get('query') || 'karam bhumi a Hindi novel by prem chand';
 
     let result;
     let errorMsg = "";
