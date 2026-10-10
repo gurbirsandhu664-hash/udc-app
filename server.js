@@ -8,59 +8,101 @@ const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Local database load
+// 1. Load Local Reference Files
 let udcIndex = [];
+let ddcIndex = [];
+
 try {
-  const filePath = path.join(__dirname, 'udc-1961-reference-index.json');
-  if (fs.existsSync(filePath)) {
-    udcIndex = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    console.log('UDC 1961 reference loaded successfully.');
+  const udcPath = path.join(__dirname, 'udc-1961-reference-index.json');
+  if (fs.existsSync(udcPath)) {
+    udcIndex = JSON.parse(fs.readFileSync(udcPath, 'utf8'));
+    console.log('UDC 1961 index loaded successfully.');
   }
 } catch (e) {
-  console.log('Index file read notice:', e.message);
+  console.log('UDC index load notice:', e.message);
 }
 
-function getLocalMatches(query, limit = 6) {
-  if (!Array.isArray(udcIndex)) return [];
-  const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-  return udcIndex.filter(item => {
-    const text = `${item.class_number || item.code || ''} ${item.description || item.title || ''}`.toLowerCase();
+try {
+  const ddcPath = path.join(__dirname, 'ddc-23-reference-index.json');
+  if (fs.existsSync(ddcPath)) {
+    ddcIndex = JSON.parse(fs.readFileSync(ddcPath, 'utf8'));
+    console.log('DDC 23 index loaded successfully.');
+  }
+} catch (e) {
+  console.log('DDC index load notice:', e.message);
+}
+
+// 2. Local Match Helper
+function getLocalMatches(queryText, limit = 8) {
+  if (!queryText) return [];
+  const words = queryText.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const combined = Array.isArray(udcIndex) ? udcIndex : Object.values(udcIndex || {});
+  
+  return combined.filter(item => {
+    const text = `${item.class_number || item.code || item.number || ''} ${item.description || item.title || item.heading || ''}`.toLowerCase();
     return words.some(w => text.includes(w));
   }).slice(0, limit);
 }
 
-app.post('/api/classify', async (req, res) => {
+// 3. Classification Handler
+async function handleClassification(req, res) {
   try {
-    const { query } = req.body;
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
+    const userQuery = req.body?.query || req.body?.title || req.body?.text || req.body?.subject || req.body?.input || req.query?.q || req.query?.query;
+
+    if (!userQuery || !userQuery.trim()) {
+      return res.status(400).json({ error: 'Query is required', message: 'Query is required' });
     }
 
+    const trimmedQuery = userQuery.trim();
     const apiKey = process.env.DEEPSEEK_API_KEY;
+
+    const localRefs = getLocalMatches(trimmedQuery);
+    const referenceContext = localRefs.length > 0
+      ? `VERIFIED LOCAL INDEX MATCHES:\n${JSON.stringify(localRefs, null, 2)}`
+      : 'No direct local index match. Rely strictly on official 1961 UDC rules.';
+
     if (!apiKey) {
-      return res.status(500).json({ error: 'DEEPSEEK_API_KEY is missing in Render Environment' });
+      if (localRefs.length > 0) {
+        const top = localRefs[0];
+        const num = top.class_number || top.code || top.number || '000';
+        const desc = top.description || top.title || top.heading || trimmedQuery;
+        return res.json({
+          success: true,
+          class_number: num,
+          number: num,
+          description: desc,
+          result: { class_number: num, description: desc }
+        });
+      }
+      return res.status(500).json({ error: 'DEEPSEEK_API_KEY missing and no local match found.' });
     }
 
-    const matches = getLocalMatches(query);
-    const contextText = matches.length 
-      ? `Reference UDC 1961 entries:\n${JSON.stringify(matches)}` 
-      : 'Use UDC 1961 standard schedules.';
+    const systemPrompt = `You are the master authority on Universal Decimal Classification (UDC - 1961 Edition).
+Your task is to classify the title/topic accurately according to the 1961 schedules.
 
-    const systemPrompt = `You are an expert UDC (Universal Decimal Classification - 1961 Edition) classifier.
-Provide the exact UDC 1961 number for the subject.
-Rules:
-1. Use standard auxiliary signs: ':' (relation), '+' (addition), '/' (extension), '=' (language), '(0...)' (form), '(1/9)' (place), '""' (time).
-2. Never invent modern notations outside UDC 1961.
-3. Respond ONLY with raw JSON:
+CRITICAL INSTRUCTIONS:
+1. Always base your answer on the provided verified local reference data whenever applicable.
+2. Standard UDC 1961 notation rules:
+   - Use ':' for relation/combination
+   - Use '+' for coordination/addition
+   - Use '/' for extension
+   - Use '(0...)' for form
+   - Use '(1/9)' for place
+   - Use '""' for time
+   - Use '=' for language
+3. Provide ONLY valid JSON without backticks:
 {
-  "class_number": "UDC class number",
-  "description": "Subject description",
-  "breakdown": [{"component": "code", "meaning": "interpretation"}]
+  "class_number": "<UDC Number>",
+  "description": "<Official Subject Heading>",
+  "breakdown": [
+    { "component": "<Part>", "meaning": "<Meaning>" }
+  ]
 }
 
-${contextText}`;
+${referenceContext}`;
 
     const apiRes = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -74,38 +116,55 @@ ${contextText}`;
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Classify: ${query}` }
+          { role: 'user', content: `Classify: ${trimmedQuery}` }
         ]
       })
     });
 
     if (!apiRes.ok) {
-      const err = await apiRes.text();
-      throw new Error(`DeepSeek API error: ${err}`);
+      throw new Error(`DeepSeek API error (${apiRes.status})`);
     }
 
-    const json = await apiRes.json();
-    const result = JSON.parse(json.choices[0].message.content);
+    const data = await apiRes.json();
+    const parsed = JSON.parse(data.choices[0].message.content);
+    const finalNumber = parsed.class_number || parsed.number || '000';
+    const finalDesc = parsed.description || trimmedQuery;
 
-    return res.json({ success: true, result });
+    return res.json({
+      success: true,
+      query: trimmedQuery,
+      class_number: finalNumber,
+      number: finalNumber,
+      description: finalDesc,
+      breakdown: parsed.breakdown || [],
+      result: parsed
+    });
+
   } catch (err) {
-    console.error('Error:', err.message);
-    const fallback = getLocalMatches(req.body ? req.body.query : '', 1);
-    if (fallback.length) {
-      const f = fallback[0];
+    console.error('Processing error:', err.message);
+    const q = req.body?.query || req.body?.title || '';
+    const fallbackList = getLocalMatches(q, 1);
+    
+    if (fallbackList.length > 0) {
+      const top = fallbackList[0];
+      const num = top.class_number || top.code || top.number || '000';
+      const desc = top.description || top.title || top.heading || q;
       return res.json({
         success: true,
         fallback: true,
-        result: {
-          class_number: f.class_number || f.code,
-          description: f.description || f.title,
-          breakdown: [{ component: f.class_number || f.code, meaning: 'Local Index Match' }]
-        }
+        class_number: num,
+        number: num,
+        description: desc,
+        result: { class_number: num, description: desc }
       });
     }
-    return res.status(500).json({ success: false, error: err.message });
+
+    return res.status(500).json({ error: err.message || 'Classification failed' });
   }
-});
+}
+
+app.post('/api/classify', handleClassification);
+app.post('/classify', handleClassification);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
