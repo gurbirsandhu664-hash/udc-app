@@ -1,48 +1,47 @@
-// FUNCTION TO GET CORRECT UDC & DDC
-function getClassification(subject, topic) {
-    let output = "DeepSeek AI is added\n\n"; // <--- This adds the text at the top
-
+// DEEPSEEK AI CORRECTED CODE
+function getCorrectClassification(subject, topic) {
+    // 1. Add the requested header
+    let finalOutput = "DeepSeek AI is added\n\n";
+    
     let udcCode = "N/A";
     let ddcCode = "N/A";
     let auditText = "";
 
-    // --- FIXING THE UDC ERROR ---
-    if (subject === "Medicine" || subject === "Medical") {
-        if (topic.includes("Aptitude") || topic.includes("Test") || topic.includes("Examination")) {
+    // 2. Logic for Medicine / Medical
+    if (subject.toLowerCase().includes("medicine") || subject.toLowerCase().includes("medical")) {
+        
+        // If it's a test or aptitude test
+        if (topic.toLowerCase().includes("aptitude") || topic.toLowerCase().includes("test") || topic.toLowerCase().includes("examination")) {
             
-            // CORRECT LOGIC: Do NOT use 37 (Education) for Medical tests.
-            // Use 61:159.9 (Medical Psychology) or just 61 (Medicine)
+            // CORRECTED UDC: Use 61 (Medicine) and 159.9 (Psychology). 
+            // REMOVED: 37 (Education) because it's a medical test.
             udcCode = "61:159.9"; 
+            ddcCode = "610.76";   // DDC was already correct
             
             auditText = "UDC: Used 61 for medicine and 159.9 for aptitude/psychology testing. " +
-                        "Removed the incorrect 37 (Education) notation. Linked by colon for interdisciplinary relation.";
+                        "The previous code incorrectly used 37 (Education) for a medical test. " +
+                        "No newspaper notation is applicable.";
         } else {
+            // General Medicine
             udcCode = "61";
-            auditText = "UDC: Used 61 for medicine.";
+            ddcCode = "610";
+            auditText = "UDC: Used 61 for general medicine.";
         }
     } else {
-        // General Education Logic (Fallback)
-        if (topic.includes("Aptitude") || topic.includes("Test")) {
+        // Fallback for general Education
+        if (topic.toLowerCase().includes("aptitude") || topic.toLowerCase().includes("test")) {
             udcCode = "37.047";
             auditText = "UDC: Used 37.047 for general aptitude tests in education.";
         }
     }
 
-    // --- FIXING THE DDC (Dewey) ---
-    if (subject === "Medicine" || subject === "Medical") {
-        ddcCode = "610"; // Medicine
-        if (topic.includes("Aptitude") || topic.includes("Test")) {
-            ddcCode += ".76"; // Examinations, tests
-        }
-    }
+    // 3. Build the final output
+    finalOutput += `UDC: ${udcCode}\n`;
+    finalOutput += `DDC: ${ddcCode}\n\n`;
+    finalOutput += `Audit: ${auditText}`;
 
-    // --- BUILDING THE FINAL OUTPUT ---
-    output += `UDC: ${udcCode}\n`;
-    output += `DDC: ${ddcCode}\n\n`;
-    output += `Audit: ${auditText}\n`;
-
-    return output;
+    return finalOutput;
 }
 
-// --- EXAMPLE USAGE ---
-console.log(getClassification("Medicine", "Aptitude Test"));
+// --- TEST RUN ---
+console.log(getCorrectClassification("Medicine", "Aptitude Test"));
