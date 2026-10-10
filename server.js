@@ -64,7 +64,29 @@ STRICT RULES:
     }
 }
 
-// --- Send one title ---
+// --- NEW: Browser-friendly GET route ---
+app.get('/udc', async (req, res) => {
+    const title = req.query.title;
+    if (!title) {
+        return res.send(`
+            <h2>UDC 1961 Tester</h2>
+            <form method="GET" action="/udc">
+                <input type="text" name="title" placeholder="Enter title here..." style="width:300px;padding:10px;" value="Reading habits of female university teachers in India">
+                <button type="submit" style="padding:10px;">Get UDC</button>
+            </form>
+        `);
+    }
+    const result = await getUDCFromAI(title);
+    res.send(`
+        <h2>UDC Result</h2>
+        <p><b>Title:</b> ${title}</p>
+        <p><b>UDC:</b> <span style="color:green;font-size:24px;">${result.udc}</span></p>
+        <p><b>Reason:</b> ${result.reason}</p>
+        <br><a href="/udc">Try another title</a>
+    `);
+});
+
+// --- POST routes (for API use) ---
 app.post('/get-udc', async (req, res) => {
     const { title } = req.body;
     if (!title) {
@@ -74,7 +96,6 @@ app.post('/get-udc', async (req, res) => {
     res.json({ title, udc: result.udc, reason: result.reason });
 });
 
-// --- Send many titles ---
 app.post('/get-udc-bulk', async (req, res) => {
     const { titles } = req.body;
     if (!titles || !Array.isArray(titles)) {
@@ -90,7 +111,7 @@ app.post('/get-udc-bulk', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('UDC App is running!');
+    res.send('UDC App is running! Go to <a href="/udc">/udc</a> to test.');
 });
 
 app.listen(port, () => {
