@@ -6,36 +6,26 @@ app.use(express.json());
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "YOUR_API_KEY_HERE";
 
-// --- Embedded UDC 1961 Abridged Edition Rules ---
-const UDC_RULES = `
-UDC 1961 ABRIDGED EDITION - KEY RULES:
-- 028 = Reading and advice for readers
-- 028.9 = Reading interests and habits
-- 02 = Library and information science
-- 37 = Education
-- 05 = Serial publications / newspapers / journalism
-- 316 = Sociology
-- 659 = Advertising / public relations
-- 681.3 = Data processing / computer science
-- -055.2 = Women (auxiliary) — NOT authorized in 1961 abridged edition
-- (540) = India (auxiliary) — NOT authorized in 1961 abridged edition
-- Always give the shortest correct UDC number from the 1961 abridged edition.
-- If a specific auxiliary is not in the 1961 edition, DO NOT add it.
-`;
-
 async function getUDCFromAI(title) {
     const systemPrompt = `You are an expert librarian specialized in UDC (Universal Decimal Classification) 1961 abridged edition.
-Your ONLY job is to provide the EXACT UDC notation for the given title.
-
-${UDC_RULES}
+Your ONLY job is to provide the EXACT UDC notation for the given title in a detailed report.
 
 STRICT RULES:
-1. NEVER make up your own notation. Use ONLY the rules given above.
-2. Do NOT add auxiliaries like -055.2 or (540) unless the 1961 abridged edition authorizes them.
+1. NEVER make up your own notation. Use ONLY official UDC 1961 abridged edition rules.
+2. If a specific auxiliary (like -055.2 for women, (540) for India) is NOT authorized in the 1961 edition, DO NOT add it.
 3. Preserve every letter, digit, decimal point, bracket, quote and suffix exactly.
-4. Output ONLY valid JSON in this exact format: {"udc": "number", "reason": "short explanation in English"}`;
+4. NO TRUNCATION. Give complete details.
+5. Output ONLY valid JSON in this exact format:
+{
+  "udc": "number",
+  "mainSubject": "short main subject",
+  "subSubject": "sub subject / context",
+  "breakdown": "detailed UDC notation breakdown and rules used",
+  "confidence": "high / medium / low",
+  "audit": "notation audit notes"
+}`;
 
-    const userPrompt = `Find the exact UDC 1961 Abridged Edition notation for this title: "${title}"`;
+    const userPrompt = `Find the exact UDC 1961 Abridged Edition notation with FULL DETAILS for this title: "${title}"`;
 
     try {
         const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -64,54 +54,60 @@ STRICT RULES:
     }
 }
 
-// --- NEW: Browser-friendly GET route ---
+// --- GET route (Browser-friendly, full report) ---
 app.get('/udc', async (req, res) => {
     const title = req.query.title;
     if (!title) {
         return res.send(`
-            <h2>UDC 1961 Tester</h2>
+            <html><body style="font-family:Arial;padding:20px;">
+            <h2>UDC 1961 Full Report Tester</h2>
             <form method="GET" action="/udc">
-                <input type="text" name="title" placeholder="Enter title here..." style="width:300px;padding:10px;" value="Reading habits of female university teachers in India">
-                <button type="submit" style="padding:10px;">Get UDC</button>
+                <input type="text" name="title" placeholder="Enter title here..." style="width:80%;padding:10px;" value="Reading habits of female university teachers in India">
+                <button type="submit" style="padding:10px;">Get UDC Report</button>
             </form>
+            </body></html>
         `);
     }
-    const result = await getUDCFromAI(title);
+    const r = await getUDCFromAI(title);
     res.send(`
-        <h2>UDC Result</h2>
+        <html><body style="font-family:Arial;padding:20px;background:#f9f9f9;">
+        <h2>UDC 1961 Full Report</h2>
         <p><b>Title:</b> ${title}</p>
-        <p><b>UDC:</b> <span style="color:green;font-size:24px;">${result.udc}</span></p>
-        <p><b>Reason:</b> ${result.reason}</p>
+        <div style="background:#eef;padding:15px;border-radius:8px;">
+            <h3>UDC: <span style="color:green;">${r.udc}</span></h3>
+            <p><b>Main Subject:</b> ${r.mainSubject || '-'}</p>
+            <p><b>Sub Subject:</b> ${r.subSubject || '-'}</p>
+            <p><b>Breakdown:</b> ${r.breakdown || '-'}</p>
+            <p><b>Confidence:</b> ${r.confidence || '-'}</p>
+            <p><b>Audit:</b> ${r.audit || '-'}</p>
+        </div>
         <br><a href="/udc">Try another title</a>
+        </body></html>
     `);
 });
 
-// --- POST routes (for API use) ---
+// --- POST routes (API use) ---
 app.post('/get-udc', async (req, res) => {
     const { title } = req.body;
-    if (!title) {
-        return res.status(400).json({ error: "Title is required" });
-    }
-    const result = await getUDCFromAI(title);
-    res.json({ title, udc: result.udc, reason: result.reason });
+    if (!title) return res.status(400).json({ error: "Title is required" });
+    const r = await getUDCFromAI(title);
+    res.json({ title, ...r });
 });
 
 app.post('/get-udc-bulk', async (req, res) => {
     const { titles } = req.body;
-    if (!titles || !Array.isArray(titles)) {
-        return res.status(400).json({ error: "titles array is required" });
-    }
+    if (!titles || !Array.isArray(titles)) return res.status(400).json({ error: "titles array required" });
     const results = [];
     for (let title of titles) {
-        const result = await getUDCFromAI(title);
-        results.push({ title, udc: result.udc, reason: result.reason });
+        const r = await getUDCFromAI(title);
+        results.push({ title, ...r });
         await new Promise(r => setTimeout(r, 500));
     }
     res.json(results);
 });
 
 app.get('/', (req, res) => {
-    res.send('UDC App is running! Go to <a href="/udc">/udc</a> to test.');
+    res.send('UDC App is running! Go to <a href="/udc">/udc</a> for full report.');
 });
 
 app.listen(port, () => {
