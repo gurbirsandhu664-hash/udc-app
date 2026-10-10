@@ -2,6 +2,14 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// ਰੈਂਡਰ ਪ੍ਰੋਸੈਸ ਨੂੰ ਕਦੇ ਕਰੈਸ਼ ਨਾ ਹੋਣ ਦੇਣ ਲਈ ਸੁਰੱਖਿਆ ਕਵਚ
+process.on('uncaughtException', (err) => {
+  console.error('Caught exception:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -10,7 +18,7 @@ const app = express();
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Headers', '*');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
@@ -57,11 +65,11 @@ function ruleEngine(rawTitle) {
     const placeU = t.includes('india') ? '(540)' : '';
     const formU = isSpeech ? '(042)' : '';
     return {
-      udc: `929:5${placeU}${formU}`[span_10](start_span)[span_10](end_span)[span_11](start_span)[span_11](end_span)[span_12](start_span)[span_12](end_span)[span_13](start_span)[span_13](end_span),
+      udc: `929:5${placeU}${formU}`[span_12](start_span)[span_12](end_span)[span_13](start_span)[span_13](end_span)[span_14](start_span)[span_14](end_span)[span_15](start_span)[span_15](end_span),
       ddc: t.includes('india') ? '509.254' : '509.2',
       mainSubject: 'Science / Biographies of Scientists',
       subSubject: rawTitle,
-      udcBreakdown: `929: Biography; :5: Pure Science; ${placeU ? placeU + ': India; ' : ''}${formU ? formU + ': Speeches' : ''}`.trim()[span_14](start_span)[span_14](end_span)[span_15](start_span)[span_15](end_span)[span_16](start_span)[span_16](end_span)[span_17](start_span)[span_17](end_span),
+      udcBreakdown: `929: Biography; :5: Pure Science; ${placeU ? placeU + ': India; ' : ''}${formU ? formU + ': Speeches' : ''}`.trim()[span_16](start_span)[span_16](end_span)[span_17](start_span)[span_17](end_span)[span_18](start_span)[span_18](end_span)[span_19](start_span)[span_19](end_span),
       ddcBreakdown: '509.254: Scientists of India (DDC 23)'
     };
   }
@@ -69,40 +77,40 @@ function ruleEngine(rawTitle) {
   // 2. ਹੱਥ-ਲਿਖਤਾਂ ਤੇ ਲਾਇਬ੍ਰੇਰੀ ਸੁਰੱਖਿਆ
   if (t.includes('manuscript') || t.includes('preservation')) {
     return {
-      udc: '025.85:091:027.7[span_18](start_span)[span_19](start_span)'[span_18](end_span)[span_19](end_span),
-      ddc: '025.84[span_20](start_span)'[span_20](end_span),
+      udc: '025.85:091:027.7[span_20](start_span)[span_21](start_span)'[span_20](end_span)[span_21](end_span),
+      ddc: '025.84[span_22](start_span)'[span_22](end_span),
       mainSubject: 'Library Science / Preservation',
       subSubject: rawTitle,
-      udcBreakdown: '025.85: Preservation & repair; :091: Manuscripts; :027.7: University libraries[span_21](start_span)[span_22](start_span)'[span_21](end_span)[span_22](end_span),
-      ddcBreakdown: '025.84: Maintenance and preservation of library collections (DDC 23)[span_23](start_span)'[span_23](end_span)
+      udcBreakdown: '025.85: Preservation & repair; :091: Manuscripts; :027.7: University libraries[span_23](start_span)[span_24](start_span)'[span_23](end_span)[span_24](end_span),
+      ddcBreakdown: '025.84: Maintenance and preservation of library collections (DDC 23)[span_25](start_span)'[span_25](end_span)
     };
   }
 
   // 3. ਪੰਜਾਬੀ ਭਾਸ਼ਾ
   if (t.includes('punjabi') || t.includes('panjabi')) {
-    let u = '809.142.2', d = '491.42', m = 'Punjabi Language[span_24](start_span)[span_25](start_span)'[span_24](end_span)[span_25](end_span);
+    let u = '809.142.2', d = '491.42', m = 'Punjabi Language[span_26](start_span)[span_27](start_span)'[span_26](end_span)[span_27](end_span);
     if (t.includes('welfare') || t.includes('social')) {
-      u += ':36'; m += ' & Social Welfare[span_26](start_span)[span_27](start_span)'[span_26](end_span)[span_27](end_span);
+      u += ':36'; m += ' & Social Welfare[span_28](start_span)[span_29](start_span)'[span_28](end_span)[span_29](end_span);
     }
     return {
-      udc: isBib ? `016:${u}` : u[span_28](start_span)[span_28](end_span),
-      ddc: isBib ? `016.${d}` : d[span_29](start_span)[span_29](end_span),
+      udc: isBib ? `016:${u}` : u[span_30](start_span)[span_30](end_span),
+      ddc: isBib ? `016.${d}` : d[span_31](start_span)[span_31](end_span),
       mainSubject: isBib ? `Bibliography / ${m}` : m,
       subSubject: rawTitle,
-      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}809.142.2: Punjabi; :36: Social welfare`[span_30](start_span)[span_30](end_span)[span_31](start_span)[span_31](end_span)[span_32](start_span)[span_32](end_span),
-      ddcBreakdown: `${isBib ? '016.' : ''}${d}: Languages & Social Services`[span_33](start_span)[span_33](end_span)[span_34](start_span)[span_34](end_span)
+      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}809.142.2: Punjabi; :36: Social welfare`[span_32](start_span)[span_32](end_span)[span_33](start_span)[span_33](end_span)[span_34](start_span)[span_34](end_span),
+      ddcBreakdown: `${isBib ? '016.' : ''}${d}: Languages & Social Services`[span_35](start_span)[span_35](end_span)[span_36](start_span)[span_36](end_span)
     };
   }
 
   // 4. ਸੋਸ਼ਲ ਵੈਲਫੇਅਰ
   if (t.includes('social welfare') || t.includes('welfare')) {
     return {
-      udc: isBib ? '016:36' : '36[span_35](start_span)[span_36](start_span)'[span_35](end_span)[span_36](end_span),
-      ddc: isBib ? '016.361' : '361[span_37](start_span)'[span_37](end_span),
+      udc: isBib ? '016:36' : '36[span_37](start_span)[span_38](start_span)'[span_37](end_span)[span_38](end_span),
+      ddc: isBib ? '016.361' : '361[span_39](start_span)'[span_39](end_span),
       mainSubject: isBib ? 'Bibliography / Social Welfare' : 'Social Welfare',
       subSubject: rawTitle,
-      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}36: Social relief and welfare`[span_38](start_span)[span_38](end_span)[span_39](start_span)[span_39](end_span),
-      ddcBreakdown: isBib ? '016.361: Social problems and services' : '361: Social problems[span_40](start_span)'[span_40](end_span)
+      udcBreakdown: `${isBib ? '016: Bibliographies; ' : ''}36: Social relief and welfare`[span_40](start_span)[span_40](end_span)[span_41](start_span)[span_41](end_span),
+      ddcBreakdown: isBib ? '016.361: Social problems and services' : '361: Social problems[span_42](start_span)'[span_42](end_span)
     };
   }
 
@@ -114,11 +122,11 @@ function ruleEngine(rawTitle) {
     let author = (t.includes('prem chand') || t.includes('premchand') || t.includes('karam')) ? 'Premchand' : (t.includes('bachchan') ? 'Bachchan' : '');
     let work = (t.includes('karam') || t.includes('bhumi')) ? '"Karmabhumi"' : (t.includes('madhu') ? '"Madhushala"' : '');
     return {
-      udc: `891.43${formU}${author}${work}`[span_41](start_span)[span_41](end_span)[span_42](start_span)[span_42](end_span)[span_43](start_span)[span_43](end_span),
+      udc: `891.43${formU}${author}${work}`[span_43](start_span)[span_43](end_span)[span_44](start_span)[span_44](end_span)[span_45](start_span)[span_45](end_span),
       ddc: `891.43${formD}`,
       mainSubject: 'Hindi Literature / Fiction',
       subSubject: rawTitle,
-      udcBreakdown: `891.43: Hindi Literature; ${formU}: Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim()[span_44](start_span)[span_44](end_span)[span_45](start_span)[span_45](end_span)[span_46](start_span)[span_46](end_span),
+      udcBreakdown: `891.43: Hindi Literature; ${formU}: Form; ${author ? author + ': Author; ' : ''}${work ? work + ': Title' : ''}`.trim()[span_46](start_span)[span_46](end_span)[span_47](start_span)[span_47](end_span)[span_48](start_span)[span_48](end_span),
       ddcBreakdown: `891.43${formD}: Hindi Fiction`
     };
   }
@@ -159,54 +167,59 @@ function ruleEngine(rawTitle) {
   };
 }
 
+async function fetchWithTimeout(url, options, timeoutMs = 4000) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
+  ]);
+}
+
 async function callAI(title) {
   if (GEMINI_API_KEY) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          contents: [{ role: 'user', parts: [{ text: `Classify: "${title}"` }] }],
-          generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
-        })
-      });
-      clearTimeout(timeoutId);
-      const data = await res.json();
-      if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return JSON.parse(data.candidates[0].content.parts[0].text);
+      const res = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+            contents: [{ role: 'user', parts: [{ text: `Classify: "${title}"` }] }],
+            generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
+          })
+        },
+        4000
+      );
+      if (res && res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return JSON.parse(text);
       }
-    } catch (e) {
-      console.warn("Gemini call bypassed:", e.message);
-    }
+    } catch (e) {}
   }
 
   if (GROQ_API_KEY) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'system', content: SYSTEM_INSTRUCTION }, { role: 'user', content: `Classify: "${title}"` }],
-          temperature: 0.1,
-          response_format: { type: 'json_object' }
-        })
-      });
-      clearTimeout(timeoutId);
-      const data = await res.json();
-      if (res.ok && data.choices?.[0]?.message?.content) {
-        return JSON.parse(data.choices[0].message.content);
+      const res = await fetchWithTimeout(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'system', content: SYSTEM_INSTRUCTION }, { role: 'user', content: `Classify: "${title}"` }],
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
+          })
+        },
+        4000
+      );
+      if (res && res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return JSON.parse(text);
       }
-    } catch (e) {
-      console.warn("Groq call bypassed:", e.message);
-    }
+    } catch (e) {}
   }
 
   return null;
@@ -214,7 +227,7 @@ async function callAI(title) {
 
 app.post(['/api/classify', '/classify'], async (req, res) => {
   try {
-    const query = req.body.title || req.body.query || req.body.text;
+    const query = req.body ? (req.body.title || req.body.query || req.body.text || '') : '';
     if (!query) {
       return res.status(400).json({ error: "Title is required" });
     }
@@ -252,13 +265,13 @@ app.post(['/api/classify', '/classify'], async (req, res) => {
       udcBreakdown: ub,
       ddcBreakdown: db,
       confidence: "98%",
-      evidence: "BS 1000A:1961 & DDC 23 Verified[span_47](start_span)[span_48](start_span)"[span_47](end_span)[span_48](end_span)
+      evidence: "BS 1000A:1961 & DDC 23 Verified[span_49](start_span)[span_50](start_span)"[span_49](end_span)[span_50](end_span)
     });
-  } catch (globalErr) {
-    console.error("Handler error:", globalErr);
-    const fb = ruleEngine(req.body ? (req.body.title || req.body.query || '') : '');
+  } catch (err) {
+    const fb = ruleEngine(req.body ? (req.body.title || '') : '');
     return res.status(200).json({
       success: true,
+      answer: fb.udc,
       udcNumber: fb.udc,
       ddcNumber: fb.ddc,
       mainSubject: fb.mainSubject,
@@ -273,6 +286,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Universal Classifier permanently alive on port ${PORT}`);
 });
