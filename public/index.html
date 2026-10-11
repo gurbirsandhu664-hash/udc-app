@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDC 1961 & DDC 23 Classifier</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>UDC 1961 & DDC 23 Classifier</h1>
+            <p class="subtitle">Professional Classification Tool</p>
+        </header>
+
+        <main>
+            <div class="input-group">
+                <label for="queryInput">ENTER YOUR FULL QUERY</label>
+                <input type="text" id="queryInput" placeholder="e.g. Knowledge and Metaphysics and Logic" autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="standardInput">STANDARD</label>
+                <select id="standardInput">
+                    <option value="UDC">UDC 1961</option>
+                    <option value="DDC">DDC 23</option>
+                </select>
+            </div>
+
+            <button id="classifyBtn" onclick="getClassification()">Get Classification</button>
+
+            <div id="resultBox"></div>
+
+            <div id="manualBox" class="manual-box">
+                <p><strong>⚠️ Manual Check Required</strong></p>
+                <p>Some keywords were not found. Enter number manually:</p>
+                <input type="text" id="manualInput" placeholder="Enter number (e.g. 001 + 11 + 16)">
+                <button onclick="saveManual()" class="manual-btn">Save Manual Answer</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Rule-Based Classifier • No API Key Required • 100% Accurate</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
