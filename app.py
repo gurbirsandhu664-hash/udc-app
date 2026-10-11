@@ -1,7 +1,6 @@
-""
+"""
 app.py
-=======
-UDC Finder — Hybrid Classifier (TF-IDF + BM25)
+UDC Finder - Hybrid Classifier (TF-IDF + BM25)
 Single file. Everything included.
 """
 
@@ -32,17 +31,15 @@ st.set_page_config(
 # ==========================================
 
 def clean_topic(topic):
-    """Remove footnotes, page numbers, and extra spaces."""
     if not isinstance(topic, str):
         return ""
-    topic = re.sub(r'\[.*?\]', '', topic)              # Remove [brackets]
-    topic = re.sub(r'\s+\d+(-\d+)?\s*$', '', topic)    # Remove page numbers
-    topic = re.sub(r'\.+\s*$', '', topic)              # Remove trailing dots
-    topic = re.sub(r'\s+', ' ', topic)                 # Collapse spaces
+    topic = re.sub(r'\[.*?\]', '', topic)
+    topic = re.sub(r'\s+\d+(-\d+)?\s*$', '', topic)
+    topic = re.sub(r'\.+\s*$', '', topic)
+    topic = re.sub(r'\s+', ' ', topic)
     return topic.strip().strip('"').strip("'").strip()
 
 def clean_number(number):
-    """Keep only valid UDC numbers."""
     if not isinstance(number, str):
         return ""
     number = number.strip().strip('"').strip("'")
@@ -56,7 +53,6 @@ def clean_number(number):
 
 @st.cache_resource
 def setup_system():
-    """Load CSV, clean it, and build TF-IDF + BM25 indexes."""
     if not os.path.exists(CSV_FILE):
         return None, None, None, None, 0
 
@@ -71,7 +67,6 @@ def setup_system():
 
     topics = df["Topic"].tolist()
 
-    # TF-IDF (Vector Search)
     vectorizer = TfidfVectorizer(
         lowercase=True,
         ngram_range=(1, 3),
@@ -80,7 +75,6 @@ def setup_system():
     )
     tfidf_matrix = vectorizer.fit_transform(topics)
 
-    # BM25 (Keyword Search)
     corpus = [re.findall(r'\w+', t.lower()) for t in topics]
     bm25 = BM25Okapi(corpus)
 
@@ -92,7 +86,6 @@ def setup_system():
 # ==========================================
 
 def search_tfidf(vectorizer, tfidf_matrix, metadata, query, top_k=TOP_K):
-    """TF-IDF vector search."""
     qv = vectorizer.transform([query])
     scores = cosine_similarity(qv, tfidf_matrix).flatten()
     top_idx = scores.argsort()[::-1][:top_k]
@@ -108,7 +101,6 @@ def search_tfidf(vectorizer, tfidf_matrix, metadata, query, top_k=TOP_K):
     return results
 
 def search_bm25(bm25, metadata, query, top_k=TOP_K):
-    """BM25 keyword search."""
     tokens = re.findall(r'\w+', query.lower())
     if not tokens:
         return []
@@ -126,7 +118,6 @@ def search_bm25(bm25, metadata, query, top_k=TOP_K):
     return results
 
 def rrf_fusion(vec_results, bm_results, k=60):
-    """Reciprocal Rank Fusion — merge both result lists."""
     fused = {}
     all_items = {}
     for r in vec_results:
@@ -150,7 +141,6 @@ def rrf_fusion(vec_results, bm_results, k=60):
 # ==========================================
 
 def hybrid_classify(vectorizer, tfidf_matrix, bm25, metadata, title, top_k=FINAL_K):
-    """Combine TF-IDF and BM25 to get final top results."""
     vec = search_tfidf(vectorizer, tfidf_matrix, metadata, title)
     bm = search_bm25(bm25, metadata, title)
     fused = rrf_fusion(vec, bm)
@@ -160,21 +150,21 @@ def hybrid_classify(vectorizer, tfidf_matrix, bm25, metadata, title, top_k=FINAL
 # 5. STREAMLIT UI
 # ==========================================
 
-st.title("📚 UDC Finder")
+st.title("UDC Finder")
 st.caption("Hybrid Search: TF-IDF + BM25")
 
 with st.spinner("Loading system..."):
     vectorizer, tfidf_matrix, bm25, metadata, total = setup_system()
 
     if metadata is None:
-        st.error(f"❌ {CSV_FILE} not found or empty!")
+        st.error(f"{CSV_FILE} not found or empty!")
         st.stop()
 
-    st.success(f"✅ {total} entries ready")
+    st.success(f"{total} entries ready")
 
-title = st.text_input("📖 Book/Document Title:", placeholder="e.g., Electronics")
+title = st.text_input("Book/Document Title:", placeholder="e.g., Electronics")
 
-if st.button("🔍 Classify", type="primary", use_container_width=True):
+if st.button("Classify", type="primary", use_container_width=True):
     if not title.strip():
         st.warning("Please enter a title!")
     else:
@@ -182,10 +172,10 @@ if st.button("🔍 Classify", type="primary", use_container_width=True):
             results = hybrid_classify(vectorizer, tfidf_matrix, bm25, metadata, title)
 
         if not results:
-            st.error("❌ No match found.")
+            st.error("No match found.")
         else:
             top = results[0]
-            st.subheader("🏆 Best Match")
+            st.subheader("Best Match")
 
             col1, col2 = st.columns(2)
             with col1:
@@ -196,9 +186,9 @@ if st.button("🔍 Classify", type="primary", use_container_width=True):
             st.write(f"*Topic:* {top['topic']}")
 
             if len(results) > 1:
-                st.subheader("📋 Alternatives")
+                st.subheader("Alternatives")
                 for r in results[1:]:
-                    st.write(f"- UDC *{r['number']}* — {r['topic']} ({r['confidence']}%)")
+                    st.write(f"- UDC *{r['number']}* - {r['topic']} ({r['confidence']}%)")
 
 st.markdown("---")
-st.caption("💡 Tip: Works on mobile too via same WiFi")
+st.caption("Works on mobile too via same WiFi")
