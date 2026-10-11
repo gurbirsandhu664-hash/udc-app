@@ -1,159 +1,83 @@
 import os
-import json
-import requests
 from flask import Flask, request, jsonify, render_template_string
 
 # ==========================================
-# 1. DEEPSEEK API CONFIGURATION
-# ==========================================
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "YOUR_API_KEY_HERE")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-
-# ==========================================
-# 2. RULE-BASED DICTIONARY (FINAL - CORRECT NUMBERS)
+# 1. RULE-BASED DICTIONARY (NO AI FOR NUMBERS)
 # ==========================================
 UDC_1961_RULES = {
-    # Philosophy
     "knowledge": "001", "epistemology": "001", "theory of knowledge": "001",
     "metaphysics": "11", "ontology": "111", "being": "111", "reality": "111",
     "logic": "16", "reasoning": "16", "philosophy": "1", "ethics": "17",
     "morality": "17", "aesthetics": "18", "psychology": "159.9",
-    
-    # Religion
     "religion": "2", "christianity": "27", "islam": "28", "hinduism": "233",
     "buddhism": "24", "sikhism": "233", "judaism": "26", "theology": "2",
-    
-    # Social Sciences
     "social": "3", "sociology": "316", "politics": "32", "economics": "33",
     "law": "34", "education": "37", "anthropology": "39",
-    
-    # Language & Literature
     "language": "8", "linguistics": "81", "literature": "82", "english": "811",
     "hindi": "821", "punjabi": "821", "sanskrit": "811",
-    
-    # Science
     "science": "5", "mathematics": "51", "physics": "53", "chemistry": "54",
     "biology": "57", "botany": "58", "zoology": "59", "environment": "502",
-    
-    # Technology
     "technology": "6", "medicine": "61", "engineering": "62", "agriculture": "63",
     "computer": "004", "artificial intelligence": "004.8", "internet": "004.7",
-    
-    # Arts
     "arts": "7", "painting": "75", "music": "78", "sports": "79", "photography": "77",
-    
-    # History & Geography
     "history": "9", "geography": "91", "biography": "92", "archaeology": "902",
     "india": "94(540)", "indian": "94(540)", "punjab": "94(540)",
     "gandhi": "929", "nehru": "929", "british": "94(410)",
-    
-    # General
     "general": "0", "computer science": "004", "information": "002",
     "library": "02", "journalism": "070", "management": "005"
 }
 
 DDC_23_RULES = {
-    # Philosophy
     "knowledge": "121", "epistemology": "121", "theory of knowledge": "121",
     "metaphysics": "110", "ontology": "111", "being": "111", "reality": "111",
     "logic": "160", "reasoning": "160", "philosophy": "100", "ethics": "170",
     "morality": "170", "aesthetics": "180", "psychology": "150",
-    
-    # Religion
     "religion": "200", "christianity": "230", "islam": "297", "hinduism": "294.5",
     "buddhism": "294.3", "sikhism": "294.6", "judaism": "296", "theology": "200",
-    
-    # Social Sciences
     "social": "300", "sociology": "301", "politics": "320", "economics": "330",
     "law": "340", "education": "370", "anthropology": "301",
-    
-    # Language & Literature
     "language": "400", "linguistics": "410", "literature": "800", "english": "420",
     "hindi": "491.43", "punjabi": "491.42", "sanskrit": "491.2",
-    
-    # Science
     "science": "500", "mathematics": "510", "physics": "530", "chemistry": "540",
     "biology": "570", "botany": "580", "zoology": "590", "environment": "577",
-    
-    # Technology
     "technology": "600", "medicine": "610", "engineering": "620", "agriculture": "630",
     "computer": "004", "artificial intelligence": "006.3", "internet": "004.678",
-    
-    # Arts
     "arts": "700", "painting": "750", "music": "780", "sports": "790", "photography": "770",
-    
-    # History & Geography
     "history": "900", "geography": "910", "biography": "920", "archaeology": "930",
     "india": "954", "indian": "954", "punjab": "954.552",
     "gandhi": "954.035", "nehru": "954.042", "british": "941",
-    
-    # General
     "general": "000", "computer science": "004", "information": "020",
     "library": "020", "journalism": "070", "management": "650"
 }
 
 # ==========================================
-# 3. AI KEYWORD EXTRACTION (NO NUMBERS)
+# 2. SIMPLE KEYWORD EXTRACTOR (NO AI - PURE PYTHON)
 # ==========================================
-def extract_keywords_from_ai(query):
+def extract_keywords(query):
     """
-    Asks DeepSeek AI to extract only keywords/subjects.
-    Returns a list of strings.
+    Simple rule: 'and', ',', te spaces ton title nu todo.
+    Har word nu lower case karo te dictionary vich check karo.
     """
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
+    # 'and', 'or', 'the', 'of', 'in' jaise words hatao
+    stop_words = {"and", "or", "the", "of", "in", "a", "an", "to", "for", "with", "on"}
     
-    prompt = f"""
-    You are a strict librarian. Extract ONLY the main subjects/topics from the user's query.
-    Return the result as a valid JSON list of strings.
-    Use simple, common subject names (e.g., "knowledge", "metaphysics", "logic").
-    If a subject is a proper noun (like "India", "Gandhi"), return it as it is.
-    DO NOT assign any classification numbers.
+    # Title nu words vich todo
+    words = query.lower().replace(",", " ").replace("&", " ").split()
     
-    User Query: "{query}"
+    # Stop words hatao te clean karo
+    keywords = []
+    for w in words:
+        w = w.strip()
+        if w and w not in stop_words:
+            keywords.append(w)
     
-    Example Output format: ["knowledge", "metaphysics", "logic"]
-    """
-    
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [
-            {"role": "system", "content": "You are a helpful librarian assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.0,
-        "response_format": {"type": "json_object"}
-    }
-    
-    try:
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        content = data['choices'][0]['message']['content']
-        parsed = json.loads(content)
-        
-        if isinstance(parsed, list):
-            return parsed
-        elif isinstance(parsed, dict) and "subjects" in parsed:
-            return parsed["subjects"]
-        else:
-            return ["UNKNOWN"]
-            
-    except Exception as e:
-        print(f"AI Error: {e}")
-        return ["UNKNOWN"]
+    return keywords
 
 # ==========================================
-# 4. MAIN CLASSIFIER LOGIC (EXACT MATCHING)
+# 3. MAIN CLASSIFIER LOGIC (PURE RULE-BASED)
 # ==========================================
 def get_classification(query, standard="UDC"):
-    """
-    Main function: AI extracts keywords, Dictionary maps to numbers.
-    Returns a dictionary with status, final_answer, and audit log.
-    """
-    keywords = extract_keywords_from_ai(query)
+    keywords = extract_keywords(query)
     
     rules = UDC_1961_RULES if standard.upper() == "UDC" else DDC_23_RULES
     standard_name = "UDC 1961" if standard.upper() == "UDC" else "DDC 23"
@@ -163,22 +87,21 @@ def get_classification(query, standard="UDC"):
     error_found = False
     
     for word in keywords:
-        word_clean = str(word).strip().lower()
-        
-        # Exact Match Only
-        if word_clean in rules:
-            num = rules[word_clean]
-            final_numbers.append(num)
-            audit_log.append(f"✅ '{word}' -> {num}")
+        if word in rules:
+            num = rules[word]
+            if num not in final_numbers:
+                final_numbers.append(num)
+                audit_log.append(f"✅ '{word}' -> {num}")
+            else:
+                audit_log.append(f"⏭️ '{word}' -> {num} (already added)")
         else:
             error_found = True
-            audit_log.append(f"❌ '{word}' -> NO RULE FOUND (Manual Check Required)")
+            audit_log.append(f"❌ '{word}' -> NOT FOUND")
     
-    # Return Result
     if error_found or not final_numbers:
         return {
             "status": "ERROR",
-            "message": "Some keywords were not found in the dictionary. Manual check required.",
+            "message": "Kuch keywords dictionary vich nahi mile. Manual check karo.",
             "standard": standard_name,
             "audit": audit_log,
             "final_answer": "MANUAL CHECK"
@@ -187,14 +110,14 @@ def get_classification(query, standard="UDC"):
     answer = " + ".join(final_numbers) if len(final_numbers) > 1 else final_numbers[0]
     return {
         "status": "SUCCESS",
-        "message": "Classification successful.",
+        "message": "Sahi classification mil gayi.",
         "standard": standard_name,
         "audit": audit_log,
         "final_answer": answer
     }
 
 # ==========================================
-# 5. FLASK APP (FRONTEND + BACKEND)
+# 4. FLASK APP
 # ==========================================
 app = Flask(__name__)
 
@@ -237,11 +160,10 @@ HTML_PAGE = """
         
         <div id="resultBox"></div>
         
-        <!-- Manual Entry Box -->
         <div id="manualBox" class="manual-box">
             <p><b>⚠️ Manual Check Required:</b></p>
-            <p style="font-size:13px;">Some keywords were not found. Enter number manually:</p>
-            <input type="text" id="manualInput" placeholder="Enter classification number (e.g. 001 + 11 + 16)">
+            <p style="font-size:13px;">Kuch keywords dictionary vich nahi mile. Khud number pao:</p>
+            <input type="text" id="manualInput" placeholder="Enter number (e.g. 001 + 11 + 16)">
             <button onclick="saveManual()" style="background:#ffc107; color:#000;">Save Manual Answer</button>
         </div>
     </div>
@@ -293,7 +215,7 @@ HTML_PAGE = """
             const resultBox = document.getElementById('resultBox');
             
             if (!manualValue) {
-                alert("Please enter a number first!");
+                alert("Pehla number pao!");
                 return;
             }
             
@@ -301,7 +223,7 @@ HTML_PAGE = """
                 <div class="result-box">
                     <p><b>${currentStandard === 'UDC' ? 'UDC 1961' : 'DDC 23'}</b></p>
                     <p class="success" style="font-size:24px;">${manualValue}</p>
-                    <p style="color:orange; font-size:12px;">⚠️ Manual Entry (User Provided)</p>
+                    <p style="color:orange; font-size:12px;">⚠️ Manual Entry</p>
                 </div>
             `;
             document.getElementById('manualBox').style.display = 'none';
