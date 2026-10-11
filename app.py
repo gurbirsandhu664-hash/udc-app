@@ -1,6 +1,5 @@
 import os
 import json
-import difflib
 import requests
 from flask import Flask, request, jsonify, render_template_string
 
@@ -11,7 +10,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "YOUR_API_KEY_HERE")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 # ==========================================
-# 2. RULE-BASED DICTIONARY (EXPANDED)
+# 2. RULE-BASED DICTIONARY (FINAL - CORRECT NUMBERS)
 # ==========================================
 UDC_1961_RULES = {
     # Philosophy
@@ -147,19 +146,7 @@ def extract_keywords_from_ai(query):
         return ["UNKNOWN"]
 
 # ==========================================
-# 4. FUZZY MATCHING (FOR SPELLING MISTAKES)
-# ==========================================
-def find_best_match(word, rules_dict):
-    """
-    If exact match not found, find the closest match using difflib.
-    """
-    matches = difflib.get_close_matches(word, rules_dict.keys(), n=1, cutoff=0.8)
-    if matches:
-        return matches[0]
-    return None
-
-# ==========================================
-# 5. MAIN CLASSIFIER LOGIC (ZERO-ERROR)
+# 4. MAIN CLASSIFIER LOGIC (EXACT MATCHING)
 # ==========================================
 def get_classification(query, standard="UDC"):
     """
@@ -178,24 +165,16 @@ def get_classification(query, standard="UDC"):
     for word in keywords:
         word_clean = str(word).strip().lower()
         
-        # Step 1: Exact Match
+        # Exact Match Only
         if word_clean in rules:
             num = rules[word_clean]
             final_numbers.append(num)
             audit_log.append(f"✅ '{word}' -> {num}")
-        
-        # Step 2: Fuzzy Match (for spelling mistakes)
         else:
-            best_match = find_best_match(word_clean, rules)
-            if best_match:
-                num = rules[best_match]
-                final_numbers.append(num)
-                audit_log.append(f"⚠️ '{word}' -> '{best_match}' (fuzzy) -> {num}")
-            else:
-                error_found = True
-                audit_log.append(f"❌ '{word}' -> NO RULE FOUND (Manual Check Required)")
+            error_found = True
+            audit_log.append(f"❌ '{word}' -> NO RULE FOUND (Manual Check Required)")
     
-    # Step 3: Return Result
+    # Return Result
     if error_found or not final_numbers:
         return {
             "status": "ERROR",
@@ -215,7 +194,7 @@ def get_classification(query, standard="UDC"):
     }
 
 # ==========================================
-# 6. FLASK APP (FRONTEND + BACKEND)
+# 5. FLASK APP (FRONTEND + BACKEND)
 # ==========================================
 app = Flask(__name__)
 
