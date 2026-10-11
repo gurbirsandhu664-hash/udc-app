@@ -1,3 +1,4 @@
 streamlit
 pandas
-rapidfuzz
+scikit-learn
+rank-bm25
