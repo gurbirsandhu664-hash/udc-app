@@ -2,69 +2,101 @@ import os
 from flask import Flask, request, jsonify, render_template_string
 
 # ==========================================
-# 1. RULE-BASED DICTIONARY (NO AI FOR NUMBERS)
+# 1. RULE-BASED DICTIONARY (Sahi Numbers)
 # ==========================================
 UDC_1961_RULES = {
+    # Philosophy
     "knowledge": "001", "epistemology": "001", "theory of knowledge": "001",
     "metaphysics": "11", "ontology": "111", "being": "111", "reality": "111",
     "logic": "16", "reasoning": "16", "philosophy": "1", "ethics": "17",
     "morality": "17", "aesthetics": "18", "psychology": "159.9",
+    
+    # Religion
     "religion": "2", "christianity": "27", "islam": "28", "hinduism": "233",
     "buddhism": "24", "sikhism": "233", "judaism": "26", "theology": "2",
+    
+    # Social Sciences
     "social": "3", "sociology": "316", "politics": "32", "economics": "33",
     "law": "34", "education": "37", "anthropology": "39",
+    
+    # Language & Literature
     "language": "8", "linguistics": "81", "literature": "82", "english": "811",
     "hindi": "821", "punjabi": "821", "sanskrit": "811",
+    
+    # Science
     "science": "5", "mathematics": "51", "physics": "53", "chemistry": "54",
     "biology": "57", "botany": "58", "zoology": "59", "environment": "502",
+    
+    # Technology
     "technology": "6", "medicine": "61", "engineering": "62", "agriculture": "63",
     "computer": "004", "artificial intelligence": "004.8", "internet": "004.7",
+    
+    # Arts
     "arts": "7", "painting": "75", "music": "78", "sports": "79", "photography": "77",
+    
+    # History & Geography
     "history": "9", "geography": "91", "biography": "92", "archaeology": "902",
     "india": "94(540)", "indian": "94(540)", "punjab": "94(540)",
     "gandhi": "929", "nehru": "929", "british": "94(410)",
+    
+    # General
     "general": "0", "computer science": "004", "information": "002",
     "library": "02", "journalism": "070", "management": "005"
 }
 
 DDC_23_RULES = {
+    # Philosophy
     "knowledge": "121", "epistemology": "121", "theory of knowledge": "121",
     "metaphysics": "110", "ontology": "111", "being": "111", "reality": "111",
     "logic": "160", "reasoning": "160", "philosophy": "100", "ethics": "170",
     "morality": "170", "aesthetics": "180", "psychology": "150",
+    
+    # Religion
     "religion": "200", "christianity": "230", "islam": "297", "hinduism": "294.5",
     "buddhism": "294.3", "sikhism": "294.6", "judaism": "296", "theology": "200",
+    
+    # Social Sciences
     "social": "300", "sociology": "301", "politics": "320", "economics": "330",
     "law": "340", "education": "370", "anthropology": "301",
+    
+    # Language & Literature
     "language": "400", "linguistics": "410", "literature": "800", "english": "420",
     "hindi": "491.43", "punjabi": "491.42", "sanskrit": "491.2",
+    
+    # Science
     "science": "500", "mathematics": "510", "physics": "530", "chemistry": "540",
     "biology": "570", "botany": "580", "zoology": "590", "environment": "577",
+    
+    # Technology
     "technology": "600", "medicine": "610", "engineering": "620", "agriculture": "630",
     "computer": "004", "artificial intelligence": "006.3", "internet": "004.678",
+    
+    # Arts
     "arts": "700", "painting": "750", "music": "780", "sports": "790", "photography": "770",
+    
+    # History & Geography
     "history": "900", "geography": "910", "biography": "920", "archaeology": "930",
     "india": "954", "indian": "954", "punjab": "954.552",
     "gandhi": "954.035", "nehru": "954.042", "british": "941",
+    
+    # General
     "general": "000", "computer science": "004", "information": "020",
     "library": "020", "journalism": "070", "management": "650"
 }
 
 # ==========================================
-# 2. SIMPLE KEYWORD EXTRACTOR (NO AI - PURE PYTHON)
+# 2. KEYWORD EXTRACTOR (NO AI - PURE PYTHON)
 # ==========================================
 def extract_keywords(query):
     """
     Simple rule: 'and', ',', te spaces ton title nu todo.
-    Har word nu lower case karo te dictionary vich check karo.
     """
-    # 'and', 'or', 'the', 'of', 'in' jaise words hatao
-    stop_words = {"and", "or", "the", "of", "in", "a", "an", "to", "for", "with", "on"}
+    # 'and', 'or', 'the' jaise words hatao
+    stop_words = {"and", "or", "the", "of", "in", "a", "an", "to", "for", "with", "on", "by"}
     
     # Title nu words vich todo
     words = query.lower().replace(",", " ").replace("&", " ").split()
     
-    # Stop words hatao te clean karo
     keywords = []
     for w in words:
         w = w.strip()
@@ -126,7 +158,7 @@ HTML_PAGE = """
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepSeek AI Classifier</title>
+    <title>UDC & DDC Classifier</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f0ff; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -144,7 +176,7 @@ HTML_PAGE = """
 </head>
 <body>
     <div class="container">
-        <h2>DeepSeek AI Classifier</h2>
+        <h2>UDC & DDC Classifier</h2>
         <h4>LIVE UDC 1961 & DDC 23 STANDARD</h4>
         
         <label><b>ENTER YOUR FULL QUERY</b></label>
@@ -156,7 +188,7 @@ HTML_PAGE = """
             <option value="DDC">DDC 23</option>
         </select>
         
-        <button onclick="getClassification()">Get Live Classification</button>
+        <button onclick="getClassification()">Get Classification</button>
         
         <div id="resultBox"></div>
         
