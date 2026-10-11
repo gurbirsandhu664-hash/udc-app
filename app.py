@@ -1,19 +1,13 @@
 """
 app.py
 ================================================================================
-UDC & DDC CLASSIFIER — PROFESSIONAL COMPLETE EDITION
+UDC & DDC FINDER — SUPERFAST PROFESSIONAL EDITION
 ================================================================================
-Sections Covered:
-- Section A: Simple titles (UDC)
-- Section B: Common Auxiliaries (UDC)
-- Section C: Special Auxiliaries (UDC)
-- Section D: DDC (Multiple Synthesis)
-================================================================================
-UDC Symbols Used:
-  :  Relation       +  Addition      /  Extension
-  [] Grouping       :: Subgrouping   =  Language
-  (0...) Form       (1/9) Place      (=...) Race
-  "..." Time        .00 Point of View  -03 Materials
+- Manual Dictionary (100% accurate for known titles)
+- Hybrid Search (TF-IDF + BM25 + RRF Fusion)
+- All UDC Common Auxiliaries
+- All UDC Special Auxiliaries
+- All Symbols ( : + / [] :: = (0...) (1/9) (=...) "..." .00 -03 )
 ================================================================================
 """
 
@@ -36,15 +30,100 @@ FINAL_K = 5
 st.set_page_config(page_title="UDC/DDC Finder", page_icon="📚", layout="centered")
 
 # ==============================================================================
-# 1. COMMON AUXILIARIES (Table 1a — 1l)
+# 1. MANUAL DICTIONARY (100% Accurate)
+# ==============================================================================
+
+MANUAL_UDC = {
+    # --- Languages (Language Auxiliary = ) ---
+    "punjabi": "=214.2",
+    "punjabi language": "=214.2",
+    "punjabi literature": "821.214.2",
+    "hindi": "=214",
+    "hindi language": "=214",
+    "hindi literature": "821.214",
+    "urdu": "=214.1",
+    "urdu language": "=214.1",
+    "urdu literature": "821.214.1",
+    "bengali": "=214.3",
+    "bengali language": "=214.3",
+    "tamil": "=214.4",
+    "tamil language": "=214.4",
+    "telugu": "=214.5",
+    "marathi": "=214.6",
+    "gujarati": "=214.7",
+    "sanskrit": "=211",
+    "sanskrit language": "=211",
+    "english": "=111",
+    "english language": "=111",
+    "english literature": "821.111",
+    "french": "=133.1",
+    "french language": "=133.1",
+    "german": "=112.2",
+    "german language": "=112.2",
+    "arabic": "=411",
+    "arabic language": "=411",
+    "persian": "=411.1",
+    "chinese": "=581",
+    "japanese": "=582",
+    
+    # --- Science and Arts (Addition) ---
+    "science and arts": "5+7",
+    "science and art": "5+7",
+    "arts and science": "5+7",
+    "arts and sciences": "5+7",
+    
+    # --- Common Titles ---
+    "information and control theory": "007",
+    "history of india": "94(540)",
+    "indian history": "94(540)",
+    "management": "65",
+    "electronics": "621.38",
+    "library science": "02",
+    "computer science": "004",
+    "artificial intelligence": "004.8",
+    "machine learning": "004.85",
+    "deep learning": "004.85",
+    "data science": "004.6",
+    "cyber security": "004.7",
+    "cloud computing": "004.7",
+    "internet of things": "004.7",
+    "software engineering": "004.4",
+    "database management": "004.6",
+    "operating systems": "004.4",
+    "computer networks": "004.7",
+    
+    # --- Simple Subjects ---
+    "physics": "53",
+    "chemistry": "54",
+    "biology": "57",
+    "mathematics": "51",
+    "medicine": "61",
+    "engineering": "62",
+    "agriculture": "63",
+    "law": "34",
+    "education": "37",
+    "economics": "33",
+    "history": "94",
+    "geography": "91",
+    "philosophy": "1",
+    "religion": "2",
+    "social sciences": "3",
+    "language": "4",
+    "arts": "7",
+    "literature": "8",
+}
+
+# ==============================================================================
+# 2. COMMON AUXILIARIES (Tables 1a–1l)
 # ==============================================================================
 
 # 1a: Language ( = )
 LANGUAGE = {
     "english": "=111", "german": "=112.2", "french": "=133.1",
     "italian": "=131.1", "spanish": "=134.2", "portuguese": "=134.3",
-    "russian": "=161.1", "hindi": "=214", "urdu": "=214.1",
-    "punjabi": "=214.2", "bengali": "=214.3", "sanskrit": "=211",
+    "russian": "=161.1", "hindi": "=214", "":urdu": "=214.1",
+    "pun "(058)",
+   jabi": " "=214.2", "bengali": "=214.3", "sanskrit": "=211",
     "arabic": "=411", "persian": "=411.1", "chinese": "=581",
     "japanese": "=582", "korean": "=583", "tamil": "=214.4",
     "telugu": "=214.5", "marathi": "=214.6", "gujarati": "=214.7",
@@ -57,8 +136,7 @@ FORM = {
     "guide": "(036)", "textbook": "(075)", "thesis": "(043)",
     "dissertation": "(043)", "report": "(047)", "periodical": "(05)",
     "journal": "(05)", "atlas": "(084.4)", "map": "(084.3)",
-    "patent": "(088)", "standard": "(083)", "yearbook": "(058)",
-    "directory": "(058.7)", "biography": "(092)", "conference": "(063)",
+    "patent": "(088)", "standard": "(083)", "yearbookdirectory": "(058.7)", "biography": "(092)", "conference": "(063)",
     "proceedings": "(063)", "abstract": "(048)", "index": "(083.8)",
 }
 
@@ -129,7 +207,7 @@ GROUPING_KEYWORDS = [" general ", " overall ", " combined "]
 SUBGROUPING_KEYWORDS = [" sub ", " specific ", " detailed "]
 
 # ==============================================================================
-# 2. SPECIAL AUXILIARIES
+# 3. SPECIAL AUXILIARIES
 # ==============================================================================
 
 SPECIAL_AUX = {
@@ -138,62 +216,6 @@ SPECIAL_AUX = {
     "research": ".01", "management": ".02", "planning": ".03",
     "marketing": ".04", "production": ".05", "maintenance": ".06",
     "quality": ".07", "testing": ".08", "safety": ".09",
-}
-
-# ==============================================================================
-# 3. MANUAL DICTIONARY (100% Accurate)
-# ==============================================================================
-
-MANUAL_UDC = {
-    # Science and Arts (Addition — as you wanted)
-    "science and arts": "5+7",
-    "science and art": "5+7",
-    "arts and science": "5+7",
-    "arts and sciences": "5+7",
-    
-    # Hindi (DDC number — 891.43)
-    "hindi": "891.43",
-    "hindi literature": "891.43",
-    "hindi books": "891.43",
-    "hindi language": "891.43",
-    
-    # Common titles
-    "information and control theory": "007",
-    "history of india": "94(540)",
-    "indian history": "94(540)",
-    "management": "65",
-    "electronics": "621.38",
-    "library science": "02",
-    "computer science": "004",
-    "artificial intelligence": "004.8",
-    "machine learning": "004.85",
-    "deep learning": "004.85",
-    "data science": "004.6",
-    "cyber security": "004.7",
-    "cloud computing": "004.7",
-    "internet of things": "004.7",
-    "software engineering": "004.4",
-    "database management": "004.6",
-    "operating systems": "004.4",
-    "computer networks": "004.7",
-    "physics": "53",
-    "chemistry": "54",
-    "biology": "57",
-    "mathematics": "51",
-    "medicine": "61",
-    "engineering": "62",
-    "agriculture": "63",
-    "law": "34",
-    "education": "37",
-    "economics": "33",
-    "history": "94",
-    "geography": "91",
-    "philosophy": "1",
-    "religion": "2",
-    "social sciences": "3",
-    "language": "4",
-    "arts": "7",
-    "literature": "8",
 }
 
 # ==============================================================================
@@ -218,7 +240,7 @@ def clean_number(number):
     return number
 
 # ==============================================================================
-# 5. SETUP SYSTEM
+# 5. SETUP SYSTEM (Fast Caching)
 # ==============================================================================
 
 @st.cache_resource
@@ -245,7 +267,7 @@ def setup_system():
     return vectorizer, tfidf_matrix, bm25, metadata, len(df)
 
 # ==============================================================================
-# 6. SEARCH
+# 6. SEARCH (Superfast)
 # ==============================================================================
 
 def search_tfidf(vectorizer, tfidf_matrix, metadata, query, top_k=TOP_K):
@@ -345,22 +367,18 @@ def detect_auxiliaries(title):
         if kw in title_lower:
             aux["relation"] = True
             break
-
     for kw in ADDITION_KEYWORDS:
         if kw in title_lower:
             aux["addition"] = True
             break
-
     for kw in EXTENSION_KEYWORDS:
         if kw in title_lower:
             aux["extension"] = True
             break
-
     for kw in GROUPING_KEYWORDS:
         if kw in title_lower:
             aux["grouping"] = True
             break
-
     for kw in SUBGROUPING_KEYWORDS:
         if kw in title_lower:
             aux["subgrouping"] = True
@@ -390,14 +408,12 @@ def build_proper_udc(results, title):
     top_results = [main]
     aux = detect_auxiliaries(title)
 
-    # Addition (+) — for "plus"
     if aux["addition"] and len(results) >= 2:
         for r in results[1:]:
             if r["number"] != main_num:
                 main_num = f"{main_num}+{r['number']}"
                 top_results.append(r)
                 break
-    # Relation (:) — for "and", "in", etc.
     elif aux["relation"] and len(results) >= 2:
         for r in results[1:]:
             if r["number"] != main_num:
@@ -406,7 +422,6 @@ def build_proper_udc(results, title):
                 break
 
     parts = [main_num]
-
     if aux["language"]:
         parts.append(aux["language"])
     if aux["form"]:
@@ -499,7 +514,7 @@ with st.spinner("Loading system..."):
     st.success(f"✅ {total} entries ready")
 
 title = st.text_input("📖 Book/Document Title:",
-                       placeholder="e.g., Science and Arts, Hindi, Handbook of Electronics in India")
+                       placeholder="e.g., Punjabi language, Science and Arts, Hindi")
 
 if st.button("🔍 Classify", type="primary", use_container_width=True):
     if not title.strip():
