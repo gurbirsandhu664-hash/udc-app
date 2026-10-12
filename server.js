@@ -12,17 +12,6 @@ app.use(express.static(path.join(__dirname)));
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
 
-function loadJsonSafe(filename) {
-    try {
-        const p = path.join(__dirname, filename);
-        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-    } catch (e) {}
-    return {};
-}
-
-const udcIndex = loadJsonSafe('udc-1961-reference-index.json');
-const ddcIndex = loadJsonSafe('ddc-23-reference-index.json');
-
 const SYLLABUS_SYSTEM_INSTRUCTION = `You are a Senior University Examiner and Expert Classifier in Advanced Library Classification for M.Lib.I.Sc (Course LSP5003).
 You must analyze titles and produce classification numbers strictly following:
 1. Universal Decimal Classification (UDC 3rd Abridged English Edition BS 1000A:1961).
@@ -31,38 +20,31 @@ You must analyze titles and produce classification numbers strictly following:
 MANDATORY RULES:
 - Coordination: Addition sign (+) e.g. Science and Arts = 5+7.
 - Consecutive Extension: Slash (/) e.g. 53/54.
-- Relationship / Colon: Colon (:) e.g. Foreign relations between India and Pakistan = 327(540:549) or 327:954.
-- Common Auxiliaries of Place: (...) e.g. India (540), Pakistan (549), UK (410), USA (73).
-- Special Auxiliaries: -1/-9 (Literature: English drama = 820-2, English novel = 820-31).
+- Relationship / Colon: Colon (:) e.g. Foreign relations between India and USA = 327(540:73).
+- Common Auxiliaries of Place: India (540), USA (73), Pakistan (549), UK (410).
+- Special Auxiliaries: -1/-9 (Literature: English drama = 820-2).
 - Library Science: 025.4 (Classification), 025.3 (Cataloguing).
-- DDC 23: Complete synthesized notation (e.g. Foreign relations between India and Pakistan = 327.540549).
+- DDC 23: Complete synthesized notation (e.g. Foreign relations between India and USA = 327.54073).
 
 Return strictly a valid JSON object with these exact keys:
 {
   "main_subject": "Primary Main Subject Name",
   "sub_subject": "Exact Sub-discipline and Facets Identified",
   "udc_breakdown": "Exact synthetically built UDC notation preserving all signs (+, /, :, (), -31, -2)",
-  "confidence": "High (Gemini AI Live Connected)",
+  "confidence": "High (Gemini 2.5 Flash Live Connected)",
   "notation_audit": "Detailed audit of each digit, symbol (+, :, (), -) and facet",
   "explanation": "Clear academic reasoning under UDC 1961 and DDC 23 rules",
   "sources": "UDC BS 1000A:1961 & DDC 23rd Edition",
   "ddc_answer": "Exact synthesized DDC 23 notation"
 }`;
 
-// ਸਾਰੇ ਚਾਲੂ ਮਾਡਲ ਅਤੇ API ਵਰਜਨ ਕੰਬੀਨੇਸ਼ਨ
-const ENDPOINT_ATTEMPTS = [
-    { ver: 'v1beta', model: 'gemini-2.5-flash' },
-    { ver: 'v1beta', model: 'gemini-1.5-flash-latest' },
-    { ver: 'v1beta', model: 'gemini-1.5-flash' },
-    { ver: 'v1',     model: 'gemini-1.5-flash' },
-    { ver: 'v1beta', model: 'gemini-pro' }
-];
-
-function sendGeminiRequest(version, model, title) {
+function callGemini(modelName, title) {
     return new Promise((resolve, reject) => {
+        if (!GEMINI_API_KEY) return reject(new Error("KEY_EMPTY"));
+
         const payload = JSON.stringify({
             contents: [{
-                parts: [{ text: `${SYLLABUS_SYSTEM_INSTRUCTION}\n\nTitle to Classify: "${title}"\nReturn JSON ONLY:` }]
+                parts: [{ text: `${SYLLABUS_SYSTEM_INSTRUCTION}\n\nTitle to Classify: "${title}"\nJSON ONLY:` }]
             }],
             generationConfig: {
                 temperature: 0.05,
@@ -70,36 +52,35 @@ function sendGeminiRequest(version, model, title) {
             }
         });
 
-        const apiPath = `/${version}/models/${model}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-
-        const req = https.request({
+        const options = {
             hostname: 'generativelanguage.googleapis.com',
-            path: apiPath,
+            path: `/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(payload)
             }
-        }, (res) => {
-            let buffer = '';
-            res.on('data', chunk => buffer += chunk);
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
             res.on('end', () => {
                 if (res.statusCode !== 200) {
                     return reject(new Error(`HTTP_${res.statusCode}`));
                 }
                 try {
-                    const parsed = JSON.parse(buffer);
-                    const rawText = parsed.candidates[0]?.content?.parts?.[0]?.text;
-                    if (!rawText) return reject(new Error("EMPTY_PARTS"));
-                    resolve({ result: JSON.parse(rawText), connectedModel: model });
+                    const parsed = JSON.parse(data);
+                    const text = parsed.candidates[0].content.parts[0].text;
+                    resolve(JSON.parse(text));
                 } catch (e) {
                     reject(e);
                 }
             });
         });
 
-        req.on('error', (err) => reject(err));
-        req.setTimeout(20000, () => {
+        req.on('error', reject);
+        req.setTimeout(25000, () => {
             req.destroy();
             reject(new Error("TIMEOUT"));
         });
@@ -108,80 +89,57 @@ function sendGeminiRequest(version, model, title) {
     });
 }
 
-async function executeClassification(title) {
-    if (!GEMINI_API_KEY) throw new Error("MISSING_KEY");
-
-    let lastError = null;
-    for (const ep of ENDPOINT_ATTEMPTS) {
+async function smartClassify(title) {
+    const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
+    let lastErr = null;
+    for (const m of models) {
         try {
-            console.log(`[Connecting] Probing: /${ep.ver}/models/${ep.model}`);
-            const { result, connectedModel } = await sendGeminiRequest(ep.ver, ep.model, title);
-            result.confidence = `High (Connected via ${connectedModel})`;
-            return result;
+            const out = await callGemini(m, title);
+            out.confidence = `High (Connected via ${m})`;
+            return out;
         } catch (err) {
-            console.warn(`[Failed Probe] ${ep.model} (${ep.ver}): ${err.message}`);
-            lastError = err;
+            lastErr = err;
         }
     }
-    throw lastError;
+    throw lastErr;
 }
 
-function academicSyllabusFallback(rawTitle, errorReason) {
-    const raw = (rawTitle || '').trim();
-    const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-
-    // 1. Direct Index Match
-    if (udcIndex[raw] || udcIndex[clean]) {
-        return {
-            main_subject: "Direct Indexed Subject",
-            sub_subject: raw,
-            udc_breakdown: udcIndex[raw] || udcIndex[clean],
-            confidence: "100% Exact Match",
-            notation_audit: `Direct notation: ${udcIndex[raw] || udcIndex[clean]} preserved.`,
-            explanation: "Verified from syllabus index table.",
-            sources: "UDC BS 1000A:1961 & DDC 23",
-            ddc_answer: ddcIndex[raw] || ddcIndex[clean] || "000"
-        };
-    }
-
-    // 2. Foreign relations between India and Pakistan
-    if (/\b(foreign|international|relation|relations)\b/i.test(clean) && /\b(india|pakistan)\b/i.test(clean)) {
+function dynamicFallback(title, errReason) {
+    const t = (title || '').toLowerCase();
+    
+    // Dynamic rule for Foreign Relations
+    if (t.includes('foreign') || t.includes('relation')) {
+        let udcPlace = "(540:73)";
+        let ddcNum = "327.54073";
+        let sub = "Foreign relations between India and USA";
+        
+        if (t.includes('pakistan')) {
+            udcPlace = "(540:549)";
+            ddcNum = "327.540549";
+            sub = "Foreign relations between India and Pakistan";
+        }
+        
         return {
             main_subject: "Political Science / International Relations",
-            sub_subject: "Foreign relations between India and Pakistan",
-            udc_breakdown: "327(540:549)",
-            confidence: `High (Syllabus Synthesis - ${errorReason})`,
-            notation_audit: "UDC 327 (International relations) + Place Auxiliary (540:549) representing India and Pakistan interaction.",
-            explanation: "UDC 327(540:549); DDC 327.540549 (Foreign relations of India with Pakistan).",
+            sub_subject: sub,
+            udc_breakdown: `327${udcPlace}`,
+            confidence: `Fallback Engine Active (${errReason})`,
+            notation_audit: `UDC 327 (Foreign relations) + Auxiliary of Place ${udcPlace}.`,
+            explanation: `Processed via dynamic rule. Live Gemini Status: ${errReason}.`,
             sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
-            ddc_answer: "327.540549"
+            ddc_answer: ddcNum
         };
     }
 
-    // 3. Library classification
-    if (/\b(classification)\b/i.test(clean) && /\b(library|libraries|cataloguing)\b/i.test(clean)) {
-        return {
-            main_subject: "Library & Information Science",
-            sub_subject: "Library Classification",
-            udc_breakdown: "025.4",
-            confidence: `Fallback Active (${errorReason})`,
-            notation_audit: "UDC Class 025.4 allocated for Classification Schemes.",
-            explanation: `Fallback active. UDC 025.4; DDC 025.4.`,
-            sources: "UDC BS 1000A:1961 Section A & DDC 23rd Edition",
-            ddc_answer: "025.4"
-        };
-    }
-
-    // Default Fallback
     return {
-        main_subject: "Generalities & Complex Synthesis",
-        sub_subject: raw,
-        udc_breakdown: "001",
-        confidence: `Fallback Active (${errorReason})`,
-        notation_audit: "Synthesized via syllabus fallback logic.",
-        explanation: `API probe returned: ${errorReason}. Verify key permissions.`,
+        main_subject: "Library & Information Science",
+        sub_subject: title,
+        udc_breakdown: "025.4",
+        confidence: `Fallback Engine Active (${errReason})`,
+        notation_audit: "Base schedule allocation.",
+        explanation: `API status: ${errReason}. Please check API key project setup.`,
         sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
-        ddc_answer: "001"
+        ddc_answer: "025.4"
     };
 }
 
@@ -193,41 +151,40 @@ app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
             sub_subject: "General Knowledge",
             udc_breakdown: "001",
             confidence: "Standard Baseline",
-            notation_audit: "Base notation 001 allocated.",
+            notation_audit: "Base notation 001.",
             explanation: "No title provided.",
-            sources: "UDC 1961 Edition; DDC 23rd Edition",
+            sources: "UDC 1961; DDC 23",
             ddc_answer: "001"
         });
     }
 
-    let finalResult;
+    let result;
     try {
-        finalResult = await executeClassification(title);
+        result = await smartClassify(title);
     } catch (err) {
-        console.error(`[Fallback Triggered] Final reason: ${err.message}`);
-        finalResult = academicSyllabusFallback(title, err.message);
+        result = dynamicFallback(title, err.message);
     }
 
     res.json({
         success: true,
         title: title,
-        main_subject: finalResult.main_subject,
-        sub_subject: finalResult.sub_subject,
-        udc_breakdown: finalResult.udc_breakdown,
-        confidence: finalResult.confidence,
-        notation_audit: finalResult.notation_audit,
-        explanation: finalResult.explanation,
-        sources: finalResult.sources,
-        ddc_answer: finalResult.ddc_answer,
-        mainSubject: finalResult.main_subject,
-        subSubject: finalResult.sub_subject,
-        udcBreakdown: finalResult.udc_breakdown,
-        notationAudit: finalResult.notation_audit,
-        ddcAnswer: finalResult.ddc_answer,
-        udc: finalResult.udc_breakdown,
-        ddc: finalResult.ddc_answer,
-        result: finalResult,
-        data: finalResult
+        main_subject: result.main_subject,
+        sub_subject: result.sub_subject,
+        udc_breakdown: result.udc_breakdown,
+        confidence: result.confidence,
+        notation_audit: result.notation_audit,
+        explanation: result.explanation,
+        sources: result.sources,
+        ddc_answer: result.ddc_answer,
+        mainSubject: result.main_subject,
+        subSubject: result.sub_subject,
+        udcBreakdown: result.udc_breakdown,
+        notationAudit: result.notation_audit,
+        ddcAnswer: result.ddc_answer,
+        udc: result.udc_breakdown,
+        ddc: result.ddc_answer,
+        result: result,
+        data: result
     });
 });
 
@@ -238,5 +195,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Classifier running on port ${PORT}`);
+    console.log(`Server listening on port ${PORT}`);
 });
