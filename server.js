@@ -10,10 +10,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// Get API Key from Render Environment
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
-
-console.log(`[BOOT] Server starting. GEMINI_API_KEY length: ${GEMINI_API_KEY.length}`);
 
 function loadJsonSafe(filename) {
     try {
@@ -46,33 +43,34 @@ Return strictly a valid JSON object with these exact keys:
   "main_subject": "Primary Main Subject Name",
   "sub_subject": "Exact Sub-discipline and Facets Identified",
   "udc_breakdown": "Exact synthetically built UDC notation preserving all signs (+, /, :, (), -31, -2)",
-  "confidence": "High (Gemini Live AI Verified)",
+  "confidence": "High (Gemini AI Live Connected)",
   "notation_audit": "Detailed audit of each digit, symbol (+, :, (), -) and facet",
   "explanation": "Clear academic reasoning under UDC 1961 and DDC 23 rules",
   "sources": "UDC BS 1000A:1961 & DDC 23rd Edition",
   "ddc_answer": "Exact synthesized DDC 23 notation"
 }`;
 
-function callGoogleGeminiRaw(modelName, title) {
-    return new Promise((resolve, reject) => {
-        if (!GEMINI_API_KEY) {
-            return reject(new Error("API_KEY_IS_EMPTY"));
-        }
+// 404 ਤੋਂ ਬਚਣ ਲਈ ਸਾਰੇ ਪ੍ਰਮਾਣਿਤ ਐਂਡਪੁਆਇੰਟ ਨਾਮ
+const CANDIDATE_MODELS = [
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro-latest",
+    "gemini-pro"
+];
 
-        const requestBody = JSON.stringify({
-            contents: [
-                {
-                    role: "user",
-                    parts: [{ text: `${SYLLABUS_SYSTEM_INSTRUCTION}\n\nTitle to Classify: "${title}"\nReturn JSON ONLY:` }]
-                }
-            ],
+function requestSingleModel(model, title) {
+    return new Promise((resolve, reject) => {
+        const payload = JSON.stringify({
+            contents: [{
+                parts: [{ text: `${SYLLABUS_SYSTEM_INSTRUCTION}\n\nTitle to Classify: "${title}"\nReturn JSON ONLY:` }]
+            }],
             generationConfig: {
                 temperature: 0.05,
                 responseMimeType: "application/json"
             }
         });
 
-        const apiPath = `/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+        const apiPath = `/v1beta/models/${model}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
 
         const req = https.request({
             hostname: 'generativelanguage.googleapis.com',
@@ -80,66 +78,54 @@ function callGoogleGeminiRaw(modelName, title) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(requestBody),
-                'x-goog-api-key': GEMINI_API_KEY
+                'Content-Length': Buffer.byteLength(payload)
             }
         }, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
+            let buffer = '';
+            res.on('data', chunk => buffer += chunk);
             res.on('end', () => {
                 if (res.statusCode !== 200) {
-                    console.error(`[Gemini ${modelName} Error ${res.statusCode}]: ${data}`);
                     return reject(new Error(`HTTP_${res.statusCode}`));
                 }
                 try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.candidates && parsed.candidates[0]?.content?.parts?.[0]?.text) {
-                        const jsonOutput = JSON.parse(parsed.candidates[0].content.parts[0].text);
-                        resolve({ data: jsonOutput, model: modelName });
-                    } else {
-                        reject(new Error("EMPTY_PARTS"));
-                    }
+                    const parsed = JSON.parse(buffer);
+                    const rawText = parsed.candidates[0].content.parts[0].text;
+                    resolve(JSON.parse(rawText));
                 } catch (e) {
                     reject(e);
                 }
             });
         });
 
-        req.on('error', (err) => reject(err));
+        req.on('error', (e) => reject(e));
         req.setTimeout(25000, () => {
             req.destroy();
             reject(new Error("TIMEOUT"));
         });
-        req.write(requestBody);
+        req.write(payload);
         req.end();
     });
 }
 
-// 2.5 Flash -> 1.5 Flash resilient chain
-async function executeClassificationPipeline(title) {
-    // 1. Try 2.5 Flash First
-    try {
-        console.log(`[API] Trying gemini-2.5-flash for: "${title}"`);
-        const result = await callGoogleGeminiRaw('gemini-2.5-flash', title);
-        result.data.confidence = "High (Gemini 2.5 Flash Live Connected)";
-        return result.data;
-    } catch (err25) {
-        console.warn(`[API] 2.5-flash failed (${err25.message}). Switching to gemini-1.5-flash...`);
-    }
+async function resolveClassification(title) {
+    if (!GEMINI_API_KEY) throw new Error("MISSING_KEY");
 
-    // 2. Try 1.5 Flash
-    try {
-        const result = await callGoogleGeminiRaw('gemini-1.5-flash', title);
-        result.data.confidence = "High (Gemini 1.5 Flash Live Connected)";
-        return result.data;
-    } catch (err15) {
-        console.warn(`[API] 1.5-flash failed (${err15.message}).`);
-        throw err15;
+    let lastError = null;
+    for (const model of CANDIDATE_MODELS) {
+        try {
+            console.log(`[Connecting] Attempting model: ${model}`);
+            const res = await requestSingleModel(model, title);
+            res.confidence = `High (Connected via ${model})`;
+            return res;
+        } catch (err) {
+            console.warn(`[Skip] Model ${model} returned: ${err.message}`);
+            lastError = err;
+        }
     }
+    throw lastError;
 }
 
-// Built-in Academic Engine
-function academicSyllabusFallback(rawTitle, errorReason) {
+function academicSyllabusFallback(rawTitle, reason) {
     const raw = (rawTitle || '').trim();
     const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -161,40 +147,26 @@ function academicSyllabusFallback(rawTitle, errorReason) {
             main_subject: "Library & Information Science",
             sub_subject: "Library Classification",
             udc_breakdown: "025.4",
-            confidence: `Fallback Active (${errorReason})`,
+            confidence: `Fallback Active (${reason})`,
             notation_audit: "UDC Class 025.4 allocated for Classification Schemes.",
-            explanation: `Fallback used due to: ${errorReason}. UDC 025.4; DDC 025.4.`,
-            sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
+            explanation: `Fallback active. Reason: ${reason}. UDC 025.4; DDC 025.4.`,
+            sources: "UDC BS 1000A:1961 Section A & DDC 23rd Edition",
             ddc_answer: "025.4"
         };
     }
 
-    if (/\b(english)\b/i.test(clean) && /\b(drama|play|plays)\b/i.test(clean)) {
-        return {
-            main_subject: "Literature",
-            sub_subject: "English Literature — Drama",
-            udc_breakdown: "820-2",
-            confidence: `Fallback Active (${errorReason})`,
-            notation_audit: "UDC 820 (English literature) + Special Auxiliary -2 (Drama)",
-            explanation: `UDC 820-2 (English drama); DDC 822 (English drama). Reason: ${errorReason}`,
-            sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
-            ddc_answer: "822"
-        };
-    }
-
     return {
-        main_subject: "Disciplinary Synthesis",
+        main_subject: "Library & Information Science",
         sub_subject: raw,
         udc_breakdown: "025.4",
-        confidence: `Fallback Active (${errorReason})`,
+        confidence: `Fallback Active (${reason})`,
         notation_audit: "Processed via academic syllabus engine.",
-        explanation: `API status: ${errorReason}. Check Render Environment variable.`,
+        explanation: `API status: ${reason}.`,
         sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
         ddc_answer: "025.4"
     };
 }
 
-// Main Endpoint
 app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
     const title = req.body?.title || req.query?.title || req.query?.q || '';
     if (!title.trim()) {
@@ -212,9 +184,9 @@ app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
 
     let finalResult;
     try {
-        finalResult = await executeClassificationPipeline(title);
+        finalResult = await resolveClassification(title);
     } catch (err) {
-        console.error(`[Pipeline Error] Reason: ${err.message}`);
+        console.error(`[Fallback Triggered] Final reason: ${err.message}`);
         finalResult = academicSyllabusFallback(title, err.message);
     }
 
