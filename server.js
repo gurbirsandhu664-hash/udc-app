@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -9,397 +10,215 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// Safe loader taaki Render te missing files naal app exit/crash na hove
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+
+// Load optional local tables
 function loadJsonSafe(filename) {
     try {
         const p = path.join(__dirname, filename);
-        if (fs.existsSync(p)) {
-            return JSON.parse(fs.readFileSync(p, 'utf8'));
-        }
-    } catch (e) {
-        console.log(`Notice: ${filename} could not be loaded:`, e.message);
-    }
+        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+    } catch (e) {}
     return {};
 }
 
 const udcIndex = loadJsonSafe('udc-1961-reference-index.json');
 const ddcIndex = loadJsonSafe('ddc-23-reference-index.json');
 
-function cleanTokens(str) {
-    return (str || '')
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
+// M.Lib.I.Sc Master Syllabus Prompt Engine
+const SYSTEM_PROMPT = `You are an expert Professor and Examiner in Advanced Library Classification for Master of Library and Information Science (M.Lib.I.Sc) following the syllabus:
+- UDC (Universal Decimal Classification, 3rd Abridged English Edition BS 1000A:1961)
+- DDC (Dewey Decimal Classification, 23rd Edition)
 
-// -------------------------------------------------------------
-// 1. FORMS & AUXILIARIES (BIOGRAPHY, SPEECHES, REPORTS, ETC.)
-// -------------------------------------------------------------
-function getFormAuxiliary(text) {
-    let formUdc = "";
-    let formDdc = "";
-    let isBiography = false;
-    let notes = [];
+You must master all 4 syllabus sections:
+Section A: Simple titles according to UDC.
+Section B: Titles according to UDC Common Auxiliaries:
+  - Coordination / Addition: + (e.g., Science and Arts = 5+7, Physics and Chemistry = 53+54)
+  - Consecutive extension: / (e.g., 53/54)
+  - Relation / Colon: : (e.g., Bibliometrics of Physics = 02:001.811:53)
+  - Subgrouping: [ ]
+  - Common Auxiliaries of Language: =... (e.g., =914.3 Hindi, =914.2 Punjabi)
+  - Common Auxiliaries of Form: (0...) (e.g., (021) Compendium, (038) Dictionary, (047) Report, (058) Directory)
+  - Common Auxiliaries of Place: (...) (e.g., (4) Europe, (540) India, (73) USA, (4+73) Europe and USA)
+  - Common Auxiliaries of Race and Nationality: (=...) (e.g., (=914.3))
+  - Common Auxiliaries of Time: "..." (e.g., "19", "1960/1970")
+  - Alphabetical & Non-UDC specification: A/Z or *
+Section C: Special Auxiliaries:
+  - Hyphen series: -1/-9 (e.g., Literature forms: -1 Poetry, -2 Drama, -3 Prose fiction, -31 Novel, -32 Short story)
+  - Point-nought series: .01/.09
+  - Apostrophe series: '1/'9 (Synthesis)
+Section D: Dewey Decimal Classification (DDC 23rd Edition):
+  - 000-999 Main classes with complete Table 1 (Standard Subdivisions), Table 2 (Geographic Areas), Table 3 (Arts & Literature forms), Table 4 (Languages), Table 5 (Ethnic groups), Table 6 (Languages).
 
-    if (/\b(life\s*and|biography|biographies|autobiography|memoirs?|life\s*of|lives\s*of)\b/i.test(text)) {
-        isBiography = true;
-        formUdc = "(092)";
-        formDdc = ".092";
-        notes.push("UDC (092) / 929: = Biography of Persons in Special Field; DDC .092");
-    } else if (/\b(speeches|addresses|lectures|orations?)\b/i.test(text)) {
-        formUdc = "(042)";
-        formDdc = ".04";
-        notes.push("UDC (042) = Speeches, lectures; DDC .04");
-    } else if (/\b(annual\s*reports?|progress\s*reports?|reports?)\b/i.test(text)) {
-        formUdc = "(047)";
-        formDdc = ".06";
-        notes.push("UDC (047) = Reports / Accounts; DDC .06");
-    } else if (/\b(directories|directory|yearbooks?)\b/i.test(text)) {
-        formUdc = "(058)";
-        formDdc = ".025";
-        notes.push("UDC (058) = Directories; DDC .025");
-    } else if (/\b(handbooks?|manuals?|guides?)\b/i.test(text)) {
-        formUdc = "(02)";
-        formDdc = ".02";
-        notes.push("UDC (02) = Handbooks; DDC .02");
-    } else if (/\b(bibliographies|bibliography)\b/i.test(text)) {
-        formUdc = "(01)";
-        formDdc = "016";
-        notes.push("UDC (01) = Bibliographies; DDC 016");
-    }
+Analyze the input title deeply and output STRICT JSON only with keys:
+{
+  "main_subject": "Primary academic discipline name",
+  "sub_subject": "Detailed subject concept and facets",
+  "udc_breakdown": "Exact synthetically built notation preserving all symbols (+, /, :, =, (0...), (...), (=...), '...', -1/-9, .0, ') without truncation",
+  "confidence": "High (M.Lib.I.Sc Rigorous Classification)",
+  "notation_audit": "Detailed explanation of each digit, symbol (+, :, (), -), and auxiliary used",
+  "explanation": "Clear academic justification citing specific UDC 1961 and DDC 23 rules",
+  "sources": "UDC 3rd Abridged English Edition (BS 1000A:1961) & DDC 23rd Edition",
+  "ddc_answer": "Complete DDC 23 notation with Table additions"
+}`;
 
-    return { formUdc, formDdc, isBiography, notes };
-}
-
-// -------------------------------------------------------------
-// 2. PLACE & CORPORATE BODIES
-// -------------------------------------------------------------
-function getPlaceAndOrg(text) {
-    let placeUdc = "";
-    let ddcPlace = "";
-    let orgRel = "";
-    let notes = [];
-
-    if (/\b(institutes?|institutions?|organisations?|organizations?|associations?|societies|society|academies|academy|boards?|councils?)\b/i.test(text)) {
-        orgRel = ":061";
-        notes.push("UDC :061 = Organisations / Institutions");
-    }
-
-    if (/\b(india|indian|punjab|delhi|haryana|bombay|bengal|madras)\b/i.test(text)) {
-        placeUdc = "(540)";
-        ddcPlace = ".0954";
-        notes.push("UDC (540) = India; DDC .0954");
-    } else if (/\b(europe|european)\b/i.test(text) && /\b(america|american|usa)\b/i.test(text)) {
-        placeUdc = "(4+73)";
-        ddcPlace = ".094";
-        notes.push("UDC (4+73) = Europe & America");
-    } else if (/\b(america|american|usa|united\s*states)\b/i.test(text)) {
-        placeUdc = "(73)";
-        ddcPlace = ".0973";
-        notes.push("UDC (73) = United States");
-    } else if (/\b(britain|british|uk|england)\b/i.test(text)) {
-        placeUdc = "(410)";
-        ddcPlace = ".0941";
-        notes.push("UDC (410) = Great Britain");
-    } else if (/\b(international|world|global)\b/i.test(text)) {
-        placeUdc = "(100)";
-        ddcPlace = ".09";
-        notes.push("UDC (100) = International");
-    }
-
-    return { placeUdc, ddcPlace, orgRel, notes };
-}
-
-// -------------------------------------------------------------
-// 3. MASTER TAXONOMY GRAPH
-// -------------------------------------------------------------
-const KNOWLEDGE_GRAPH = [
-    // Scientists & Pure Sciences
-    {
-        keywords: ["scientist", "scientists", "scientific research", "science", "pure science", "natural science"],
-        main: "Pure Sciences",
-        sub: "Pure Sciences & Scientists",
-        udc: "5",
-        ddc: "500",
-        exp: "UDC 5 (Mathematics & Natural Sciences); DDC 500 (Natural sciences)."
-    },
-    // Public Administration
-    {
-        keywords: ["public administration", "administration", "administrative", "civil service", "governance", "bureaucracy"],
-        main: "Social Sciences",
-        sub: "Public Administration & Management",
-        udc: "35",
-        ddc: "351",
-        exp: "UDC 35 (Public administration); DDC 351 (Public administration)."
-    },
-    // Nursery rhymes / Folklore
-    {
-        keywords: ["nursery rhymes", "rhymes", "fairy tale", "folklore", "folk song", "folk tale", "mythology"],
-        main: "Customs, Folklore & Literature",
-        sub: "Folklore — Nursery Rhymes & Children's Folk Verse",
-        udc: "398.8",
-        ddc: "398.8",
-        exp: "UDC 398.8 (Folk poetry, nursery rhymes); DDC 398.8 (Folklore rhymes)."
-    },
-    // Hindi Novels / Premchand
-    {
-        keywords: ["premchand", "prem chand", "godan", "gaban", "karambhumi", "karam bhumi", "rangbhumi", "nirmala", "hindi novel"],
-        main: "Literature",
-        sub: "Hindi Literature — Novel (Premchand)",
-        udc: "891.43-31",
-        ddc: "891.433",
-        exp: "UDC 891.43-31 (Hindi novel with auxiliary -31); DDC 891.433 (Hindi fiction)."
-    },
-    {
-        keywords: ["punjabi novel", "panjabi novel", "nanak singh"],
-        main: "Literature",
-        sub: "Punjabi Literature — Novel",
-        udc: "891.42-31",
-        ddc: "891.423",
-        exp: "UDC 891.42-31 (Punjabi novel with auxiliary -31); DDC 891.423."
-    },
-    {
-        keywords: ["novel", "novels", "fiction"],
-        main: "Literature",
-        sub: "Literature — Novels & Fiction",
-        udc: "82-31",
-        ddc: "808.83",
-        exp: "UDC 82-31 (Novels); DDC 808.83 (Fiction)."
-    },
-    // Astronomy
-    {
-        keywords: ["astronomy", "astronomical", "astromical", "astrophysics", "solar system", "planet", "galaxy", "telescope"],
-        main: "Pure Sciences",
-        sub: "Astronomy & Astrophysics",
-        udc: "52",
-        ddc: "520",
-        exp: "UDC 52 (Astronomy, Astrophysics); DDC 520."
-    },
-    // Library Science
-    {
-        keywords: ["bibliometrics", "scientometrics", "informetrics", "citation analysis"],
-        main: "Library & Information Science",
-        sub: "Bibliometrics & Citation Studies",
-        udc: "02:001.811",
-        ddc: "020.72",
-        exp: "UDC 02:001.811 (Bibliometrics); DDC 020.72."
-    },
-    {
-        keywords: ["cataloguing", "cataloging", "classified catalogue", "aacr", "ccc", "metadata"],
-        main: "Library Science",
-        sub: "Cataloguing & Metadata",
-        udc: "025.3",
-        ddc: "025.3",
-        exp: "UDC 025.3 (Cataloguing); DDC 025.3."
-    },
-    {
-        keywords: ["classification", "colon classification", "decimal classification", "udc", "ddc"],
-        main: "Library Science",
-        sub: "Classification Schemes",
-        udc: "025.4",
-        ddc: "025.4",
-        exp: "UDC 025.4 (Classification); DDC 025.4."
-    },
-    {
-        keywords: ["library", "libraries", "librarianship"],
-        main: "Library Science",
-        sub: "Library Science",
-        udc: "02",
-        ddc: "020",
-        exp: "UDC 02 (Libraries); DDC 020."
-    },
-    // Computer Science
-    {
-        keywords: ["computer", "programming", "software", "algorithm", "artificial intelligence", "machine learning", "database"],
-        main: "Computer Science",
-        sub: "Computer Science & IT",
-        udc: "004",
-        ddc: "004",
-        exp: "UDC 004 (Computer science); DDC 004."
-    },
-    // Pure Sciences (Specific)
-    { keywords: ["mathematics", "math", "algebra", "calculus", "geometry", "statistics"], main: "Pure Sciences", sub: "Mathematics", udc: "51", ddc: "510", exp: "UDC 51 (Mathematics); DDC 510." },
-    { keywords: ["physics", "quantum", "mechanics", "optics"], main: "Pure Sciences", sub: "Physics", udc: "53", ddc: "530", exp: "UDC 53 (Physics); DDC 530." },
-    { keywords: ["chemistry", "chemical", "biochemistry"], main: "Pure Sciences", sub: "Chemistry", udc: "54", ddc: "540", exp: "UDC 54 (Chemistry); DDC 540." },
-    { keywords: ["biology", "biological", "genetics", "evolution"], main: "Pure Sciences", sub: "Biological Sciences", udc: "57", ddc: "570", exp: "UDC 57 (Biology); DDC 570." },
-    { keywords: ["botany", "plants", "flora"], main: "Pure Sciences", sub: "Botany", udc: "58", ddc: "580", exp: "UDC 58 (Botany); DDC 580." },
-    { keywords: ["zoology", "animals", "wildlife"], main: "Pure Sciences", sub: "Zoology", udc: "59", ddc: "590", exp: "UDC 59 (Zoology); DDC 590." },
-    { keywords: ["medicine", "medical", "surgery", "disease", "health"], main: "Applied Sciences", sub: "Medical Sciences", udc: "61", ddc: "610", exp: "UDC 61 (Medicine); DDC 610." },
-    { keywords: ["engineering", "mechanical", "electrical", "civil"], main: "Applied Sciences", sub: "Engineering", udc: "62", ddc: "620", exp: "UDC 62 (Engineering); DDC 620." },
-    { keywords: ["agriculture", "farming", "crops"], main: "Applied Sciences", sub: "Agriculture", udc: "63", ddc: "630", exp: "UDC 63 (Agriculture); DDC 630." },
-    { keywords: ["management", "business", "commerce", "accounting"], main: "Applied Sciences", sub: "Management", udc: "65", ddc: "650", exp: "UDC 65 (Management); DDC 650." },
-    { keywords: ["higher education", "university", "universities", "college"], main: "Social Sciences", sub: "Higher Education", udc: "378", ddc: "378", exp: "UDC 378 (Higher Education); DDC 378." },
-    { keywords: ["education", "teaching", "pedagogy", "school"], main: "Social Sciences", sub: "Education", udc: "37", ddc: "370", exp: "UDC 37 (Education); DDC 370." },
-    { keywords: ["law", "jurisprudence", "legal", "crimin"], main: "Social Sciences", sub: "Law & Jurisprudence", udc: "34", ddc: "340", exp: "UDC 34 (Law); DDC 340." },
-    { keywords: ["economics", "economy", "banking", "finance"], main: "Social Sciences", sub: "Economics & Finance", udc: "33", ddc: "330", exp: "UDC 33 (Economics); DDC 330." },
-    { keywords: ["politics", "political", "government", "democracy"], main: "Social Sciences", sub: "Political Science", udc: "32", ddc: "320", exp: "UDC 32 (Politics); DDC 320." },
-    { keywords: ["sociology", "society", "social work"], main: "Social Sciences", sub: "Sociology", udc: "301", ddc: "301", exp: "UDC 301 (Sociology); DDC 301." },
-    { keywords: ["history", "historical", "ancient", "medieval"], main: "Geography & History", sub: "History", udc: "93/99", ddc: "900", exp: "UDC 93/99 (History); DDC 900." }
-];
-
-function autoClassify(rawTitle) {
-    const raw = (rawTitle || '').trim();
-    if (!raw) {
-        return {
-            main_subject: "Generalities",
-            sub_subject: "General Knowledge",
-            udc_breakdown: "001",
-            confidence: "Standard Baseline",
-            notation_audit: "Base notation 001 allocated.",
-            explanation: "No title provided. Defaulted to Generalities.",
-            sources: "UDC 1961 Edition; DDC 23rd Edition",
-            ddc_answer: "001"
-        };
-    }
-
-    const cleaned = cleanTokens(raw);
-
-    // 1. Exact Reference Lookup
-    let directUdc = udcIndex[raw] || udcIndex[cleaned];
-    let directDdc = ddcIndex[raw] || ddcIndex[cleaned];
-
-    if (!directUdc || !directDdc) {
-        for (const k of Object.keys(udcIndex)) {
-            if (cleanTokens(k) === cleaned) { directUdc = udcIndex[k]; break; }
+// Gemini 2.5 API Caller
+function callGeminiAPI(title) {
+    return new Promise((resolve, reject) => {
+        if (!GEMINI_API_KEY) {
+            return reject(new Error("GEMINI_API_KEY is not configured in Render environment variables."));
         }
-        for (const k of Object.keys(ddcIndex)) {
-            if (cleanTokens(k) === cleaned) { directDdc = ddcIndex[k]; break; }
-        }
-    }
 
-    if (directUdc || directDdc) {
-        const u = directUdc || "001";
-        const d = directDdc || "000";
-        return {
-            main_subject: "Direct Reference Index",
-            sub_subject: raw,
-            udc_breakdown: u,
-            confidence: "100% Exact Reference Verification",
-            notation_audit: `Direct notation match: ${u} preserved completely without truncation.`,
-            explanation: "Verified directly against standard 1961 reference tables.",
-            sources: "udc-1961-reference-index.json / ddc-23-reference-index.json",
-            ddc_answer: d
-        };
-    }
-
-    // 2. Auxiliaries
-    const { formUdc, formDdc, isBiography, notes: formNotes } = getFormAuxiliary(cleaned);
-    const { placeUdc, ddcPlace, orgRel, notes: placeNotes } = getPlaceAndOrg(cleaned);
-
-    // 3. Subject Score Match
-    let bestSubject = null;
-    let maxScore = 0;
-
-    for (const item of KNOWLEDGE_GRAPH) {
-        let score = 0;
-        for (const kw of item.keywords) {
-            const re = new RegExp(`\\b${kw.replace(/\s+/g, '\\s+')}\\b`, 'i');
-            if (re.test(cleaned)) {
-                score += kw.length;
+        const payload = JSON.stringify({
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: `${SYSTEM_PROMPT}\n\nTitle to Classify: "${title}"\nOutput JSON only:` }]
+                }
+            ],
+            generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
             }
-        }
-        if (score > maxScore) {
-            maxScore = score;
-            bestSubject = item;
-        }
-    }
+        });
 
-    if (bestSubject) {
-        let finalUdc = "";
-        let finalDdc = "";
-        let finalSub = bestSubject.sub;
+        const req = https.request({
+            hostname: 'generativelanguage.googleapis.com',
+            path: `/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.candidates && parsed.candidates[0].content.parts[0].text) {
+                        const aiJson = JSON.parse(parsed.candidates[0].content.parts[0].text);
+                        resolve(aiJson);
+                    } else {
+                        reject(new Error("Invalid structure from Gemini: " + data));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        });
 
-        if (isBiography) {
-            finalUdc = `929:${bestSubject.udc}${placeUdc}`;
-            finalDdc = `${bestSubject.ddc === "500" ? "509.2" : bestSubject.ddc + ".092"}${ddcPlace}`;
-            finalSub = `Biography of ${bestSubject.sub}`;
-        } else {
-            const isLit = bestSubject.udc.startsWith("8");
-            finalUdc = `${bestSubject.udc}${isLit ? '' : placeUdc}${isLit ? '' : orgRel}${formUdc}`;
-            finalDdc = `${bestSubject.ddc}${isLit ? '' : ddcPlace}${isLit ? '' : formDdc}`;
-        }
+        req.on('error', (e) => reject(e));
+        req.setTimeout(15000, () => {
+            req.destroy();
+            reject(new Error("Gemini API call timed out."));
+        });
+        req.write(payload);
+        req.end();
+    });
+}
 
-        let expNotes = [bestSubject.exp];
-        if (isBiography) expNotes.push("UDC 929: = Biography of Persons in Special Field");
-        if (placeUdc) expNotes.push(`Place: ${placeUdc}`);
-        if (formNotes.length && !isBiography) expNotes.push(`Form: ${formNotes.join(', ')}`);
+// Offline Syllabus Fallback Engine (Runs if AI key is missing or network times out)
+function syllabusOfflineEngine(rawTitle) {
+    const raw = (rawTitle || '').trim();
+    const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
+    // Direct Index Match
+    if (udcIndex[raw] || udcIndex[clean]) {
         return {
-            main_subject: bestSubject.main,
-            sub_subject: finalSub,
-            udc_breakdown: finalUdc,
-            confidence: "High (Faceted Analytical Synthesis)",
-            notation_audit: `Notation '${finalUdc}' fully synthesized without truncation.`,
-            explanation: expNotes.join(' | '),
-            sources: "Universal Decimal Classification (UDC 1961) & Dewey Decimal Classification (DDC 23rd)",
-            ddc_answer: finalDdc
+            main_subject: "Direct Indexed Subject",
+            sub_subject: raw,
+            udc_breakdown: udcIndex[raw] || udcIndex[clean],
+            confidence: "100% Exact Schedule Match",
+            notation_audit: `Direct match: ${udcIndex[raw] || udcIndex[clean]} preserved without truncation.`,
+            explanation: "Direct match located in standard reference tables.",
+            sources: "UDC BS 1000A:1961 & DDC 23",
+            ddc_answer: ddcIndex[raw] || ddcIndex[clean] || "000"
         };
     }
 
-    // 4. Fallback
-    const fallbackUdc = `5/6${placeUdc}${orgRel}${formUdc}`;
-    const fallbackDdc = `500${ddcPlace}${formDdc}`;
+    // Addition (+) Coordination: Science and Arts
+    if (/\b(science|sciences)\b/i.test(clean) && /\b(art|arts)\b/i.test(clean) && /\b(and|\+)\b/i.test(clean)) {
+        return {
+            main_subject: "Pure Sciences & The Arts (Coordinated Subjects)",
+            sub_subject: "Sciences and Arts",
+            udc_breakdown: "5+7",
+            confidence: "High (M.Lib.I.Sc Section B Rule of Coordination)",
+            notation_audit: "Notation '5+7': UDC sign of addition (+) joins Class 5 (Science) and Class 7 (Arts).",
+            explanation: "UDC Section B Common Auxiliary of Aggregation: The plus sign (+) connects two non-consecutive main classes 5 and 7; DDC 500 & 700.",
+            sources: "UDC 1961 BS 1000A Common Auxiliaries & DDC 23",
+            ddc_answer: "500 [with 700]"
+        };
+    }
 
+    // Default synthesis
     return {
-        main_subject: "Pure & Applied Sciences",
+        main_subject: "Advanced Classification Synthesis",
         sub_subject: raw,
-        udc_breakdown: fallbackUdc,
-        confidence: "Medium (Semantic Inference)",
-        notation_audit: `Notation '${fallbackUdc}' synthesized from institutional tokens.`,
-        explanation: `Analyzed through semantic classification. Place: ${placeUdc || 'none'}.`,
-        sources: "UDC 1961 Edition Main Tables & DDC 23rd Edition",
-        ddc_answer: fallbackDdc
+        udc_breakdown: "001",
+        confidence: "Baseline Synthesis",
+        notation_audit: "Notation analyzed through structural fallback.",
+        explanation: "Provide GEMINI_API_KEY in Render environment variables for full AI-powered analysis.",
+        sources: "UDC 1961 & DDC 23rd Edition",
+        ddc_answer: "001"
     };
 }
 
-// Universal API Router
-app.all(['/api/classify', '/api/search', '/classify'], (req, res) => {
-    try {
-        const title = req.body?.title || req.query?.title || req.query?.q || '';
-        const r = autoClassify(title);
-
-        res.json({
-            success: true,
-            title: title,
-            main_subject: r.main_subject,
-            sub_subject: r.sub_subject,
-            udc_breakdown: r.udc_breakdown,
-            confidence: r.confidence,
-            notation_audit: r.notation_audit,
-            explanation: r.explanation,
-            sources: r.sources,
-            ddc_answer: r.ddc_answer,
-            mainSubject: r.main_subject,
-            subSubject: r.sub_subject,
-            udcBreakdown: r.udc_breakdown,
-            notationAudit: r.notation_audit,
-            ddcAnswer: r.ddc_answer,
-            udc: r.udc_breakdown,
-            ddc: r.ddc_answer,
-            result: r,
-            data: r
+// Master API Handler
+app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
+    const title = req.body?.title || req.query?.title || req.query?.q || '';
+    if (!title.trim()) {
+        return res.json({
+            main_subject: "Generalities",
+            sub_subject: "General Knowledge",
+            udc_breakdown: "001",
+            confidence: "Baseline Standard",
+            notation_audit: "Base notation 001 allocated.",
+            explanation: "No title provided.",
+            sources: "UDC 1961 Edition; DDC 23rd Edition",
+            ddc_answer: "001"
         });
-    } catch (err) {
-        console.error("API Error:", err);
-        res.status(500).json({ error: "Classification engine error" });
     }
+
+    let result;
+    try {
+        result = await callGeminiAPI(title);
+    } catch (err) {
+        console.log("Gemini API skipped/failed:", err.message, "Using offline syllabus engine.");
+        result = syllabusOfflineEngine(title);
+    }
+
+    res.json({
+        success: true,
+        title: title,
+        main_subject: result.main_subject,
+        sub_subject: result.sub_subject,
+        udc_breakdown: result.udc_breakdown,
+        confidence: result.confidence,
+        notation_audit: result.notation_audit,
+        explanation: result.explanation,
+        sources: result.sources,
+        ddc_answer: result.ddc_answer,
+        mainSubject: result.main_subject,
+        subSubject: result.sub_subject,
+        udcBreakdown: result.udc_breakdown,
+        notationAudit: result.notation_audit,
+        ddcAnswer: result.ddc_answer,
+        udc: result.udc_breakdown,
+        ddc: result.ddc_answer,
+        result: result,
+        data: result
+    });
 });
 
 app.get('*', (req, res) => {
     const indexPath = path.join(__dirname, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-    } else {
-        res.send("UDC & DDC Classifier is live.");
-    }
+    if (fs.existsSync(indexPath)) res.sendFile(indexPath);
+    else res.send("UDC & DDC M.Lib.I.Sc Classifier is live.");
 });
 
-// Crash-proof process guards
 process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err.message));
 process.on('unhandledRejection', (err) => console.error('Unhandled Rejection:', err));
 
-// Binds strictly to 0.0.0.0 for Render host requirement
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on port ${PORT}`);
 });
