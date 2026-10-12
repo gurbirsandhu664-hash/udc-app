@@ -9,35 +9,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// Safe JSON loader taaki app crash na hove
-function loadJsonSafe(filename) {
-    const p = path.join(__dirname, filename);
-    if (fs.existsSync(p)) {
+// Safe loader taaki Render te JSON missing hon te crash na hove
+function loadJsonFile(filename) {
+    const filePath = path.join(__dirname, filename);
+    if (fs.existsSync(filePath)) {
         try {
-            return JSON.parse(fs.readFileSync(p, 'utf8'));
-        } catch (e) {
-            console.error(`Error loading ${filename}:`, e.message);
+            return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        } catch (err) {
+            console.error(`Error loading ${filename}:`, err.message);
             return {};
         }
     }
     return {};
 }
 
-const udcIndex = loadJsonSafe('udc-1961-reference-index.json');
-const ddcIndex = loadJsonSafe('ddc-23-reference-index.json');
+// Dono index load kite gaye han
+const udcIndex = loadJsonFile('udc-1961-reference-index.json');
+const ddcIndex = loadJsonFile('ddc-23-reference-index.json');
 
-// UDC / DDC Rules Engine for Random/New Titles
+// Standard Classification Knowledge Base (Random / Complex Titles layi)
 const SUBJECT_PATTERNS = [
-    // 000 - Generalities / Computer Science / Library
+    // 000 - Generalities, Computer Science, Library Science
     { re: /\b(bibliometrics|scientometrics|informetrics|citation analysis)\b/i, 
-      main: "Library & Information Science", sub: "Bibliometrics", udc: "02:001.811", ddc: "020.72", exp: "UDC 02 (Libraries) colon-linked with 001.811 (Scientific technique/Bibliometrics); DDC 020.72 (Research in library and information science)." },
+      main: "Library & Information Science", sub: "Bibliometrics & Citation Analysis", udc: "02:001.811", ddc: "020.72", exp: "UDC 02 (Libraries) colon-linked with 001.811 (Scientific technique/Bibliometrics); DDC 020.72 (Research in library and information science)." },
     { re: /\b(cataloguing|cataloging|classified catalogue|aacr|ccc)\b/i, 
       main: "Library Science", sub: "Cataloguing / Practical Manual", udc: "025.3", ddc: "025.3", exp: "UDC 025.3 (Cataloguing, records); DDC 025.3 (Bibliographic analysis & cataloguing)." },
-    { re: /\b(classification|colon classification|decimal classification)\b/i, 
+    { re: /\b(classification|colon classification|decimal classification|udc|ddc)\b/i, 
       main: "Library Science", sub: "Classification & Indexing", udc: "025.4", ddc: "025.4", exp: "UDC 025.4 (Classification schemes); DDC 025.4 (Subject analysis & classification)." },
     { re: /\b(library|libraries|public library|academic library|national library)\b/i, 
       main: "Library Science", sub: "General Library Operations", udc: "02", ddc: "020", exp: "UDC 02 (Librarianship, Library science); DDC 020 (Library and information sciences)." },
-    { re: /\b(computer|programming|software|algorithm|artificial intelligence|machine learning|python|database)\b/i, 
+    { re: /\b(computer|programming|software|algorithm|artificial intelligence|machine learning|python|database|cloud)\b/i, 
       main: "Computer Science", sub: "Data Processing & Computation", udc: "004", ddc: "004", exp: "UDC 004 (Computer science & technology); DDC 004 (Computer science)." },
     
     // 100 - Philosophy & Psychology
@@ -64,7 +65,7 @@ const SUBJECT_PATTERNS = [
     { re: /\b(religion|theology)\b/i, 
       main: "Religion", sub: "Comparative Religion", udc: "2", ddc: "200", exp: "UDC 2 (Theology, Religion); DDC 200 (Religion)." },
 
-    // 300 - Social Sciences / Education / Law / Economics
+    // 300 - Social Sciences, Education, Law, Economics, Politics
     { re: /\b(higher education|university education|college)\b/i, 
       main: "Social Sciences", sub: "Higher Education", udc: "378", ddc: "378", exp: "UDC 378 (Higher education, Universities); DDC 378 (Higher education)." },
     { re: /\b(education|teaching|pedagogy|school|curriculum)\b/i, 
@@ -92,7 +93,7 @@ const SUBJECT_PATTERNS = [
     { re: /\b(zoology|animals|wildlife)\b/i, 
       main: "Pure Sciences", sub: "Zoology", udc: "59", ddc: "590", exp: "UDC 59 (Zoology); DDC 590 (Animals/Zoology)." },
 
-    // 600 - Applied Sciences / Medicine / Engineering
+    // 600 - Applied Sciences, Medicine, Engineering, Agriculture
     { re: /\b(medicine|medical|surgery|pathology|diseases|health|clinical)\b/i, 
       main: "Applied Sciences", sub: "Medical Sciences", udc: "61", ddc: "610", exp: "UDC 61 (Medical sciences, Medicine); DDC 610 (Medicine & health)." },
     { re: /\b(engineering|mechanical|electrical|civil|electronics)\b/i, 
@@ -102,11 +103,11 @@ const SUBJECT_PATTERNS = [
     { re: /\b(management|business administration|accounting|marketing)\b/i, 
       main: "Applied Sciences", sub: "Business Management", udc: "65", ddc: "650", exp: "UDC 65 (Management and organization of industry); DDC 650 (Management & auxiliary services)." },
 
-    // 700 - Arts & Recreation
+    // 700 - The Arts
     { re: /\b(art|painting|drawing|sculpture|music|cinema|photography)\b/i, 
       main: "The Arts", sub: "Fine Arts & Recreation", udc: "7", ddc: "700", exp: "UDC 7 (The Arts, Recreation, Entertainment, Sport); DDC 700 (The arts)." },
 
-    // 800 - Linguistics & Literature
+    // 800 - Language & Literature
     { re: /\b(linguistics|grammar|punjabi language|hindi language|english language|language)\b/i, 
       main: "Linguistics", sub: "Language & Linguistics", udc: "80", ddc: "400", exp: "UDC 80 (General linguistics, Philology); DDC 400 (Language)." },
     { re: /\b(literature|poetry|drama|fiction|novel|short stories|prose)\b/i, 
@@ -119,12 +120,11 @@ const SUBJECT_PATTERNS = [
       main: "Geography & History", sub: "History", udc: "93/99", ddc: "900", exp: "UDC 93/99 (History of nations); DDC 900 (History & geography)." }
 ];
 
-// Auxiliaries detection (Place, Form, Time)
 function detectAuxiliaries(title) {
     let auxUdc = "";
     let auxExp = [];
 
-    // Place auxiliaries (540 = India, 410 = UK, 73 = USA)
+    // Place Auxiliaries (India: 540, UK: 410, USA: 73)
     if (/\b(india|indian|punjab)\b/i.test(title)) {
         auxUdc += "(540)";
         auxExp.push("UDC Place Auxiliary (540) = India");
@@ -136,7 +136,7 @@ function detectAuxiliaries(title) {
         auxExp.push("UDC Place Auxiliary (73) = United States");
     }
 
-    // Form auxiliaries (02 = manual, 03 = dictionary, 05 = periodical)
+    // Form Auxiliaries (Manual: 02, Dictionary: 03)
     if (/\b(manual|handbook|guide)\b/i.test(title)) {
         auxUdc += "(02)";
         auxExp.push("UDC Form Auxiliary (02) = Manuals, Books of instruction");
@@ -148,76 +148,67 @@ function detectAuxiliaries(title) {
     return { auxUdc, auxExp };
 }
 
-// Full Classifier Function (matching front-end exactly)
-function buildClassification(title) {
-    if (!title || typeof title !== 'string' || !title.trim()) {
+function processClassification(rawTitle) {
+    const title = (rawTitle || '').trim();
+    if (!title) {
         return {
             main_subject: "Generalities",
             sub_subject: "General Knowledge",
-            udc_breakdown: "001 (Knowledge in general)",
-            confidence: "Baseline Default",
-            notation_audit: "Validated standard base class",
-            explanation: "No specific title provided.",
-            sources: "UDC 1961 edition; DDC 23rd edition",
-            ddc_answer: "001 (Knowledge)"
+            udc_breakdown: "001",
+            confidence: "Baseline Standard",
+            notation_audit: "Validated standard base notation.",
+            explanation: "No title provided. Defaulted to general knowledge.",
+            sources: "UDC 1961 Edition; DDC 23rd Edition",
+            ddc_answer: "001"
         };
     }
 
-    const cleanTitle = title.trim();
-    const lowerTitle = cleanTitle.toLowerCase();
+    const lower = title.toLowerCase();
 
-    // 1. Exact match from JSON reference files if available
-    let directUdc = udcIndex[cleanTitle] || udcIndex[lowerTitle];
-    let directDdc = ddcIndex[cleanTitle] || ddcIndex[lowerTitle];
+    // 1. Direct match check
+    const directUdc = udcIndex[title] || udcIndex[lower];
+    const directDdc = ddcIndex[title] || ddcIndex[lower];
 
     if (directUdc || directDdc) {
         return {
-            main_subject: "Specific Subject (Direct Reference)",
-            sub_subject: cleanTitle,
+            main_subject: "Direct Indexed Subject",
+            sub_subject: title,
             udc_breakdown: directUdc || "001",
             confidence: "100% Exact Reference Verification",
-            notation_audit: `Direct notation match: ${directUdc || directDdc} preserved without truncation.`,
-            explanation: `Exact entry confirmed in 1961 standard reference index tables.`,
+            notation_audit: `Direct match verified: ${directUdc || directDdc} preserved without truncation.`,
+            explanation: "Exact entry located in standard reference tables.",
             sources: "udc-1961-reference-index.json / ddc-23-reference-index.json",
             ddc_answer: directDdc || "000"
         };
     }
 
-    // 2. Multi-concept compound checks (Colon connection for relations, e.g. "Higher education and computers")
-    let matchedRules = [];
-    for (const rule of SUBJECT_PATTERNS) {
-        if (rule.re.test(lowerTitle)) {
-            matchedRules.push(rule);
-        }
-    }
+    // 2. Multi-rule analysis (Compound subjects)
+    const matched = SUBJECT_PATTERNS.filter(p => p.re.test(lower));
+    const { auxUdc, auxExp } = detectAuxiliaries(lower);
 
-    const { auxUdc, auxExp } = detectAuxiliaries(lowerTitle);
-
-    if (matchedRules.length >= 2) {
-        // Compound topic relation using Colon ':'
-        const primary = matchedRules[0];
-        const secondary = matchedRules[1];
-        const combinedUdc = `${primary.udc}:${secondary.udc}${auxUdc}`;
-        const combinedDdc = primary.ddc;
+    if (matched.length >= 2) {
+        const primary = matched[0];
+        const secondary = matched[1];
+        const finalUdc = `${primary.udc}:${secondary.udc}${auxUdc}`;
 
         return {
             main_subject: `${primary.main} / ${secondary.main}`,
-            sub_subject: `${primary.sub} with relation to ${secondary.sub}`,
-            udc_breakdown: `${combinedUdc}`,
-            confidence: "High (Compound Subject Relation Synthesized)",
-            notation_audit: `UDC ${primary.udc} linked by colon (:) with ${secondary.udc} + auxiliaries ${auxUdc || 'none'}. Preserved without truncation.`,
+            sub_subject: `${primary.sub} : ${secondary.sub}`,
+            udc_breakdown: finalUdc,
+            confidence: "High (Compound Subject Synthesized)",
+            notation_audit: `UDC ${primary.udc} linked by colon (:) to ${secondary.udc} + auxiliaries ${auxUdc || 'none'}. Preserved without truncation.`,
             explanation: `${primary.exp} Colon relation connects ${secondary.sub} (${secondary.udc}). ${auxExp.join('; ')}`,
             sources: "UDC 1961 Abridged English Edition (BS 1000A) Rules of Combination",
-            ddc_answer: `${combinedDdc} (Classed under primary subject ${primary.sub})`
+            ddc_answer: `${primary.ddc} (Classed under primary: ${primary.sub})`
         };
-    } else if (matchedRules.length === 1) {
-        const item = matchedRules[0];
+    } else if (matched.length === 1) {
+        const item = matched[0];
         const finalUdc = `${item.udc}${auxUdc}`;
 
         return {
             main_subject: item.main,
             sub_subject: item.sub,
-            udc_breakdown: `${finalUdc}`,
+            udc_breakdown: finalUdc,
             confidence: "High (Rule & Auxiliary Audit Validated)",
             notation_audit: `UDC base ${item.udc} appended with auxiliaries ${auxUdc || 'none'}. Preserved without truncation.`,
             explanation: `${item.exp} ${auxExp.length ? 'Auxiliaries: ' + auxExp.join('; ') : ''}`,
@@ -226,49 +217,60 @@ function buildClassification(title) {
         };
     }
 
-    // 3. Fallback Generalities if entirely unknown
+    // 3. Fallback
     return {
         main_subject: "Generalities & Interdisciplinary",
-        sub_subject: cleanTitle,
-        udc_breakdown: "001" + auxUdc,
-        confidence: "Standard General Fallback",
-        notation_audit: "Base notation 001 allocated for interdisciplinary title.",
-        explanation: "Title analyzed under general knowledge and intellectual fundamentals.",
+        sub_subject: title,
+        udc_breakdown: `001${auxUdc}`,
+        confidence: "Standard General Analysis",
+        notation_audit: "Base notation 001 allocated for interdisciplinary subject.",
+        explanation: "Title analyzed under general knowledge and scientific fundamentals.",
         sources: "Universal Decimal Classification Class 0 (Generalities)",
         ddc_answer: "001"
     };
 }
 
-// API endpoint handling both GET and POST requests
+// Universal API endpoints (Supporting all potential front-end query shapes)
 app.all(['/api/classify', '/api/search', '/classify'], (req, res) => {
     try {
-        const title = req.body?.title || req.query?.title || req.query?.q || '';
-        const data = buildClassification(title);
+        const queryTitle = req.body?.title || req.query?.title || req.query?.q || '';
+        const result = processClassification(queryTitle);
+
         res.json({
             success: true,
-            title: title,
-            ...data
+            title: queryTitle,
+            // Direct snake_case mapping for UI elements
+            main_subject: result.main_subject,
+            sub_subject: result.sub_subject,
+            udc_breakdown: result.udc_breakdown,
+            confidence: result.confidence,
+            notation_audit: result.notation_audit,
+            explanation: result.explanation,
+            sources: result.sources,
+            ddc_answer: result.ddc_answer,
+            // Nested object fallback in case client expects result.key
+            result: result
         });
     } catch (err) {
-        console.error("API Processing Error:", err);
-        res.status(500).json({ error: "Classification Engine Internal Error" });
+        console.error("API Error:", err);
+        res.status(500).json({ error: "Classification engine error" });
     }
 });
 
-// Front-end delivery
+// Front-end root serving
 app.get('*', (req, res) => {
     const indexPath = path.join(__dirname, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.send("Server running smoothly. Please verify index.html in the root folder.");
+        res.send("UDC & DDC Classifier is live.");
     }
 });
 
-// Process Guard
+// Unhandled error protection
 process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err.message));
 process.on('unhandledRejection', (err) => console.error('Unhandled Rejection:', err));
 
 app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
