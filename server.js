@@ -10,7 +10,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
+// Get API Key from Render Environment
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || "").trim();
+
+console.log(`[BOOT] Server starting. GEMINI_API_KEY length: ${GEMINI_API_KEY.length}`);
 
 function loadJsonSafe(filename) {
     try {
@@ -36,27 +39,33 @@ MANDATORY RULES:
 - Common Auxiliaries of Place: (...) e.g. India (540), UK (410), USA (73), Europe and USA (4+73).
 - Special Auxiliaries: -1/-9 (Literature forms: -1 Poetry, -2 Drama, -31 Novel, -32 Short Story). For example: English drama = 820-2, English novel = 820-31, Hindi novel = 891.43-31.
 - Library Science: Classification = 025.4, Cataloguing = 025.3, General Library Science = 02.
-- DDC 23: Complete notation with standard subdivisions from Table 1 and Table 2 (e.g. Library classification = 025.4, English drama = 822).
+- DDC 23: Complete notation with standard subdivisions from Table 1 and Table 2 (e.g. Library classification = 025.4, English drama = 822, English fiction = 823).
 
 Return strictly a valid JSON object with these exact keys:
 {
   "main_subject": "Primary Main Subject Name",
   "sub_subject": "Exact Sub-discipline and Facets Identified",
   "udc_breakdown": "Exact synthetically built UDC notation preserving all signs (+, /, :, (), -31, -2)",
-  "confidence": "High (Gemini AI Verified)",
+  "confidence": "High (Gemini Live AI Verified)",
   "notation_audit": "Detailed audit of each digit, symbol (+, :, (), -) and facet",
   "explanation": "Clear academic reasoning under UDC 1961 and DDC 23 rules",
   "sources": "UDC BS 1000A:1961 & DDC 23rd Edition",
   "ddc_answer": "Exact synthesized DDC 23 notation"
 }`;
 
-function callGeminiModel(modelName, title) {
+function callGoogleGeminiRaw(modelName, title) {
     return new Promise((resolve, reject) => {
+        if (!GEMINI_API_KEY) {
+            return reject(new Error("API_KEY_IS_EMPTY"));
+        }
+
         const requestBody = JSON.stringify({
-            contents: [{
-                role: "user",
-                parts: [{ text: `${SYLLABUS_SYSTEM_INSTRUCTION}\n\nTitle to Classify: "${title}"\nJSON ONLY:` }]
-            }],
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: `${SYLLABUS_SYSTEM_INSTRUCTION}\n\nTitle to Classify: "${title}"\nReturn JSON ONLY:` }]
+                }
+            ],
             generationConfig: {
                 temperature: 0.05,
                 responseMimeType: "application/json"
@@ -79,14 +88,16 @@ function callGeminiModel(modelName, title) {
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
                 if (res.statusCode !== 200) {
-                    return reject(new Error(`HTTP_${res.statusCode}: ${data}`));
+                    console.error(`[Gemini ${modelName} Error ${res.statusCode}]: ${data}`);
+                    return reject(new Error(`HTTP_${res.statusCode}`));
                 }
                 try {
                     const parsed = JSON.parse(data);
                     if (parsed.candidates && parsed.candidates[0]?.content?.parts?.[0]?.text) {
-                        resolve(JSON.parse(parsed.candidates[0].content.parts[0].text));
+                        const jsonOutput = JSON.parse(parsed.candidates[0].content.parts[0].text);
+                        resolve({ data: jsonOutput, model: modelName });
                     } else {
-                        reject(new Error("Empty response payload"));
+                        reject(new Error("EMPTY_PARTS"));
                     }
                 } catch (e) {
                     reject(e);
@@ -95,7 +106,7 @@ function callGeminiModel(modelName, title) {
         });
 
         req.on('error', (err) => reject(err));
-        req.setTimeout(30000, () => {
+        req.setTimeout(25000, () => {
             req.destroy();
             reject(new Error("TIMEOUT"));
         });
@@ -104,23 +115,31 @@ function callGeminiModel(modelName, title) {
     });
 }
 
-// 2.5 Flash -> 1.5 Flash Resilience Engine
-async function classifyWithGemini(title) {
-    if (!GEMINI_API_KEY) throw new Error("NO_API_KEY_FOUND");
-
+// 2.5 Flash -> 1.5 Flash resilient chain
+async function executeClassificationPipeline(title) {
+    // 1. Try 2.5 Flash First
     try {
-        const res25 = await callGeminiModel('gemini-2.5-flash', title);
-        res25.confidence = "High (Gemini 2.5 Flash Live)";
-        return res25;
+        console.log(`[API] Trying gemini-2.5-flash for: "${title}"`);
+        const result = await callGoogleGeminiRaw('gemini-2.5-flash', title);
+        result.data.confidence = "High (Gemini 2.5 Flash Live Connected)";
+        return result.data;
     } catch (err25) {
-        console.warn(`[2.5 Flash bypassed: ${err25.message}] Trying 1.5 Flash...`);
-        const res15 = await callGeminiModel('gemini-1.5-flash', title);
-        res15.confidence = "High (Gemini 1.5 Flash Live)";
-        return res15;
+        console.warn(`[API] 2.5-flash failed (${err25.message}). Switching to gemini-1.5-flash...`);
+    }
+
+    // 2. Try 1.5 Flash
+    try {
+        const result = await callGoogleGeminiRaw('gemini-1.5-flash', title);
+        result.data.confidence = "High (Gemini 1.5 Flash Live Connected)";
+        return result.data;
+    } catch (err15) {
+        console.warn(`[API] 1.5-flash failed (${err15.message}).`);
+        throw err15;
     }
 }
 
-function academicSyllabusFallback(rawTitle) {
+// Built-in Academic Engine
+function academicSyllabusFallback(rawTitle, errorReason) {
     const raw = (rawTitle || '').trim();
     const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -142,10 +161,10 @@ function academicSyllabusFallback(rawTitle) {
             main_subject: "Library & Information Science",
             sub_subject: "Library Classification",
             udc_breakdown: "025.4",
-            confidence: "High (M.Lib.I.Sc Core Schedule)",
+            confidence: `Fallback Active (${errorReason})`,
             notation_audit: "UDC Class 025.4 allocated for Classification Schemes.",
-            explanation: "UDC 025.4; DDC 025.4.",
-            sources: "UDC BS 1000A:1961 Section A & DDC 23rd Edition",
+            explanation: `Fallback used due to: ${errorReason}. UDC 025.4; DDC 025.4.`,
+            sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
             ddc_answer: "025.4"
         };
     }
@@ -155,26 +174,27 @@ function academicSyllabusFallback(rawTitle) {
             main_subject: "Literature",
             sub_subject: "English Literature — Drama",
             udc_breakdown: "820-2",
-            confidence: "High (Special Auxiliary -2)",
+            confidence: `Fallback Active (${errorReason})`,
             notation_audit: "UDC 820 (English literature) + Special Auxiliary -2 (Drama)",
-            explanation: "UDC 820-2 (English drama); DDC 822 (English drama).",
+            explanation: `UDC 820-2 (English drama); DDC 822 (English drama). Reason: ${errorReason}`,
             sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
             ddc_answer: "822"
         };
     }
 
     return {
-        main_subject: "Library & Information Science",
+        main_subject: "Disciplinary Synthesis",
         sub_subject: raw,
         udc_breakdown: "025.4",
-        confidence: "Syllabus Synthesis",
-        notation_audit: "Notation generated via built-in M.Lib.I.Sc rules.",
-        explanation: "API connecting. Verified under UDC 1961 and DDC 23.",
+        confidence: `Fallback Active (${errorReason})`,
+        notation_audit: "Processed via academic syllabus engine.",
+        explanation: `API status: ${errorReason}. Check Render Environment variable.`,
         sources: "UDC BS 1000A:1961 & DDC 23rd Edition",
         ddc_answer: "025.4"
     };
 }
 
+// Main Endpoint
 app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
     const title = req.body?.title || req.query?.title || req.query?.q || '';
     if (!title.trim()) {
@@ -192,10 +212,10 @@ app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
 
     let finalResult;
     try {
-        finalResult = await classifyWithGemini(title);
+        finalResult = await executeClassificationPipeline(title);
     } catch (err) {
-        console.warn(`[API Notice] Fallback used: ${err.message}`);
-        finalResult = academicSyllabusFallback(title);
+        console.error(`[Pipeline Error] Reason: ${err.message}`);
+        finalResult = academicSyllabusFallback(title, err.message);
     }
 
     res.json({
