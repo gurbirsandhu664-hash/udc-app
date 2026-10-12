@@ -1,5 +1,0 @@
-streamlit
-pandas
-scikit-learn
-rank-bm25
-rapidfuzz
