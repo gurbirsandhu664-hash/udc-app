@@ -62,40 +62,23 @@ function withWikipediaSources(result,wikipedia){
 }
 
 function retrieveReferenceEvidence(title, sourcePrefix, limit=5, charLimit=6900){
-  // Rank only within the requested edition: DDC-23 Volumes 1–4 never leak into UDC,
-  // and UDC B.S. 1000A:1961 pages never serve as DDC evidence.
   const tokens=[...new Set(evidenceTokens(title))];
   if(!tokens.length) return "";
-  const allPages = sourcePrefix === "DDC" ? DDC_REFERENCE_PAGES : REFERENCE_PAGES;
-  const pages = allPages.filter(p => sourcePrefix === "DDC"
-    ? /^ddc vol [1-4]/i.test(String(p.volume||p.source||""))
-    : /B\.S\. 1000A:1961|UDC/i.test(String(p.volume||p.source||"")));
+  const pages = sourcePrefix === "DDC" ? DDC_REFERENCE_PAGES : REFERENCE_PAGES;
   if(!pages.length) return "";
-  const docFreq=Object.create(null);
-  for(const t of tokens) docFreq[t]=pages.reduce((n,p)=>n+((p._tokenCounts?.[t]||0)>0?1:0),0);
-  const queryPhrase=String(title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   const scored=[];
   for(const p of pages){
-    const text=String(p.text||"");
-    if(!text.trim()) continue;
-    const normalized=text.toLowerCase().replace(/[^a-z0-9]+/g," ");
-    let score=0, matched=0;
+    if(sourcePrefix === "DDC" && !/^ddc vol [1-4]/i.test(String(p.volume||p.source||""))) continue;
+    if(sourcePrefix === "UDC" && !/B\.S\. 1000A:1961|UDC/i.test(String(p.volume||p.source||""))) continue;
+    let score=0;
     for(const t of tokens){
       const count=p._tokenCounts?.[t]||0;
-      if(count){
-        matched++;
-        // Rare title terms carry more weight than common words; repeated OCR noise is capped.
-        const idf=1+Math.log((pages.length+1)/(docFreq[t]+1));
-        score += Math.min(count,4)*idf*(t.length>=7?1.8:1);
-      }
+      if(count) score += Math.min(count,5)*(t.length>=7?2:1);
     }
-    if(queryPhrase && normalized.includes(queryPhrase)) score += 12;
-    // Prefer pages matching several distinct title terms over one noisy repeated term.
-    score *= 0.7 + (matched/Math.max(tokens.length,1))*0.6;
-    if(score>0) scored.push({p,score,matched});
+    if(score>0) scored.push({p,score});
   }
-  scored.sort((a,b)=>b.matched-a.matched || b.score-a.score || Number(a.p.page)-Number(b.p.page));
-  const selected=scored.slice(0,limit).map(({p,score,matched})=>`[${p.volume||sourcePrefix}, PDF page ${p.page}, matched title terms ${matched}/${tokens.length}, relevance ${score.toFixed(2)}]\n${p.text}`);
+  scored.sort((a,b)=>b.score-a.score);
+  const selected=scored.slice(0,limit).map(({p,score})=>`[${p.volume||sourcePrefix}, PDF page ${p.page}, relevance ${score}]\n${p.text}`);
   let out="";
   for(const block of selected){ if(out.length+block.length+2>charLimit) break; out+=(out?"\n\n":"")+block; }
   return out;
@@ -103,7 +86,7 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit=5, charLimit=6900)
 
 const SUMMARY_BASE="https://udcsummary.info/php/index.php";
 const UDC_AUTHORITY_EDITION="B.S. 1000A:1961 — Abridged English Edition, 3rd edition, revised, London";
-const ENGINE_VERSION="V110 schedule-grounded retrieval: UDC 1961 + DDC-23";
+const ENGINE_VERSION="V110 deployment fix: flat root + UDC 1961/DDC-23 references";
 
 const UDC_RULES=`
 Universal Decimal Classification is the primary classification. A separate Dewey Decimal Classification (DDC) answer may also be returned, but NEVER mix UDC notation into the DDC field or DDC notation into the UDC field.
@@ -469,7 +452,7 @@ async function gemini(title,model,grounded,referenceEvidence="",udcReferenceEvid
 
 app.get("/",(_,res)=>res.sendFile(path.join(__dirname,"index.html")));
 app.get("/index.html",(_,res)=>res.sendFile(path.join(__dirname,"index.html")));
-app.get("/api/health",(_,res)=>res.json({ok:true,version:ENGINE_VERSION,geminiPrimaryConfigured:!!GEMINI_KEY,groqFallbackConfigured:!!GROQ_KEY,models:MODELS,bundledUDCReferencePages:REFERENCE_PAGES.length,bundledUDCTextPages:REFERENCE_PAGES.filter(p=>String(p.text||"").trim()).length,bundledDdcReferencePages:DDC_REFERENCE_PAGES.length,bundledDdcTextPages:DDC_REFERENCE_PAGES.filter(p=>String(p.text||"").trim()).length,referenceRetrieval:"edition-isolated IDF-ranked title-term retrieval",ddcVolumes:[...new Set(DDC_REFERENCE_PAGES.map(p=>p.volume))],ddcReferenceMode:"bundled server-side read-only reference corpus",wikipediaSubjectContext:true,wikipediaPolicy:"supplementary context only; not a classification authority",authority:"Bundled UDC B.S. 1000A:1961 + DDC-23 volumes 1-4",authorityUrl:SUMMARY_BASE}));
+app.get("/api/health",(_,res)=>res.json({ok:true,version:ENGINE_VERSION,geminiPrimaryConfigured:!!GEMINI_KEY,groqFallbackConfigured:!!GROQ_KEY,models:MODELS,bundledUDCReferencePages:REFERENCE_PAGES.length,bundledDdcReferencePages:DDC_REFERENCE_PAGES.length,ddcVolumes:[...new Set(DDC_REFERENCE_PAGES.map(p=>p.volume))],ddcReferenceMode:"bundled server-side read-only reference corpus",wikipediaSubjectContext:true,wikipediaPolicy:"supplementary context only; not a classification authority",authority:"Bundled UDC B.S. 1000A:1961 + DDC-23 volumes 1-4",authorityUrl:SUMMARY_BASE}));
 app.post("/api/classify",async(req,res)=>{const title=String(req.body?.title||"").trim();let referenceEvidence=String(req.body?.ddc_reference_evidence||"").slice(0,7000);let udcReferenceEvidence=String(req.body?.udc_reference_evidence||"").slice(0,7000);if(!title)return res.status(400).json({error:"Enter a book title."}); if(/^(?:a )?bibliography of writings and social welfare$/.test(norm(title))) return res.json({status:"needs_title_confirmation",title,full_title:title,udc_number:"",ddc_number:"",udc_answer:"",ddc_answer:"",main_subject:"Title wording needs confirmation",sub_subject:"Bibliography / social welfare",breakdown:"The exact title says “writings and social welfare”. That is not equivalent to “writings on social welfare”.",explanation:"No classification number has been assigned because changing “and” to “on” would silently rewrite the supplied title. Confirm the exact title before classifying.",confidence:"NOT CLASSIFIED — title confirmation required",official_udc_match:false,sources:[]}); const [bundledDDC,bundledUDC,wikipedia]=await Promise.all([Promise.resolve(retrieveReferenceEvidence(title,"DDC",5,5000)),Promise.resolve(retrieveReferenceEvidence(title,"UDC",4,3500)),fetchWikipediaEvidence(title)]); const wikiContext=wikipedia.text?`\n\nWikipedia subject context (supplementary only; NOT a classification schedule; do not derive or verify class numbers from this text):\n${wikipedia.text}`:""; referenceEvidence=[bundledDDC,referenceEvidence,wikiContext].filter(Boolean).join("\n\n").slice(0,7000); udcReferenceEvidence=[bundledUDC,udcReferenceEvidence,wikiContext].filter(Boolean).join("\n\n").slice(0,7000);
  // Deterministic exact/high-value rules run first to protect known titles and conserve API quota.
  const lc=localClassify(title); const dk=ddcSpecial(title)||ddcKey(title); if(dk) Object.assign(lc,{ddc_number:dk.ddc_number,ddc_title:dk.ddc_title,ddc_breakdown:dk.ddc_breakdown,ddc_note:dk.ddc_note,ddc_explanation:dk.ddc_explanation}); if(lc.official_udc_match) return res.json(withWikipediaSources(applyNumberMixingGuard(lc,title,lc,dk),wikipedia));

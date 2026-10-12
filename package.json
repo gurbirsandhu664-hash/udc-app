@@ -1,6 +1,6 @@
 {
   "name": "udc-ddc-stable-reference-classifier",
-  "version": "110.0.0",
+  "version": "111.0.0",
   "type": "module",
   "scripts": {
     "start": "node server.js"
