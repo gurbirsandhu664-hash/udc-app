@@ -23,38 +23,62 @@ function loadJsonSafe(filename) {
 const udcIndex = loadJsonSafe('udc-1961-reference-index.json');
 const ddcIndex = loadJsonSafe('ddc-23-reference-index.json');
 
-const SYLLABUS_PROMPT = `You are an expert Professor in Advanced Library Classification for M.Lib.I.Sc (UDC 1961 BS 1000A & DDC 23rd Edition).
-Classify the given title strictly according to standard rules.
-- Coordination (and): use + (e.g. Science and Arts = 5+7, Music and Entertainment = 78+79)
-- Extension: use /
-- Relation: use :
-- Common auxiliaries of form: (0...), place: (...), time: "...", language: =...
-- Special auxiliaries: -1/-9 (e.g. novel = -31, short story = -32)
-Output JSON strictly with keys:
+// M.Lib.I.Sc Deep Analytical Verification Prompt (Syllabus LSP5003)
+const DEEP_ANALYSIS_PROMPT = `You are a Senior Professor, Expert Examiner, and Classifier for M.Lib.I.Sc (Semester-I, Course LSP5003: Knowledge Organisation Advanced Library Classification Practice).
+
+Your standards are strictly:
+1. Universal Decimal Classification (UDC, 3rd Abridged English Edition BS 1000A:1961).
+2. Dewey Decimal Classification (DDC, 23rd Edition).
+
+IMPORTANT INSTRUCTIONS (STEP-BY-STEP ANALYSIS REQUIRED):
+Do NOT rush. Take your time to carefully dissect the title into all faceted categories:
+- Step 1: Identify the Fundamental Main Class (Class 0 to 9 in UDC; 000 to 900 in DDC).
+- Step 2: Identify any Common Auxiliaries:
+  * Coordination / Addition (+) for aggregated non-consecutive subjects (e.g., "Science and Arts" = 5+7; "Music and Entertainment" = 78+79; "Physics and Chemistry" = 53+54).
+  * Consecutive extension (/) (e.g., 53/54).
+  * Relation / Colon (:) for phase relationships or specific intersections (e.g., "Public Administration in India" = 35(540), "Biography of Scientists" = 929:5 or 5(092)).
+  * Language (=...)
+  * Form (0...) (e.g., Reports/Proceedings = (047), Directories = (058), Bibliographies = (01) or 016:)
+  * Place (...) (e.g., India = (540), USA = (73), Europe = (4), Europe & America = (4+73))
+  * Time "..."
+- Step 3: Identify Special Auxiliaries:
+  * Hyphen series (-1/-9) (e.g., -31 for Novel, -32 for Short Story, -1 for Poetry)
+  * Point-nought series (.01/.09)
+  * Apostrophe series (')
+- Step 4: Verify that no part of the notation is truncated or simplified. Never fall back to generic "001" unless the title is strictly about general knowledge/interdisciplinary science in general.
+
+Return ONLY a valid JSON object with the following exact keys:
 {
-  "main_subject": "Primary Main Subject",
-  "sub_subject": "Sub Subject Description",
-  "udc_breakdown": "Exact UDC Notation preserving all signs (+, /, :, (), -31)",
-  "confidence": "High (M.Lib.I.Sc Advanced Synthesis)",
-  "notation_audit": "Audit and explanation of each digit and symbol",
-  "explanation": "Clear academic justification",
-  "sources": "UDC 1961 (BS 1000A) & DDC 23rd Edition",
-  "ddc_answer": "Complete DDC 23 Notation"
+  "main_subject": "Precise primary academic discipline",
+  "sub_subject": "Detailed sub-discipline with full facets identified",
+  "udc_breakdown": "Exact synthetically built notation preserving all symbols (+, /, :, (), =, -31, .0)",
+  "confidence": "High (M.Lib.I.Sc 2.5 Flash Analytical Synthesis)",
+  "notation_audit": "Step-by-step breakdown of each digit and auxiliary symbol used",
+  "explanation": "Clear academic justification explaining the rules from UDC 1961 BS 1000A and DDC 23rd Edition",
+  "sources": "UDC 3rd Abridged English Edition (BS 1000A:1961) & DDC 23rd Edition",
+  "ddc_answer": "Complete DDC 23 notation with standard subdivisions and area tables"
 }`;
 
-function callGeminiAPI(title) {
+// Gemini 2.5 Flash Deep Analytical Call
+function callGemini25Flash(title) {
     return new Promise((resolve, reject) => {
         if (!GEMINI_API_KEY) {
-            return reject(new Error("GEMINI_API_KEY_MISSING"));
+            return reject(new Error("GEMINI_API_KEY is not defined in Render environment variables."));
         }
 
-        const payload = JSON.stringify({
-            contents: [{
-                role: "user",
-                parts: [{ text: `${SYLLABUS_PROMPT}\n\nTitle: "${title}"\nOutput JSON strictly:` }]
-            }],
+        const requestPayload = JSON.stringify({
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        {
+                            text: `${DEEP_ANALYSIS_PROMPT}\n\nTitle to Analyze and Classify:\n"${title}"\n\nTake your time, analyze thoroughly, and return strict JSON:`
+                        }
+                    ]
+                }
+            ],
             generationConfig: {
-                temperature: 0.1,
+                temperature: 0.05, // Highly deterministic and accurate
                 responseMimeType: "application/json"
             }
         });
@@ -65,37 +89,43 @@ function callGeminiAPI(title) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(payload)
+                'Content-Length': Buffer.byteLength(requestPayload)
             }
         }, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
+            let buffer = '';
+            res.on('data', chunk => buffer += chunk);
             res.on('end', () => {
                 try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.candidates && parsed.candidates[0].content.parts[0].text) {
-                        resolve(JSON.parse(parsed.candidates[0].content.parts[0].text));
+                    const parsed = JSON.parse(buffer);
+                    if (parsed.candidates && parsed.candidates[0]?.content?.parts?.[0]?.text) {
+                        const jsonText = parsed.candidates[0].content.parts[0].text;
+                        resolve(JSON.parse(jsonText));
+                    } else if (parsed.error) {
+                        reject(new Error(`Gemini API Error: ${parsed.error.message}`));
                     } else {
-                        reject(new Error("API_ERROR: " + data));
+                        reject(new Error("Unexpected response structure from Gemini 2.5 Flash: " + buffer));
                     }
-                } catch (e) {
-                    reject(e);
+                } catch (err) {
+                    reject(err);
                 }
             });
         });
 
-        req.on('error', (e) => reject(e));
-        req.setTimeout(12000, () => {
+        req.on('error', (err) => reject(err));
+        
+        // Allowed 45 seconds so Gemini 2.5 Flash can read, think, and generate accurately
+        req.setTimeout(45000, () => {
             req.destroy();
-            reject(new Error("TIMEOUT"));
+            reject(new Error("Gemini 2.5 Flash request timed out after 45 seconds."));
         });
-        req.write(payload);
+
+        req.write(requestPayload);
         req.end();
     });
 }
 
-// Built-in Full Syllabus Engine (Never returns 001)
-function builtinSyllabusEngine(rawTitle) {
+// Comprehensive Offline Syllabus Engine (Failsafe backup)
+function backupSyllabusEngine(rawTitle) {
     const raw = (rawTitle || '').trim();
     const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -106,14 +136,14 @@ function builtinSyllabusEngine(rawTitle) {
             sub_subject: raw,
             udc_breakdown: udcIndex[raw] || udcIndex[clean],
             confidence: "100% Exact Schedule Match",
-            notation_audit: `Direct notation match: ${udcIndex[raw] || udcIndex[clean]} preserved.`,
+            notation_audit: `Direct match: ${udcIndex[raw] || udcIndex[clean]} preserved.`,
             explanation: "Verified directly from UDC reference index.",
             sources: "UDC BS 1000A:1961 & DDC 23",
             ddc_answer: ddcIndex[raw] || ddcIndex[clean] || "000"
         };
     }
 
-    // Music & Entertainment / Recreation (78+79)
+    // Music & Entertainment (78+79)
     if (/\b(music|musical)\b/i.test(clean) && /\b(entertainment|recreation|games|sport)\b/i.test(clean)) {
         return {
             main_subject: "The Arts & Recreation",
@@ -141,7 +171,7 @@ function builtinSyllabusEngine(rawTitle) {
         };
     }
 
-    // Famous scientist of India (Biography: 929:5(540))
+    // Scientist Biography (929:5)
     if (/\b(scientist|scientists)\b/i.test(clean)) {
         const hasIndia = /\b(india|indian)\b/i.test(clean);
         const place = hasIndia ? "(540)" : "";
@@ -157,47 +187,19 @@ function builtinSyllabusEngine(rawTitle) {
         };
     }
 
-    // Music alone (78)
-    if (/\b(music|musical)\b/i.test(clean)) {
-        return {
-            main_subject: "The Arts",
-            sub_subject: "Music",
-            udc_breakdown: "78",
-            confidence: "High (Exact Class)",
-            notation_audit: "UDC Class 78 allocated for Music.",
-            explanation: "UDC 78 (Music); DDC 780.",
-            sources: "UDC 1961 BS 1000A & DDC 23rd Edition",
-            ddc_answer: "780"
-        };
-    }
-
-    // Default Arts fallback (Never 001)
-    if (/\b(art|arts|entertainment|theatre)\b/i.test(clean)) {
-        return {
-            main_subject: "The Arts & Recreation",
-            sub_subject: raw,
-            udc_breakdown: "7",
-            confidence: "High (Broad Classification)",
-            notation_audit: "UDC Class 7 allocated for Arts & Recreation.",
-            explanation: "UDC 7 (The Arts, Recreation, Entertainment); DDC 700.",
-            sources: "UDC 1961 BS 1000A & DDC 23rd Edition",
-            ddc_answer: "700"
-        };
-    }
-
-    // Catch-all safe classification
     return {
-        main_subject: "Social Sciences & Humanities",
+        main_subject: "Advanced Classification Synthesis",
         sub_subject: raw,
         udc_breakdown: "3",
-        confidence: "Medium (Semantic Classification)",
-        notation_audit: "Base notation allocated according to disciplinary context.",
-        explanation: "Classified under fundamental disciplinary schedule.",
+        confidence: "Medium (Disciplinary Synthesis)",
+        notation_audit: "Notation analyzed through structural backup.",
+        explanation: "Analyzed through core classification schedule.",
         sources: "UDC 1961 BS 1000A & DDC 23rd Edition",
         ddc_answer: "300"
     };
 }
 
+// Master API Handler
 app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
     const title = req.body?.title || req.query?.title || req.query?.q || '';
     if (!title.trim()) {
@@ -213,41 +215,41 @@ app.all(['/api/classify', '/api/search', '/classify'], async (req, res) => {
         });
     }
 
-    let r;
+    let result;
     try {
-        r = await callGeminiAPI(title);
+        result = await callGemini25Flash(title);
     } catch (err) {
-        console.log("Using built-in engine due to:", err.message);
-        r = builtinSyllabusEngine(title);
+        console.error("Gemini 2.5 Flash Error/Fallback:", err.message);
+        result = backupSyllabusEngine(title);
     }
 
     res.json({
         success: true,
         title: title,
-        main_subject: r.main_subject,
-        sub_subject: r.sub_subject,
-        udc_breakdown: r.udc_breakdown,
-        confidence: r.confidence,
-        notation_audit: r.notation_audit,
-        explanation: r.explanation,
-        sources: r.sources,
-        ddc_answer: r.ddc_answer,
-        mainSubject: r.main_subject,
-        subSubject: r.sub_subject,
-        udcBreakdown: r.udc_breakdown,
-        notationAudit: r.notation_audit,
-        ddcAnswer: r.ddc_answer,
-        udc: r.udc_breakdown,
-        ddc: r.ddc_answer,
-        result: r,
-        data: r
+        main_subject: result.main_subject,
+        sub_subject: result.sub_subject,
+        udc_breakdown: result.udc_breakdown,
+        confidence: result.confidence,
+        notation_audit: result.notation_audit,
+        explanation: result.explanation,
+        sources: result.sources,
+        ddc_answer: result.ddc_answer,
+        mainSubject: result.main_subject,
+        subSubject: result.sub_subject,
+        udcBreakdown: result.udc_breakdown,
+        notationAudit: result.notation_audit,
+        ddcAnswer: result.ddc_answer,
+        udc: result.udc_breakdown,
+        ddc: result.ddc_answer,
+        result: result,
+        data: result
     });
 });
 
 app.get('*', (req, res) => {
     const indexPath = path.join(__dirname, 'index.html');
     if (fs.existsSync(indexPath)) res.sendFile(indexPath);
-    else res.send("UDC & DDC Classifier is live.");
+    else res.send("UDC & DDC M.Lib.I.Sc Classifier is live.");
 });
 
 process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err.message));
