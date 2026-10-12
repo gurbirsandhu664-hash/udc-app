@@ -3,157 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UDC & DDC Classifier</title>
+    <title>UDC & DDC Live Classifier</title>
     <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --primary: #2563eb;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --banner-bg: #eef2ff;
+            --banner-border: #c7d2fe;
+            --banner-text: #3730a3;
+            --accent: #059669;
+        }
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
         body {
-            background-color: #f8fafc;
-            color: #1e293b;
-            padding: 16px;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 20px 16px;
+            display: flex;
+            justify-content: center;
         }
         .container {
-            max-width: 600px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 580px;
         }
-        .search-box {
-            background: #ffffff;
-            border-radius: 12px;
+        .search-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
             padding: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        .search-box input {
+        .search-container input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 14px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
             outline: none;
+            color: var(--text-main);
+            transition: border-color 0.2s;
             margin-bottom: 12px;
         }
-        .search-box button {
+        .search-container input:focus {
+            border-color: var(--primary);
+        }
+        .search-container button {
             width: 100%;
-            background-color: #3b82f6;
-            color: white;
+            background-color: var(--primary);
+            color: #ffffff;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .search-box button:hover {
-            background-color: #2563eb;
+        .search-container button:hover {
+            background-color: #1d4ed8;
         }
-        .header-banner {
-            background: #eef2ff;
-            border-radius: 12px;
+        .banner {
+            background: var(--banner-bg);
+            border: 1px solid var(--banner-border);
+            border-radius: 14px;
             padding: 16px;
-            margin-bottom: 16px;
-            border: 1px solid #e0e7ff;
+            margin-bottom: 20px;
         }
-        .header-banner h2 {
-            font-size: 14px;
-            font-weight: 700;
-            color: #3730a3;
-            text-transform: uppercase;
-            line-height: 1.4;
+        .banner h2 {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--banner-text);
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
         }
-        .header-banner p {
+        .banner p {
             font-size: 13px;
             color: #4338ca;
-            margin-top: 4px;
-            line-height: 1.4;
+            line-height: 1.45;
         }
-        .sub-header {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #64748b;
+        .section-tag {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
             text-transform: uppercase;
-            margin: 16px 0 8px 0;
+            margin-bottom: 6px;
         }
         .divider {
-            width: 24px;
+            width: 28px;
             height: 3px;
-            background-color: #0f172a;
+            background-color: var(--text-main);
             margin-bottom: 16px;
+            border-radius: 2px;
         }
         .card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
         .card-label {
             font-size: 11px;
             font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
+            color: var(--text-muted);
             letter-spacing: 0.5px;
+            text-transform: uppercase;
             margin-bottom: 6px;
         }
         .card-value {
             font-size: 15px;
-            color: #0f172a;
+            font-weight: 500;
+            color: var(--text-main);
             line-height: 1.5;
             word-break: break-word;
         }
-        .highlight-title {
-            color: #059669;
-            font-weight: 700;
+        .result-heading {
+            color: var(--accent);
             font-size: 16px;
-            margin: 20px 0 10px 0;
+            font-weight: 700;
+            margin: 24px 0 12px 0;
         }
-        .ddc-box {
-            border: 1px solid #cbd5e1;
+        .ddc-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 16px;
-            margin-top: 10px;
-            background: #ffffff;
+            padding: 18px 16px;
         }
         .ddc-label {
             font-size: 11px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
+            font-weight: 800;
+            color: var(--text-muted);
             letter-spacing: 0.5px;
+            text-transform: uppercase;
             margin-bottom: 8px;
         }
         .ddc-divider {
-            width: 20px;
+            width: 24px;
             height: 3px;
-            background-color: #0f172a;
+            background-color: var(--text-main);
             margin-bottom: 12px;
+            border-radius: 2px;
         }
         .ddc-value {
             font-size: 18px;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--text-main);
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="search-box">
-        <input type="text" id="titleInput" placeholder="Enter book or document title here..." />
-        <button id="classifyBtn" onclick="runClassification()">Classify Title</button>
+    <div class="search-container">
+        <input type="text" id="titleInput" placeholder="Enter book or document title..." autofocus />
+        <button id="classifyBtn" onclick="runClassify()">Classify Title</button>
     </div>
 
-    <div class="header-banner">
+    <div class="banner">
         <h2>FULL-TITLE / FULL-NOTATION MODE:</h2>
         <p>every letter, digit, decimal point, auxiliary, bracket, quote and suffix is preserved in the answer.</p>
     </div>
 
-    <div class="sub-header">COMPLETE UDC ANSWER — NO TRUNCATION</div>
+    <div class="section-tag">COMPLETE UDC ANSWER — NO TRUNCATION</div>
     <div class="divider"></div>
 
     <div class="card">
@@ -191,9 +213,9 @@
         <div class="card-value" id="sources">-</div>
     </div>
 
-    <div class="highlight-title">Classification result</div>
+    <div class="result-heading">Classification result</div>
 
-    <div class="ddc-box">
+    <div class="ddc-card">
         <div class="ddc-label">DDC ANSWER — SECTION D</div>
         <div class="ddc-divider"></div>
         <div class="ddc-value" id="ddc_answer">-</div>
@@ -201,12 +223,13 @@
 </div>
 
 <script>
-    async function runClassification() {
-        const title = document.getElementById('titleInput').value.trim();
+    async function runClassify() {
+        const input = document.getElementById('titleInput');
+        const title = input.value.trim();
         if (!title) return;
 
         const btn = document.getElementById('classifyBtn');
-        btn.textContent = "Processing...";
+        btn.textContent = "Classifying...";
         btn.disabled = true;
 
         try {
@@ -229,18 +252,16 @@
             document.getElementById('ddc_answer').textContent = d.ddc_answer || d.ddcAnswer || d.ddc || "-";
 
         } catch (err) {
-            console.error("Classification error:", err);
-            alert("Error connecting to server. Please try again.");
+            console.error(err);
+            alert("Error fetching classification data.");
         } finally {
             btn.textContent = "Classify Title";
             btn.disabled = false;
         }
     }
 
-    document.getElementById('titleInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            runClassification();
-        }
+    document.getElementById('titleInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') runClassify();
     });
 </script>
 
