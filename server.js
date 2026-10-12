@@ -34,82 +34,109 @@ function normalizeClean(str) {
 }
 
 // -------------------------------------------------------------
-// 1. FORM & COMMON AUXILIARIES (BIBLIOGRAPHY, DIRECTORY, ETC.)
+// 1. FORMS, SERIALS & DOCUMENT TYPES (ANNUAL REPORT, ETC.)
 // -------------------------------------------------------------
-function extractFormAndBiblio(norm) {
-    let isBiblio = false;
+function extractDocumentForms(norm) {
     let formUdc = "";
     let formDdc = "";
-    let notes = [];
+    let formNotes = [];
 
-    if (/\b(bibliograph|bibliographie|reading list)\b/i.test(norm)) {
-        isBiblio = true;
-        notes.push("UDC Special Phase 016: (Special Subject Bibliography); DDC 016 (Bibliographies)");
-    } else if (/\b(director|directori|word\s*director|world\s*director)\b/i.test(norm)) {
+    if (/\b(annual\s*report|progress\s*report|administrative\s*report|report|reports)\b/i.test(norm)) {
+        formUdc = "(047)";
+        formDdc = ".06";
+        formNotes.push("UDC (047) = Reports, accounts of proceedings; DDC Table 1 .06 (Organizations & management)");
+    } else if (/\b(director|directori|yearbook|year\s*book|almanac)\b/i.test(norm)) {
         formUdc = "(058)";
         formDdc = ".025";
-        notes.push("UDC (058) = Directories / Yearbooks; DDC Table 1 .025");
-    } else if (/\b(handbook|manual|guidebook)\b/i.test(norm)) {
+        formNotes.push("UDC (058) = Directories / Yearbooks; DDC T1 .025");
+    } else if (/\b(journal|periodical|magazine|bulletin|review)\b/i.test(norm)) {
+        formUdc = "(05)";
+        formDdc = ".05";
+        formNotes.push("UDC (05) = Periodicals, serials; DDC T1 .05");
+    } else if (/\b(handbook|manual|guidebook|compendium)\b/i.test(norm)) {
         formUdc = "(02)";
         formDdc = ".02";
-        notes.push("UDC (02) = Handbooks / Manuals; DDC Table 1 .02");
+        formNotes.push("UDC (02) = Handbooks / Manuals; DDC T1 .02");
     } else if (/\b(encycloped|encyclopaed)\b/i.test(norm)) {
         formUdc = "(03)";
         formDdc = ".03";
-        notes.push("UDC (03) = Encyclopedias; DDC Table 1 .03");
-    } else if (/\b(dictionar|glossar)\b/i.test(norm)) {
+        formNotes.push("UDC (03) = Encyclopedias; DDC T1 .03");
+    } else if (/\b(dictionar|glossar|lexicon)\b/i.test(norm)) {
         formUdc = "(038)";
         formDdc = ".03";
-        notes.push("UDC (038) = Dictionaries");
+        formNotes.push("UDC (038) = Dictionaries");
+    } else if (/\b(conference|proceedings|symposium|seminar)\b/i.test(norm)) {
+        formUdc = "(063)";
+        formDdc = ".06";
+        formNotes.push("UDC (063) = Conferences / Symposia");
     }
 
-    return { isBiblio, formUdc, formDdc, notes };
+    return { formUdc, formDdc, formNotes };
 }
 
 // -------------------------------------------------------------
-// 2. PLACE AUXILIARIES (MULTIPLE & SINGLE)
+// 2. GEOGRAPHICAL & CORPORATE BODIES / INSTITUTES
 // -------------------------------------------------------------
-function extractPlaces(norm) {
-    let places = [];
+function extractPlacesAndBodies(norm) {
+    let placeUdc = "";
     let ddcPlace = "";
+    let orgRel = "";
+    let placeNotes = [];
 
-    const hasEurope = /\b(europe|european|british|britain|uk|england|france|germany)\b/i.test(norm);
-    const hasAmerica = /\b(american|america|usa|united\s*states|north\s*america)\b/i.test(norm);
-    const hasIndia = /\b(india|indian|punjab|delhi|haryana)\b/i.test(norm);
-    const hasWorld = /\b(international|world|global)\b/i.test(norm);
-
-    if (hasEurope && hasAmerica) {
-        places.push("(4+73)");
-        ddcPlace = ".094";
-    } else if (hasAmerica) {
-        places.push("(73)");
-        ddcPlace = ".0973";
-    } else if (hasEurope) {
-        places.push("(4)");
-        ddcPlace = ".094";
-    } else if (hasIndia) {
-        places.push("(540)");
-        ddcPlace = ".0954";
-    } else if (hasWorld) {
-        places.push("(100)");
-        ddcPlace = ".09";
+    // Corporate / Institute relationship
+    if (/\b(institute|institution|organisation|organization|association|society|academy|board|council|bureau|department)\b/i.test(norm)) {
+        orgRel = ":061";
+        placeNotes.push("UDC :061 = Institutions, organizations, corporate bodies");
     }
 
-    return { placeUdc: places.join(''), ddcPlace };
+    // Place identification
+    if (/\b(india|indian|punjab|delhi|haryana|bengal|bombay|madras)\b/i.test(norm)) {
+        placeUdc = "(540)";
+        ddcPlace = ".0954";
+        placeNotes.push("UDC (540) = India; DDC .0954");
+    } else if (/\b(europe|european)\b/i.test(norm) && /\b(america|american|usa)\b/i.test(norm)) {
+        placeUdc = "(4+73)";
+        ddcPlace = ".094";
+        placeNotes.push("UDC (4+73) = Europe & America");
+    } else if (/\b(america|american|usa|united\s*states)\b/i.test(norm)) {
+        placeUdc = "(73)";
+        ddcPlace = ".0973";
+        placeNotes.push("UDC (73) = United States");
+    } else if (/\b(britain|british|uk|england)\b/i.test(norm)) {
+        placeUdc = "(410)";
+        ddcPlace = ".0941";
+        placeNotes.push("UDC (410) = Great Britain");
+    } else if (/\b(international|world|global)\b/i.test(norm)) {
+        placeUdc = "(100)";
+        ddcPlace = ".09";
+        placeNotes.push("UDC (100) = International, World-wide");
+    }
+
+    return { placeUdc, ddcPlace, orgRel, placeNotes };
 }
 
 // -------------------------------------------------------------
-// 3. SUBJECT & DISCIPLINE DETECTION
+// 3. MASTER DISCIPLINARY TAXONOMY (UDC 0 TO 9 & DDC 000 TO 900)
 // -------------------------------------------------------------
-const DEEP_SUBJECTS = [
-    // Nursery rhymes & Folklore
+const COMPREHENSIVE_TAXONOMY = [
+    // 35 Public Administration / Civil Service
     {
-        re: /(nursery\s*rhyme|rhymes|lullab|fairy\s*tale|folklore|folk\s*song|folk\s*tale|mythology)/i,
+        re: /(public\s*administration|civil\s*service|administrative\s*law|public\s*affairs|bureaucracy|governance|public\s*sector\s*management|local\s*government|municipal\s*administration|police\s*administration)/i,
+        main: "Social Sciences",
+        sub: "Public Administration & Administrative Control",
+        udc: "35",
+        ddc: "351",
+        exp: "UDC 35 (Public administration. Government. Military affairs); DDC 351 (Public administration)."
+    },
+
+    // Customs, Folklore & Nursery Rhymes
+    {
+        re: /(nursery\s*rhyme|rhymes|fairy\s*tale|folklore|folk\s*lore|folk\s*song|folk\s*tale|mythology)/i,
         main: "Customs, Folklore & Literature",
         sub: "Folklore — Nursery Rhymes & Children's Folk Verse",
         udc: "398.8",
         ddc: "398.8",
-        exp: "UDC 398.8 (Folk poetry, rhymes, ballads, nursery rhymes); DDC 398.8 (Rhymes and rhyming games)."
+        exp: "UDC 398.8 (Folk poetry, rhymes, ballads, nursery rhymes); DDC 398.8 (Rhymes & games)."
     },
 
     // Specific Authors & Hindi Literature
@@ -180,7 +207,7 @@ const DEEP_SUBJECTS = [
         exp: "UDC 891.42 (Punjabi language & literature); DDC 891.42."
     },
 
-    // General Literature Forms
+    // General Literature
     {
         re: /\b(novel|novels|fiction)\b/i,
         main: "Literature",
@@ -216,7 +243,7 @@ const DEEP_SUBJECTS = [
         exp: "UDC 52 (Astronomy, Astrophysics); DDC 520."
     },
 
-    // Library & Information Science
+    // Library Science
     {
         re: /(bibliometr|scientometr|informetr|citation\s*analysis)/i,
         main: "Library & Information Science",
@@ -242,7 +269,7 @@ const DEEP_SUBJECTS = [
         exp: "UDC 025.4 (Classification); DDC 025.4."
     },
     {
-        re: /(librar|librarianship|information\s*centre)/i,
+        re: /(librar|librarianship|information\s*centre|library\s*science)/i,
         main: "Library Science",
         sub: "Library Science",
         udc: "02",
@@ -273,15 +300,15 @@ const DEEP_SUBJECTS = [
     { re: /(christian|bible|church)/i, main: "Religion", sub: "Christianity", udc: "22/28", ddc: "230", exp: "UDC 22/28 (Christianity); DDC 230." },
     { re: /(religion|theolog)/i, main: "Religion", sub: "Religion", udc: "2", ddc: "200", exp: "UDC 2 (Religion); DDC 200." },
 
-    // Social Sciences
+    // Social Sciences (Law, Economics, Politics, Education)
     { re: /(higher\s*education|universit|college)/i, main: "Social Sciences", sub: "Higher Education", udc: "378", ddc: "378", exp: "UDC 378 (Higher education); DDC 378." },
     { re: /(education|teaching|pedagog)/i, main: "Social Sciences", sub: "Education", udc: "37", ddc: "370", exp: "UDC 37 (Education); DDC 370." },
-    { re: /(law|jurisprudence|legal)/i, main: "Social Sciences", sub: "Law", udc: "34", ddc: "340", exp: "UDC 34 (Law); DDC 340." },
+    { re: /(law|jurisprudence|legal|crimin)/i, main: "Social Sciences", sub: "Law", udc: "34", ddc: "340", exp: "UDC 34 (Law); DDC 340." },
     { re: /(economic|banking|finance)/i, main: "Social Sciences", sub: "Economics", udc: "33", ddc: "330", exp: "UDC 33 (Economics); DDC 330." },
     { re: /(politic|government|state)/i, main: "Social Sciences", sub: "Political Science", udc: "32", ddc: "320", exp: "UDC 32 (Politics); DDC 320." },
     { re: /(sociolog|society)/i, main: "Social Sciences", sub: "Sociology", udc: "301", ddc: "301", exp: "UDC 301 (Sociology); DDC 301." },
 
-    // Pure Sciences
+    // Pure Sciences (Math, Physics, Chem, Bio, Botany, Zoology)
     { re: /(mathemat|algebra|calculus|geometr|statistic)/i, main: "Pure Sciences", sub: "Mathematics", udc: "51", ddc: "510", exp: "UDC 51 (Mathematics); DDC 510." },
     { re: /(physic|quantum|mechanic)/i, main: "Pure Sciences", sub: "Physics", udc: "53", ddc: "530", exp: "UDC 53 (Physics); DDC 530." },
     { re: /(chemistr|biochemist)/i, main: "Pure Sciences", sub: "Chemistry", udc: "54", ddc: "540", exp: "UDC 54 (Chemistry); DDC 540." },
@@ -289,7 +316,7 @@ const DEEP_SUBJECTS = [
     { re: /(botan|plant)/i, main: "Pure Sciences", sub: "Botany", udc: "58", ddc: "580", exp: "UDC 58 (Botany); DDC 580." },
     { re: /(zoolog|animal)/i, main: "Pure Sciences", sub: "Zoology", udc: "59", ddc: "590", exp: "UDC 59 (Zoology); DDC 590." },
 
-    // Applied Sciences
+    // Applied Sciences (Medicine, Engineering, Agriculture, Management)
     { re: /(medicin|medical|disease|health)/i, main: "Applied Sciences", sub: "Medical Sciences", udc: "61", ddc: "610", exp: "UDC 61 (Medicine); DDC 610." },
     { re: /(engineer|mechanical|electrical|civil)/i, main: "Applied Sciences", sub: "Engineering", udc: "62", ddc: "620", exp: "UDC 62 (Engineering); DDC 620." },
     { re: /(agricult|farm|crop)/i, main: "Applied Sciences", sub: "Agriculture", udc: "63", ddc: "630", exp: "UDC 63 (Agriculture); DDC 630." },
@@ -301,7 +328,10 @@ const DEEP_SUBJECTS = [
     { re: /(histor|ancient|medieval)/i, main: "Geography & History", sub: "History", udc: "93/99", ddc: "900", exp: "UDC 93/99 (History); DDC 900." }
 ];
 
-function classifyMaster(rawTitle) {
+// -------------------------------------------------------------
+// 4. SYNTHESIS ENGINE
+// -------------------------------------------------------------
+function classifyMasterEngine(rawTitle) {
     const raw = (rawTitle || '').trim();
     if (!raw) {
         return {
@@ -318,7 +348,7 @@ function classifyMaster(rawTitle) {
 
     const norm = normalizeClean(raw);
 
-    // 1. DIRECT JSON INDEX LOOKUP
+    // 1. DIRECT JSON REFERENCE CHECK
     let directUdc = udcIndex[raw] || udcIndex[norm];
     let directDdc = ddcIndex[raw] || ddcIndex[norm];
 
@@ -346,82 +376,69 @@ function classifyMaster(rawTitle) {
         };
     }
 
-    // 2. PARSE FORMS & PLACES
-    const { isBiblio, formUdc, formDdc, notes: formNotes } = extractFormAndBiblio(norm);
-    const { placeUdc, ddcPlace } = extractPlaces(norm);
+    // 2. PARSE FORMS, SERIALS & PLACES
+    const { formUdc, formDdc, formNotes } = extractDocumentForms(norm);
+    const { placeUdc, ddcPlace, orgRel, placeNotes } = extractPlacesAndBodies(norm);
 
-    // 3. MATCH SUBJECT DISCIPLINE
+    // 3. IDENTIFY SUBJECT DISCIPLINE
     let found = null;
-    for (const d of DEEP_SUBJECTS) {
+    for (const d of COMPREHENSIVE_TAXONOMY) {
         if (d.re.test(norm)) {
             found = d;
             break;
         }
     }
 
-    // If no direct subject, check bibliography alone
-    if (!found && isBiblio) {
-        return {
-            main_subject: "Generalities & Bibliography",
-            sub_subject: "General Bibliography",
-            udc_breakdown: `01${placeUdc}`,
-            confidence: "High (Form Synthesis)",
-            notation_audit: `Notation '01${placeUdc}' audited: General bibliography with geographical auxiliaries.`,
-            explanation: `UDC 01 (Bibliography) combined with place auxiliary ${placeUdc || 'none'}.`,
-            sources: "UDC 1961 Edition Class 01; DDC 011",
-            ddc_answer: `011${ddcPlace}`
-        };
-    }
-
     if (found) {
-        let finalUdc = "";
-        let finalDdc = "";
-        let finalSub = found.sub;
-        let finalExp = found.exp;
+        const isLiterature = found.udc.startsWith("8");
+        // Literature does not attach directory/org auxiliaries
+        const finalPlace = isLiterature ? "" : placeUdc;
+        const finalForm = isLiterature ? "" : formUdc;
+        const finalOrg = isLiterature ? "" : orgRel;
 
-        if (isBiblio) {
-            // Subject bibliography rule: UDC 016:Subject(Place)
-            finalUdc = `016:${found.udc}${placeUdc}`;
-            finalDdc = `016.${found.ddc.replace('.', '')}`;
-            finalSub = `Bibliography of ${found.sub}`;
-            finalExp = `Special subject bibliography (UDC 016:) linked to ${found.sub} (${found.udc}) with place ${placeUdc || 'none'}; DDC 016.${found.ddc}.`;
-        } else {
-            finalUdc = `${found.udc}${placeUdc}${formUdc}`;
-            finalDdc = `${found.ddc}${ddcPlace}${formDdc}`;
-            if (formNotes.length) finalExp += ` Form: ${formNotes.join('; ')}.`;
-        }
+        // UDC faceted synthesis: Subject + Place + Org + Form
+        const finalUdc = `${found.udc}${finalPlace}${finalOrg}${finalForm}`;
+        
+        // DDC faceted synthesis: Subject + Standard Subdivisions
+        const finalDdc = `${found.ddc}${isLiterature ? '' : ddcPlace}${isLiterature ? '' : formDdc}`;
+
+        let finalNotes = [found.exp];
+        if (placeNotes.length && !isLiterature) finalNotes.push(placeNotes.join('; '));
+        if (formNotes.length && !isLiterature) finalNotes.push(formNotes.join('; '));
 
         return {
             main_subject: found.main,
-            sub_subject: finalSub,
+            sub_subject: found.sub,
             udc_breakdown: finalUdc,
             confidence: "High (Faceted Analytical Synthesis)",
-            notation_audit: `Notation '${finalUdc}' fully synthesized: Auxiliaries, colons, and phase relationships preserved without truncation.`,
-            explanation: finalExp,
+            notation_audit: `Notation '${finalUdc}' fully synthesized: Auxiliary symbols, places, and corporate bodies preserved without truncation.`,
+            explanation: finalNotes.join(' | '),
             sources: "Universal Decimal Classification (UDC 1961) & Dewey Decimal Classification (DDC 23rd)",
             ddc_answer: finalDdc
         };
     }
 
-    // 4. INTELLIGENT ROOT FALLBACK (Never 001)
-    const fallbackUdc = `001${placeUdc}${formUdc}`;
+    // 4. FALLBACK: GENERALITIES WITH STRUCTURAL EXTENSIONS
+    const fallbackUdc = `001${placeUdc}${orgRel}${formUdc}`;
     return {
         main_subject: "Generalities & Interdisciplinary",
         sub_subject: raw,
         udc_breakdown: fallbackUdc,
-        confidence: "Medium (General Analysis)",
-        notation_audit: `Notation '${fallbackUdc}' allocated with geographical/form extensions.`,
-        explanation: "Title analyzed under general principles.",
+        confidence: "Medium (Structural Synthesis)",
+        notation_audit: `Notation '${fallbackUdc}' allocated with extensions.`,
+        explanation: "Title analyzed under general knowledge foundations.",
         sources: "UDC 1961 Class 0",
-        ddc_answer: `001${ddcPlace}`
+        ddc_answer: `001${ddcPlace}${formDdc}`
     };
 }
 
-// Universal API endpoints (UI compatibility)
+// -------------------------------------------------------------
+// 5. UNIVERSAL API ENDPOINT
+// -------------------------------------------------------------
 app.all(['/api/classify', '/api/search', '/classify'], (req, res) => {
     try {
         const title = req.body?.title || req.query?.title || req.query?.q || '';
-        const r = classifyMaster(title);
+        const r = classifyMasterEngine(title);
 
         res.json({
             success: true,
