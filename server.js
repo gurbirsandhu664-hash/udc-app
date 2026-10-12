@@ -9,15 +9,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
+// Safe loader taaki Render te missing files naal app exit/crash na hove
 function loadJsonSafe(filename) {
-    const p = path.join(__dirname, filename);
-    if (fs.existsSync(p)) {
-        try {
+    try {
+        const p = path.join(__dirname, filename);
+        if (fs.existsSync(p)) {
             return JSON.parse(fs.readFileSync(p, 'utf8'));
-        } catch (e) {
-            console.error(`Error loading ${filename}:`, e.message);
-            return {};
         }
+    } catch (e) {
+        console.log(`Notice: ${filename} could not be loaded:`, e.message);
     }
     return {};
 }
@@ -42,16 +42,15 @@ function getFormAuxiliary(text) {
     let isBiography = false;
     let notes = [];
 
-    // Biography / Life / Memoirs
     if (/\b(life\s*and|biography|biographies|autobiography|memoirs?|life\s*of|lives\s*of)\b/i.test(text)) {
         isBiography = true;
         formUdc = "(092)";
         formDdc = ".092";
-        notes.push("UDC (092) = Biographical form auxiliary / 929; DDC .092 (Biography)");
+        notes.push("UDC (092) / 929: = Biography of Persons in Special Field; DDC .092");
     } else if (/\b(speeches|addresses|lectures|orations?)\b/i.test(text)) {
         formUdc = "(042)";
         formDdc = ".04";
-        notes.push("UDC (042) = Speeches, lectures, addresses; DDC Table 1 .04");
+        notes.push("UDC (042) = Speeches, lectures; DDC .04");
     } else if (/\b(annual\s*reports?|progress\s*reports?|reports?)\b/i.test(text)) {
         formUdc = "(047)";
         formDdc = ".06";
@@ -67,7 +66,7 @@ function getFormAuxiliary(text) {
     } else if (/\b(bibliographies|bibliography)\b/i.test(text)) {
         formUdc = "(01)";
         formDdc = "016";
-        notes.push("UDC (01) = Bibliographies");
+        notes.push("UDC (01) = Bibliographies; DDC 016");
     }
 
     return { formUdc, formDdc, isBiography, notes };
@@ -90,7 +89,7 @@ function getPlaceAndOrg(text) {
     if (/\b(india|indian|punjab|delhi|haryana|bombay|bengal|madras)\b/i.test(text)) {
         placeUdc = "(540)";
         ddcPlace = ".0954";
-        notes.push("UDC (540) = India");
+        notes.push("UDC (540) = India; DDC .0954");
     } else if (/\b(europe|european)\b/i.test(text) && /\b(america|american|usa)\b/i.test(text)) {
         placeUdc = "(4+73)";
         ddcPlace = ".094";
@@ -113,17 +112,17 @@ function getPlaceAndOrg(text) {
 }
 
 // -------------------------------------------------------------
-// 3. MASTER TAXONOMY WITH EXACT ROOT MATCHING
+// 3. MASTER TAXONOMY GRAPH
 // -------------------------------------------------------------
 const KNOWLEDGE_GRAPH = [
-    // Scientists / Pure Sciences in General
+    // Scientists & Pure Sciences
     {
         keywords: ["scientist", "scientists", "scientific research", "science", "pure science", "natural science"],
         main: "Pure Sciences",
-        sub: "General Pure Sciences & Scientists",
+        sub: "Pure Sciences & Scientists",
         udc: "5",
         ddc: "500",
-        exp: "UDC 5 (Mathematics & Natural Sciences); DDC 500 (Natural sciences & mathematics)."
+        exp: "UDC 5 (Mathematics & Natural Sciences); DDC 500 (Natural sciences)."
     },
     // Public Administration
     {
@@ -158,7 +157,7 @@ const KNOWLEDGE_GRAPH = [
         sub: "Punjabi Literature — Novel",
         udc: "891.42-31",
         ddc: "891.423",
-        exp: "UDC 891.42-31 (Punjabi novel); DDC 891.423."
+        exp: "UDC 891.42-31 (Punjabi novel with auxiliary -31); DDC 891.423."
     },
     {
         keywords: ["novel", "novels", "fiction"],
@@ -239,9 +238,6 @@ const KNOWLEDGE_GRAPH = [
     { keywords: ["history", "historical", "ancient", "medieval"], main: "Geography & History", sub: "History", udc: "93/99", ddc: "900", exp: "UDC 93/99 (History); DDC 900." }
 ];
 
-// -------------------------------------------------------------
-// 4. AUTOMATIC RESOLVER
-// -------------------------------------------------------------
 function autoClassify(rawTitle) {
     const raw = (rawTitle || '').trim();
     if (!raw) {
@@ -315,7 +311,6 @@ function autoClassify(rawTitle) {
         let finalSub = bestSubject.sub;
 
         if (isBiography) {
-            // Biography of specific subject: UDC 929:Subject(Place) or Subject(Place)(092)
             finalUdc = `929:${bestSubject.udc}${placeUdc}`;
             finalDdc = `${bestSubject.ddc === "500" ? "509.2" : bestSubject.ddc + ".092"}${ddcPlace}`;
             finalSub = `Biography of ${bestSubject.sub}`;
@@ -342,22 +337,12 @@ function autoClassify(rawTitle) {
         };
     }
 
-    // 4. Safe Semantic Inference
-    let fallbackBaseUdc = "5/6";
-    let fallbackBaseDdc = "500";
-    let fallbackMain = "Pure & Applied Sciences";
-
-    if (!/\b(sci|research|tech|nature)\b/i.test(cleaned)) {
-        fallbackBaseUdc = "3";
-        fallbackBaseDdc = "300";
-        fallbackMain = "Social Sciences & Administration";
-    }
-
-    const fallbackUdc = `${fallbackBaseUdc}${placeUdc}${orgRel}${formUdc}`;
-    const fallbackDdc = `${fallbackBaseDdc}${ddcPlace}${formDdc}`;
+    // 4. Fallback
+    const fallbackUdc = `5/6${placeUdc}${orgRel}${formUdc}`;
+    const fallbackDdc = `500${ddcPlace}${formDdc}`;
 
     return {
-        main_subject: fallbackMain,
+        main_subject: "Pure & Applied Sciences",
         sub_subject: raw,
         udc_breakdown: fallbackUdc,
         confidence: "Medium (Semantic Inference)",
@@ -368,5 +353,53 @@ function autoClassify(rawTitle) {
     };
 }
 
-// -------------------------------------------------------------
-// 5. API
+// Universal API Router
+app.all(['/api/classify', '/api/search', '/classify'], (req, res) => {
+    try {
+        const title = req.body?.title || req.query?.title || req.query?.q || '';
+        const r = autoClassify(title);
+
+        res.json({
+            success: true,
+            title: title,
+            main_subject: r.main_subject,
+            sub_subject: r.sub_subject,
+            udc_breakdown: r.udc_breakdown,
+            confidence: r.confidence,
+            notation_audit: r.notation_audit,
+            explanation: r.explanation,
+            sources: r.sources,
+            ddc_answer: r.ddc_answer,
+            mainSubject: r.main_subject,
+            subSubject: r.sub_subject,
+            udcBreakdown: r.udc_breakdown,
+            notationAudit: r.notation_audit,
+            ddcAnswer: r.ddc_answer,
+            udc: r.udc_breakdown,
+            ddc: r.ddc_answer,
+            result: r,
+            data: r
+        });
+    } catch (err) {
+        console.error("API Error:", err);
+        res.status(500).json({ error: "Classification engine error" });
+    }
+});
+
+app.get('*', (req, res) => {
+    const indexPath = path.join(__dirname, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.send("UDC & DDC Classifier is live.");
+    }
+});
+
+// Crash-proof process guards
+process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err.message));
+process.on('unhandledRejection', (err) => console.error('Unhandled Rejection:', err));
+
+// Binds strictly to 0.0.0.0 for Render host requirement
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server listening on port ${PORT}`);
+});
