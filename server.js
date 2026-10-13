@@ -208,19 +208,23 @@ function localClassify(title) {
   return null;
 }
 
-// Robust HTTPS request to Google Gemini API (bypasses URL parsing issues)
 function callGeminiAPI(payload) {
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify(payload);
+    const cleanKey = String(GEMINI_KEY || "").trim();
+
+    if (!cleanKey) {
+      return reject(new Error("GEMINI_API_KEY is completely missing in Render Environment Variables."));
+    }
+
     const options = {
       hostname: "generativelanguage.googleapis.com",
       port: 443,
-      path: "/v1beta/models/" + DEFAULT_MODEL + ":generateContent",
+      path: "/v1beta/models/" + encodeURIComponent(DEFAULT_MODEL) + ":generateContent?key=" + encodeURIComponent(cleanKey),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(postData),
-        "x-goog-api-key": GEMINI_KEY
+        "Content-Length": Buffer.byteLength(postData)
       },
       timeout: 28000
     };
@@ -232,7 +236,7 @@ function callGeminiAPI(payload) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(data);
         } else {
-          reject(new Error(`API Error HTTP ${res.statusCode}: ${data.slice(0, 300)}`));
+          reject(new Error(`API Error HTTP ${res.statusCode}: ${data.slice(0, 350)}`));
         }
       });
     });
@@ -249,8 +253,6 @@ function callGeminiAPI(payload) {
 }
 
 async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY environment variable is not configured.");
-
   const payload = {
     contents: [{
       role: "user",
