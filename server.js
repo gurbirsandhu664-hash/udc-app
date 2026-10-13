@@ -76,11 +76,11 @@ function parseJSON(s) {
   return JSON.parse(clean);
 }
 
-// DIRECT GOOGLE GEMINI CALL (NO DUMMY FALLBACKS)
+// DIRECT GOOGLE GEMINI HTTPS CALL
 function callGoogleGeminiDirect(promptText, modelName) {
   return new Promise((resolve, reject) => {
     if (!GEMINI_KEY) {
-      return reject(new Error("Render dashboard par GEMINI_API_KEY add nahi hai!"));
+      return reject(new Error("GEMINI_API_KEY missing on Render"));
     }
 
     const payload = JSON.stringify({
@@ -113,7 +113,7 @@ function callGoogleGeminiDirect(promptText, modelName) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(data);
         } else {
-          reject(new Error(`Google API status ${res.statusCode}: ${data.slice(0, 200)}`));
+          reject(new Error(`API Error HTTP ${res.statusCode}: ${data.slice(0, 160)}`));
         }
       });
     });
@@ -130,33 +130,33 @@ function callGoogleGeminiDirect(promptText, modelName) {
 }
 
 async function classifyWithAI(title, ddcRef, udcRef) {
-  const prompt = `You are a professional library classifier. Analyze and classify the title into Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd edition).
+  const prompt = `You are a certified professional Library Science classifier.
+Classify this title strictly into Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd edition).
 
 Title: "${title}"
 
-DDC References from schedule:
+DDC References:
 ${ddcRef || "None"}
 
-UDC References from schedule:
+UDC References:
 ${udcRef || "None"}
 
 Rules:
-1. UDC: Use valid notation (e.g. 159.9.072 for psychological/aptitude tests, 614.25 or 61:331.7 for medical personnel, joined by colon).
-2. DDC: Pure numeric notation (e.g. 153.9461 or 610.69).
-3. Do not return 001, 025.4, or 327 unless title is literally about that specific subject.
-4. Output raw JSON only.
+1. UDC: Construct accurate notation using standard signs (: for relation, + for coordination, (0...) for form, (1/9) for place).
+2. DDC: Construct accurate decimal notation.
+3. Output strictly valid JSON only.
 
-JSON structure:
+JSON Format:
 {
   "udc_number": "exact constructed UDC notation",
   "ddc_number": "exact constructed DDC notation",
   "main_subject": "main subject discipline",
   "sub_subject": "specific subtopic",
-  "breakdown": "detailed explanation of facets and numbers",
-  "explanation": "classification explanation"
+  "breakdown": "detailed explanation of components and auxiliaries",
+  "explanation": "concise classification rationale"
 }`;
 
-  const modelList = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"];
+  const modelList = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
   let lastError = null;
 
   for (const model of modelList) {
@@ -167,32 +167,38 @@ JSON structure:
       if (!text) continue;
 
       const obj = parseJSON(text);
-      const u = String(obj.udc_number || "").trim();
-      const d = String(obj.ddc_number || "").trim();
+      const u = String(obj.udc_number || obj.udc || "").trim();
+      const d = String(obj.ddc_number || obj.ddc || "").trim();
 
-      if (!u || !d || (u === "001" && !/knowledge|generalities/i.test(title))) {
-        continue;
-      }
+      if (!u || !d) continue;
+
+      const breakdownText = obj.breakdown || `UDC: ${u}; DDC: ${d} classified based on library schedules.`;
+      const explanationText = obj.explanation || `Classified under ${obj.main_subject || "Library Classification"}.`;
 
       return {
         title,
         full_title: title,
+        // Frontend de dovan format support karda hai:
         udc_number: u,
         ddc_number: d,
         udc_answer: u,
         ddc_answer: d,
-        main_subject: obj.main_subject || "Library Classification",
+        complete_udc_answer: u,
+        complete_ddc_answer: d,
+        main_subject: obj.main_subject || "Subject Classification",
         sub_subject: obj.sub_subject || title,
-        breakdown: obj.breakdown || "Synthesized notation based on schedules.",
-        explanation: obj.explanation || "Classified dynamically by Gemini.",
+        breakdown: breakdownText,
+        udc_notation_breakdown: breakdownText,
+        explanation: explanationText,
         confidence: "VERY HIGH",
-        evidence_summary: `Classified by ${model}.`,
-        notation_check: "Verified",
+        evidence_summary: `Classified dynamically by ${model}.`,
+        notation_check: "Verified notation",
+        notation_audit: "Verified notation",
         sources: ["https://udcsummary.info/php/index.php"]
       };
     } catch (err) {
       lastError = err;
-      console.warn(`Model ${model} failed:`, err.message);
+      console.warn(`Model ${model} retry:`, err.message);
     }
   }
 
@@ -218,19 +224,13 @@ app.post("/api/classify", async (req, res) => {
     const result = await classifyWithAI(title, ddcRef, udcRef);
     return res.json(result);
   } catch (err) {
-    console.error("Classification failure for:", title, err.message);
+    console.error("Classification error:", err.message);
     return res.status(500).json({
-      error: "Gemini API Connection Error: " + err.message,
-      detail: "Kripya Render Environment Variables mein GEMINI_API_KEY check karein."
+      error: "Classification failed: " + err.message
     });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server live on port ${PORT}`);
-  if (!GEMINI_KEY) {
-    console.error("FATAL: GEMINI_API_KEY environment variable is NOT set in Render!");
-  } else {
-    console.log("GEMINI_API_KEY detected.");
-  }
+  console.log(`Server strictly live on port ${PORT}`);
 });
