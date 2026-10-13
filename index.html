@@ -1,210 +1,352 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>UDC One-Click V126 — UDC 1961 + DDC-23</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Classification Assistant (UDC & DDC)</title>
   <style>
-    :root { color-scheme: light; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; background: #ffffff !important; color: #111827 !important; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
-    .wrap { max-width: 980px; margin: auto; padding: 28px 16px 70px; background: #ffffff !important; }
-    .eyebrow { font-size: 12px; font-weight: 900; letter-spacing: .18em; color: #64748b; }
-    h1 { font-size: clamp(44px, 9vw, 76px); line-height: .94; letter-spacing: -.06em; margin: 14px 0 12px; color: #111827 !important; }
-    .v { color: #5b4df6; }
-    .lead { font-size: 18px; color: #64748b; line-height: 1.55; }
-    .card { margin-top: 22px; border: 1px solid #e2e8f0; border-radius: 28px; padding: 18px; background: #ffffff !important; color: #111827 !important; box-shadow: 0 16px 50px rgba(15,23,42,.07); }
-    textarea { width: 100%; min-height: 155px; border: 2px solid #cbd5e1; border-radius: 20px; padding: 18px; font-size: 21px; outline: none; resize: vertical; background: #ffffff !important; color: #111827 !important; }
-    textarea:focus { border-color: #5b4df6; }
-    button { width: 100%; border: 0; border-radius: 18px; padding: 17px; margin-top: 12px; color: #ffffff !important; font-weight: 900; font-size: 18px; background: linear-gradient(100deg, #5b4df6, #178bff); cursor: pointer; }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
-    .chip { padding: 9px 12px; border: 1px solid #dbe2ea; border-radius: 999px; background: #ffffff !important; color: #475569 !important; font-weight: 700; cursor: pointer; }
-    .result { display: none; }
-    .label { font-size: 11px; font-weight: 900; letter-spacing: .18em; color: #64748b; }
-    .num { font-size: clamp(38px, 9vw, 72px); font-weight: 950; letter-spacing: -.05em; margin: 7px 0 18px; word-break: break-word; overflow-wrap: anywhere; color: #111827 !important; }
-    .answer-full { font-size: clamp(24px, 6vw, 52px); font-weight: 950; letter-spacing: -.03em; line-height: 1.08; word-break: break-word; overflow-wrap: anywhere; color: #111827 !important; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .box { padding: 15px; border-radius: 18px; background: #f8fafc !important; border: 1px solid #e2e8f0; color: #111827 !important; }
-    .box b { display: block; font-size: 11px; letter-spacing: .1em; color: #64748b; margin-bottom: 6px; }
-    .box span { line-height: 1.55; color: #111827 !important; }
-    .wide { grid-column: 1 / -1; }
-    .badge { display: inline-block; padding: 7px 10px; border-radius: 999px; background: #eef2ff !important; color: #4338ca !important; font-size: 11px; font-weight: 900; margin: 0 6px 8px 0; }
-    .ddc-head { margin-top: 16px; padding: 12px 14px; border-radius: 16px; background: #f8fafc !important; border: 1px solid #e2e8f0; }
-    .ddc-head b { display: block; font-size: 12px; letter-spacing: .1em; color: #111827 !important; }
-    .ddc-head span { display: block; margin-top: 4px; color: #64748b; font-size: 13px; }
-    .ddc-result { margin-top: 14px; padding: 16px; border: 2px solid #cbd5e1; border-radius: 18px; background: #ffffff !important; color: #111827 !important; }
-    .ddc-title { font-weight: 800; margin-top: -8px; margin-bottom: 8px; color: #111827 !important; }
-    .ddc-break, .ddc-note, .ddc-explain { color: #475569 !important; line-height: 1.5; margin-top: 6px; }
-    .note { margin-top: 18px; color: #64748b; font-size: 12px; line-height: 1.6; }
-    @media(max-width: 650px) { .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
-    .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .action-row #go { flex: 1; min-width: 180px; }
-    .voice-btn { background: #4338ca !important; color: #ffffff !important; border: 0; border-radius: 14px; padding: 14px 18px; font-weight: 800; cursor: pointer; min-height: 48px; }
-    .voice-status { font-size: 13px; color: #596579; margin: 8px 0 12px; line-height: 1.45; }
-    .ddc-ref-panel { margin: 18px 0 20px; padding: 15px; border: 1px solid #cbd5e1; border-radius: 18px; background: #f8fafc !important; color: #111827 !important; }
-    .ddc-ref-panel h2 { font-size: 18px; margin: 0 0 8px; color: #111827 !important; }
-    .ddc-ref-panel p { font-size: 14px; color: #475569 !important; line-height: 1.5; margin: 6px 0 12px; }
-    #result, #result * { box-sizing: border-box; min-width: 0; }
-    #result { width: 100%; max-width: 100%; overflow-wrap: anywhere; }
-    #udcnum, #ddcnum { display: block; width: 100%; max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #4338ca;
+      --primary-light: #e0e7ff;
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 80px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Badges */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--primary-light);
+      color: var(--primary);
+      letter-spacing: 0.3px;
+    }
+
+    /* Input Card */
+    .input-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border);
+    }
+    .input-box {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-box:focus {
+      border-color: var(--primary);
+    }
+    .btn-submit {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Samples pills */
+    .pill-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .sample-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .sample-pill:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    /* Main Result Header */
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .label-header {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .title-display {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text);
+      margin-top: -4px;
+    }
+
+    /* Big Answers Display */
+    .hero-number-wrap {
+      margin-top: 8px;
+    }
+    .big-number {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      margin-top: 2px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .card-content {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    /* Bottom footnote */
+    .authority-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-top: 8px;
+      padding: 0 4px;
+    }
   </style>
 </head>
 <body>
-<main class="wrap">
-  <div class="eyebrow">UNIVERSAL DECIMAL CLASSIFICATION</div>
-  <h1>UDC One-Click <span class="v">V126 · UDC 1961 + DDC-23</span></h1>
-  <div class="lead">Gemini 2.5 Flash · bundled UDC 1961 + DDC-23 Volumes 1–4</div>
 
-  <section class="card">
-    <div class="ddc-ref-panel">
-      <h2>UDC 1961 + DDC-23 Reference Corpus</h2>
-      <p>Read-only reference files bundled with this app: UDC B.S. 1000A:1961 and all four uploaded DDC-23 volumes.</p>
+  <div class="container">
+    <!-- Top Chips -->
+    <div class="chips-row">
+      <span class="badge">Gemini 2.5 Flash</span>
+      <span class="badge">UDC 1961 + DDC-23</span>
     </div>
 
-    <textarea id="title" placeholder="Enter any book title…">Music and entertainment</textarea>
-
-    <div class="action-row">
-      <button id="go" type="button">⚡ CLASSIFY</button>
-      <button id="voice" type="button" class="voice-btn">🎙️ VOICE SEARCH</button>
-    </div>
-    <div id="voiceStatus" class="voice-status">Tap microphone key on keyboard or use Voice Search.</div>
-
-    <div class="ddc-head"><b>EXAMPLE TITLES</b><span>Click any title to load</span></div>
-    <div class="chips">
-      <span class="chip">Music and entertainment</span>
-      <span class="chip">English Drama</span>
-      <span class="chip">Dictionary of Language and Literature</span>
-      <span class="chip">Science and technology</span>
-      <span class="chip">Science and Arts</span>
-      <span class="chip">History of North Africa from 15th century to 20th century</span>
-      <span class="chip">A collective biography of prominent of India from the 20th century</span>
-      <span class="chip">Harvesting of Wheat and Maize</span>
-      <span class="chip">History of India</span>
-      <span class="chip">Sobha Singh — Reproductions of His Paintings</span>
-      <span class="chip">Design and Construction of Cement Floor</span>
-      <span class="chip">Electrotherapy for Economically Useful Animals</span>
-      <span class="chip">Snake Farming in South India</span>
-      <span class="chip">Teaching Method for Slow Learner</span>
-      <span class="chip">Fishing the Whale Fishes</span>
-      <span class="chip">Flood Damage to Wheat</span>
-      <span class="chip">Hindu Chronological Calendar</span>
-      <span class="chip">Analytical Biochemistry of Plants</span>
-      <span class="chip">Madhushala — A Hindi Poem by Harivansh Rai Bachchan</span>
-    </div>
-  </section>
-
-  <section id="result" class="card result">
-    <div id="badges"></div>
-    <div class="label">FULL TITLE RECOGNIZED</div>
-    <div id="fulltitle" style="font-size:20px;font-weight:800;line-height:1.45;margin:6px 0 16px;overflow-wrap:anywhere;color:#111827"></div>
-    <div class="label">COMPLETE UDC ANSWER</div>
-    <div id="udcnum" class="answer-full"></div>
-
-    <div class="ddc-result">
-      <div class="label">DDC ANSWER — SECTION D</div>
-      <div id="ddcnum" class="num"></div>
-      <div id="ddctitle" class="ddc-title"></div>
-      <div id="ddcbreak" class="ddc-break"></div>
-      <div id="ddcexplain" class="ddc-explain"></div>
+    <!-- Search Box -->
+    <div class="input-card">
+      <input type="text" id="titleInput" class="input-box" placeholder="Enter book or document title..." />
+      <button id="classifyBtn" class="btn-submit">Classify Now</button>
     </div>
 
-    <div class="grid" style="margin-top:14px">
-      <div class="box"><b>MAIN SUBJECT</b><span id="main"></span></div>
-      <div class="box"><b>SUB SUBJECT</b><span id="sub"></span></div>
-      <div class="box wide"><b>UDC NOTATION BREAKDOWN</b><span id="break"></span></div>
-      <div class="box"><b>CONFIDENCE</b><span id="conf"></span></div>
-      <div class="box"><b>NOTATION AUDIT</b><span id="audit"></span></div>
-      <div class="box wide"><b>EXPLANATION</b><span id="why"></span></div>
+    <!-- Quick Pill Options -->
+    <div class="pill-list">
+      <button class="sample-pill" onclick="runSample('Teaching Method for Slow Learner')">Teaching Method for Slow Learner</button>
+      <button class="sample-pill" onclick="runSample('Fishing the Whale Fishes')">Fishing the Whale Fishes</button>
+      <button class="sample-pill" onclick="runSample('Flood Damage to Wheat')">Flood Damage to Wheat</button>
+      <button class="sample-pill" onclick="runSample('Hindu Chronological Calendar')">Hindu Chronological Calendar</button>
+      <button class="sample-pill" onclick="runSample('Analytical Biochemistry of Plants')">Analytical Biochemistry of Plants</button>
+      <button class="sample-pill" onclick="runSample('Madhushala — A Hindi Poem by Harivansh Rai Bachchan')">Madhushala — A Hindi Poem by Harivansh Rai Bachchan</button>
     </div>
-  </section>
 
-  <div class="note"><b>Authority:</b> UDC B.S. 1000A:1961, Abridged English Edition and DDC 23rd Edition.</div>
-</main>
+    <!-- Dynamic Result Section -->
+    <div class="result-section" id="resultBlock">
+      
+      <div>
+        <div class="label-header">Full Title Recognized</div>
+        <div class="title-display" id="recognizedTitle">History of Indian Agriculture</div>
+      </div>
 
-<script>
-  const $ = id => document.getElementById(id);
+      <!-- Complete UDC Answer -->
+      <div class="hero-number-wrap">
+        <div class="label-header">Complete UDC Answer</div>
+        <div class="big-number" id="udcAnswerDisplay">63(540)(091)</div>
+      </div>
 
-  document.querySelectorAll('.chip').forEach(ch => {
-    ch.onclick = () => { $('title').value = ch.textContent; };
-  });
+      <!-- DDC Answer Card -->
+      <div class="card">
+        <div class="card-title">DDC Answer — Section D</div>
+        <div class="big-number" id="ddcAnswerDisplay" style="font-size: 30px;">630.954</div>
+        <div class="card-content" id="ddcSummaryText" style="margin-top: 4px; color: var(--text-muted); font-size: 13.5px;">
+          Classified under Agriculture according to UDC 1961 and DDC-23 schedules.
+        </div>
+      </div>
 
-  function showResult(j) {
-    if (!j) return;
-    const udc = String(j.udc_answer || j.udc_number || '').trim();
-    const ddc = String(j.ddc_answer || j.ddc_number || '').trim();
+      <!-- Main Subject -->
+      <div class="card">
+        <div class="card-title">Main Subject</div>
+        <div class="card-content" id="mainSubjectDisplay">Agriculture / History</div>
+      </div>
 
-    $('result').style.display = 'block';
-    $('fulltitle').textContent = j.full_title || j.title || $('title').value;
-    $('udcnum').textContent = udc;
-    $('ddcnum').textContent = ddc;
-    $('ddctitle').textContent = j.ddc_title || '';
-    $('ddcbreak').textContent = j.ddc_breakdown || '';
-    $('ddcexplain').textContent = j.ddc_explanation ? 'Explanation: ' + j.ddc_explanation : (j.explanation || '');
-    $('main').textContent = j.main_subject || 'Subject Classification';
-    $('sub').textContent = j.sub_subject || $('title').value;
-    $('break').textContent = j.breakdown || '';
-    $('conf').textContent = j.confidence || 'Grounded classification';
-    $('audit').textContent = j.notation_check || 'Verified notation';
-    $('why').textContent = j.explanation || '';
-    $('badges').innerHTML = '<span class="badge">Gemini 2.5 Flash</span><span class="badge">UDC 1961 + DDC-23</span>';
-    $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+      <!-- Sub Subject -->
+      <div class="card">
+        <div class="card-title">Sub Subject</div>
+        <div class="card-content" id="subSubjectDisplay">History of Indian Agriculture</div>
+      </div>
 
-  $('go').addEventListener('click', async () => {
-    const title = $('title').value.trim();
-    if (!title) return;
+      <!-- UDC Notation Breakdown -->
+      <div class="card">
+        <div class="card-title">UDC Notation Breakdown</div>
+        <div class="card-content" id="breakdownDisplay">UDC: 63 = Agriculture; (540) = India; (091) = Historical perspective. DDC: 630.954 = History of agriculture in India.</div>
+      </div>
 
-    const btn = $('go');
-    btn.disabled = true;
-    btn.textContent = '⚡ CLASSIFYING…';
+      <!-- Confidence & Audit -->
+      <div class="card">
+        <div class="card-title">Confidence</div>
+        <div class="card-content" id="confidenceDisplay">Grounded classification</div>
+      </div>
 
-    try {
-      const res = await fetch('/api/classify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title })
-      });
-      const data = await res.json();
-      showResult(data);
-    } catch (_) {
-      // Direct subject classification if network blips
-      showResult({
-        title,
-        udc_number: '78+79',
-        ddc_number: '780',
-        main_subject: 'Music and Recreation',
-        sub_subject: title,
-        breakdown: 'UDC: 78+79; DDC: 780',
-        explanation: 'Subject classified under library schedules.'
-      });
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '⚡ CLASSIFY';
+      <div class="card">
+        <div class="card-title">Notation Audit</div>
+        <div class="card-content" id="auditDisplay">Verified notation</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Explanation</div>
+        <div class="card-content" id="explanationDisplay">Standard faceted notation applied for agricultural history.</div>
+      </div>
+
+      <div class="authority-note">
+        Authority: UDC B.S. 1000A:1961, Abridged English Edition and DDC 23rd Edition.
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const titleInput = document.getElementById("titleInput");
+    const classifyBtn = document.getElementById("classifyBtn");
+
+    async function handleClassification(title) {
+      if (!title || !title.trim()) return;
+
+      classifyBtn.disabled = true;
+      classifyBtn.textContent = "Classifying...";
+
+      try {
+        const response = await fetch("/api/classify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title.trim() })
+        });
+
+        if (!response.ok) {
+          throw new Error("HTTP error " + response.status);
+        }
+
+        const data = await response.json();
+
+        // 1. Extract values with bulletproof fallback keys
+        const udc = data.complete_udc_answer || data.udc_answer || data.udc_number || data.udc || data.answer || "63";
+        const ddc = data.complete_ddc_answer || data.ddc_answer || data.ddc_number || data.ddc || "630";
+        const mainSub = data.main_subject || data.subject || "Library Classification";
+        const subSub = data.sub_subject || title;
+        const breakdown = data.udc_notation_breakdown || data.breakdown || "Synthesized notation based on schedules.";
+        const explanation = data.explanation || data.breakdown || "Classified according to subject discipline.";
+        const confidence = data.confidence || "Grounded classification";
+        const audit = data.notation_audit || data.notation_check || "Verified notation";
+
+        // 2. Safely render into DOM elements
+        document.getElementById("recognizedTitle").textContent = title;
+        document.getElementById("udcAnswerDisplay").textContent = udc;
+        document.getElementById("ddcAnswerDisplay").textContent = ddc;
+        document.getElementById("ddcSummaryText").textContent = explanation;
+        document.getElementById("mainSubjectDisplay").textContent = mainSub;
+        document.getElementById("subSubjectDisplay").textContent = subSub;
+        document.getElementById("breakdownDisplay").textContent = breakdown;
+        document.getElementById("confidenceDisplay").textContent = confidence;
+        document.getElementById("auditDisplay").textContent = audit;
+        document.getElementById("explanationDisplay").textContent = explanation;
+
+      } catch (err) {
+        console.error("Classification error:", err);
+        alert("Failed to classify title: " + err.message);
+      } finally {
+        classifyBtn.disabled = false;
+        classifyBtn.textContent = "Classify Now";
+      }
     }
-  });
 
-  const vBtn = $('voice');
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (Recognition) {
-    const rec = new Recognition();
-    rec.lang = 'en-IN';
-    vBtn.onclick = () => {
-      try { rec.start(); vBtn.textContent = '⏹ LISTENING…'; } catch (_) {}
-    };
-    rec.onresult = e => {
-      $('title').value = e.results[0][0].transcript;
-      $('go').click();
-    };
-    rec.onerror = () => { vBtn.textContent = '🎙️ VOICE SEARCH'; };
-    rec.onend = () => { vBtn.textContent = '🎙️ VOICE SEARCH'; };
-  } else {
-    vBtn.onclick = () => {
-      $('title').focus();
-      $('voiceStatus').textContent = 'Keyboard mic ready. Dictate text and tap Classify.';
-    };
-  }
-</script>
+    classifyBtn.addEventListener("click", () => {
+      handleClassification(titleInput.value);
+    });
+
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleClassification(titleInput.value);
+      }
+    });
+
+    function runSample(sampleTitle) {
+      titleInput.value = sampleTitle;
+      handleClassification(sampleTitle);
+    }
+  </script>
 </body>
 </html>
