@@ -279,7 +279,11 @@ async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") 
     
     const txt = await r.text();
     let j;
-    try { j = JSON.parse(txt); } catch { throw Error("Bad Gemini response: " + txt.slice(0, 200)); }
+    try { 
+      j = JSON.parse(txt); 
+    } catch { 
+      throw Error("Bad Gemini response: " + txt.slice(0, 200)); 
+    }
     if (!r.ok) throw Error(j?.error?.message || ("Gemini HTTP " + r.status));
 
     const rawContent = j?.candidates?.[0]?.content?.parts?.map(x => x.text || "").join("");
