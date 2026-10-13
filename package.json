@@ -1,5 +1,5 @@
 {
-  "name": "udc-ddc-stable-reference-classifier",
+  "name": "udc-ddc-accuracy-boost-classifier",
   "version": "127.0.0",
   "type": "module",
   "scripts": {

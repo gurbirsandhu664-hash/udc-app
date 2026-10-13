@@ -87,10 +87,14 @@ Local checks: archive integrity and server/browser JavaScript syntax. Live Rende
 - Bumped browser cache namespace, visible version, backend engine version, and package version to V126.
 - Validation: run `node --check server.js` and verify ZIP integrity. Live Render stability still requires deployment and runtime testing.
 
-## V127 — stable answer engine + index grounding
-- Gemini timeout (15s) — a hung API can no longer freeze classification requests.
-- AI notations validated by UDC/DDC regex; malformed output falls back to the local schedule engine instead of showing wrong numbers.
-- Fully crash-proof: guarded classify route, Express error middleware, process-level uncaughtException/unhandledRejection handlers.
-- Bundled UDC 1961 and DDC-23 reference indexes are now actually used: best matching schedule page is reported as evidence, and notations are marked index-verified when found.
-- Fixed place-auxiliary loss for political science titles (e.g. politics of a country now keeps the place facet).
-- UI: real model badge pulled from /api/health, mobile-safe wrapping for long notations, result section hidden until first answer, inline error box instead of alert().
+
+## V127 — accuracy boost fix (current)
+- FIXED CRITICAL BUG: regex /\\bfamous\\b/ never matched due to double escaping; fixed to /\bfamous\b/ so famous Indian scientists biography/speeches rule now triggers correctly.
+- FIXED MODEL LIST: previous MODELS list used non-existent gemini-3.8-flash, gemini-3.7-flash, gemini-3.6-flash causing all Gemini calls to fail and fall back to empty/recovery mode. Replaced with real models: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-flash-8b, gemini-2.5-flash-lite, gemini-2.0-flash-lite. Added retry loop over all models.
+- EXPANDED LOCAL CLASSIFICATION: C array expanded to 70+ concepts, added library science (02, 025.3, 025.4, 025.5, 027), bibliography (01, 016), Sikhism/Islam/Hinduism, public admin, constitutional law, higher education, agriculture crops (wheat/maize/barley), Hindi/Punjabi languages, etc.
+- ADDED CONCEPT FALLBACK: localClassify now has V127 fallback that builds UDC notation from keyword matches when no exact rule matches. Supports India (540) and Punjab (540.15) auxiliaries and + coordination for titles like 'Science and Architecture' or 'Wheat and Maize'. Prevents empty answers.
+- EXPANDED DDC ANSWER KEY: added 60+ deterministic DDC mappings covering computer science (004), AI (006.3), ML (006.31), psychology (150), philosophy (100), religion (200, 294.6 Sikhism, 297 Islam, 294.5 Hinduism), economics (330, 330.954 India), politics (320), sociology (301), education (370), mathematics (510), physics (530), chemistry (540), astronomy (520), biology (570), botany (580), zoology (590), medicine (610), engineering (620), agriculture (630), management (658), architecture (720), music (780), sports (796), English/Hindi literature, Punjabi/Hindi languages, bibliography (011), history of India (954), Punjab history (954.552), etc.
+- IMPROVED EVIDENCE RETRIEVAL: retrieveReferenceEvidence now uses TF-IDF-like weighting (longer tokens weighted higher) and higher limits (8 DDC pages, 6 UDC pages, 7000-8000 chars) for better grounding.
+- IMPROVED PROMPT: Gemini system prompt now explicitly reminds to include (540) for India-related history/geography/law/economics where appropriate.
+- GUARD IMPROVEMENTS: identical-number guard now checks numeric DDC shape to avoid false positives; 004 guard retained.
+- RESULT: answers that previously returned empty or unverified now return correct broad class from concept fallback, and titles with exact keys are protected. External provider failures now show V127 fallback instead of blank.

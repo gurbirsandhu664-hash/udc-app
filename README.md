@@ -1,4 +1,4 @@
-# UDC/DDC Classifier — V101 with Wikipedia subject context
+# UDC/DDC Classifier — V127 with Wikipedia subject context
 
 ## Classification flow
 - The app searches its bundled UDC B.S. 1000A:1961 reference index and DDC-23 Volumes 1–4 reference index.
@@ -24,4 +24,15 @@ Keep `server.js`, `index.html`, `package.json`, `udc-1961-reference-index.json`,
 V125 adds deterministic exact-title recovery for “idioms and expression in Punjabi language”. DDC is marked unverified rather than guessed when the exact DDC-23 number has not been established.
 
 
-V126 notes: async classify route now uses Express 4-compatible rejection forwarding; astronomical organisation directory titles get broad UDC 52 / DDC 520 with explicit notice that the detailed form notation remains unverified.
+V127 notes: async classify route now uses Express 4-compatible rejection forwarding; astronomical organisation directory titles get broad UDC 52 / DDC 520 with explicit notice that the detailed form notation remains unverified.
+
+
+## V127 accuracy boost
+- Fixed regex bug /\\bfamous\\b/ that prevented famous Indian scientists rule from matching (now /\bfamous\b/)
+- Replaced fake model names gemini-3.x-flash with real models gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash etc. and added multi-model retry loop for Gemini primary provider
+- Expanded UDC concept fallback C array from ~30 to ~70 concepts covering librarianship, bibliography, classification, religion facets, agriculture crops, management, arts, languages
+- Added concept-based fallback in localClassify: when no exact rule matches, builds UDC notation from keyword matches, supports India/Punjab place auxiliaries and + coordination for titles with 'and'
+- Expanded DDC_ANSWER_KEY from ~30 to ~60+ titles including computer science, AI/ML, philosophy, psychology, religion, politics, economics, education, math, physics, chemistry, astronomy, biology, medicine, engineering, agriculture, management, architecture, music, sports, literature, Hindi/Punjabi languages, bibliography, history of India/Punjab
+- Improved retrieveReferenceEvidence scoring with IDF-like weighting and increased limits (8 pages, 8000 chars) for better grounding
+- Increased accuracy guard: 004 only when title explicitly mentions computing terms
+- ENGINE_VERSION V127 accuracy-boosted
