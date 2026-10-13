@@ -1,5 +1,6 @@
 import express from "express";
 import path from "node:path";
+import https from "node:https";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -207,10 +208,50 @@ function localClassify(title) {
   return null;
 }
 
-async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY environment variable is missing.");
+// Robust HTTPS request to Google Gemini API (bypasses URL parsing issues)
+function callGeminiAPI(payload) {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify(payload);
+    const options = {
+      hostname: "generativelanguage.googleapis.com",
+      port: 443,
+      path: "/v1beta/models/" + DEFAULT_MODEL + ":generateContent",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(postData),
+        "x-goog-api-key": GEMINI_KEY
+      },
+      timeout: 28000
+    };
 
-  const body = {
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", chunk => data += chunk);
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(data);
+        } else {
+          reject(new Error(`API Error HTTP ${res.statusCode}: ${data.slice(0, 300)}`));
+        }
+      });
+    });
+
+    req.on("error", err => reject(err));
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Request timed out after 28 seconds"));
+    });
+
+    req.write(postData);
+    req.end();
+  });
+}
+
+async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") {
+  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY environment variable is not configured.");
+
+  const payload = {
     contents: [{
       role: "user",
       parts: [{
@@ -225,37 +266,18 @@ async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") 
     }
   };
 
-  const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 28000);
+  const rawResponse = await callGeminiAPI(payload);
+  let j;
   try {
-    // Direct, absolute URL
-    const apiUrl = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + encodeURIComponent(DEFAULT_MODEL) + ":generateContent";
-    const r = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_KEY
-      },
-      body: JSON.stringify(body),
-      signal: ac.signal
-    });
-
-    const txt = await r.text();
-    let j;
-    try {
-      j = JSON.parse(txt);
-    } catch {
-      throw Error("Bad Gemini response: " + txt.slice(0, 200));
-    }
-    if (!r.ok) throw Error(j?.error?.message || `Gemini HTTP ${r.status}`);
-
-    const rawContent = j?.candidates?.[0]?.content?.parts?.map(x => x.text || "").join("");
-    const parsed = parseJSON(rawContent);
-    const validated = validate(parsed, title);
-    return { ...validated, engine: "Gemini 2.5 Flash", model: DEFAULT_MODEL, grounded: true };
-  } finally {
-    clearTimeout(tm);
+    j = JSON.parse(rawResponse);
+  } catch {
+    throw Error("Bad Gemini response format: " + rawResponse.slice(0, 200));
   }
+
+  const rawContent = j?.candidates?.[0]?.content?.parts?.map(x => x.text || "").join("");
+  const parsed = parseJSON(rawContent);
+  const validated = validate(parsed, title);
+  return { ...validated, engine: "Gemini 2.5 Flash", model: DEFAULT_MODEL, grounded: true };
 }
 
 app.get("/", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
