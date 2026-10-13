@@ -31,7 +31,7 @@ function loadReferencePages(filePath, label) {
       for (const token of evidenceTokens(page.text)) counts[token] = (counts[token] || 0) + 1;
       page._tokenCounts = counts;
     }
-    console.log(`${label} reference corpus loaded: ${pages.length} pages (${pages.filter(p => String(p.text || "").trim()).length} with text)`);
+    console.log(`${label} reference corpus loaded: ${pages.length} pages`);
     return pages;
   } catch (e) {
     console.error(`${label} reference corpus unavailable:`, e.message);
@@ -41,45 +41,6 @@ function loadReferencePages(filePath, label) {
 
 REFERENCE_PAGES = loadReferencePages(UDC_INDEX_PATH, "UDC B.S. 1000A:1961");
 DDC_REFERENCE_PAGES = loadReferencePages(DDC_INDEX_PATH, "DDC-23 Volumes 1-4");
-
-async function fetchWikipediaEvidence(title) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4500);
-  try {
-    const url = "https://en.wikipedia.org/w/rest.php/v1/search/page?q=" + encodeURIComponent(title) + "&limit=3";
-    const response = await fetch(url, {
-      headers: { "Accept": "application/json", "User-Agent": "UDC-DDC-Classifier/1.0 (supplementary subject-context lookup)" },
-      signal: controller.signal
-    });
-    if (!response.ok) return { text: "", sources: [] };
-    const data = await response.json();
-    const pages = (Array.isArray(data?.pages) ? data.pages : []).slice(0, 3).map(page => {
-      const clean = value => String(value || "").replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
-      const pageUrl = page?.content_urls?.desktop?.page || (page?.key ? "https://en.wikipedia.org/wiki/" + encodeURIComponent(page.key).replace(/%20/g, "_") : "");
-      return { title: clean(page.title), description: clean(page.description), excerpt: clean(page.excerpt), url: pageUrl };
-    }).filter(page => page.title && (page.description || page.excerpt));
-    return {
-      text: pages.map(page => "[Wikipedia subject context: " + page.title + "] " + page.description + " " + page.excerpt + " Source: " + page.url).join("\n").slice(0, 2600),
-      sources: pages.map(page => page.url).filter(Boolean)
-    };
-  } catch {
-    return { text: "", sources: [] };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function withWikipediaSources(result, wikipedia) {
-  const urls = Array.isArray(wikipedia?.sources) ? wikipedia.sources : [];
-  const existing = Array.isArray(result?.sources) ? result.sources : [];
-  return {
-    ...result,
-    sources: [...new Set([...existing, ...urls])].slice(0, 12),
-    wikipedia_subject_context: urls.length > 0
-      ? "Wikipedia was used only as supplementary subject context; classification numbers must be supported by the UDC 1961/DDC-23 schedules or configured exact-title rules."
-      : "Wikipedia lookup unavailable; bundled schedules and configured rules remain the classification references."
-  };
-}
 
 function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6900) {
   const tokens = [...new Set(evidenceTokens(title))];
@@ -98,7 +59,7 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6
     if (score > 0) scored.push({ p, score });
   }
   scored.sort((a, b) => b.score - a.score);
-  const selected = scored.slice(0, limit).map(({ p, score }) => "[" + (p.volume || sourcePrefix) + ", PDF page " + p.page + ", relevance " + score + "]\n" + p.text);
+  const selected = scored.slice(0, limit).map(({ p, score }) => `[${p.volume || sourcePrefix}, Page ${p.page}, score ${score}]\n${p.text}`);
   let out = "";
   for (const block of selected) {
     if (out.length + block.length + 2 > charLimit) break;
@@ -109,16 +70,16 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6
 
 const SUMMARY_BASE = "https://udcsummary.info/php/index.php";
 const UDC_AUTHORITY_EDITION = "B.S. 1000A:1961 — Abridged English Edition, 3rd edition, revised, London";
-const ENGINE_VERSION = "V127 pure Gemini 2.5 Flash + high accuracy classification";
+const ENGINE_VERSION = "V126 exact-title recovery + pure Gemini 2.5 Flash + UDC 1961/DDC-23 separation";
 
 const UDC_RULES = `
-You are an expert Library Science classifier specializing in UDC (B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
+You are an expert Library Science classifier specializing in Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
 Universal Decimal Classification (UDC) is the primary classification. Dewey Decimal Classification (DDC) is secondary.
 RULE 1: NEVER mix UDC notation into DDC, and NEVER mix DDC notation into UDC. Both must be completely independent.
 RULE 2: Preserve the full title and all facets (place, language, form, subject relations).
 RULE 3: UDC uses colon ':' for relations, '+' for coordination, '=' for language, '(0...)' for form, '(1/9)' for place, and quotes '""' for time.
 RULE 4: DDC uses purely numerical notation with a decimal point after the first three digits. Do not put letters or brackets in DDC.
-RULE 5: Strictly ground your classifications in the provided UDC 1961 and DDC-23 schedule excerpts. Do not hallucinate or guess arbitrary numbers.
+RULE 5: Strictly ground your classifications in the provided UDC 1961 and DDC-23 schedule excerpts. Do not hallucinate.
 `;
 
 const DDC_ANSWER_KEY = {
@@ -168,7 +129,7 @@ function norm(s) {
 }
 
 function parseJSON(s) {
-  if (!s) throw Error("Empty AI response");
+  if (!s) throw Error("Empty response");
   s = String(s).replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```\s*$/i, "").trim();
   const a = s.indexOf("{"), b = s.lastIndexOf("}");
   if (a >= 0 && b > a) s = s.slice(a, b + 1);
@@ -225,6 +186,7 @@ function applyNumberMixingGuard(out, title, ddcKeyResult) {
 
 const exact = [
   [/^sobha singh(?:\s*[—-]\s*reproductions?\s+of\s+(?:his\s+)?paintings?|\s+reproductions?\s+of\s+(?:his\s+)?paintings?)$/i, "75(084.1)SOB", "Painting", "Sobha Singh — Reproductions of His Paintings", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
+  [/^sobha singh$/i, "75(084.1)SOB", "Painting", "Sobha Singh", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
   [/^harvesting of wheat and maize$/i, "633.11+633.15:631.55", "Agriculture", "Harvesting of wheat and maize", "633.11 = wheat; 633.15 = maize; 631.55 = harvesting."],
   [/^harvesting of cereals$/i, "633.1:631.55", "Agriculture", "Harvesting of cereals", "633.1 = cereals; 631.55 = harvesting."],
   [/^history of india$/i, "94(540)", "History", "History of India", "94 = General history; (540) = India."]
@@ -246,13 +208,13 @@ function localClassify(title) {
 }
 
 async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY is missing in environment variables.");
-  
+  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY is not configured.");
+
   const body = {
     contents: [{
       role: "user",
       parts: [{
-        text: UDC_RULES + "\nClassify this complete book title: \"" + title + "\".\nDDC-23 Reference Excerpts:\n" + (referenceEvidence || "None supplied.") + "\n\nUDC B.S. 1000A:1961 Reference Excerpts:\n" + (udcReferenceEvidence || "None supplied.") + "\n\nPerform a high-accuracy classification. Provide exact 'udc_number' and 'ddc_number'. JSON format only."
+        text: `${UDC_RULES}\nClassify this book title: "${title}".\nDDC Reference:\n${referenceEvidence || "None"}\n\nUDC Reference:\n${udcReferenceEvidence || "None"}\n\nProvide exact 'udc_number' and 'ddc_number' in JSON.`
       }]
     }],
     generationConfig: {
@@ -266,25 +228,25 @@ async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") 
   const ac = new AbortController();
   const tm = setTimeout(() => ac.abort(), 28000);
   try {
-    const url = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + encodeURIComponent(DEFAULT_MODEL) + ":generateContent";
-    const r = await fetch(url, {
+    const endpoint = new URL(`[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){DEFAULT_MODEL}:generateContent`);
+    const r = await fetch(endpoint.href, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_KEY
       },
       body: JSON.stringify(body),
       signal: ac.signal
     });
-    
+
     const txt = await r.text();
     let j;
-    try { 
-      j = JSON.parse(txt); 
-    } catch { 
-      throw Error("Bad Gemini response: " + txt.slice(0, 200)); 
+    try {
+      j = JSON.parse(txt);
+    } catch {
+      throw Error("Bad Gemini response: " + txt.slice(0, 200));
     }
-    if (!r.ok) throw Error(j?.error?.message || ("Gemini HTTP " + r.status));
+    if (!r.ok) throw Error(j?.error?.message || `Gemini HTTP ${r.status}`);
 
     const rawContent = j?.candidates?.[0]?.content?.parts?.map(x => x.text || "").join("");
     const parsed = parseJSON(rawContent);
@@ -303,7 +265,6 @@ app.get("/api/health", (_, res) => res.json({
   version: ENGINE_VERSION,
   geminiConfigured: !!GEMINI_KEY,
   model: DEFAULT_MODEL,
-  groqRemoved: true,
   bundledUDCReferencePages: REFERENCE_PAGES.length,
   bundledDdcReferencePages: DDC_REFERENCE_PAGES.length
 }));
@@ -321,16 +282,13 @@ app.post("/api/classify", safeAsync(async (req, res) => {
     return res.json(lc);
   }
 
-  const [bundledDDC, bundledUDC, wikipedia] = await Promise.all([
-    Promise.resolve(retrieveReferenceEvidence(title, "DDC", 5, 5000)),
-    Promise.resolve(retrieveReferenceEvidence(title, "UDC", 4, 3500)),
-    fetchWikipediaEvidence(title)
-  ]);
+  const bundledDDC = retrieveReferenceEvidence(title, "DDC", 5, 5000);
+  const bundledUDC = retrieveReferenceEvidence(title, "UDC", 4, 3500);
 
   try {
     const out = await gemini(title, bundledDDC, bundledUDC);
     const guarded = applyNumberMixingGuard(out, title, dk);
-    return res.json(withWikipediaSources(guarded, wikipedia));
+    return res.json(guarded);
   } catch (err) {
     console.error("Gemini Error:", err.message);
     return res.status(500).json({
@@ -341,4 +299,4 @@ app.post("/api/classify", safeAsync(async (req, res) => {
   }
 }));
 
-app.listen(PORT, () => console.log("Classifier running on port " + PORT + " using " + DEFAULT_MODEL));
+app.listen(PORT, () => console.log(`Classifier running on port ${PORT} using ${DEFAULT_MODEL}`));
