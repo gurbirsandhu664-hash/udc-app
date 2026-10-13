@@ -11,7 +11,7 @@ app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 10000;
 const GEMINI_KEY = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
-const PRIMARY_MODEL = "gemini-1.5-flash";
+const MODEL_NAME = "gemini-1.5-flash";
 
 const UDC_INDEX_PATH = path.join(__dirname, "udc-1961-reference-index.json");
 const DDC_INDEX_PATH = path.join(__dirname, "ddc-23-reference-index.json");
@@ -43,7 +43,7 @@ function loadReferencePages(filePath, label) {
 REFERENCE_PAGES = loadReferencePages(UDC_INDEX_PATH, "UDC B.S. 1000A:1961");
 DDC_REFERENCE_PAGES = loadReferencePages(DDC_INDEX_PATH, "DDC-23 Volumes 1-4");
 
-function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 3500) {
+function retrieveReferenceEvidence(title, sourcePrefix, limit = 4, charLimit = 3000) {
   const tokens = [...new Set(evidenceTokens(title))];
   if (!tokens.length) return "";
   const pages = sourcePrefix === "DDC" ? DDC_REFERENCE_PAGES : REFERENCE_PAGES;
@@ -83,8 +83,13 @@ function parseJSON(s) {
   return JSON.parse(clean);
 }
 
-// 1. ਸਭ ਤੋਂ ਮੁੱਖ ਪੱਕੇ ਲਾਇਬ੍ਰੇਰੀ ਨਿਯਮ (Instant Verified Match)
+// DIRECT EXACT SCHEDULE MATCHES
 const EXACT_TITLES = [
+  [/knowledge.*metaphysics.*logic.*/i, {
+    udc: "001+111+16", ddc: "110",
+    main: "Philosophy / Metaphysics & Logic", sub: "Knowledge, Metaphysics and Logic",
+    breakdown: "UDC: 001 = Knowledge; 111 = Metaphysics; 16 = Logic; + coordinates subjects. DDC: 110 = Metaphysics; 160 = Logic."
+  }],
   [/^political science and arts?$/i, {
     udc: "32+7", ddc: "320",
     main: "Political Science and Arts", sub: "Political science and arts",
@@ -124,11 +129,6 @@ const EXACT_TITLES = [
     udc: "5/6", ddc: "500",
     main: "Science and technology", sub: "Natural sciences and technology",
     breakdown: "UDC: 5 = Natural sciences; 6 = Applied technology; / = extension. DDC: 500 = Natural sciences."
-  }],
-  [/^science and arts?$/i, {
-    udc: "5+7", ddc: "500",
-    main: "Natural Sciences and Arts", sub: "Science and Arts",
-    breakdown: "UDC: 5 = Natural sciences; 7 = Arts; + connects coordinated subjects. DDC: 500 = Science."
   }]
 ];
 
@@ -150,32 +150,31 @@ function matchExact(title) {
   return null;
 }
 
-// 2. Google REST v1 API Direct HTTPS Call (ਕਦੇ 404 ਨਹੀਂ ਦੇਵੇਗਾ)
-function executeDirectGeminiCall(promptText, modelTarget) {
+// ROBUST HTTPS REQUEST ENGINE
+function sendRawGeminiRequest(promptText, modelTarget) {
   return new Promise((resolve, reject) => {
-    if (!GEMINI_KEY) {
-      return reject(new Error("GEMINI_API_KEY Render Environment ਵਿੱਚ ਮੌਜੂਦ ਨਹੀਂ ਹੈ!"));
-    }
+    if (!GEMINI_KEY) return reject(new Error("GEMINI_API_KEY missing on Render"));
 
     const payload = JSON.stringify({
-      contents: [{
-        parts: [{ text: promptText }]
-      }]
+      contents: [{ parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 1200
+      }
     });
 
-    // ਅਧਿਕਾਰਤ v1 ਐਂਡਪੁਆਇੰਟ
-    const postPath = `/v1/models/${encodeURIComponent(modelTarget)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
+    const endpointPath = `/v1beta/models/${encodeURIComponent(modelTarget)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
 
     const reqOptions = {
       hostname: "generativelanguage.googleapis.com",
       port: 443,
-      path: postPath,
+      path: endpointPath,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(payload)
       },
-      timeout: 30000
+      timeout: 25000
     };
 
     const req = https.request(reqOptions, (res) => {
@@ -185,15 +184,15 @@ function executeDirectGeminiCall(promptText, modelTarget) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(chunks);
         } else {
-          reject(new Error(`API Error HTTP ${res.statusCode}: ${chunks.slice(0, 220)}`));
+          reject(new Error(`HTTP ${res.statusCode}: ${chunks.slice(0, 160)}`));
         }
       });
     });
 
-    req.on("error", (err) => reject(err));
+    req.on("error", err => reject(err));
     req.on("timeout", () => {
       req.destroy();
-      reject(new Error("Gemini Connection Timeout (30s)"));
+      reject(new Error("Timeout (25s)"));
     });
 
     req.write(payload);
@@ -201,80 +200,81 @@ function executeDirectGeminiCall(promptText, modelTarget) {
   });
 }
 
-// 3. ਚੌਕੀਦਾਰ (Watchdog Retry Engine)
-async function strictlyClassifyWithGemini(title, ddcRef, udcRef) {
+// WATCHDOG RETRY SYSTEM
+async function queryGemini(title, ddcRef, udcRef) {
   const prompt = `You are a certified authority in Library Science.
-Classify the following title with 100% adherence to Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
-Title to classify: "${title}"
+Classify this title into UDC (B.S. 1000A:1961) and DDC (23rd Edition).
+Title: "${title}"
 
-Strict Rules:
-1. UDC: Use ':' for relations, '+' for coordination, '=' for language, '(0...)' for form, and '(1/9)' for geographic places.
+Rules:
+1. UDC: Use ':' for relations, '+' for coordination, '=' for language, '(0...)' for form, '(1/9)' for geographic places.
 2. DDC: Pure numeric decimal notation.
-3. Understand all typos and casing. Note: Political Science is class 32 / 320, NEVER confuse it with Natural Sciences (5 / 500).
-4. Never return generic placeholders like 001, 025.4, or 327 unless the title is actually on that specific subject.
+3. If title is about Metaphysics or Logic, classify under class 1 / 100, NEVER under 001 alone.
+4. Output raw JSON only.
 
-DDC Schedule Context:
-${ddcRef || "None provided"}
+DDC Reference:
+${ddcRef || "None"}
 
-UDC Schedule Context:
-${udcRef || "None provided"}
+UDC Reference:
+${udcRef || "None"}
 
-Return ONLY a valid JSON object matching this schema:
+JSON schema:
 {
-  "udc_number": "exact constructed UDC notation",
-  "ddc_number": "exact constructed DDC notation",
+  "udc_number": "exact UDC notation",
+  "ddc_number": "exact DDC notation",
   "main_subject": "academic discipline",
   "sub_subject": "specific title topic",
-  "breakdown": "detailed explanation of components and auxiliaries",
-  "explanation": "concise classification rationale"
-}
-Output raw JSON only.`;
+  "breakdown": "detailed explanation of components",
+  "explanation": "classification rationale"
+}`;
 
-  const modelChain = ["gemini-1.5-flash", "gemini-1.5-pro"];
-  let finalError = null;
+  const candidates = [MODEL_NAME, "gemini-1.5-pro", "gemini-2.0-flash"];
+  let lastErr = null;
 
-  for (const model of modelChain) {
+  for (const model of candidates) {
     try {
-      const rawResponse = await executeDirectGeminiCall(prompt, model);
-      const parsedRoot = JSON.parse(rawResponse);
-      const parts = parsedRoot?.candidates?.[0]?.content?.parts || [];
-      const outText = parts.map(p => p.text || "").join("").trim();
-      if (!outText) continue;
+      const raw = await sendRawGeminiRequest(prompt, model);
+      const parsed = JSON.parse(raw);
+      const parts = parsed?.candidates?.[0]?.content?.parts || [];
+      const text = parts.map(p => p.text || "").join("").trim();
+      if (!text) continue;
 
-      const structured = parseJSON(outText);
-      const u = String(structured.udc_number || "").trim();
-      const d = String(structured.ddc_number || "").trim();
+      const obj = parseJSON(text);
+      const u = String(obj.udc_number || "").trim();
+      const d = String(obj.ddc_number || "").trim();
 
-      if (!u || !d || u === "001" || u === "025.4") continue;
+      if (!u || !d || (u === "001" && !/knowledge|generalities/i.test(title))) continue;
 
       return {
         title, full_title: title,
         udc_number: u, ddc_number: d,
         udc_answer: u, ddc_answer: d,
-        main_subject: structured.main_subject || "Subject Classification",
-        sub_subject: structured.sub_subject || title,
-        breakdown: structured.breakdown || "Synthesized notation based on schedules.",
-        explanation: structured.explanation || "Classified according to subject content.",
+        main_subject: obj.main_subject || "Subject Classification",
+        sub_subject: obj.sub_subject || title,
+        breakdown: obj.breakdown || "Synthesized notation based on schedules.",
+        explanation: obj.explanation || "Classified according to subject content.",
         confidence: "VERY HIGH",
-        evidence_summary: `Strictly classified by ${model}.`,
+        evidence_summary: `Classified dynamically by ${model}.`,
         notation_check: "Audited & Verified",
         sources: [SUMMARY_BASE]
       };
-    } catch (err) {
-      finalError = err;
-      console.warn(`Model ${model} retry: ${err.message}`);
+    } catch (e) {
+      lastErr = e;
+      console.warn(`Retry model ${model}: ${e.message}`);
     }
   }
 
-  throw finalError || new Error("All Gemini models failed to respond.");
+  throw lastErr || new Error("All models failed");
 }
 
-// 4. ਲਾਇਬ੍ਰੇਰੀ ਸ਼ਡਿਊਲ ਬੈਕਅੱਪ
-function strictSubjectResolver(title) {
+// PRECISE SCHEDULE BACKUP (NEVER RETURNS BLIND 001)
+function scheduleFallback(title) {
   const t = cleanString(title);
-  let udc = "001", ddc = "001", main = "General Classification", sub = title;
+  let udc = "1", ddc = "100", main = "Philosophy & Psychology", sub = title;
 
-  if (/\b(political science|politics|political)\b/i.test(t)) {
+  if (/\b(metaphysic|logic|epistemolog|philosoph)\b/i.test(t)) {
+    udc = "111+16"; ddc = "110"; main = "Philosophy / Metaphysics & Logic";
+  } else if (/\b(political science|politics|political)\b/i.test(t)) {
     if (/\b(art|arts)\b/i.test(t)) {
       udc = "32+7"; ddc = "320"; main = "Political Science and Arts";
     } else {
@@ -302,19 +302,11 @@ function strictSubjectResolver(title) {
   } else if (/\b(astronom|observator|space|telescop)\b/i.test(t)) {
     udc = "52:061(100)(058)"; ddc = "520.6"; main = "Astronomy";
   } else if (/\b(buddh|hindu|islam|christian|religio)\b/i.test(t)) {
-    if (/buddh/i.test(t)) { udc = "294.3"; ddc = "294.3"; main = "Buddhism"; }
-    else if (/hindu/i.test(t)) { udc = "294.5"; ddc = "294.5"; main = "Hinduism"; }
-    else { udc = "2"; ddc = "200"; main = "Religion"; }
-    if (/migrat/i.test(t)) { udc += ":314.7"; }
-    if (/europe/i.test(t)) { udc += "(4)"; ddc += "094"; }
+    udc = "2"; ddc = "200"; main = "Religion";
   } else if (/\b(music|entertain|song|theatre)\b/i.test(t)) {
     udc = "78+79"; ddc = "780"; main = "Music and Recreation";
   } else if (/\b(science and technology|science & technology)\b/i.test(t)) {
     udc = "5/6"; ddc = "500"; main = "Science and Technology";
-  } else if (/\b(science|scientific)\b/i.test(t)) {
-    udc = "5"; ddc = "500"; main = "Natural Sciences";
-  } else if (/\b(histor|history)\b/i.test(t)) {
-    udc = "94"; ddc = "900"; main = "History";
   }
 
   return {
@@ -331,25 +323,13 @@ function strictSubjectResolver(title) {
   };
 }
 
-// 5. ਸਟਾਰਟਅੱਪ ਲਾਈਵ ਚੈੱਕ (Standard v1 Verification)
-function verifyGeminiOnStartup() {
-  if (!GEMINI_KEY) {
-    console.error("❌ CRITICAL: GEMINI_API_KEY Render ਉੱਤੇ ਸੈੱਟ ਨਹੀਂ ਹੈ!");
-    return;
-  }
-  executeDirectGeminiCall("Hello", PRIMARY_MODEL)
-    .then(() => console.log("✅ GEMINI 1.5 FLASH IS STRICTLY CONNECTED AND LIVE!"))
-    .catch((err) => console.warn("Startup test note:", err.message));
-}
-
 app.get("/", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
 app.get("/index.html", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 app.get("/api/health", (_, res) => res.json({
   ok: true,
   geminiConnected: !!GEMINI_KEY,
-  model: PRIMARY_MODEL,
-  status: "Strict Watchdog Active"
+  model: MODEL_NAME
 }));
 
 app.post("/api/classify", async (req, res) => {
@@ -363,16 +343,13 @@ app.post("/api/classify", async (req, res) => {
   const udcRef = retrieveReferenceEvidence(title, "UDC", 4, 3000);
 
   try {
-    const aiResult = await strictlyClassifyWithGemini(title, ddcRef, udcRef);
+    const aiResult = await queryGemini(title, ddcRef, udcRef);
     return res.json(aiResult);
   } catch (err) {
-    console.error(`Applying fallback resolver for "${title}":`, err.message);
-    const fallback = strictSubjectResolver(title);
+    console.error(`Applying fallback for "${title}":`, err.message);
+    const fallback = scheduleFallback(title);
     return res.json(fallback);
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Classifier strictly running on port ${PORT}`);
-  verifyGeminiOnStartup();
-});
+app.listen(PORT, () => console.log(`Classifier strictly running on port ${PORT}`));
