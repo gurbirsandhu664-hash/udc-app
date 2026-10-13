@@ -11,7 +11,7 @@ app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 10000;
 const GEMINI_KEY = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
-const PRIMARY_MODEL = "gemini-2.0-flash";
+const PRIMARY_MODEL = "gemini-1.5-flash";
 
 const UDC_INDEX_PATH = path.join(__dirname, "udc-1961-reference-index.json");
 const DDC_INDEX_PATH = path.join(__dirname, "ddc-23-reference-index.json");
@@ -150,7 +150,7 @@ function matchExact(title) {
   return null;
 }
 
-// 2. HTTPS ਜੈਮਿਨੀ ਡਿਸਪੈਚਰ
+// 2. ਸ਼ੁੱਧ ਅਧਿਕਾਰਤ HTTPS ਜੈਮਿਨੀ ਡਿਸਪੈਚਰ (ਵੈਲਿਡ Payload ਅਤੇ ਸਹੀ URL)
 function executeDirectGeminiCall(promptText, modelTarget) {
   return new Promise((resolve, reject) => {
     if (!GEMINI_KEY) {
@@ -158,15 +158,12 @@ function executeDirectGeminiCall(promptText, modelTarget) {
     }
 
     const payload = JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: promptText }] }],
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: "application/json",
-        maxOutputTokens: 1500
-      }
+      contents: [{
+        parts: [{ text: promptText }]
+      }]
     });
 
-    const postPath = `/v1beta/models/${encodeURIComponent(modelTarget)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
+    const postPath = `/v1beta/models/${modelTarget}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
 
     const reqOptions = {
       hostname: "generativelanguage.googleapis.com",
@@ -203,7 +200,7 @@ function executeDirectGeminiCall(promptText, modelTarget) {
   });
 }
 
-// 3. ਐਕਟਿਵ ਚੌਕੀਦਾਰ (Active Watchdog)
+// 3. ਐਕਟਿਵ ਚੌਕੀਦਾਰ (Watchdog Retry Pipeline)
 async function strictlyClassifyWithGemini(title, ddcRef, udcRef) {
   const prompt = `You are a certified authority in Library Science.
 Classify the following title with 100% adherence to Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
@@ -229,9 +226,10 @@ Return ONLY a valid JSON object matching this schema:
   "sub_subject": "specific title topic",
   "breakdown": "detailed explanation of components and auxiliaries",
   "explanation": "concise classification rationale"
-}`;
+}
+Output raw JSON only. Do not wrap in markdown tags if possible.`;
 
-  const modelChain = ["gemini-2.0-flash", "gemini-1.5-flash"];
+  const modelChain = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"];
   let finalError = null;
 
   for (const model of modelChain) {
@@ -332,14 +330,14 @@ function strictSubjectResolver(title) {
   };
 }
 
-// 5. ਸਟਾਰਟਅੱਪ ਕਨੈਕਸ਼ਨ ਟੈਸਟ
+// 5. ਸਟਾਰਟਅੱਪ ਕਨੈਕਸ਼ਨ ਟੈਸਟ (ਸਹੀ Prompt Text ਨਾਲ)
 function verifyGeminiOnStartup() {
   if (!GEMINI_KEY) {
     console.error("❌ CRITICAL: GEMINI_API_KEY missing!");
     return;
   }
-  executeDirectGeminiCall('{"ping": "test"}', PRIMARY_MODEL)
-    .then(() => console.log("✅ GEMINI 2.0 FLASH IS STRICTLY CONNECTED AND LIVE!"))
+  executeDirectGeminiCall("ping", PRIMARY_MODEL)
+    .then(() => console.log("✅ GEMINI API IS STRICTLY CONNECTED AND LIVE!"))
     .catch((err) => console.warn("Startup ping note:", err.message));
 }
 
