@@ -70,7 +70,7 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6
 
 const SUMMARY_BASE = "https://udcsummary.info/php/index.php";
 const UDC_AUTHORITY_EDITION = "B.S. 1000A:1961 — Abridged English Edition, 3rd edition, revised, London";
-const ENGINE_VERSION = "V126 exact-title recovery + pure Gemini 2.5 Flash + UDC 1961/DDC-23 separation";
+const ENGINE_VERSION = "V126 pure Gemini 2.5 Flash + high accuracy";
 
 const UDC_RULES = `
 You are an expert Library Science classifier specializing in Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
@@ -208,7 +208,7 @@ function localClassify(title) {
 }
 
 async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY is not configured.");
+  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY environment variable is missing.");
 
   const body = {
     contents: [{
@@ -228,8 +228,9 @@ async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") 
   const ac = new AbortController();
   const tm = setTimeout(() => ac.abort(), 28000);
   try {
-    const endpoint = new URL(`[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){DEFAULT_MODEL}:generateContent`);
-    const r = await fetch(endpoint.href, {
+    // Direct, absolute URL
+    const apiUrl = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + encodeURIComponent(DEFAULT_MODEL) + ":generateContent";
+    const r = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
