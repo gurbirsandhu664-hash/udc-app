@@ -72,11 +72,13 @@ const SUMMARY_BASE = "https://udcsummary.info/php/index.php";
 const ENGINE_VERSION = "V126 pure Gemini 2.5 Flash High Accuracy";
 
 const UDC_RULES = `
-You are an expert Library Science classifier for UDC (B.S. 1000A:1961) and DDC 23rd Edition.
-UDC is primary, DDC is secondary.
-RULE 1: Never mix UDC with DDC. Keep them completely separate.
-RULE 2: For composite titles like "Science and Arts", use UDC '+' coordination: 5+7. For DDC use 500 or 700.
-RULE 3: Return exact accurate numbers matching the subject of the title. Do not return 025.4 unless the title is actually about classification.
+You are an expert Library Science classifier specializing in UDC (B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
+Universal Decimal Classification (UDC) is primary. Dewey Decimal Classification (DDC) is secondary.
+RULE 1: Never mix UDC into DDC, and never mix DDC into UDC. Keep them completely separate.
+RULE 2: Preserve the full title and substantive concepts (place, language, form, topic, history).
+RULE 3: UDC uses colon ':' for relations, '+' for coordination, '=' for language, '(0...)' for form, '(1/9)' for place, and quotes '""' for time.
+RULE 4: DDC uses purely numeric decimal notation (digits with a single decimal point after 3 digits).
+RULE 5: Provide realistic, professional, accurate UDC and DDC classifications for every title. Never return blank or empty strings.
 `;
 
 const schema = {
@@ -108,9 +110,11 @@ function parseJSON(s) {
   return JSON.parse(s);
 }
 
+// Fixed titles for instant zero-latency match
 const exact = [
-  [/^science and arts?$/i, "5+7", "500 or 700", "Natural Sciences and Arts", "Science and Arts", "UDC: 5 = Mathematics and natural sciences; 7 = The arts; + connects two coordinated subjects. DDC: 500 (Science) or 700 (Arts)."],
-  [/^sobha singh(?:\s*[—-]\s*reproductions?\s+of\s+(?:his\s+)?paintings?|\s+reproductions?\s+of\s+(?:his\s+)?paintings?)$/i, "75(084.1)SOB", "759.954", "Painting", "Sobha Singh — Reproductions of His Paintings", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
+  [/^famous scientists? of india.*(?:speeches|research|life).*$/i, "5.007(540)(042)", "509.2", "Natural sciences / Scientists", "Famous scientists of India — speeches on their life and research", "UDC: 5 = Natural sciences; 5.007 = Scientists generally; (540) = India; (042) = Speeches/lectures. DDC: 509.2 = Biography of scientists."],
+  [/^science and arts?$/i, "5+7", "500", "Natural Sciences and Arts", "Science and Arts", "UDC: 5 = Natural sciences; 7 = Arts; + indicates coordination. DDC: 500 = Science (or 700 = Arts)."],
+  [/^sobha singh.*reproductions?.*$/i, "75(084.1)SOB", "759.954", "Painting", "Sobha Singh — Reproductions of His Paintings", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
   [/^sobha singh$/i, "75(084.1)SOB", "759.954", "Painting", "Sobha Singh", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
   [/^harvesting of wheat and maize$/i, "633.11+633.15:631.55", "633.11", "Agriculture", "Harvesting of wheat and maize", "633.11 = wheat; 633.15 = maize; 631.55 = harvesting."],
   [/^harvesting of cereals$/i, "633.1:631.55", "633.1", "Agriculture", "Harvesting of cereals", "633.1 = cereals; 631.55 = harvesting."],
@@ -136,7 +140,7 @@ function localMatch(title) {
 }
 
 async function geminiCall(title, ddcRef, udcRef) {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY environment variable missing");
+  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY is not set in Render environment variables.");
 
   const endpoint = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){DEFAULT_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
 
@@ -144,14 +148,23 @@ async function geminiCall(title, ddcRef, udcRef) {
     contents: [{
       role: "user",
       parts: [{
-        text: `${UDC_RULES}\nBook Title: "${title}"\nDDC Schedule References:\n${ddcRef || "None"}\n\nUDC Schedule References:\n${udcRef || "None"}\nReturn valid JSON matching the exact subject.`
+        text: `${UDC_RULES}
+Classify the following book title accurately: "${title}".
+
+DDC Schedule Reference Evidence:
+${ddcRef || "None"}
+
+UDC Schedule Reference Evidence:
+${udcRef || "None"}
+
+Generate accurate UDC and DDC numbers. Return strictly in JSON according to schema.`
       }]
     }],
     generationConfig: {
-      temperature: 0.0,
+      temperature: 0.1,
       responseMimeType: "application/json",
       responseSchema: schema,
-      maxOutputTokens: 1200
+      maxOutputTokens: 1500
     }
   };
 
@@ -163,11 +176,17 @@ async function geminiCall(title, ddcRef, udcRef) {
 
   const txt = await response.text();
   if (!response.ok) {
-    throw new Error(`Gemini API HTTP ${response.status}: ${txt.slice(0, 200)}`);
+    console.error("Gemini API Error Response:", txt);
+    throw new Error(`Gemini API Error HTTP ${response.status}`);
   }
 
   const resJson = JSON.parse(txt);
-  const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  // Robustly extract all parts of response text
+  const parts = resJson?.candidates?.[0]?.content?.parts || [];
+  const rawText = parts.map(p => p.text || "").join("");
+  if (!rawText) throw new Error("Gemini returned an empty candidate text.");
+
   const parsed = parseJSON(rawText);
 
   return {
@@ -195,21 +214,24 @@ app.post("/api/classify", async (req, res) => {
   const title = String(req.body?.title || "").trim();
   if (!title) return res.status(400).json({ error: "Title required" });
 
+  // 1. Check exact pre-verified titles
   const exactHit = localMatch(title);
   if (exactHit) return res.json(exactHit);
 
+  // 2. Fetch schedule reference evidence from bundled indexes
   const bundledDDC = retrieveReferenceEvidence(title, "DDC", 4, 3000);
   const bundledUDC = retrieveReferenceEvidence(title, "UDC", 4, 3000);
 
+  // 3. Dynamic call to Gemini 2.5 Flash
   try {
     const aiResult = await geminiCall(title, bundledDDC, bundledUDC);
     return res.json(aiResult);
   } catch (err) {
-    console.error("Gemini Classification Error:", err.message);
+    console.error("Gemini Execution Error:", err.message);
     return res.status(500).json({
-      error: `Classification error: ${err.message}`
+      error: `Classification error: ${err.message}. Please verify GEMINI_API_KEY in Render.`
     });
   }
 });
 
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`Classifier running on port ${PORT} using ${DEFAULT_MODEL}`));
