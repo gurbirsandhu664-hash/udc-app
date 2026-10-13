@@ -11,7 +11,7 @@ app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 10000;
 const GEMINI_KEY = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
-const PRIMARY_MODEL = "gemini-2.5-flash";
+const PRIMARY_MODEL = "gemini-2.0-flash";
 
 const UDC_INDEX_PATH = path.join(__dirname, "udc-1961-reference-index.json");
 const DDC_INDEX_PATH = path.join(__dirname, "ddc-23-reference-index.json");
@@ -83,7 +83,7 @@ function parseJSON(s) {
   return JSON.parse(clean);
 }
 
-// 1. ਸਭ ਤੋਂ ਮੁੱਖ ਪੱਕੇ ਲਾਇਬ੍ਰੇਰੀ ਨਿਯਮ (Instant Verified Match)
+// 1. ਸਭ ਤੋਂ ਮੁੱਖ ਪੱਕੇ ਲਾਇਬ੍ਰੇਰੀ ਨਿਯਮ
 const EXACT_TITLES = [
   [/^political science and arts?$/i, {
     udc: "32+7", ddc: "320",
@@ -150,10 +150,12 @@ function matchExact(title) {
   return null;
 }
 
-// 2. ਸ਼ੁੱਧ ਡਾਇਰੈਕਟ HTTPS ਜੈਮਿਨੀ ਕਾਲ (Strict Dispatcher)
+// 2. HTTPS ਜੈਮਿਨੀ ਡਿਸਪੈਚਰ
 function executeDirectGeminiCall(promptText, modelTarget) {
   return new Promise((resolve, reject) => {
-    if (!GEMINI_KEY) return reject(new Error("GEMINI_API_KEY is not defined on Render."));
+    if (!GEMINI_KEY) {
+      return reject(new Error("GEMINI_API_KEY is not defined on Render."));
+    }
 
     const payload = JSON.stringify({
       contents: [{ role: "user", parts: [{ text: promptText }] }],
@@ -201,7 +203,7 @@ function executeDirectGeminiCall(promptText, modelTarget) {
   });
 }
 
-// 3. ਐਕਟਿਵ ਚੌਕੀਦਾਰ (Watchdog Retry Pipeline)
+// 3. ਐਕਟਿਵ ਚੌਕੀਦਾਰ (Active Watchdog)
 async function strictlyClassifyWithGemini(title, ddcRef, udcRef) {
   const prompt = `You are a certified authority in Library Science.
 Classify the following title with 100% adherence to Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
@@ -229,7 +231,7 @@ Return ONLY a valid JSON object matching this schema:
   "explanation": "concise classification rationale"
 }`;
 
-  const modelChain = [PRIMARY_MODEL, "gemini-2.0-flash", "gemini-1.5-flash"];
+  const modelChain = ["gemini-2.0-flash", "gemini-1.5-flash"];
   let finalError = null;
 
   for (const model of modelChain) {
@@ -268,21 +270,18 @@ Return ONLY a valid JSON object matching this schema:
   throw finalError || new Error("All Gemini models failed to respond.");
 }
 
-// 4. ਅਸਲ ਲਾਇਬ੍ਰੇਰੀ ਸ਼ਡਿਊਲ ਇੰਜਣ (ਗਲਤੀਆਂ ਤੋਂ ਮੁਕਤ ਪ੍ਰਾਥਮਿਕਤਾ)
+// 4. ਲਾਇਬ੍ਰੇਰੀ ਸ਼ਡਿਊਲ ਬੈਕਅੱਪ
 function strictSubjectResolver(title) {
   const t = cleanString(title);
   let udc = "001", ddc = "001", main = "General Classification", sub = title;
 
-  // 1. Political Science must precede Science
   if (/\b(political science|politics|political)\b/i.test(t)) {
     if (/\b(art|arts)\b/i.test(t)) {
       udc = "32+7"; ddc = "320"; main = "Political Science and Arts";
     } else {
       udc = "32"; ddc = "320"; main = "Political Science";
     }
-  }
-  // 2. Migration & Demography
-  else if (/\b(migrat|emigrat|immigrat|refugee)\b/i.test(t)) {
+  } else if (/\b(migrat|emigrat|immigrat|refugee)\b/i.test(t)) {
     let uPlace = "";
     let dPlace = "";
     if (/india/i.test(t) && /(usa|united states|america)/i.test(t)) {
@@ -293,9 +292,7 @@ function strictSubjectResolver(title) {
     udc = "325.2" + uPlace;
     ddc = "304" + (dPlace || "");
     main = "Demography / Migration";
-  }
-  // 3. Foreign Relations
-  else if (/\b(fore?i?gn? relation|international relation|foreign policy)\b/i.test(t)) {
+  } else if (/\b(fore?i?gn? relation|international relation|foreign policy)\b/i.test(t)) {
     let uPlace = "";
     let dPlace = "";
     if (/italy/i.test(t) && /pakistan/i.test(t)) { uPlace = "(450:549)"; dPlace = ".450549"; }
@@ -303,31 +300,21 @@ function strictSubjectResolver(title) {
     udc = "327" + uPlace;
     ddc = "327" + (dPlace || "");
     main = "International Relations";
-  }
-  // 4. Astronomy
-  else if (/\b(astronom|observator|space|telescop)\b/i.test(t)) {
+  } else if (/\b(astronom|observator|space|telescop)\b/i.test(t)) {
     udc = "52:061(100)(058)"; ddc = "520.6"; main = "Astronomy";
-  }
-  // 5. Religions
-  else if (/\b(buddh|hindu|islam|christian|religio)\b/i.test(t)) {
+  } else if (/\b(buddh|hindu|islam|christian|religio)\b/i.test(t)) {
     if (/buddh/i.test(t)) { udc = "294.3"; ddc = "294.3"; main = "Buddhism"; }
     else if (/hindu/i.test(t)) { udc = "294.5"; ddc = "294.5"; main = "Hinduism"; }
     else { udc = "2"; ddc = "200"; main = "Religion"; }
     if (/migrat/i.test(t)) { udc += ":314.7"; }
     if (/europe/i.test(t)) { udc += "(4)"; ddc += "094"; }
-  }
-  // 6. Music & Arts
-  else if (/\b(music|entertain|song|theatre)\b/i.test(t)) {
+  } else if (/\b(music|entertain|song|theatre)\b/i.test(t)) {
     udc = "78+79"; ddc = "780"; main = "Music and Recreation";
-  }
-  // 7. Pure Sciences & Technology
-  else if (/\b(science and technology|science & technology)\b/i.test(t)) {
+  } else if (/\b(science and technology|science & technology)\b/i.test(t)) {
     udc = "5/6"; ddc = "500"; main = "Science and Technology";
-  }
-  else if (/\b(science|scientific)\b/i.test(t)) {
+  } else if (/\b(science|scientific)\b/i.test(t)) {
     udc = "5"; ddc = "500"; main = "Natural Sciences";
-  }
-  else if (/\b(histor|history)\b/i.test(t)) {
+  } else if (/\b(histor|history)\b/i.test(t)) {
     udc = "94"; ddc = "900"; main = "History";
   }
 
@@ -345,14 +332,14 @@ function strictSubjectResolver(title) {
   };
 }
 
-// 5. Startup Connection Test
+// 5. ਸਟਾਰਟਅੱਪ ਕਨੈਕਸ਼ਨ ਟੈਸਟ
 function verifyGeminiOnStartup() {
   if (!GEMINI_KEY) {
     console.error("❌ CRITICAL: GEMINI_API_KEY missing!");
     return;
   }
   executeDirectGeminiCall('{"ping": "test"}', PRIMARY_MODEL)
-    .then(() => console.log("✅ GEMINI 2.5 FLASH IS STRICTLY CONNECTED AND LIVE!"))
+    .then(() => console.log("✅ GEMINI 2.0 FLASH IS STRICTLY CONNECTED AND LIVE!"))
     .catch((err) => console.warn("Startup ping note:", err.message));
 }
 
