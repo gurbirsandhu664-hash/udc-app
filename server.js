@@ -46,7 +46,7 @@ async function fetchWikipediaEvidence(title) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
-    const url = `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(title)}&limit=3`;
+    const url = "https://en.wikipedia.org/w/rest.php/v1/search/page?q=" + encodeURIComponent(title) + "&limit=3";
     const response = await fetch(url, {
       headers: { "Accept": "application/json", "User-Agent": "UDC-DDC-Classifier/1.0 (supplementary subject-context lookup)" },
       signal: controller.signal
@@ -55,11 +55,11 @@ async function fetchWikipediaEvidence(title) {
     const data = await response.json();
     const pages = (Array.isArray(data?.pages) ? data.pages : []).slice(0, 3).map(page => {
       const clean = value => String(value || "").replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
-      const pageUrl = page?.content_urls?.desktop?.page || (page?.key ? `https://en.wikipedia.org/wiki/${encodeURIComponent(page.key).replace(/%20/g, "_")}` : "");
+      const pageUrl = page?.content_urls?.desktop?.page || (page?.key ? "https://en.wikipedia.org/wiki/" + encodeURIComponent(page.key).replace(/%20/g, "_") : "");
       return { title: clean(page.title), description: clean(page.description), excerpt: clean(page.excerpt), url: pageUrl };
     }).filter(page => page.title && (page.description || page.excerpt));
     return {
-      text: pages.map(page => `[Wikipedia subject context: ${page.title}] ${page.description} ${page.excerpt} Source: ${page.url}`).join("\n").slice(0, 2600),
+      text: pages.map(page => "[Wikipedia subject context: " + page.title + "] " + page.description + " " + page.excerpt + " Source: " + page.url).join("\n").slice(0, 2600),
       sources: pages.map(page => page.url).filter(Boolean)
     };
   } catch {
@@ -98,7 +98,7 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6
     if (score > 0) scored.push({ p, score });
   }
   scored.sort((a, b) => b.score - a.score);
-  const selected = scored.slice(0, limit).map(({ p, score }) => `[${p.volume || sourcePrefix}, PDF page ${p.page}, relevance ${score}]\n${p.text}`);
+  const selected = scored.slice(0, limit).map(({ p, score }) => "[" + (p.volume || sourcePrefix) + ", PDF page " + p.page + ", relevance " + score + "]\n" + p.text);
   let out = "";
   for (const block of selected) {
     if (out.length + block.length + 2 > charLimit) break;
@@ -109,7 +109,7 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6
 
 const SUMMARY_BASE = "https://udcsummary.info/php/index.php";
 const UDC_AUTHORITY_EDITION = "B.S. 1000A:1961 — Abridged English Edition, 3rd edition, revised, London";
-const ENGINE_VERSION = 'V127 pure Gemini 2.5 Flash + high accuracy classification';
+const ENGINE_VERSION = "V127 pure Gemini 2.5 Flash + high accuracy classification";
 
 const UDC_RULES = `
 You are an expert Library Science classifier specializing in UDC (B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
@@ -252,15 +252,7 @@ async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") 
     contents: [{
       role: "user",
       parts: [{
-        text: `${UDC_RULES}
-Classify this complete book title: "${title}".
-DDC-23 Reference Excerpts:
-${referenceEvidence || "None supplied."}
-
-UDC B.S. 1000A:1961 Reference Excerpts:
-${udcReferenceEvidence || "None supplied."}
-
-Perform a high-accuracy classification. Provide exact 'udc_number' and 'ddc_number'. JSON format only.`
+        text: UDC_RULES + "\nClassify this complete book title: \"" + title + "\".\nDDC-23 Reference Excerpts:\n" + (referenceEvidence || "None supplied.") + "\n\nUDC B.S. 1000A:1961 Reference Excerpts:\n" + (udcReferenceEvidence || "None supplied.") + "\n\nPerform a high-accuracy classification. Provide exact 'udc_number' and 'ddc_number'. JSON format only."
       }]
     }],
     generationConfig: {
@@ -274,7 +266,7 @@ Perform a high-accuracy classification. Provide exact 'udc_number' and 'ddc_numb
   const ac = new AbortController();
   const tm = setTimeout(() => ac.abort(), 28000);
   try {
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){encodeURIComponent(DEFAULT_MODEL)}:generateContent`;
+    const url = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + encodeURIComponent(DEFAULT_MODEL) + ":generateContent";
     const r = await fetch(url, {
       method: "POST",
       headers: { 
@@ -287,8 +279,8 @@ Perform a high-accuracy classification. Provide exact 'udc_number' and 'ddc_numb
     
     const txt = await r.text();
     let j;
-    try { j = JSON.parse(txt); } catch { throw Error("Bad Gemini response"); }
-    if (!r.ok) throw Error(j?.error?.message || `Gemini HTTP ${r.status}`);
+    try { j = JSON.parse(txt); } catch { throw Error("Bad Gemini response: " + txt.slice(0, 200)); }
+    if (!r.ok) throw Error(j?.error?.message || ("Gemini HTTP " + r.status));
 
     const rawContent = j?.candidates?.[0]?.content?.parts?.map(x => x.text || "").join("");
     const parsed = parseJSON(rawContent);
@@ -338,11 +330,11 @@ app.post("/api/classify", safeAsync(async (req, res) => {
   } catch (err) {
     console.error("Gemini Error:", err.message);
     return res.status(500).json({
-      error: `Classification failed: ${err.message}`,
+      error: "Classification failed: " + err.message,
       title,
       full_title: title
     });
   }
 }));
 
-app.listen(PORT, () => console.log(`Classifier running on port ${PORT} using ${DEFAULT_MODEL}`));
+app.listen(PORT, () => console.log("Classifier running on port " + PORT + " using " + DEFAULT_MODEL));
