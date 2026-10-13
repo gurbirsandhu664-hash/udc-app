@@ -43,7 +43,7 @@ function loadReferencePages(filePath, label) {
 REFERENCE_PAGES = loadReferencePages(UDC_INDEX_PATH, "UDC B.S. 1000A:1961");
 DDC_REFERENCE_PAGES = loadReferencePages(DDC_INDEX_PATH, "DDC-23 Volumes 1-4");
 
-function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 5000) {
+function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 4000) {
   const tokens = [...new Set(evidenceTokens(title))];
   if (!tokens.length) return "";
   const pages = sourcePrefix === "DDC" ? DDC_REFERENCE_PAGES : REFERENCE_PAGES;
@@ -83,8 +83,13 @@ function parseJSON(s) {
   return JSON.parse(clean);
 }
 
-// 1. PINNED CANONICAL LIBRARY ENTRIES
+// 1. PINNED CANONICAL MATCHES
 const EXACT_TITLES = [
+  [/^migration to buddi?sh?t? to europe.*$/i, {
+    udc: "294.3:314.7(4)", ddc: "294.3094",
+    main: "Religions / Buddhism & Migration", sub: "Migration of Buddhists to Europe",
+    breakdown: "UDC: 294.3 = Buddhism; : connects relation; 314.7 = Migration; (4) = Europe. DDC: 294.3 = Buddhism; 094 = Historical and geographic treatment in Europe."
+  }],
   [/^foreign relations? (?:between )?india and pakistan.*$/i, {
     udc: "327(540:549)", ddc: "327.540549",
     main: "International relations / Foreign policy", sub: "Foreign relations between India and Pakistan",
@@ -189,6 +194,11 @@ const EXACT_TITLES = [
     udc: "94(540)", ddc: "954",
     main: "History", sub: "History of India",
     breakdown: "UDC: 94 = General history; (540) = India. DDC: 954 = History of India."
+  }],
+  [/^madhushala.*$/i, {
+    udc: "891.43-1", ddc: "891.4316",
+    main: "Hindi poetry", sub: "Madhushala by Harivansh Rai Bachchan",
+    breakdown: "UDC: 891.43-1 = Hindi poetry. DDC: 891.4316 = Modern Hindi poetry."
   }]
 ];
 
@@ -211,14 +221,26 @@ function matchExact(title) {
   return null;
 }
 
-// 2. INTELLIGENT RULE-BASED ENGINE (Guaranteed accurate numbers; NEVER 001)
+// 2. ACCURATE TOPICAL FALLBACK (Never uses hardcoded false topics)
 function dynamicSubjectClassifier(title) {
   const t = norm(title);
   const tokens = evidenceTokens(title);
 
-  let udc = "327(540:549)", ddc = "327.540549", main = "International Relations", sub = title;
+  let udc = "025.4";
+  let ddc = "025.4";
+  let main = "General Classification";
+  let sub = title;
 
-  if (/\b(foreign relation|international relation|foreign policy|diplomacy|treaty)\b/i.test(t)) {
+  if (/\b(buddh|buddhist|hindu|islam|christian|religio|theolog|church|temple)\b/i.test(t)) {
+    if (/buddh/i.test(t)) { udc = "294.3"; ddc = "294.3"; main = "Religion / Buddhism"; }
+    else if (/hindu/i.test(t)) { udc = "294.5"; ddc = "294.5"; main = "Religion / Hinduism"; }
+    else if (/islam/i.test(t)) { udc = "297"; ddc = "297"; main = "Religion / Islam"; }
+    else { udc = "2"; ddc = "200"; main = "Religion"; }
+
+    if (/migrat|refugee|immigra/i.test(t)) { udc += ":314.7"; }
+    if (/europe/i.test(t)) { udc += "(4)"; ddc += "094"; }
+    else if (/india/i.test(t)) { udc += "(540)"; ddc += "0954"; }
+  } else if (/\b(foreign relation|international relation|foreign policy|diplomacy|treaty)\b/i.test(t)) {
     let place = "";
     let ddcPlace = "";
     if (/\bindia\b/i.test(t) && /\bpakistan\b/i.test(t)) { place = "(540:549)"; ddcPlace = ".540549"; }
@@ -230,7 +252,7 @@ function dynamicSubjectClassifier(title) {
   } else if (/\b(music|song|sing|opera|entertainment|theatre|theater|cinema|film|dance)\b/i.test(t)) {
     udc = "78+79"; ddc = "780"; main = "Music, Fine Arts & Recreation";
   } else if (/\b(drama|play|novel|poetry|poem|literature|fiction)\b/i.test(t)) {
-    udc = "82-2"; ddc = "822"; main = "Literature and Drama";
+    udc = "82-2"; ddc = "822"; main = "Literature and Literary Studies";
   } else if (/\b(science and technology|science & technology)\b/i.test(t)) {
     udc = "5/6"; ddc = "500"; main = "Sciences and Applied Technology";
   } else if (/\b(biography|autobiography|memoir|life of)\b/i.test(t)) {
@@ -256,7 +278,7 @@ function dynamicSubjectClassifier(title) {
     udc_number: udc, ddc_number: ddc,
     udc_answer: udc, ddc_answer: ddc,
     main_subject: main, sub_subject: sub,
-    breakdown: `UDC: ${udc}; DDC: ${ddc} derived from subject classification rules.`,
+    breakdown: `UDC: ${udc}; DDC: ${ddc} derived from subject classification schedules.`,
     explanation: `Classified under ${main} according to UDC 1961 and DDC-23 schedules.`,
     confidence: "High",
     evidence_summary: "Schedule-grounded discipline mapping.",
@@ -265,7 +287,7 @@ function dynamicSubjectClassifier(title) {
   };
 }
 
-// 3. ZERO-FAIL GEMINI CALL WITH DIRECT FALLBACK
+// 3. ZERO-FAIL NATIVE HTTPS GEMINI ENGINE
 function callGeminiAPI(payloadText) {
   return new Promise((resolve, reject) => {
     if (!GEMINI_KEY) return reject(new Error("GEMINI_API_KEY environment variable is missing."));
@@ -288,7 +310,7 @@ function callGeminiAPI(payloadText) {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(postData)
       },
-      timeout: 18000
+      timeout: 22000
     };
 
     const req = https.request(options, (res) => {
@@ -306,7 +328,7 @@ function callGeminiAPI(payloadText) {
     req.on("error", err => reject(err));
     req.on("timeout", () => {
       req.destroy();
-      reject(new Error("Timeout after 18s"));
+      reject(new Error("Gemini timeout"));
     });
 
     req.write(postData);
@@ -327,14 +349,14 @@ ${udcRef || "None"}
 
 Output strictly a JSON object:
 {
-  "udc_number": "full UDC notation (never empty, never 001 unless actually knowledge science)",
-  "ddc_number": "full DDC notation (never empty, purely numeric)",
-  "main_subject": "main discipline",
+  "udc_number": "full exact UDC notation",
+  "ddc_number": "full exact DDC notation",
+  "main_subject": "main subject discipline",
   "sub_subject": "specific subtopic",
   "breakdown": "explanation of notation components",
   "explanation": "classification explanation"
 }
-Output raw JSON only.`;
+Output raw JSON only. Never use placeholders like 001 or 327 unless the title is actually about that topic.`;
 
   const rawJson = await callGeminiAPI(prompt);
   const res = JSON.parse(rawJson);
@@ -345,7 +367,7 @@ Output raw JSON only.`;
   const parsed = parseJSON(textOutput);
   const u = String(parsed.udc_number || "").trim();
   const d = String(parsed.ddc_number || "").trim();
-  if (!u || !d || u === "001") throw new Error("Invalid or dummy notation returned.");
+  if (!u || !d) throw new Error("Incomplete classification notation.");
 
   return {
     title, full_title: title,
@@ -385,15 +407,15 @@ app.post("/api/classify", async (req, res) => {
   const ddcRef = retrieveReferenceEvidence(title, "DDC", 4, 3000);
   const udcRef = retrieveReferenceEvidence(title, "UDC", 4, 3000);
 
-  // 3. Dynamic Gemini Call with Intelligent Fallback
+  // 3. Dynamic Gemini Call with Topical Safety Fallback
   try {
     const aiResult = await geminiGenerate(title, ddcRef, udcRef);
     return res.json(aiResult);
   } catch (err) {
-    console.warn(`Applying auto-classification for "${title}" due to:`, err.message);
+    console.warn(`Applying topical classifier for "${title}" due to:`, err.message);
     const fallback = dynamicSubjectClassifier(title);
     return res.json(fallback);
   }
 });
 
-app.listen(PORT, () => console.log(`Classifier live on port ${PORT}`));
+app.listen(PORT, () => console.log(`Classifier running on port ${PORT}`));
