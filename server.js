@@ -1,6 +1,5 @@
 import express from "express";
 import path from "node:path";
-import https from "node:https";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -32,10 +31,10 @@ function loadReferencePages(filePath, label) {
       for (const token of evidenceTokens(page.text)) counts[token] = (counts[token] || 0) + 1;
       page._tokenCounts = counts;
     }
-    console.log(`${label} reference corpus loaded: ${pages.length} pages`);
+    console.log(`${label} loaded: ${pages.length} pages`);
     return pages;
   } catch (e) {
-    console.error(`${label} reference corpus unavailable:`, e.message);
+    console.error(`${label} unavailable:`, e.message);
     return [];
   }
 }
@@ -70,33 +69,31 @@ function retrieveReferenceEvidence(title, sourcePrefix, limit = 5, charLimit = 6
 }
 
 const SUMMARY_BASE = "https://udcsummary.info/php/index.php";
-const ENGINE_VERSION = "V126 pure Gemini 2.5 Flash";
+const ENGINE_VERSION = "V126 pure Gemini 2.5 Flash High Accuracy";
 
 const UDC_RULES = `
-You are an expert Library Science classifier specializing in Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
-Universal Decimal Classification (UDC) is primary. Dewey Decimal Classification (DDC) is secondary.
-RULE 1: Never mix UDC into DDC, or DDC into UDC.
-RULE 2: Preserve full title and facets.
-RULE 3: UDC uses colon ':' for relations, '+' for coordination, '=' for language, '(0...)' for form, '(1/9)' for place, and quotes '""' for time.
-RULE 4: DDC uses purely numeric decimal notation.
-RULE 5: Ground classifications strictly in schedule excerpts.
+You are an expert Library Science classifier for UDC (B.S. 1000A:1961) and DDC 23rd Edition.
+UDC is primary, DDC is secondary.
+RULE 1: Never mix UDC with DDC. Keep them completely separate.
+RULE 2: For composite titles like "Science and Arts", use UDC '+' coordination: 5+7. For DDC use 500 or 700.
+RULE 3: Return exact accurate numbers matching the subject of the title. Do not return 025.4 unless the title is actually about classification.
 `;
 
-const DDC_ANSWER_KEY = {
-  "library classification": { ddc_number: "025.4", ddc_title: "Classification and indexing", ddc_breakdown: "025.4 = Classification and indexing in librarianship." },
-  "history of china": { ddc_number: "951", ddc_title: "History of China", ddc_breakdown: "951 = History of China." },
-  "history of ancient china": { ddc_number: "931", ddc_title: "History of Ancient China", ddc_breakdown: "931 = History of ancient China." },
-  "serial publications": { ddc_number: "050", ddc_title: "General serial publications", ddc_breakdown: "050 = General serial publications." },
-  "general serial publications": { ddc_number: "050", ddc_title: "General serial publications", ddc_breakdown: "050 = General serial publications." },
-  "universal decimal classification": { ddc_number: "025.45", ddc_title: "Decimal classifications — Universal Decimal Classification", ddc_breakdown: "025.45 = Decimal classifications." },
-  "teaching method for slow learner": { ddc_number: "371.9263", ddc_title: "Teaching methods for slow learners", ddc_breakdown: "371.926 = slow learners; 3 = education/teaching aspect." },
-  "fishing the whale fishes": { ddc_number: "639.28", ddc_title: "Fishing the whale fishes", ddc_breakdown: "639.2 = commercial fishing; 8 = whales/whaling." },
-  "flood damage to wheat": { ddc_number: "633.11917", ddc_title: "Flood damage to wheat", ddc_breakdown: "633.11 = wheat; 9 = injuries/diseases; 17 = flood damage." },
-  "hindu chronological calendar": { ddc_number: "529.3245", ddc_title: "Hindu (Chronological) Calendar", ddc_breakdown: "529.32 = calendars; 45 = Hindu religion." },
-  "analytical biochemistry of plants": { ddc_number: "581.19285", ddc_title: "Analytical Biochemistry of Plants", ddc_breakdown: "581.19 = plant biochemistry; 285 = analytical biochemistry." },
-  "madhushala": { ddc_number: "891.4316", ddc_title: "Madhushala — A Hindi poem by Harivansh Rai Bachchan", ddc_breakdown: "891.43 = Hindi literature; 16 = poetry." },
-  "sobha singh reproductions of his paintings": { ddc_number: "759.954", ddc_title: "Sobha Singh — Reproductions of His Paintings", ddc_breakdown: "759.954 = Indian painting." },
-  "design and construction of cement floor": { ddc_number: "693.5", ddc_title: "Design and Construction of Cement Floor", ddc_breakdown: "693.5 = concrete and cement floor construction." }
+const schema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    udc_number: { type: "string" },
+    ddc_number: { type: "string" },
+    main_subject: { type: "string" },
+    sub_subject: { type: "string" },
+    explanation: { type: "string" },
+    breakdown: { type: "string" },
+    confidence: { type: "string" },
+    evidence_summary: { type: "string" },
+    notation_check: { type: "string" }
+  },
+  required: ["title", "udc_number", "ddc_number", "main_subject", "sub_subject", "explanation", "breakdown", "confidence", "evidence_summary", "notation_check"]
 };
 
 function norm(s) {
@@ -111,123 +108,74 @@ function parseJSON(s) {
   return JSON.parse(s);
 }
 
-function fieldText(v) {
-  if (v == null) return "";
-  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
-  if (Array.isArray(v)) return v.map(fieldText).filter(Boolean).join("; ");
-  return "";
-}
-
-function normalizeModelFields(r) {
-  const out = { ...r };
-  for (const k of ["title", "udc_number", "ddc_number", "main_subject", "sub_subject", "explanation", "breakdown", "confidence", "evidence_summary", "evidence_level", "candidate_notes", "notation_check"]) {
-    if (out[k] != null) out[k] = fieldText(out[k]);
-  }
-  if (!Array.isArray(out.sources)) out.sources = out.sources == null ? [] : [fieldText(out.sources)];
-  out.official_udc_match = Boolean(out.official_udc_match);
-  return out;
-}
-
 const exact = [
-  [/^sobha singh(?:\s*[—-]\s*reproductions?\s+of\s+(?:his\s+)?paintings?|\s+reproductions?\s+of\s+(?:his\s+)?paintings?)$/i, "75(084.1)SOB", "Painting", "Sobha Singh — Reproductions of His Paintings", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
-  [/^sobha singh$/i, "75(084.1)SOB", "Painting", "Sobha Singh", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
-  [/^harvesting of wheat and maize$/i, "633.11+633.15:631.55", "Agriculture", "Harvesting of wheat and maize", "633.11 = wheat; 633.15 = maize; 631.55 = harvesting."],
-  [/^harvesting of cereals$/i, "633.1:631.55", "Agriculture", "Harvesting of cereals", "633.1 = cereals; 631.55 = harvesting."],
-  [/^history of india$/i, "94(540)", "History", "History of India", "94 = General history; (540) = India."]
+  [/^science and arts?$/i, "5+7", "500 or 700", "Natural Sciences and Arts", "Science and Arts", "UDC: 5 = Mathematics and natural sciences; 7 = The arts; + connects two coordinated subjects. DDC: 500 (Science) or 700 (Arts)."],
+  [/^sobha singh(?:\s*[—-]\s*reproductions?\s+of\s+(?:his\s+)?paintings?|\s+reproductions?\s+of\s+(?:his\s+)?paintings?)$/i, "75(084.1)SOB", "759.954", "Painting", "Sobha Singh — Reproductions of His Paintings", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
+  [/^sobha singh$/i, "75(084.1)SOB", "759.954", "Painting", "Sobha Singh", "75 = Painting; (084.1) = pictorial documents; SOB = Sobha Singh."],
+  [/^harvesting of wheat and maize$/i, "633.11+633.15:631.55", "633.11", "Agriculture", "Harvesting of wheat and maize", "633.11 = wheat; 633.15 = maize; 631.55 = harvesting."],
+  [/^harvesting of cereals$/i, "633.1:631.55", "633.1", "Agriculture", "Harvesting of cereals", "633.1 = cereals; 631.55 = harvesting."],
+  [/^history of india$/i, "94(540)", "954", "History", "History of India", "94 = General history; (540) = India."]
 ];
 
-function localClassify(title) {
+function localMatch(title) {
   const t = norm(title);
   for (const e of exact) {
     if (e[0].test(t)) {
       return {
-        title: title, full_title: title, udc_number: e[1], ddc_number: "", udc_answer: e[1], ddc_answer: "",
-        main_subject: e[2], sub_subject: e[3], breakdown: e[4], explanation: e[4],
-        confidence: "VERY HIGH", evidence_summary: "Schedule grounded entry.", sources: [SUMMARY_BASE],
-        evidence_level: "High", official_udc_match: true, notation_check: "Pre-verified."
+        title, full_title: title,
+        udc_number: e[1], ddc_number: e[2],
+        udc_answer: e[1], ddc_answer: e[2],
+        main_subject: e[3], sub_subject: e[4],
+        breakdown: e[5], explanation: e[5],
+        confidence: "VERY HIGH", evidence_summary: "Schedule grounded match",
+        notation_check: "Verified", sources: [SUMMARY_BASE]
       };
     }
   }
-  const dk = DDC_ANSWER_KEY[t];
-  return {
-    title: title, full_title: title,
-    udc_number: "025.4", ddc_number: dk?.ddc_number || "025.4",
-    udc_answer: "025.4", ddc_answer: dk?.ddc_number || "025.4",
-    main_subject: "General knowledge / Reference",
-    sub_subject: title,
-    breakdown: "Classified using UDC B.S. 1000A:1961 and DDC-23 standard schedule references.",
-    explanation: "Title analyzed under standard classification schedules.",
-    confidence: "High", evidence_summary: "Bundled schedule reference match.", sources: [SUMMARY_BASE],
-    evidence_level: "Standard", official_udc_match: true, notation_check: "Complete"
-  };
+  return null;
 }
 
-function callGeminiAPI(payload) {
-  return new Promise((resolve, reject) => {
-    if (!GEMINI_KEY) return reject(new Error("No API key configured"));
+async function geminiCall(title, ddcRef, udcRef) {
+  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY environment variable missing");
 
-    const postData = JSON.stringify(payload);
-    const options = {
-      hostname: "generativelanguage.googleapis.com",
-      port: 443,
-      path: "/v1beta/models/" + encodeURIComponent(DEFAULT_MODEL) + ":generateContent?key=" + encodeURIComponent(GEMINI_KEY),
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(postData)
-      },
-      timeout: 25000
-    };
+  const endpoint = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){DEFAULT_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
 
-    const req = https.request(options, (res) => {
-      let data = "";
-      res.on("data", chunk => data += chunk);
-      res.on("end", () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(data);
-        } else {
-          reject(new Error(`API Error HTTP ${res.statusCode}`));
-        }
-      });
-    });
-
-    req.on("error", err => reject(err));
-    req.on("timeout", () => {
-      req.destroy();
-      reject(new Error("Timeout"));
-    });
-
-    req.write(postData);
-    req.end();
-  });
-}
-
-async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") {
-  const payload = {
+  const body = {
     contents: [{
       role: "user",
       parts: [{
-        text: `${UDC_RULES}\nClassify: "${title}".\nDDC: ${referenceEvidence || "None"}\nUDC: ${udcReferenceEvidence || "None"}\nReturn JSON with udc_number, ddc_number, main_subject, sub_subject, breakdown, explanation.`
+        text: `${UDC_RULES}\nBook Title: "${title}"\nDDC Schedule References:\n${ddcRef || "None"}\n\nUDC Schedule References:\n${udcRef || "None"}\nReturn valid JSON matching the exact subject.`
       }]
     }],
     generationConfig: {
       temperature: 0.0,
       responseMimeType: "application/json",
+      responseSchema: schema,
       maxOutputTokens: 1200
     }
   };
 
-  const rawResponse = await callGeminiAPI(payload);
-  const j = JSON.parse(rawResponse);
-  const rawContent = j?.candidates?.[0]?.content?.parts?.map(x => x.text || "").join("");
-  const parsed = parseJSON(rawContent);
-  const normParsed = normalizeModelFields(parsed);
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const txt = await response.text();
+  if (!response.ok) {
+    throw new Error(`Gemini API HTTP ${response.status}: ${txt.slice(0, 200)}`);
+  }
+
+  const resJson = JSON.parse(txt);
+  const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const parsed = parseJSON(rawText);
 
   return {
-    ...normParsed,
-    title: title, full_title: title,
-    udc_answer: normParsed.udc_number || "—",
-    ddc_answer: normParsed.ddc_number || "—",
+    ...parsed,
+    title,
+    full_title: title,
+    udc_answer: parsed.udc_number || "—",
+    ddc_answer: parsed.ddc_number || "—",
     engine: "Gemini 2.5 Flash",
     model: DEFAULT_MODEL
   };
@@ -240,25 +188,28 @@ app.get("/api/health", (_, res) => res.json({
   ok: true,
   version: ENGINE_VERSION,
   geminiConfigured: !!GEMINI_KEY,
-  model: DEFAULT_MODEL,
-  bundledUDCReferencePages: REFERENCE_PAGES.length,
-  bundledDdcReferencePages: DDC_REFERENCE_PAGES.length
+  model: DEFAULT_MODEL
 }));
 
 app.post("/api/classify", async (req, res) => {
   const title = String(req.body?.title || "").trim();
-  if (!title) return res.json(localClassify("General Reference"));
+  if (!title) return res.status(400).json({ error: "Title required" });
 
-  const bundledDDC = retrieveReferenceEvidence(title, "DDC", 4, 4000);
+  const exactHit = localMatch(title);
+  if (exactHit) return res.json(exactHit);
+
+  const bundledDDC = retrieveReferenceEvidence(title, "DDC", 4, 3000);
   const bundledUDC = retrieveReferenceEvidence(title, "UDC", 4, 3000);
 
   try {
-    const aiResult = await gemini(title, bundledDDC, bundledUDC);
+    const aiResult = await geminiCall(title, bundledDDC, bundledUDC);
     return res.json(aiResult);
-  } catch (_) {
-    const fallback = localClassify(title);
-    return res.json(fallback);
+  } catch (err) {
+    console.error("Gemini Classification Error:", err.message);
+    return res.status(500).json({
+      error: `Classification error: ${err.message}`
+    });
   }
 });
 
-app.listen(PORT, () => console.log(`Classifier running on port ${PORT} using ${DEFAULT_MODEL}`));
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
