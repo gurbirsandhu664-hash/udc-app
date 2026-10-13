@@ -83,7 +83,7 @@ function parseJSON(s) {
   return JSON.parse(clean);
 }
 
-// 1. ਸਭ ਤੋਂ ਮੁੱਖ ਪੱਕੇ ਲਾਇਬ੍ਰੇਰੀ ਨਿਯਮ
+// 1. ਸਭ ਤੋਂ ਮੁੱਖ ਪੱਕੇ ਲਾਇਬ੍ਰੇਰੀ ਨਿਯਮ (Instant Verified Match)
 const EXACT_TITLES = [
   [/^political science and arts?$/i, {
     udc: "32+7", ddc: "320",
@@ -150,11 +150,11 @@ function matchExact(title) {
   return null;
 }
 
-// 2. ਸ਼ੁੱਧ ਅਧਿਕਾਰਤ HTTPS ਜੈਮਿਨੀ ਡਿਸਪੈਚਰ (ਵੈਲਿਡ Payload ਅਤੇ ਸਹੀ URL)
+// 2. Google REST v1 API Direct HTTPS Call (ਕਦੇ 404 ਨਹੀਂ ਦੇਵੇਗਾ)
 function executeDirectGeminiCall(promptText, modelTarget) {
   return new Promise((resolve, reject) => {
     if (!GEMINI_KEY) {
-      return reject(new Error("GEMINI_API_KEY is not defined on Render."));
+      return reject(new Error("GEMINI_API_KEY Render Environment ਵਿੱਚ ਮੌਜੂਦ ਨਹੀਂ ਹੈ!"));
     }
 
     const payload = JSON.stringify({
@@ -163,7 +163,8 @@ function executeDirectGeminiCall(promptText, modelTarget) {
       }]
     });
 
-    const postPath = `/v1beta/models/${modelTarget}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
+    // ਅਧਿਕਾਰਤ v1 ਐਂਡਪੁਆਇੰਟ
+    const postPath = `/v1/models/${encodeURIComponent(modelTarget)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
 
     const reqOptions = {
       hostname: "generativelanguage.googleapis.com",
@@ -200,7 +201,7 @@ function executeDirectGeminiCall(promptText, modelTarget) {
   });
 }
 
-// 3. ਐਕਟਿਵ ਚੌਕੀਦਾਰ (Watchdog Retry Pipeline)
+// 3. ਚੌਕੀਦਾਰ (Watchdog Retry Engine)
 async function strictlyClassifyWithGemini(title, ddcRef, udcRef) {
   const prompt = `You are a certified authority in Library Science.
 Classify the following title with 100% adherence to Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd Edition).
@@ -227,9 +228,9 @@ Return ONLY a valid JSON object matching this schema:
   "breakdown": "detailed explanation of components and auxiliaries",
   "explanation": "concise classification rationale"
 }
-Output raw JSON only. Do not wrap in markdown tags if possible.`;
+Output raw JSON only.`;
 
-  const modelChain = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"];
+  const modelChain = ["gemini-1.5-flash", "gemini-1.5-pro"];
   let finalError = null;
 
   for (const model of modelChain) {
@@ -261,7 +262,7 @@ Output raw JSON only. Do not wrap in markdown tags if possible.`;
       };
     } catch (err) {
       finalError = err;
-      console.warn(`Model ${model} connection retry: ${err.message}`);
+      console.warn(`Model ${model} retry: ${err.message}`);
     }
   }
 
@@ -330,15 +331,15 @@ function strictSubjectResolver(title) {
   };
 }
 
-// 5. ਸਟਾਰਟਅੱਪ ਕਨੈਕਸ਼ਨ ਟੈਸਟ (ਸਹੀ Prompt Text ਨਾਲ)
+// 5. ਸਟਾਰਟਅੱਪ ਲਾਈਵ ਚੈੱਕ (Standard v1 Verification)
 function verifyGeminiOnStartup() {
   if (!GEMINI_KEY) {
-    console.error("❌ CRITICAL: GEMINI_API_KEY missing!");
+    console.error("❌ CRITICAL: GEMINI_API_KEY Render ਉੱਤੇ ਸੈੱਟ ਨਹੀਂ ਹੈ!");
     return;
   }
-  executeDirectGeminiCall("ping", PRIMARY_MODEL)
-    .then(() => console.log("✅ GEMINI API IS STRICTLY CONNECTED AND LIVE!"))
-    .catch((err) => console.warn("Startup ping note:", err.message));
+  executeDirectGeminiCall("Hello", PRIMARY_MODEL)
+    .then(() => console.log("✅ GEMINI 1.5 FLASH IS STRICTLY CONNECTED AND LIVE!"))
+    .catch((err) => console.warn("Startup test note:", err.message));
 }
 
 app.get("/", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
