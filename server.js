@@ -141,7 +141,7 @@ function localClassify(title) {
   for (const e of exact) {
     if (e[0].test(t)) {
       return {
-        title, full_title: title, udc_number: e[1], ddc_number: "", udc_answer: e[1], ddc_answer: "",
+        title: title, full_title: title, udc_number: e[1], ddc_number: "", udc_answer: e[1], ddc_answer: "",
         main_subject: e[2], sub_subject: e[3], breakdown: e[4], explanation: e[4],
         confidence: "VERY HIGH", evidence_summary: "Schedule grounded entry.", sources: [SUMMARY_BASE],
         evidence_level: "High", official_udc_match: true, notation_check: "Pre-verified."
@@ -150,7 +150,7 @@ function localClassify(title) {
   }
   const dk = DDC_ANSWER_KEY[t];
   return {
-    title, full_title: title,
+    title: title, full_title: title,
     udc_number: "025.4", ddc_number: dk?.ddc_number || "025.4",
     udc_answer: "025.4", ddc_answer: dk?.ddc_number || "025.4",
     main_subject: "General knowledge / Reference",
@@ -225,7 +225,7 @@ async function gemini(title, referenceEvidence = "", udcReferenceEvidence = "") 
 
   return {
     ...normParsed,
-    title, full_title: title,
+    title: title, full_title: title,
     udc_answer: normParsed.udc_number || "—",
     ddc_answer: normParsed.ddc_number || "—",
     engine: "Gemini 2.5 Flash",
@@ -256,7 +256,6 @@ app.post("/api/classify", async (req, res) => {
     const aiResult = await gemini(title, bundledDDC, bundledUDC);
     return res.json(aiResult);
   } catch (_) {
-    // ਫੇਲ੍ਹ ਹੋਣ 'ਤੇ ਵੀ 500 ਐਰਰ ਨਹੀਂ ਦੇਣੀ, ਸਿੱਧਾ ਵੈਰੀਫਾਈਡ ਲੋਕਲ ਸ਼ਡਿਊਲ ਨਤੀਜਾ ਦਿਖਾਉਣਾ ਹੈ
     const fallback = localClassify(title);
     return res.json(fallback);
   }
