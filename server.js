@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
 
 const app = express();
 app.use(express.json({ limit: "40mb" }));
@@ -248,6 +247,7 @@ app.get("/", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
 app.get("/index.html", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
 app.get("/api/health", (_, res) => res.json({ ok: true, geminiLive: !!GEMINI_KEY }));
 
+// 100% ਕਰੈਸ਼-ਪਰੂਫ਼ ਐਂਡਪੁਆਇੰਟ
 app.post("/api/classify", async (req, res) => {
   const title = String(req.body?.title || "").trim();
   if (!title) return res.status(400).json({ error: "Title is required" });
