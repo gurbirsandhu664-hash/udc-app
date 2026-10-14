@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>UDC & DDC Authority Classification Engine</title>
+  <title>UDC 1961 & DDC 23 Authority Classification Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
@@ -87,13 +87,13 @@
     <div>
       <div class="presets-title">Verified Standard Titles</div>
       <div class="presets-wrapper">
+        <button class="preset-pill" onclick="quickFill('Statistics of Population Growth')">Statistics of Population Growth</button>
+        <button class="preset-pill" onclick="quickFill('Linguistics of Punjabi Language')">Linguistics of Punjabi Language</button>
         <button class="preset-pill" onclick="quickFill('Architecture of Hindu Temples')">Architecture of Hindu Temples</button>
         <button class="preset-pill" onclick="quickFill('History of North Africa from 15th century to 20th century.')">History of North Africa from 15th century to 20th century.</button>
         <button class="preset-pill" onclick="quickFill('Science and arts')">Science and arts</button>
-        <button class="preset-pill" onclick="quickFill('Architecture of Buddhist Monasteries')">Architecture of Buddhist Monasteries</button>
         <button class="preset-pill" onclick="quickFill('Mathematics for Engineers')">Mathematics for Engineers</button>
         <button class="preset-pill" onclick="quickFill('Ethics of Medical Practice')">Ethics of Medical Practice</button>
-        <button class="preset-pill" onclick="quickFill('Logic of Scientific Discovery')">Logic of Scientific Discovery</button>
       </div>
     </div>
 
@@ -105,7 +105,7 @@
 
       <div class="notation-card">
         <div class="card-head">
-          <span class="notation-tag udc">Universal Decimal Classification (UDC 1961)</span>
+          <span class="notation-tag udc">Universal Decimal Classification (UDC B.S. 1000A:1961)</span>
         </div>
         <div id="outUDC" class="notation-number udc"></div>
         <div id="outUDCBreakdown" class="notation-desc mono-meta"></div>
@@ -113,7 +113,7 @@
 
       <div class="notation-card">
         <div class="card-head">
-          <span class="notation-tag ddc">Dewey Decimal Classification (DDC 23)</span>
+          <span class="notation-tag ddc">Dewey Decimal Classification (DDC 23rd Edition)</span>
         </div>
         <div id="outDDC" class="notation-number ddc"></div>
         <div id="outDDCSub" class="notation-desc"></div>
