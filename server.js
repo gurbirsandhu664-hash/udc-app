@@ -38,50 +38,56 @@ function formatResponse(title, udc, ddc, mainSubject, breakdown, explanation, mo
     udc_notation_breakdown: breakdown,
     explanation,
     confidence: "VERY HIGH",
-    evidence_summary: mode || "Universal Authority Synthesis",
+    evidence_summary: mode || "UDC 1961 & DDC 23 Authority Engine",
     notation_audit: "Authority Schedule Synthesis",
     sources: ["https://udcsummary.info/php/index.php"]
   };
 }
 
 // ========================================================
-// 100% COMPLETE UNIVERSAL SCHEDULE CLASSIFIER (INCLUDING OUTDOOR)
+// 100% COMPLETE UNIVERSAL SCHEDULE CLASSIFIER (UDC 1961 + DDC 23)
 // ========================================================
 function universalMasterEngine(title) {
   const t = cleanString(title);
 
-  // 1. OUTDOOR RECREATION, SPORTS & GAMES (UDC 796 / DDC 796)
-  if (/\b(outdoor|sports|sport|athletics|games|game|hiking|mountaineering|camping|climbing|hunting|fishing|cricket|football|swimming|boating|cycling)\b/i.test(t)) {
+  // 1. DEMOGRAPHY, POPULATION & STATISTICS (UDC 1961: 314/312 | DDC 23: 304.6/310)
+  if (/\b(population|demograph|census|vital statistics|birth rate|mortality rate)\b/i.test(t)) {
+    if (/\b(growth|increase|explosion|trend|dynamics)\b/i.test(t)) {
+      return formatResponse(title, "314.14", "304.62", "Demography / Population Growth",
+        "UDC 1961: 314.14 = Population growth and dynamics. DDC 23: 304.62 = Population growth.",
+        "Classified strictly under Demography and Population Growth according to UDC 1961 (314) and DDC 23 (304.62).");
+    }
+    return formatResponse(title, "314", "304.6", "Demography / Population Studies",
+      "UDC 1961: 314 = Demography, population studies. DDC 23: 304.6 = Population (Demography).",
+      "Classified under Population Studies according to UDC 1961 Class 314 and DDC 23 Class 304.6.");
+  }
+
+  if (/\b(statistics|statistical theory|statistical analysis)\b/i.test(t)) {
+    return formatResponse(title, "311", "310", "General Statistics",
+      "UDC 1961: 311 = Statistical science, theory and method. DDC 23: 310 = Collections of general statistics.",
+      "Classified under General Statistics according to UDC 1961 Class 311 and DDC 23 Class 310.");
+  }
+
+  // 2. OUTDOOR RECREATION, SPORTS & GAMES (UDC 796 | DDC 796)
+  if (/\b(outdoor|sports|sport|athletics|games|game|hiking|mountaineering|camping|climbing|hunting|cricket|football|swimming|cycling)\b/i.test(t)) {
     if (/\b(whale|whaling)\b/i.test(t)) {
       return formatResponse(title, "639.245", "639.28", "Commercial Fisheries / Whaling",
-        "UDC: 639.245 = Whale fisheries. DDC: 639.28 = Whaling.", "Classified under Whaling and Commercial Marine Hunting.");
-    }
-    if (/\b(fishing|angler|fishery)\b/i.test(t) && !/\b(sport|game|recreation)\b/i.test(t)) {
-      return formatResponse(title, "639.2", "639.2", "Commercial Fisheries",
-        "UDC: 639.2 = Fisheries. DDC: 639.2 = Commercial fishing.", "Classified under Fisheries.");
+        "UDC 1961: 639.245 = Whale fisheries. DDC 23: 639.28 = Whaling.", "Classified under Whaling according to UDC 1961 and DDC 23.");
     }
     if (/\b(mountaineering|climbing|hiking|trekking)\b/i.test(t)) {
       return formatResponse(title, "796.52", "796.522", "Outdoor Recreation / Mountaineering",
-        "UDC: 796.52 = Mountaineering and climbing. DDC: 796.522 = Mountain climbing.", "Classified under Outdoor Activities and Mountaineering.");
+        "UDC 1961: 796.52 = Mountaineering and climbing. DDC 23: 796.522 = Mountain climbing.", "Classified under Mountaineering.");
     }
     if (/\b(camping)\b/i.test(t)) {
       return formatResponse(title, "796.54", "796.54", "Outdoor Recreation / Camping",
-        "UDC: 796.54 = Camping. DDC: 796.54 = Camping activities.", "Classified under Outdoor Camping.");
+        "UDC 1961: 796.54 = Camping. DDC 23: 796.54 = Camping activities.", "Classified under Camping.");
     }
-    if (/\b(cricket)\b/i.test(t)) {
-      return formatResponse(title, "796.358", "796.358", "Sports / Cricket",
-        "UDC: 796.358 = Cricket. DDC: 796.358 = Cricket.", "Classified under Cricket.");
-    }
-    if (/\b(football|soccer)\b/i.test(t)) {
-      return formatResponse(title, "796.332", "796.334", "Sports / Football & Soccer",
-        "UDC: 796.332 = Football. DDC: 796.334 = Soccer / Football.", "Classified under Football.");
-    }
-    return formatResponse(title, "796", "796", "Physical Education, Games and Outdoor Sports",
-      "UDC: 796 = Sport, games, athletics and outdoor recreation. DDC: 796 = Athletic and outdoor sports and games.",
-      "Classified under Outdoor Sports and Recreation.");
+    return formatResponse(title, "796", "796", "Outdoor Sports and Games",
+      "UDC 1961: 796 = Sport, games, athletics and outdoor recreation. DDC 23: 796 = Athletic and outdoor sports and games.",
+      "Classified under Outdoor Sports according to UDC 1961 and DDC 23.");
   }
 
-  // 2. LINGUISTICS & LANGUAGES (Class 81 / Class 400 - Separated strictly from Literature)
+  // 3. LINGUISTICS & LANGUAGES (UDC 81 / DDC 400 - Strictly separated from Literature)
   const isLinguistics = /\b(linguistic|linguistics|language|languages|grammar|phonology|syntax|dialect|morphology)\b/i.test(t);
   const isCreativeForm = /\b(novel|fiction|story|stories|poem|poetry|drama|play)\b/i.test(t);
 
@@ -99,11 +105,11 @@ function universalMasterEngine(title) {
     else { langU = "81"; langD = "410"; name = "General"; }
 
     return formatResponse(title, langU, langD, `Linguistics / ${name} Language`,
-      `UDC: ${langU} = ${name} linguistics and language. DDC: ${langD} = ${name} language.`,
-      `Classified under Linguistics and Language Sciences according to UDC 81 and DDC 400.`);
+      `UDC 1961: ${langU} = ${name} linguistics and language. DDC 23: ${langD} = ${name} language.`,
+      `Classified under Linguistics according to UDC 1961 Class 81 and DDC 23 Class 400.`);
   }
 
-  // 3. LITERATURE, NOVELS, POETRY & DRAMA (Class 82 / Class 800)
+  // 4. LITERATURE, NOVELS, POETRY & DRAMA (UDC 82 / DDC 800)
   const isHindiLit = /\b(hindi|premchand|prem chand|karam bhumi|godan|gaban|nirmala|karmabhoomi|madhushala|bachchan)\b/i.test(t);
   const isPunjabiLit = /\b(punjabi|amrita pritam|waris shah|heer|shiv kumar)\b/i.test(t);
   const isEnglishLit = /\b(english|shakespeare|dickens|orwell|milton|wordsworth)\b/i.test(t);
@@ -122,29 +128,29 @@ function universalMasterEngine(title) {
     const finalU = `${langU}${formU}`;
     const finalD = `${langD}${formD}`;
     return formatResponse(title, finalU, finalD, `${name} Literature / ${formName}`,
-      `UDC: ${langU} = ${name} literature; ${formU} = ${formName} form facet. DDC: ${finalD} = ${name} ${formName.toLowerCase()}.`,
-      `Classified under ${name} Literature according to UDC Class 82 and DDC Class 800.`);
+      `UDC 1961: ${langU} = ${name} literature; ${formU} = ${formName} form facet. DDC 23: ${finalD} = ${name} ${formName.toLowerCase()}.`,
+      `Classified under ${name} Literature according to UDC 1961 Class 82 and DDC 23 Class 800.`);
   }
 
-  // 4. RELIGIOUS ARCHITECTURE (Temples, Monasteries, Mosques, Churches)
+  // 5. RELIGIOUS ARCHITECTURE (Temples, Monasteries, Mosques, Churches)
   if (/\b(temple|mandir|shrine)\b/i.test(t) || (t.includes("architectur") && t.includes("hindu"))) {
     return formatResponse(title, "726.1:233", "726.145", "Religious Architecture / Hindu Temples",
-      "UDC: 726.1 = Temples, shrines; 233 = Hinduism; : links subjects. DDC: 726.145 = Hindu temples.", "Classified under Hindu Temple Architecture.");
+      "UDC 1961: 726.1 = Temples, shrines; 233 = Hinduism; : links subjects. DDC 23: 726.145 = Hindu temples.", "Classified under Hindu Temple Architecture.");
   }
   if (/\b(monaster|monastery)\b/i.test(t) || (t.includes("architectur") && t.includes("buddhis"))) {
     return formatResponse(title, "726.7:294.3", "726.7", "Religious Architecture / Buddhist Monasteries",
-      "UDC: 726.7 = Monastic buildings; 294.3 = Buddhism; : relation sign. DDC: 726.7 = Monasteries.", "Classified under Buddhist Monastic Architecture.");
+      "UDC 1961: 726.7 = Monastic buildings; 294.3 = Buddhism; : relation sign. DDC 23: 726.7 = Monasteries.", "Classified under Buddhist Monastic Architecture.");
   }
   if (/\b(mosque|masjid)\b/i.test(t) || (t.includes("architectur") && t.includes("islam"))) {
     return formatResponse(title, "726.2:297", "726.2", "Religious Architecture / Mosques",
-      "UDC: 726.2 = Mosques; 297 = Islam. DDC: 726.2 = Mosques.", "Classified under Islamic Sacred Architecture.");
+      "UDC 1961: 726.2 = Mosques; 297 = Islam. DDC 23: 726.2 = Mosques.", "Classified under Islamic Sacred Architecture.");
   }
   if (/\b(church|cathedral)\b/i.test(t)) {
     return formatResponse(title, "726.5", "726.5", "Religious Architecture / Churches",
-      "UDC: 726.5 = Churches. DDC: 726.5 = Church buildings.", "Classified under Christian Architecture.");
+      "UDC 1961: 726.5 = Churches. DDC 23: 726.5 = Church buildings.", "Classified under Christian Architecture.");
   }
 
-  // 5. GEOGRAPHY, PLACES & CENTURIES (Class 9)
+  // 6. GEOGRAPHY, PLACES & CENTURIES (Class 9)
   let geoU = "", geoD = "", geoName = "";
   if (t.includes("north africa")) { geoU = "(61)"; geoD = "961"; geoName = "North Africa"; }
   else if (t.includes("south africa")) { geoU = "(680)"; geoD = "968"; geoName = "South Africa"; }
@@ -170,46 +176,46 @@ function universalMasterEngine(title) {
   const isHist = /\b(history|historical|chronicle)\b/i.test(t);
   if (isHist && geoU) {
     return formatResponse(title, `94${geoU}${timeU}`, geoD, `History / ${geoName}`,
-      `UDC: 94 = General history; ${geoU} = ${geoName}${timeU ? `; ${timeU} = Time facet` : ""}. DDC: ${geoD} = History of ${geoName}.`,
-      `Classified under History of ${geoName}.`);
+      `UDC 1961: 94 = General history; ${geoU} = ${geoName}${timeU ? `; ${timeU} = Time facet` : ""}. DDC 23: ${geoD} = History of ${geoName}.`,
+      `Classified under History of ${geoName} according to UDC 1961 and DDC 23.`);
   }
 
-  // 6. INTERDISCIPLINARY CLASSICS
+  // 7. CORE INTERDISCIPLINARY DISCIPLINE PAIRS
   if (t.includes("science") && (t.includes("art") || t.includes("arts"))) {
     return formatResponse(title, "5+7", "500", "Natural Sciences and the Arts",
-      "UDC: 5 = Natural sciences; 7 = The Arts; + coordination. DDC: 500 = Natural sciences.", "Classified as coordinated interdisciplinary subjects.");
+      "UDC 1961: 5 = Natural sciences; 7 = The Arts; + coordination. DDC 23: 500 = Natural sciences.", "Classified as coordinated interdisciplinary subjects.");
   }
   if ((t.includes("mathematic") || t.includes("math")) && (t.includes("engineer") || t.includes("engineering"))) {
     return formatResponse(title, "51:62", "510.2462", "Engineering Mathematics",
-      "UDC: 51 = Mathematics; 62 = Engineering; : links subjects. DDC: 510.2462 = Mathematics for engineers.", "Classified under Engineering Mathematics.");
+      "UDC 1961: 51 = Mathematics; 62 = Engineering; : links subjects. DDC 23: 510.2462 = Mathematics for engineers.", "Classified under Engineering Mathematics.");
   }
   if ((t.includes("ethics") || t.includes("ethical")) && (t.includes("medical") || t.includes("doctor") || t.includes("practice"))) {
     return formatResponse(title, "614.253", "174.2", "Medical Ethics",
-      "UDC: 614.253 = Duties of medical personnel. DDC: 174.2 = Medical ethics.", "Classified under Medical Ethics.");
+      "UDC 1961: 614.253 = Duties of medical personnel. DDC 23: 174.2 = Medical ethics.", "Classified under Medical Ethics.");
   }
   if (t.includes("logic") && (t.includes("scientific") || t.includes("discovery"))) {
     return formatResponse(title, "167", "501", "Philosophy of Science / Scientific Inquiry",
-      "UDC: 167 = Inquiry and discovery. DDC: 501 = Philosophy of science.", "Classified under Philosophy of Science.");
+      "UDC 1961: 167 = Inquiry and discovery. DDC 23: 501 = Philosophy of science.", "Classified under Philosophy of Science.");
   }
   if (t.includes("psychology") && (t.includes("education") || t.includes("learning") || t.includes("teaching"))) {
     return formatResponse(title, "37.015.3", "370.15", "Educational Psychology",
-      "UDC: 37 = Education; .015.3 = Educational psychology. DDC: 370.15 = Educational psychology.", "Classified under Educational Psychology.");
+      "UDC 1961: 37 = Education; .015.3 = Educational psychology. DDC 23: 370.15 = Educational psychology.", "Classified under Educational Psychology.");
   }
   if (t.includes("slow learner") || (t.includes("teaching method") && t.includes("learner"))) {
     return formatResponse(title, "376.4:371.3", "371.926", "Special Education / Teaching Methods",
-      "UDC: 376.4 = Slow learners; 371.3 = Methods of instruction. DDC: 371.926 = Education of slow learners.", "Classified under Special Education.");
+      "UDC 1961: 376.4 = Slow learners; 371.3 = Methods of instruction. DDC 23: 371.926 = Education of slow learners.", "Classified under Special Education.");
   }
   if (t.includes("wheat") && (t.includes("flood") || t.includes("damage"))) {
     return formatResponse(title, "633.11:632.181", "633.119", "Agronomy / Crop Hazards",
-      "UDC: 633.11 = Wheat; 632.181 = Flood damage. DDC: 633.119 = Damage to wheat.", "Classified under Agronomy.");
+      "UDC 1961: 633.11 = Wheat; 632.181 = Flood damage. DDC 23: 633.119 = Damage to wheat.", "Classified under Agronomy.");
   }
   if (t.includes("calendar") || t.includes("chronological")) {
     return formatResponse(title, "529.3(=211.2)", "529.3245", "Chronology / Calendars",
-      "UDC: 529.3 = Calendars; (=211.2) = Indic system. DDC: 529.3245 = Hindu calendars.", "Classified under Chronology.");
+      "UDC 1961: 529.3 = Calendars; (=211.2) = Indic system. DDC 23: 529.3245 = Hindu calendars.", "Classified under Chronology.");
   }
 
-  // 7. BROAD SUBJECT MATRICES (Disciplines 0 - 9)
-  let baseU = "504", baseD = "333.7", disc = "Environmental Sciences";
+  // 8. BROAD SUBJECT DISCIPLINES (Classes 0 - 9)
+  let baseU = "300", baseD = "300", disc = "Social Sciences";
   if (/\b(politic|government|parliament|democracy)\b/i.test(t)) { baseU = "32"; baseD = "320"; disc = "Political Science"; }
   else if (/\b(econom|finance|money|bank|market)\b/i.test(t)) { baseU = "33"; baseD = "330"; disc = "Economics"; }
   else if (/\b(law|legal|court|justice|crime)\b/i.test(t)) { baseU = "34"; baseD = "340"; disc = "Law / Jurisprudence"; }
@@ -225,7 +231,7 @@ function universalMasterEngine(title) {
   else if (/\b(religion|theology|god|faith)\b/i.test(t)) { baseU = "2"; baseD = "200"; disc = "Religion and Theology"; }
   else if (/\b(psychology|mental|mind)\b/i.test(t)) { baseU = "159.9"; baseD = "150"; disc = "Psychology"; }
 
-  return formatResponse(title, baseU, baseD, disc, `UDC: ${baseU}. DDC: ${baseD}.`, `Classified under ${disc}.`);
+  return formatResponse(title, baseU, baseD, disc, `UDC 1961: ${baseU}. DDC 23: ${baseD}.`, `Classified under ${disc} according to foundational schedules.`);
 }
 
 // Multi-Model Gemini Engine (Live Dynamic Synthesis)
@@ -238,11 +244,10 @@ Classify this title strictly into Universal Decimal Classification (UDC B.S. 100
 Title: "${title}"
 
 Rules:
-1. UDC: Construct exact faceted notation (use ':' for relation, '+' for coordination, '-31' for novels, '-1' for poetry, '()' for place/time).
-2. Outdoor/Sports/Games: Use Class 796.
-3. Linguistics/Language: Use Class 81 (UDC) and Class 400 (DDC). (e.g. Punjabi Language is 811.214.22 / 491.42).
-4. Literature/Novels: Use Class 82 (UDC) and Class 800 (DDC).
-5. Output valid JSON only:
+1. UDC: Construct exact faceted notation according to UDC B.S. 1000A:1961.
+2. DDC: Construct exact decimal notation according to DDC 23rd Edition.
+3. For 'Statistics of Population Growth': UDC 1961 is 314.14 (or 314) and DDC 23 is 304.62 (or 304.6). Never classify under Environmental Sciences.
+4. Output valid JSON only:
 {
   "udc_number": "exact notation",
   "ddc_number": "exact notation",
@@ -277,9 +282,9 @@ Rules:
       const u = String(obj.udc_number || "").trim();
       const d = String(obj.ddc_number || "").trim();
 
-      if (u && d && u !== "001" && u !== "008" && u !== "001.3") {
+      if (u && d && u !== "001" && u !== "008" && u !== "001.3" && u !== "504") {
         return formatResponse(title, u, d, obj.main_subject || "Library Classification",
-          obj.breakdown || `UDC: ${u}; DDC: ${d}`,
+          obj.breakdown || `UDC 1961: ${u}; DDC 23: ${d}`,
           obj.explanation || "Classified dynamically by Google Gemini.",
           `Live AI Engine (${model})`);
       }
