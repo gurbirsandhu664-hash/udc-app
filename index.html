@@ -2,167 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal UDC & DDC Professional Classifier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>UDC & DDC Authority Classification Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: #111827;
-      --card-border: #1f2937;
-      --accent: #4f46e5;
-      --accent-hover: #4338ca;
-      --text-main: #f9fafb;
-      --text-sub: #9ca3af;
-      --badge-bg: #1e1b4b;
-      --badge-text: #818cf8;
-      --udc-color: #38bdf8;
-      --ddc-color: #34d399;
+      --bg: #0b0f19;
+      --card-bg: #121826;
+      --card-border: #1f293d;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --udc-cyan: #38bdf8;
+      --ddc-green: #34d399;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; padding: 2rem 1rem; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 1.5rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding: 1.5rem 1rem; display: flex; justify-content: center; }
+    .app-shell { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 1.25rem; }
 
-    header { text-align: center; margin-bottom: 0.5rem; }
-    .sub-title { font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-sub); font-weight: 700; margin-bottom: 0.5rem; }
-    h1 { font-size: 1.75rem; font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 0.5rem; }
-    .specs-text { font-size: 0.85rem; color: var(--text-sub); }
+    header { text-align: center; padding: 0.5rem 0; }
+    .badge-bar { display: inline-flex; gap: 0.5rem; background: #1e1b4b; padding: 0.25rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(99, 102, 241, 0.3); margin-bottom: 0.75rem; }
+    .badge-text { font-size: 0.72rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; }
+    h1 { font-size: 1.7rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin-bottom: 0.35rem; }
+    p.subtext { font-size: 0.85rem; color: var(--muted); }
 
-    .badges { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
-    .badge { background: var(--badge-bg); color: var(--badge-text); font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(129, 140, 248, 0.2); }
+    .search-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+    .input-field { width: 100%; background: #070a12; border: 1.5px solid var(--card-border); border-radius: 0.75rem; padding: 0.9rem 1rem; color: #fff; font-size: 1rem; font-weight: 500; outline: none; transition: border-color 0.2s; }
+    .input-field:focus { border-color: var(--primary); }
 
-    .input-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4); }
-    .input-box { width: 100%; background: #0b0f19; border: 1px solid #374151; border-radius: 0.75rem; padding: 1rem; color: #fff; font-size: 1.05rem; font-weight: 500; outline: none; transition: 0.2s; }
-    .input-box:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3); }
+    .action-btn { width: 100%; background: var(--primary); color: #fff; border: none; padding: 0.95rem; font-size: 1rem; font-weight: 700; border-radius: 0.75rem; cursor: pointer; transition: 0.2s; }
+    .action-btn:active { transform: scale(0.98); }
+    .action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .btn { width: 100%; margin-top: 0.75rem; background: var(--accent); color: #fff; border: none; padding: 1rem; font-size: 1rem; font-weight: 700; border-radius: 0.75rem; cursor: pointer; transition: 0.2s; }
-    .btn:hover { background: var(--accent-hover); }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .presets-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; margin: 0.5rem 0 0.25rem 0.25rem; }
+    .presets-wrapper { display: flex; flex-direction: column; gap: 0.4rem; }
+    .preset-pill { background: #161f30; border: 1px solid var(--card-border); color: #d1d5db; padding: 0.7rem 0.9rem; border-radius: 0.65rem; font-size: 0.85rem; font-weight: 500; text-align: left; cursor: pointer; transition: 0.15s; }
+    .preset-pill:hover, .preset-pill:active { background: #1e293b; border-color: var(--primary); color: #fff; }
 
-    .preset-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .preset-btn { background: #131b2e; border: 1px solid #1f293d; color: #d1d5db; padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.88rem; text-align: left; cursor: pointer; transition: 0.15s; }
-    .preset-btn:hover { background: #1e293b; border-color: #38bdf8; color: #fff; }
+    .results-container { display: none; flex-direction: column; gap: 1rem; margin-top: 0.5rem; }
 
-    .result-section { display: none; flex-direction: column; gap: 1rem; }
-    .full-title-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-sub); }
-    .full-title-text { font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+    .title-banner { background: #161f30; border-left: 4px solid var(--primary); padding: 0.85rem 1rem; border-radius: 0 0.75rem 0.75rem 0; }
+    .title-banner-sub { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .title-banner-name { font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 0.15rem; }
 
-    .score-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: 1.5rem; }
-    .score-label { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-sub); margin-bottom: 0.25rem; }
-    .score-value { font-family: 'JetBrains Mono', monospace; font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .score-value.udc { color: var(--udc-color); }
-    .score-value.ddc { color: var(--ddc-color); }
+    .notation-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; }
+    .notation-tag { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+    .notation-tag.udc { color: var(--udc-cyan); }
+    .notation-tag.ddc { color: var(--ddc-green); }
 
-    .detail-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1rem; padding: 1.15rem; }
-    .detail-title { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-sub); margin-bottom: 0.35rem; }
-    .detail-body { font-size: 0.95rem; line-height: 1.5; color: #e5e7eb; }
-    .notation-font { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 0.9rem; }
+    .notation-number { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+    .notation-number.udc { color: var(--udc-cyan); }
+    .notation-number.ddc { color: var(--ddc-green); }
+
+    .notation-desc { font-size: 0.88rem; color: #e5e7eb; line-height: 1.45; }
+    .mono-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #94a3b8; }
+
+    .info-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 0.85rem; padding: 1rem; }
+    .info-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .info-val { font-size: 0.95rem; font-weight: 600; color: #fff; }
+    .info-exp { font-size: 0.88rem; color: #cbd5e1; line-height: 1.45; margin-top: 0.25rem; }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="app-shell">
     <header>
-      <div class="sub-title">Authority Reference Engine</div>
-      <h1>Universal Library Classifier</h1>
-      <p class="specs-text">Deterministic Synthesis · UDC B.S. 1000A:1961 · DDC-23</p>
+      <div class="badge-bar">
+        <span class="badge-text">Library Science Reference Engine</span>
+      </div>
+      <h1>Universal Classifier</h1>
+      <p class="subtext">Deterministic UDC B.S. 1000A:1961 & DDC 23rd Edition</p>
     </header>
 
-    <div class="badges">
-      <span class="badge">UDC 1961 Official</span>
-      <span class="badge">DDC 23rd Edition</span>
-      <span class="badge">Global Geographies & Centuries</span>
+    <div class="search-panel">
+      <input type="text" id="titleInput" class="input-field" placeholder="Enter complete book title..." autocomplete="off">
+      <button id="submitBtn" class="action-btn" onclick="runClassifier()">Classify Title</button>
     </div>
 
-    <div class="input-card">
-      <input type="text" id="titleInput" class="input-box" placeholder="Enter book or document title..." autocomplete="off">
-      <button id="classifyBtn" class="btn" onclick="executeClassification()">Classify Now</button>
+    <div>
+      <div class="presets-title">Verified Standard Titles</div>
+      <div class="presets-wrapper">
+        <button class="preset-pill" onclick="quickFill('Architecture of Hindu Temples')">Architecture of Hindu Temples</button>
+        <button class="preset-pill" onclick="quickFill('History of North Africa from 15th century to 20th century.')">History of North Africa from 15th century to 20th century.</button>
+        <button class="preset-pill" onclick="quickFill('Science and arts')">Science and arts</button>
+        <button class="preset-pill" onclick="quickFill('Architecture of Buddhist Monasteries')">Architecture of Buddhist Monasteries</button>
+        <button class="preset-pill" onclick="quickFill('Mathematics for Engineers')">Mathematics for Engineers</button>
+        <button class="preset-pill" onclick="quickFill('Ethics of Medical Practice')">Ethics of Medical Practice</button>
+        <button class="preset-pill" onclick="quickFill('Logic of Scientific Discovery')">Logic of Scientific Discovery</button>
+      </div>
     </div>
 
-    <div class="preset-list">
-      <button class="preset-btn" onclick="selectPreset('History of North Africa from 15th century to 20th century.')">History of North Africa from 15th century to 20th century.</button>
-      <button class="preset-btn" onclick="selectPreset('Science and arts')">Science and arts</button>
-      <button class="preset-btn" onclick="selectPreset('Architecture of Buddhist Monasteries')">Architecture of Buddhist Monasteries</button>
-      <button class="preset-btn" onclick="selectPreset('Political History of France')">Political History of France</button>
-      <button class="preset-btn" onclick="selectPreset('Mathematics for Engineers')">Mathematics for Engineers</button>
-      <button class="preset-btn" onclick="selectPreset('Ethics of Medical Practice')">Ethics of Medical Practice</button>
-      <button class="preset-btn" onclick="selectPreset('Logic of Scientific Discovery')">Logic of Scientific Discovery</button>
-    </div>
-
-    <div id="resultSection" class="result-section">
-      <div>
-        <div class="full-title-label">Full Title Recognized</div>
-        <div id="resTitle" class="full-title-text"></div>
+    <div id="results" class="results-container">
+      <div class="title-banner">
+        <div class="title-banner-sub">Target Subject Title</div>
+        <div id="outTitle" class="title-banner-name"></div>
       </div>
 
-      <div class="score-box">
-        <div class="score-label">Complete UDC Answer (B.S. 1000A:1961)</div>
-        <div id="resUDC" class="score-value udc"></div>
-        <div id="resUDCBreakdown" class="detail-body notation-font"></div>
+      <div class="notation-card">
+        <div class="card-head">
+          <span class="notation-tag udc">Universal Decimal Classification (UDC 1961)</span>
+        </div>
+        <div id="outUDC" class="notation-number udc"></div>
+        <div id="outUDCBreakdown" class="notation-desc mono-meta"></div>
       </div>
 
-      <div class="score-box">
-        <div class="score-label">Complete DDC Answer (23rd Edition)</div>
-        <div id="resDDC" class="score-value ddc"></div>
-        <div id="resDDCBreakdown" class="detail-body notation-font"></div>
+      <div class="notation-card">
+        <div class="card-head">
+          <span class="notation-tag ddc">Dewey Decimal Classification (DDC 23)</span>
+        </div>
+        <div id="outDDC" class="notation-number ddc"></div>
+        <div id="outDDCSub" class="notation-desc"></div>
       </div>
 
-      <div class="detail-card">
-        <div class="detail-title">Main Discipline</div>
-        <div id="resMainSubject" class="detail-body" style="font-weight: 600;"></div>
-      </div>
-
-      <div class="detail-card">
-        <div class="detail-title">Classification Rationale</div>
-        <div id="resExplanation" class="detail-body"></div>
+      <div class="info-card">
+        <div class="info-label">Discipline & Component Breakdown</div>
+        <div id="outDiscipline" class="info-val"></div>
+        <div id="outExp" class="info-exp"></div>
       </div>
     </div>
   </div>
 
   <script>
-    function selectPreset(title) {
-      document.getElementById('titleInput').value = title;
-      executeClassification();
+    function quickFill(str) {
+      document.getElementById('titleInput').value = str;
+      runClassifier();
     }
 
-    async function executeClassification() {
-      const input = document.getElementById('titleInput');
-      const btn = document.getElementById('classifyBtn');
-      const resSec = document.getElementById('resultSection');
-      const title = input.value.trim();
+    async function runClassifier() {
+      const field = document.getElementById('titleInput');
+      const btn = document.getElementById('submitBtn');
+      const res = document.getElementById('results');
+      const val = field.value.trim();
 
-      if (!title) return;
+      if (!val) return;
 
       btn.disabled = true;
-      btn.innerText = "Computing Precise Notation...";
+      btn.innerText = "Processing Notation...";
 
       try {
         const response = await fetch('/api/classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title })
+          body: JSON.stringify({ title: val })
         });
 
         const data = await response.json();
 
-        document.getElementById('resTitle').innerText = data.title;
-        document.getElementById('resUDC').innerText = data.udc_number;
-        document.getElementById('resUDCBreakdown').innerText = data.breakdown || '';
-        document.getElementById('resDDC').innerText = data.ddc_number;
-        document.getElementById('resDDCBreakdown').innerText = `DDC Discipline: ${data.main_subject}`;
-        document.getElementById('resMainSubject').innerText = data.main_subject;
-        document.getElementById('resExplanation').innerText = data.explanation;
+        document.getElementById('outTitle').innerText = data.title;
+        document.getElementById('outUDC').innerText = data.udc_number || data.udc_answer;
+        document.getElementById('outUDCBreakdown').innerText = data.breakdown || '';
+        document.getElementById('outDDC').innerText = data.ddc_number || data.ddc_answer;
+        document.getElementById('outDDCSub').innerText = `Primary DDC Class: ${data.main_subject}`;
+        document.getElementById('outDiscipline').innerText = data.main_subject;
+        document.getElementById('outExp').innerText = data.explanation;
 
-        resSec.style.display = 'flex';
-        resSec.scrollIntoView({ behavior: 'smooth' });
+        res.style.display = 'flex';
+        res.scrollIntoView({ behavior: 'smooth' });
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
       } finally {
         btn.disabled = false;
-        btn.innerText = "Classify Now";
+        btn.innerText = "Classify Title";
       }
     }
   </script>
