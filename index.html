@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UDC & DDC Professional Library Classifier</title>
+  <title>Universal UDC & DDC Professional Classifier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -31,7 +31,7 @@
     h1 { font-size: 1.75rem; font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 0.5rem; }
     .specs-text { font-size: 0.85rem; color: var(--text-sub); }
 
-    .badges { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+    .badges { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
     .badge { background: var(--badge-bg); color: var(--badge-text); font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(129, 140, 248, 0.2); }
 
     .input-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4); }
@@ -74,7 +74,7 @@
     <div class="badges">
       <span class="badge">UDC 1961 Official</span>
       <span class="badge">DDC 23rd Edition</span>
-      <span class="badge">Deterministic Engine</span>
+      <span class="badge">Global Geographies & Centuries</span>
     </div>
 
     <div class="input-card">
@@ -83,13 +83,13 @@
     </div>
 
     <div class="preset-list">
+      <button class="preset-btn" onclick="selectPreset('History of North Africa from 15th century to 20th century.')">History of North Africa from 15th century to 20th century.</button>
       <button class="preset-btn" onclick="selectPreset('Science and arts')">Science and arts</button>
       <button class="preset-btn" onclick="selectPreset('Architecture of Buddhist Monasteries')">Architecture of Buddhist Monasteries</button>
       <button class="preset-btn" onclick="selectPreset('Political History of France')">Political History of France</button>
       <button class="preset-btn" onclick="selectPreset('Mathematics for Engineers')">Mathematics for Engineers</button>
       <button class="preset-btn" onclick="selectPreset('Ethics of Medical Practice')">Ethics of Medical Practice</button>
       <button class="preset-btn" onclick="selectPreset('Logic of Scientific Discovery')">Logic of Scientific Discovery</button>
-      <button class="preset-btn" onclick="selectPreset('Teaching Method for Slow Learner')">Teaching Method for Slow Learner</button>
     </div>
 
     <div id="resultSection" class="result-section">
