@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 app.use(express.json({ limit: "40mb" }));
@@ -7,6 +8,16 @@ app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 10000;
 const GEMINI_KEY = String(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
+
+// ਗੂਗਲ ਸਰਕਾਰੀ ਕਲਾਇੰਟ ਇਨੀਸ਼ੀਅਲਾਈਜ਼ੇਸ਼ਨ
+let aiClient = null;
+if (GEMINI_KEY) {
+  try {
+    aiClient = new GoogleGenAI({ apiKey: GEMINI_KEY });
+  } catch (err) {
+    console.error("Gemini init error:", err.message);
+  }
+}
 
 function cleanString(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
@@ -26,9 +37,34 @@ function parseJSON(s) {
 function universalScheduleClassifier(title) {
   const t = cleanString(title);
 
-  // 1. ਮਹਾਂਦੀਪ ਅਤੇ ਖੇਤਰ (Continents, Regions & Nations)
+  // 1. ਧਾਰਮਿਕ ਆਰਕੀਟੈਕਚਰ (Temples, Monasteries, Mosques, Churches)
+  if (t.includes("temple") || t.includes("mandir")) {
+    const isHindu = t.includes("hindu");
+    const u = isHindu ? "726.1:233" : "726.1";
+    const d = isHindu ? "726.145" : "726.1";
+    return formatResponse(title, u, d, "Religious Architecture / Temples", 
+      `UDC: 726.1 = Temples, shrines${isHindu ? "; 233 = Hinduism; : denotes relation" : ""}. DDC: ${d} = Hindu temples.`,
+      "Classified under Hindu Temple Architecture according to official UDC (B.S. 1000A) and DDC 23.");
+  }
+
+  if (t.includes("monaster") || (t.includes("architectur") && t.includes("buddhis"))) {
+    return formatResponse(title, "726.7:294.3", "726.7", "Religious Architecture / Buddhist Monasteries",
+      "UDC: 726.7 = Monastic buildings, monasteries; 294.3 = Buddhism; : relation sign. DDC: 726.7 = Monasteries and convents.",
+      "Classified under Buddhist Monastic Architecture.");
+  }
+
+  if (t.includes("mosque") || (t.includes("architectur") && t.includes("islam"))) {
+    return formatResponse(title, "726.2:297", "726.2", "Religious Architecture / Mosques",
+      "UDC: 726.2 = Mosques; 297 = Islam. DDC: 726.2 = Mosques.", "Classified under Islamic Sacred Architecture.");
+  }
+
+  if (t.includes("church") || t.includes("cathedral")) {
+    return formatResponse(title, "726.5", "726.5", "Religious Architecture / Churches",
+      "UDC: 726.5 = Churches. DDC: 726.5 = Church buildings.", "Classified under Christian Ecclesiastical Architecture.");
+  }
+
+  // 2. ਮਹਾਂਦੀਪ ਅਤੇ ਖੇਤਰ (Continents, Regions & Nations)
   let geoUDC = "", geoDDC = "", geoName = "";
-  
   if (t.includes("north africa")) { geoUDC = "(61)"; geoDDC = "61"; geoName = "North Africa"; }
   else if (t.includes("south africa")) { geoUDC = "(680)"; geoDDC = "68"; geoName = "South Africa"; }
   else if (t.includes("west africa")) { geoUDC = "(66)"; geoDDC = "66"; geoName = "West Africa"; }
@@ -48,61 +84,29 @@ function universalScheduleClassifier(title) {
   else if (t.includes("china") || t.includes("chinese")) { geoUDC = "(510)"; geoDDC = "51"; geoName = "China"; }
   else if (t.includes("japan") || t.includes("japanese")) { geoUDC = "(520)"; geoDDC = "52"; geoName = "Japan"; }
   else if (t.includes("italy") || t.includes("italian") || t.includes("rome")) { geoUDC = "(450)"; geoDDC = "45"; geoName = "Italy"; }
-  else if (t.includes("greece") || t.includes("greek")) { geoUDC = "(495)"; geoDDC = "495"; geoName = "Greece"; }
-  else if (t.includes("egypt") || t.includes("egyptian")) { geoUDC = "(620)"; geoDDC = "62"; geoName = "Egypt"; }
 
-  // 2. ਸਮੇਂ ਦਾ ਸਹਾਇਕ ਪਹਿਲੂ (Time Auxiliaries / Centuries)
+  // 3. ਸਮੇਂ ਦਾ ਸਹਾਇਕ ਪਹਿਲੂ
   let timeUDC = "";
-  if (t.includes("15th century") && t.includes("20th century")) {
-    timeUDC = '"14/19"';
-  } else if (t.includes("20th century")) {
-    timeUDC = '"19"';
-  } else if (t.includes("19th century")) {
-    timeUDC = '"18"';
-  } else if (t.includes("18th century")) {
-    timeUDC = '"17"';
-  } else if (t.includes("21st century")) {
-    timeUDC = '"20"';
-  } else if (t.includes("medieval") || t.includes("middle ages")) {
-    timeUDC = '"04/14"';
-  } else if (t.includes("ancient")) {
-    timeUDC = '"-04/+04"';
-  }
+  if (t.includes("15th century") && t.includes("20th century")) timeUDC = '"14/19"';
+  else if (t.includes("20th century")) timeUDC = '"19"';
+  else if (t.includes("19th century")) timeUDC = '"18"';
+  else if (t.includes("18th century")) timeUDC = '"17"';
+  else if (t.includes("medieval")) timeUDC = '"04/14"';
+  else if (t.includes("ancient")) timeUDC = '"-04/+04"';
 
-  const isHistory = /\b(history|historical|chronicle|annals)\b/i.test(t);
+  const isHistory = /\b(history|historical|chronicle)\b/i.test(t);
 
-  // 3. ਇਤਿਹਾਸ ਦੇ ਵਿਸ਼ੇਸ਼ ਸ਼ਡਿਊਲ ਨਿਯਮ (History with Places & Centuries)
   if (isHistory && geoUDC) {
     let u = `94${geoUDC}${timeUDC}`;
-    let d = "";
-
-    // DDC Specific Regional History
-    if (geoName === "North Africa") d = "961";
-    else if (geoName === "Africa") d = "960";
-    else if (geoName === "South Africa") d = "968";
-    else if (geoName === "France") d = "944";
-    else if (geoName === "India") d = "954";
-    else if (geoName === "United Kingdom") d = "941";
-    else if (geoName === "Germany") d = "943";
-    else if (geoName === "United States") d = "973";
-    else if (geoName === "Russia") d = "947";
-    else if (geoName === "China") d = "951";
-    else if (geoName === "Japan") d = "952";
-    else if (geoName === "Europe") d = "940";
-    else if (geoName === "Asia") d = "950";
-    else d = `9${geoDDC}`;
-
-    const breakdown = `UDC: 94 = General history; ${geoUDC} = ${geoName}${timeUDC ? `; ${timeUDC} = Time facet` : ""}. DDC: ${d} = History of ${geoName}.`;
-    const exp = `Classified under General History of ${geoName} according to official UDC (B.S. 1000A) Class 94 and DDC Class 900.`;
-    return formatResponse(title, u, d, `General History / ${geoName}`, breakdown, exp);
+    let d = geoName === "North Africa" ? "961" : (geoName === "France" ? "944" : (geoName === "India" ? "954" : `9${geoDDC}`));
+    return formatResponse(title, u, d, `General History / ${geoName}`, 
+      `UDC: 94 = General history; ${geoUDC} = ${geoName}${timeUDC ? `; ${timeUDC} = Time facet` : ""}. DDC: ${d} = History of ${geoName}.`,
+      `Classified under General History of ${geoName}.`);
   }
 
-  // 4. ਸਥਾਪਿਤ ਵਿਸ਼ੇਸ਼ ਟਾਈਟਲ
+  // 4. ਸਟੈਂਡਰਡ ਸਾਇੰਸ ਤੇ ਆਰਟਸ
   if (t.includes("science") && (t.includes("art") || t.includes("arts"))) {
     return formatResponse(title, "5+7", "500", "Natural Sciences and the Arts", "UDC: 5 = Natural sciences; 7 = The Arts; + represents coordination sign. DDC: 500 = Natural sciences.", "Classified as interdisciplinary coordination of Pure Sciences and the Arts.");
-  }
-  if (t.includes("monaster") || (t.includes("architectur") && (t.includes("buddhis") || t.includes("temple")))) {
-    return formatResponse(title, "726.7:294.3", "726.7", "Religious Architecture / Buddhist Monasteries", "UDC: 726.7 = Monastic buildings; 294.3 = Buddhism; : relation sign. DDC: 726.7 = Monasteries and convents.", "Classified under Buddhist Monastic Architecture.");
   }
   if ((t.includes("mathematic") || t.includes("math")) && (t.includes("engineer") || t.includes("engineering"))) {
     return formatResponse(title, "51:62", "510.2462", "Engineering Mathematics", "UDC: 51 = Mathematics; 62 = Engineering; : links subjects. DDC: 510.2462 = Mathematics for engineers.", "Classified under Engineering Mathematics.");
@@ -119,64 +123,19 @@ function universalScheduleClassifier(title) {
   if (t.includes("slow learner") || (t.includes("teaching method") && t.includes("learner"))) {
     return formatResponse(title, "376.4:371.3", "371.926", "Special Education / Teaching Methods", "UDC: 376.4 = Slow learners; 371.3 = Methods of instruction. DDC: 371.926 = Education of slow learners.", "Classified under Special Education.");
   }
-  if (t.includes("wheat") && (t.includes("flood") || t.includes("damage"))) {
-    return formatResponse(title, "633.11:632.181", "633.119", "Agronomy / Crop Hazards", "UDC: 633.11 = Wheat; 632.181 = Flood damage. DDC: 633.119 = Damage to wheat.", "Classified under Crop Hazards.");
-  }
-  if (t.includes("whale") || (t.includes("fishing") && t.includes("fishes"))) {
-    return formatResponse(title, "639.245", "639.28", "Fisheries / Whaling", "UDC: 639.245 = Whale fisheries. DDC: 639.28 = Whaling.", "Classified under Whaling.");
-  }
-  if (t.includes("hindu") && (t.includes("calendar") || t.includes("chronological"))) {
-    return formatResponse(title, "529.3(=211.2)", "529.3245", "Chronology / Calendars", "UDC: 529.3 = Calendars; (=211.2) = Indic system. DDC: 529.3245 = Hindu calendars.", "Classified under Sacred Chronology.");
-  }
-  if (t.includes("biochemistry") || (t.includes("plants") && t.includes("analytical"))) {
-    return formatResponse(title, "577.1:581.19", "572.2", "Plant Biochemistry", "UDC: 577.1 = Biochemistry; 581.19 = Plant chemistry. DDC: 572.2 = Plant biochemistry.", "Classified under Plant Biochemistry.");
-  }
-  if (t.includes("madhushala") || (t.includes("poem") && t.includes("bachchan"))) {
-    return formatResponse(title, "821.214.21-1", "891.431", "Hindi Literature / Poetry", "UDC: 821.214.21 = Hindi literature; -1 = Poetry. DDC: 891.431 = Hindi poetry.", "Classified under Indic Literature / Hindi Poetry.");
-  }
 
-  // 5. ਯੂਨੀਵਰਸਲ ਵਿਸ਼ਾ ਮੈਟ੍ਰਿਕਸ (Universal Subject Matrix)
+  // ਡਿਫਾਲਟ ਯੂਨੀਵਰਸਲ ਕਲਾਸ
   let baseU = "008", baseD = "001.3", disc = "Humanities";
-
-  if (/\b(politic|political|government|democracy|parliament)\b/i.test(t)) {
-    baseU = geoUDC ? `32${geoUDC}` : "32"; baseD = geoDDC ? `320.9${geoDDC}` : "320"; disc = "Political Science";
-  } else if (/\b(econom|finance|money|banking|market|industry)\b/i.test(t)) {
-    baseU = geoUDC ? `33${geoUDC}` : "33"; baseD = geoDDC ? `330.9${geoDDC}` : "330"; disc = "Economics";
-  } else if (/\b(law|legal|justice|court|crime|constitution)\b/i.test(t)) {
-    baseU = geoUDC ? `34${geoUDC}` : "34"; baseD = geoDDC ? `349.${geoDDC}` : "340"; disc = "Law / Jurisprudence";
-  } else if (/\b(education|teaching|school|curriculum)\b/i.test(t)) {
-    baseU = "37"; baseD = "370"; disc = "Education";
-  } else if (/\b(physics|quantum|optics|thermodynamics)\b/i.test(t)) {
-    baseU = "53"; baseD = "530"; disc = "Physics";
-  } else if (/\b(chemistry|chemical|organic|molecule)\b/i.test(t)) {
-    baseU = "54"; baseD = "540"; disc = "Chemistry";
-  } else if (/\b(astronom|star|space|universe)\b/i.test(t)) {
-    baseU = "52"; baseD = "520"; disc = "Astronomy";
-  } else if (/\b(geology|earth|mineral|rock)\b/i.test(t)) {
-    baseU = "55"; baseD = "550"; disc = "Geology / Earth Sciences";
-  } else if (/\b(biolog|botany|zoology|plant|animal)\b/i.test(t)) {
-    baseU = "57"; baseD = "570"; disc = "Life Sciences / Biology";
-  } else if (/\b(medicine|medical|surgery|health|disease)\b/i.test(t)) {
-    baseU = "61"; baseD = "610"; disc = "Medical Sciences";
-  } else if (/\b(engineer|engineering|mechanical|electrical|civil)\b/i.test(t)) {
-    baseU = "62"; baseD = "620"; disc = "Engineering";
-  } else if (/\b(agricultur|farming|crop|soil)\b/i.test(t)) {
-    baseU = geoUDC ? `63${geoUDC}` : "63"; baseD = geoDDC ? `630.9${geoDDC}` : "630"; disc = "Agriculture";
-  } else if (/\b(computer|software|hardware|programming|ai)\b/i.test(t)) {
-    baseU = "004"; baseD = "004"; disc = "Computer Science";
-  } else if (/\b(architectur|building)\b/i.test(t)) {
-    baseU = "72"; baseD = "720"; disc = "Architecture";
-  } else if (/\b(art|arts|painting|music|drawing)\b/i.test(t)) {
-    baseU = "7"; baseD = "700"; disc = "The Arts";
-  } else if (/\b(sport|sports|game|athletics|outdoor)\b/i.test(t)) {
-    baseU = "796"; baseD = "796"; disc = "Sports and Athletics";
-  } else if (/\b(literature|poetry|poem|novel)\b/i.test(t)) {
-    baseU = "82"; baseD = "800"; disc = "Literature";
-  } else if (/\b(religion|theology|god|faith)\b/i.test(t)) {
-    baseU = "2"; baseD = "200"; disc = "Religion and Theology";
-  } else if (isHistory) {
-    baseU = "94"; baseD = "900"; disc = "General History";
-  }
+  if (/\b(politic|government)\b/i.test(t)) { baseU = "32"; baseD = "320"; disc = "Political Science"; }
+  else if (/\b(econom|finance)\b/i.test(t)) { baseU = "33"; baseD = "330"; disc = "Economics"; }
+  else if (/\b(law|legal)\b/i.test(t)) { baseU = "34"; baseD = "340"; disc = "Law"; }
+  else if (/\b(physics)\b/i.test(t)) { baseU = "53"; baseD = "530"; disc = "Physics"; }
+  else if (/\b(chemistry)\b/i.test(t)) { baseU = "54"; baseD = "540"; disc = "Chemistry"; }
+  else if (/\b(medicine|medical)\b/i.test(t)) { baseU = "61"; baseD = "610"; disc = "Medical Sciences"; }
+  else if (/\b(engineer)\b/i.test(t)) { baseU = "62"; baseD = "620"; disc = "Engineering"; }
+  else if (/\b(architectur)\b/i.test(t)) { baseU = "72"; baseD = "720"; disc = "Architecture"; }
+  else if (/\b(sport|sports)\b/i.test(t)) { baseU = "796"; baseD = "796"; disc = "Sports"; }
+  else if (/\b(religion)\b/i.test(t)) { baseU = "2"; baseD = "200"; disc = "Religion"; }
 
   return formatResponse(title, baseU, baseD, disc, `UDC: ${baseU}. DDC: ${baseD}.`, `Classified under ${disc}.`);
 }
@@ -205,68 +164,67 @@ function formatResponse(title, udc, ddc, mainSubject, breakdown, explanation) {
   };
 }
 
-async function tryGeminiLive(title) {
-  if (!GEMINI_KEY) throw new Error("No API key");
+// ਗੂਗਲ ਸਰਕਾਰੀ SDK ਰਾਹੀਂ ਸਿੱਧੀ ਕਾਲ
+async function callGeminiEngine(title) {
+  if (!aiClient) throw new Error("No Gemini Client");
 
-  const prompt = `Classify this title strictly into Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd edition).
-Title: "${title}"
+  const prompt = `You are a certified professional Library Science classifier.
+Classify this title strictly into Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC 23rd edition).
+
+Book Title: "${title}"
 
 Rules:
-- For 'History of North Africa from 15th century to 20th century': UDC must be 94(61)"14/19" and DDC must be 961.
-- Use complete auxiliary signs.
-- Output valid JSON only: {"udc_number": "...", "ddc_number": "...", "main_subject": "...", "breakdown": "...", "explanation": "..."}`;
+1. Construct exact faceted UDC notation (use ':' for relations, '+' for coordination, brackets for place/time).
+2. For 'Architecture of Hindu Temples', UDC is 726.1:233 and DDC is 726.145. Never confuse with Buddhist Monasteries.
+3. Return raw JSON matching this schema:
+{
+  "udc_number": "exact notation",
+  "ddc_number": "exact notation",
+  "main_subject": "academic discipline",
+  "breakdown": "step by step notation breakdown",
+  "explanation": "classification rationale"
+}`;
 
-  const endpoints = [
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
-  ];
-
-  for (const ep of endpoints) {
-    try {
-      const res = await fetch(ep, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-
-      if (!res.ok) continue;
-
-      const json = await res.json();
-      const raw = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-      const obj = parseJSON(raw);
-
-      const u = String(obj.udc_number || "").trim();
-      const d = String(obj.ddc_number || "").trim();
-
-      if (u && d && u !== "001" && u !== "008" && u !== "3" && u !== "94(091)") {
-        return formatResponse(title, u, d, obj.main_subject || "Library Classification", obj.breakdown || `UDC: ${u}; DDC: ${d}`, obj.explanation || "Classified according to library schedules.");
-      }
-    } catch (e) {
-      // Continue next endpoint
+  const response = await aiClient.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json"
     }
+  });
+
+  const text = response.text;
+  const obj = parseJSON(text);
+
+  const u = String(obj.udc_number || "").trim();
+  const d = String(obj.ddc_number || "").trim();
+
+  if (!u || !d || u === "001" || u === "008") {
+    throw new Error("Invalid output");
   }
 
-  throw new Error("AI fallback");
+  return formatResponse(title, u, d, obj.main_subject || "Library Classification", obj.breakdown || `UDC: ${u}; DDC: ${d}`, obj.explanation || "Classified according to library schedules.");
 }
 
 app.get("/", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
 app.get("/index.html", (_, res) => res.sendFile(path.join(__dirname, "index.html")));
-app.get("/api/health", (_, res) => res.json({ ok: true, geminiLive: !!GEMINI_KEY }));
+app.get("/api/health", (_, res) => res.json({ ok: true, geminiEngine: !!aiClient }));
 
 app.post("/api/classify", async (req, res) => {
   const title = String(req.body?.title || "").trim();
   if (!title) return res.status(400).json({ error: "Title is required" });
 
   try {
-    const live = await tryGeminiLive(title);
-    return res.json(live);
+    const aiResult = await callGeminiEngine(title);
+    return res.json(aiResult);
   } catch (err) {
-    const result = universalScheduleClassifier(title);
-    return res.json(result);
+    console.warn("AI fallback triggered:", err.message);
+    const safeResult = universalScheduleClassifier(title);
+    return res.json(safeResult);
   }
 });
 
 process.on("uncaughtException", (err) => console.error("Uncaught:", err));
 process.on("unhandledRejection", (reason) => console.error("Unhandled:", reason));
 
-app.listen(PORT, () => console.log(`Universal Engine Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Gemini Engine Server live on port ${PORT}`));
