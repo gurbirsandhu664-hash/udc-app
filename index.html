@@ -9,7 +9,7 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     body {
       background-color: #f0f4f8;
@@ -21,7 +21,7 @@
     .container {
       background: #ffffff;
       width: 100%;
-      max-width: 600px;
+      max-width: 550px;
       padding: 25px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -36,17 +36,17 @@
       font-size: 14px;
       color: #718096;
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
     .badge {
       display: inline-block;
       background: #e2e8f0;
       color: #2b6cb0;
       font-size: 12px;
-      padding: 4px 8px;
+      padding: 4px 10px;
       border-radius: 6px;
       font-weight: bold;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
     .form-group {
       margin-bottom: 16px;
@@ -56,16 +56,15 @@
       font-size: 14px;
       font-weight: 600;
       color: #4a5568;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     input[type="text"] {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: 1.5px solid #cbd5e0;
       border-radius: 8px;
-      font-size: 15px;
+      font-size: 16px;
       outline: none;
-      transition: border-color 0.2s;
     }
     input[type="text"]:focus {
       border-color: #3182ce;
@@ -80,11 +79,7 @@
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
-      transition: background 0.2s, opacity 0.2s;
-      margin-top: 8px;
-    }
-    button:hover {
-      background: #2b6cb0;
+      margin-top: 6px;
     }
     button:disabled {
       background: #a0aec0;
@@ -122,6 +117,7 @@
       margin-top: 15px;
       font-size: 14px;
       display: none;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -138,12 +134,7 @@
     <form id="classifyForm">
       <div class="form-group">
         <label for="titleInput">ਕਿਤਾਬ ਦਾ ਨਾਮ (Book Title) *</label>
-        <input type="text" id="titleInput" placeholder="ਜਿਵੇਂ: A Brief History of Time" required autocomplete="off">
-      </div>
-
-      <div class="form-group">
-        <label for="subjectInput">ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ (Subject/Keyword)</label>
-        <input type="text" id="subjectInput" placeholder="ਜਿਵੇਂ: Physics, Cosmology" autocomplete="off">
+        <input type="text" id="titleInput" placeholder="ਜਿਵੇਂ: History of india" required autocomplete="off">
       </div>
 
       <button type="submit" id="classifyBtn">Classify</button>
@@ -156,14 +147,14 @@
         <h3>Dewey Decimal Classification (DDC)</h3>
         <div class="field"><strong>ਨੰਬਰ:</strong> <span id="ddcNumber">-</span></div>
         <div class="field"><strong>ਸਿਰਲੇਖ:</strong> <span id="ddcHeading">-</span></div>
-        <div class="field"><strong>ਭਰੋਸੇਯੋਗਤਾ (Confidence):</strong> <span id="ddcConfidence">-</span></div>
+        <div class="field"><strong>ਭਰੋਸੇਯੋਗਤਾ:</strong> <span id="ddcConfidence">-</span></div>
       </div>
 
       <div class="card">
         <h3>Universal Decimal Classification (UDC)</h3>
         <div class="field"><strong>ਨੰਬਰ:</strong> <span id="udcNumber">-</span></div>
         <div class="field"><strong>ਸਿਰਲੇਖ:</strong> <span id="udcHeading">-</span></div>
-        <div class="field"><strong>ਭਰੋਸੇਯੋਗਤਾ (Confidence):</strong> <span id="udcConfidence">-</span></div>
+        <div class="field"><strong>ਭਰੋਸੇਯੋਗਤਾ:</strong> <span id="udcConfidence">-</span></div>
       </div>
 
       <div class="card" style="background:#edf2f7;">
@@ -177,7 +168,6 @@
     const form = document.getElementById('classifyForm');
     const classifyBtn = document.getElementById('classifyBtn');
     const titleInput = document.getElementById('titleInput');
-    const subjectInput = document.getElementById('subjectInput');
     const resultBox = document.getElementById('resultBox');
     const errorBox = document.getElementById('errorBox');
 
@@ -185,8 +175,6 @@
       e.preventDefault();
 
       const title = titleInput.value.trim();
-      const subject = subjectInput.value.trim();
-
       if (!title) return;
 
       errorBox.style.display = 'none';
@@ -198,33 +186,30 @@
         const response = await fetch('/api/classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, subject })
+          body: JSON.stringify({ title })
         });
 
         const resData = await response.json();
 
         if (!response.ok || !resData.success) {
-          throw new Error(resData.error || 'ਵਰਗੀਕਰਨ ਕਰਨ ਵਿੱਚ ਅਸਮਰੱਥ ਰਿਹਾ');
+          throw new Error(resData.error || (resData.details ? resData.details : 'ਸਰਵਰ ਵੱਲੋਂ ਜਵਾਬ ਨਹੀਂ ਮਿਲਿਆ'));
         }
 
         const data = resData.data;
 
-        // DDC ਡਾਟਾ ਭਰੋ
         document.getElementById('ddcNumber').innerText = data.ddc?.number || 'N/A';
         document.getElementById('ddcHeading').innerText = data.ddc?.heading || 'N/A';
         document.getElementById('ddcConfidence').innerText = data.ddc?.confidence || 'High';
 
-        // UDC ਡਾਟਾ ਭਰੋ
         document.getElementById('udcNumber').innerText = data.udc?.number || 'N/A';
         document.getElementById('udcHeading').innerText = data.udc?.heading || 'N/A';
         document.getElementById('udcConfidence').innerText = data.udc?.confidence || 'High';
 
-        // ਸੰਖੇਪ ਭਰੋ
-        document.getElementById('summaryText').innerText = data.summary || 'ਕੋਈ ਵੇਰਵਾ ਨਹੀਂ ਮਿਲਿਆ।';
+        document.getElementById('summaryText').innerText = data.summary || 'ਕੋਈ ਵੇਰਵਾ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।';
 
         resultBox.style.display = 'block';
       } catch (err) {
-        errorBox.innerText = err.message;
+        errorBox.innerText = 'ਗਲਤੀ: ' + err.message;
         errorBox.style.display = 'block';
       } finally {
         classifyBtn.disabled = false;
