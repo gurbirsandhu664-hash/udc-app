@@ -12,29 +12,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// ਰੈਫਰੈਂਸ ਇੰਡੈਕਸ ਲੋਡਿੰਗ
-let udcIndex = [];
-let ddcIndex = [];
-
-try {
-  const udcPath = path.join(__dirname, 'udc-1961-reference-index.json');
-  const ddcPath = path.join(__dirname, 'ddc-23-reference-index.json');
-  if (fs.existsSync(udcPath)) udcIndex = JSON.parse(fs.readFileSync(udcPath, 'utf8'));
-  if (fs.existsSync(ddcPath)) ddcIndex = JSON.parse(fs.readFileSync(ddcPath, 'utf8'));
-} catch (e) {
-  console.warn("Index reading warning:", e.message);
-}
-
-// Gemini API ਕਲਾਇੰਟ
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-function getClassificationPrompt(title, subject) {
+function getClassificationPrompt(title) {
   return `You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).
 Title: "${title}"
-Subject/Context: "${subject || 'General'}"
 
-Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no markdown code block) with this exact schema:
+Return ONLY a valid, raw JSON object (no markdown, no backticks, no markdown code block) with this exact schema:
 {
   "ddc": {
     "number": "string",
@@ -62,22 +47,20 @@ function cleanAndParseJSON(rawText) {
   return JSON.parse(cleaned);
 }
 
-// ਹੈਲਥ ਚੈੱਕ ਰੂਟ (Render ਲਈ)
 app.get('/health', (req, res) => {
   res.status(200).send("OK");
 });
 
-// ਮੁੱਖ ਵਰਗੀਕਰਣ API
 app.post('/api/classify', async (req, res) => {
-  const { title, subject } = req.body;
+  const { title } = req.body;
 
   if (!title || typeof title !== 'string' || !title.trim()) {
     return res.status(400).json({ error: "ਕਿਰਪਾ ਕਰਕੇ ਕਿਤਾਬ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ।" });
   }
 
-  if (!genAI) {
+  if (!genAI || !process.env.GEMINI_API_KEY) {
     return res.status(500).json({ 
-      error: "GEMINI_API_KEY ਸਰਵਰ 'ਤੇ ਸੈੱਟ ਨਹੀਂ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ Render Environment ਵਿੱਚ ਸ਼ਾਮਲ ਕਰੋ।" 
+      error: "GEMINI_API_KEY ਮਿਲੀ ਨਹੀਂ। Render ਦੇ Environment Variables ਵਿੱਚ GEMINI_API_KEY ਸ਼ਾਮਲ ਕਰੋ।" 
     });
   }
 
@@ -90,7 +73,7 @@ app.post('/api/classify', async (req, res) => {
       }
     });
 
-    const result = await model.generateContent(getClassificationPrompt(title.trim(), subject || ""));
+    const result = await model.generateContent(getClassificationPrompt(title.trim()));
     const response = await result.response;
     const parsedData = cleanAndParseJSON(response.text());
 
@@ -100,20 +83,18 @@ app.post('/api/classify', async (req, res) => {
       data: parsedData
     });
   } catch (error) {
-    console.error("Gemini Classification Error:", error.message);
+    console.error("Gemini Classification Error:", error);
     return res.status(500).json({
-      error: "ਵਰਗੀਕਰਨ ਕਰਨ ਦੌਰਾਨ ਸਮੱਸਿਆ ਆਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+      error: "ਵਰਗੀਕਰਨ ਕਰਨ ਦੌਰਾਨ ਸਮੱਸਿਆ ਆਈ ਹੈ: " + error.message,
       details: error.message
     });
   }
 });
 
-// ਹੋਮਪੇਜ ਰੂਟ
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ਪੋਰਟ ਲਿਸਨਰ
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server actively running on port ${PORT}`);
