@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fs = require('fs');
 const path = require('path');
 
 dotenv.config();
@@ -47,6 +46,32 @@ function cleanAndParseJSON(rawText) {
   return JSON.parse(cleaned);
 }
 
+// ਤੁਹਾਡੀ ਕੀਅ ਉੱਤੇ ਉਪਲਬਧ ਮਾਡਲ ਆਪਣੇ ਆਪ ਲੱਭਣ ਵਾਲਾ ਫੰਕਸ਼ਨ
+async function getAvailableModel() {
+  try {
+    const response = await fetch(`[https://generativelanguage.googleapis.com/v1beta/models?key=$](https://generativelanguage.googleapis.com/v1beta/models?key=$){apiKey}`);
+    const data = await response.json();
+    if (data.models && data.models.length > 0) {
+      // ਸਿਰਫ਼ generateContent ਵਾਲੇ ਮਾਡਲ ਫ਼ਿਲਟਰ ਕਰੋ
+      const generateModels = data.models.filter(m => 
+        m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
+      );
+      
+      // Flash ਮਾਡਲ ਨੂੰ ਪਹਿਲ ਦਿਓ
+      const flashModel = generateModels.find(m => m.name.includes('flash'));
+      if (flashModel) {
+        return flashModel.name.replace('models/', '');
+      }
+      if (generateModels.length > 0) {
+        return generateModels[0].name.replace('models/', '');
+      }
+    }
+  } catch (e) {
+    console.warn("Auto-detect models failed, falling back to defaults:", e.message);
+  }
+  return null;
+}
+
 app.get('/health', (req, res) => {
   res.status(200).send("OK");
 });
@@ -58,19 +83,23 @@ app.post('/api/classify', async (req, res) => {
     return res.status(400).json({ error: "ਕਿਰਪਾ ਕਰਕੇ ਕਿਤਾਬ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ।" });
   }
 
-  if (!genAI || !process.env.GEMINI_API_KEY) {
+  if (!genAI || !apiKey) {
     return res.status(500).json({ 
       error: "GEMINI_API_KEY ਮਿਲੀ ਨਹੀਂ। Render ਦੇ Environment Variables ਵਿੱਚ GEMINI_API_KEY ਸ਼ਾਮਲ ਕਰੋ।" 
     });
   }
 
-  // ਮਾਡਲ ਲਿਸਟ: ਪਹਿਲਾਂ gemini-3.8-flash, ਜੇਕਰ ਕੋਈ ਸਮੱਸਿਆ ਆਵੇ ਤਾਂ gemini-2.5-flash / gemini-1.5-flash
-  const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+  // 1. ਪਹਿਲਾਂ API ਤੋਂ ਚੱਲਣਯੋਗ ਮਾਡਲ ਲੱਭੋ, ਜੇ ਨਾ ਮਿਲੇ ਤਾਂ ਲਿਸਟ ਵਿੱਚੋਂ ਕੋਸ਼ਿਸ਼ ਕਰੋ
+  const autoModel = await getAvailableModel();
+  const candidateModels = [];
+  if (autoModel) candidateModels.push(autoModel);
+  candidateModels.push('gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro');
+
   let lastError = null;
   let parsedData = null;
-  let usedModel = '';
+  let activeModelUsed = '';
 
-  for (const modelName of modelsToTry) {
+  for (const modelName of candidateModels) {
     try {
       const model = genAI.getGenerativeModel({
         model: modelName,
@@ -83,10 +112,10 @@ app.post('/api/classify', async (req, res) => {
       const result = await model.generateContent(getClassificationPrompt(title.trim()));
       const response = await result.response;
       parsedData = cleanAndParseJSON(response.text());
-      usedModel = modelName;
-      break; // ਜੇਕਰ ਕਾਲ ਸਫ਼ਲ ਹੋ ਜਾਵੇ ਤਾਂ ਲੂਪ ਰੋਕੋ
+      activeModelUsed = modelName;
+      break;
     } catch (err) {
-      console.warn(`Model ${modelName} failed, trying next... Error:`, err.message);
+      console.warn(`Model ${modelName} failed:`, err.message);
       lastError = err;
     }
   }
@@ -94,12 +123,12 @@ app.post('/api/classify', async (req, res) => {
   if (parsedData) {
     return res.json({
       success: true,
-      provider: usedModel,
+      provider: activeModelUsed,
       data: parsedData
     });
   } else {
     return res.status(500).json({
-      error: "ਵਰਗੀਕਰਨ ਕਰਨ ਦੌਰਾਨ ਸਮੱਸਿਆ ਆਈ ਹੈ: " + (lastError ? lastError.message : "ਅਣਜਾਣ ਗਲਤੀ"),
+      error: "ਵਰਗੀਕਰਨ ਕਰਨ ਦੌਰਾਨ ਸਮੱਸਿਆ ਆਈ ਹੈ: " + (lastError ? lastError.message : "ਮਾਡਲ ਉਪਲਬਧ ਨਹੀਂ ਹੈ"),
       details: lastError ? lastError.message : null
     });
   }
