@@ -1,61 +1,63 @@
-document.getElementById('classifyBtn').addEventListener('click', async (e) => {
-  e.preventDefault();
-
+<script>
+  const classifyBtn = document.getElementById('classifyBtn');
   const titleInput = document.getElementById('titleInput');
   const subjectInput = document.getElementById('subjectInput');
   const resultDiv = document.getElementById('resultDiv');
-  const btn = document.getElementById('classifyBtn');
 
-  const title = titleInput ? titleInput.value.trim() : '';
-  const subject = subjectInput ? subjectInput.value.trim() : '';
+  if (classifyBtn) {
+    classifyBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
 
-  if (!title) {
-    alert("ਕਿਰਪਾ ਕਰਕੇ ਪਹਿਲਾਂ ਕਿਤਾਬ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ।");
-    return;
-  }
+      const title = titleInput ? titleInput.value.trim() : '';
+      const subject = subjectInput ? subjectInput.value.trim() : '';
 
-  // ਕਲਿੱਕ ਹੋਣ 'ਤੇ ਬਟਨ ਤੁਰੰਤ ਬੰਦ ਕਰੋ ਤਾਂ ਜੋ ਡਬਲ-ਰਿਕੁਐਸਟ ਨਾ ਜਾਵੇ
-  btn.disabled = true;
-  btn.innerText = "ਵਰਗੀਕਰਨ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...";
+      if (!title) {
+        alert("ਕਿਰਪਾ ਕਰਕੇ ਪਹਿਲਾਂ ਕਿਤਾਬ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ।");
+        return;
+      }
 
-  try {
-    const response = await fetch('/api/classify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, subject })
+      classifyBtn.disabled = true;
+      classifyBtn.innerText = "ਵਰਗੀਕਰਨ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...";
+
+      try {
+        const response = await fetch('/api/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, subject })
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok || !resData.success) {
+          throw new Error(resData.error || "ਵਰਗੀਕਰਨ ਵਿੱਚ ਅਸਫਲ ਰਿਹਾ");
+        }
+
+        const { ddc, udc, summary } = resData.data;
+
+        resultDiv.innerHTML = `
+          <div style="background:#f4f9f4; padding:15px; border-radius:8px; border:1px solid #4CAF50; margin-top:15px;">
+            <span style="background:#4CAF50; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px;">Gemini 2.5 Flash</span>
+            <h3 style="margin:12px 0 6px 0;">DDC ਵਰਗੀਕਰਨ</h3>
+            <p style="margin:4px 0;"><strong>ਨੰਬਰ:</strong> ${ddc?.number || 'N/A'}</p>
+            <p style="margin:4px 0;"><strong>ਵਿਸ਼ਾ:</strong> ${ddc?.heading || 'N/A'}</p>
+            <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;" />
+            <h3 style="margin:6px 0;">UDC ਵਰਗੀਕਰਨ</h3>
+            <p style="margin:4px 0;"><strong>ਨੰਬਰ:</strong> ${udc?.number || 'N/A'}</p>
+            <p style="margin:4px 0;"><strong>ਵਿਸ਼ਾ:</strong> ${udc?.heading || 'N/A'}</p>
+            <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;" />
+            <p style="margin:4px 0;"><strong>ਵੇਰਵਾ:</strong> ${summary || 'ਕੋਈ ਵੇਰਵਾ ਨਹੀਂ ਮਿਲਿਆ'}</p>
+          </div>
+        `;
+      } catch (err) {
+        resultDiv.innerHTML = `
+          <div style="background:#ffebee; padding:15px; border-radius:8px; border:1px solid #f44336; margin-top:15px; color:#c62828;">
+            <strong>ਗਲਤੀ:</strong> ${err.message}
+          </div>
+        `;
+      } finally {
+        classifyBtn.disabled = false;
+        classifyBtn.innerText = "Classify";
+      }
     });
-
-    const resData = await response.json();
-
-    if (!response.ok || !resData.success) {
-      throw new Error(resData.error || "ਵਰਗੀਕਰਨ ਕਰਨ ਵਿੱਚ ਅਸਫਲ ਰਿਹਾ");
-    }
-
-    const { ddc, udc, summary } = resData.data;
-
-    resultDiv.innerHTML = `
-      <div style="background:#f4f9f4; padding:15px; border-radius:8px; border:1px solid #4CAF50; margin-top:15px;">
-        <span style="background:#4CAF50; color:white; padding:3px 8px; border-radius:4px; font-size:11px;">Gemini 2.5 Flash</span>
-        <h3 style="margin-top:12px;">DDC ਵਰਗੀਕਰਨ</h3>
-        <p><strong>ਨੰਬਰ:</strong> ${ddc?.number || 'N/A'}</p>
-        <p><strong>ਵਿਸ਼ਾ:</strong> ${ddc?.heading || 'N/A'}</p>
-        <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;" />
-        <h3>UDC ਵਰਗੀਕਰਨ</h3>
-        <p><strong>ਨੰਬਰ:</strong> ${udc?.number || 'N/A'}</p>
-        <p><strong>ਵਿਸ਼ਾ:</strong> ${udc?.heading || 'N/A'}</p>
-        <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;" />
-        <p><strong>ਵੇਰਵਾ:</strong> ${summary || 'ਕੋਈ ਵੇਰਵਾ ਨਹੀਂ ਮਿਲਿਆ'}</p>
-      </div>
-    `;
-  } catch (err) {
-    resultDiv.innerHTML = `
-      <div style="background:#ffebee; padding:15px; border-radius:8px; border:1px solid #f44336; margin-top:15px; color:#c62828;">
-        <strong>ਗਲਤੀ:</strong> ${err.message}
-      </div>
-    `;
-  } finally {
-    // ਰਿਕੁਐਸਟ ਪੂਰੀ ਹੋਣ 'ਤੇ ਬਟਨ ਦੁਬਾਰਾ ਚਾਲੂ
-    btn.disabled = false;
-    btn.innerText = "Classify";
   }
-});
+</script>
