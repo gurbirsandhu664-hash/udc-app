@@ -1,130 +1,93 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
+// fix.js — run once: node fix.js  (server.js must be in same folder)
+import { readFileSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 
-dotenv.config();
+let src = readFileSync("server.js", "utf8");
+const log = [];
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname));
-
-const API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-
-function getPrompt(title) {
-  return "You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).\n" +
-    "Title: \"" + title + "\"\n\n" +
-    "Return ONLY a valid, raw JSON object (no markdown, no backticks, no comments) with this exact schema:\n" +
-    "{\n" +
-    "  \"ddc\": {\n" +
-    "    \"number\": \"string\",\n" +
-    "    \"heading\": \"string\",\n" +
-    "    \"confidence\": \"High/Medium/Low\"\n" +
-    "  },\n" +
-    "  \"udc\": {\n" +
-    "    \"number\": \"string\",\n" +
-    "    \"heading\": \"string\",\n" +
-    "    \"confidence\": \"High/Medium/Low\"\n" +
-    "  },\n" +
-    "  \"summary\": \"Brief explanation\"\n" +
-    "}";
+function rep(re, to, label) {
+  const before = src;
+  src = src.replace(re, to);
+  if (src === before) { console.error("PATCH FAILED at: " + label); process.exit(1); }
+  log.push("OK: " + label);
 }
 
-function cleanAndParseJSON(rawText) {
-  if (!rawText) throw new Error("Empty response received from AI");
-  let cleaned = rawText.trim();
-  cleaned = cleaned.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-  const firstBrace = cleaned.indexOf('{');
-  const lastBrace = cleaned.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+// 1) Groq key force-empty (health endpoint da ReferenceError bhi fix)
+rep(/process\.env\.GROQ_API_KEY \|\| ""/, '""', "GROQ key disabled");
+
+// 2) Health line ton groq status kaddo (+ koi wikipedia field)
+rep(/,groqFallbackConfigured:!!GROQ_KEY/g, "", "health: groq field removed");
+src = src.replace(/,wikipediaContext:[^,}]*/g, "");
+
+// 3) Wikipedia functions poorian delete (fetchWikipediaEvidence + withWikipediaSources)
+rep(/async function fetchWikipediaEvidence[\s\S]*?\n}\n\nfunction retrieveReferenceEvidence/,
+    "function retrieveReferenceEvidence", "wikipedia functions deleted");
+
+// 4) Route vich Wikipedia promise hatao
+rep(/^ const \[bundledDDC,bundledUDC,wikipedia\]=await Promise\.all\(\[.*\]\);$/m,
+    ' const bundledDDC=retrieveReferenceEvidence(title,"DDC",8,7000);\n const bundledUDC=retrieveReferenceEvidence(title,"UDC",6,5000);',
+    "wikipedia fetch call removed");
+
+// 5) wikiContext line empty
+rep(/^ const wikiContext=.*$/m, ' const wikiContext="";', "wikiContext disabled");
+
+// 6) Evidence join lines ton wikipedia hatao
+rep("referenceEvidence=[bundledDDC,referenceEvidence,wikiContext]",
+    "referenceEvidence=[bundledDDC,referenceEvidence]", "ddc evidence cleaned");
+rep("udcReferenceEvidence=[bundledUDC,udcReferenceEvidence,wikiContext]",
+    "udcReferenceEvidence=[bundledUDC,udcReferenceEvidence]", "udc evidence cleaned");
+
+// 7) Saare withWikipediaSources(...) calls plain guard bana do
+rep(/withWikipediaSources\(applyNumberMixingGuard\(([a-z]+),title,lc,dk\),wikipedia\)/g,
+    "applyNumberMixingGuard($1,title,lc,dk)", "withWikipediaSources calls removed");
+
+// 8) Groq backup block dead-code bana do (kade run nahi hunda)
+rep(/if\(GROQ_KEY\)\{/, "if(false){", "groq fallback disabled");
+
+// 9) groqPrimary function delete
+rep(/async function groqPrimary[\s\S]*?\n}\n\nasync function gemini\(/,
+    "async function gemini(", "groqPrimary deleted");
+
+// 10) Crash-guard wrapper: applyNumberMixingGuard kabhi throw nahi kar sakda
+rep("// EXPANDED UDC CONCEPTS FOR FALLBACK - V127 accuracy boost",
+`// CRASH-GUARD V127: guard exception -> recoverable answer, no 500, no crash
+const _origGuard = applyNumberMixingGuard;
+applyNumberMixingGuard = function(out,title,local,dk){
+  try { return _origGuard(out,title,local,dk); }
+  catch(e){
+    console.error("number-mixing guard failed:", e.message);
+    const safe = {...out, title, full_title:title,
+      number_mixing_check:"guard-error-bypassed",
+      number_mixing_audit:["guard-error: "+String(e.message)]};
+    if(dk && dk.ddc_number){ safe.ddc_number=dk.ddc_number; safe.ddc_answer=dk.ddc_number; }
+    return safe;
   }
-  return JSON.parse(cleaned);
+};
+
+// EXPANDED UDC CONCEPTS FOR FALLBACK - V127 accuracy boost`, "crash guard installed");
+
+// 11) Last line of route: recovery vi fail hove tan vi 200 + local deterministic answer
+rep('  return res.status(200).json(applyNumberMixingGuard(recovered,title,lc,dk));',
+`  try { return res.status(200).json(applyNumberMixingGuard(recovered,title,lc,dk)); }
+  catch(e){
+    console.error("classify recovery failed:", e.message);
+    return res.status(200).json({...lc, status:"classified-local",
+      engine:"Local deterministic fallback (no crash)",
+      errors: (typeof errors!=="undefined"?errors:[]).concat(String(e.message))});
+  }`, "final no-crash safety net");
+
+// ---- verify ----
+const checks = [
+  [/fetchWikipediaEvidence\(title\)/, "wikipedia call gone"],
+  [/en\.wikipedia\.org/, "wikipedia URL gone"],
+  [/GROQ_API_KEY/, "groq env gone"],
+  [/if\(GROQ_KEY\)/, "groq branch gone"],
+];
+for (const [re, label] of checks) {
+  if (re.test(src)) { console.error("VERIFY FAILED: " + label); process.exit(1); }
 }
 
-app.get('/health', (req, res) => {
-  res.status(200).send("OK");
-});
-
-app.post('/api/classify', async (req, res) => {
-  const { title } = req.body;
-
-  if (!title || typeof title !== 'string' || !title.trim()) {
-    return res.status(400).json({ error: "Please enter a book title." });
-  }
-
-  if (!API_KEY) {
-    return res.status(500).json({ 
-      error: "GEMINI_API_KEY is not configured in Render Environment Variables." 
-    });
-  }
-
-  const modelList = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
-  let finalData = null;
-  let activeModel = '';
-  let lastErrMsg = '';
-
-  for (let i = 0; i < modelList.length; i++) {
-    const currentModel = modelList[i];
-    try {
-      const endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + 
-        encodeURIComponent(currentModel) + 
-        ":generateContent?key=" + 
-        encodeURIComponent(API_KEY);
-
-      const payload = {
-        contents: [
-          {
-            parts: [{ text: getPrompt(title.trim()) }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json"
-        }
-      };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const resJson = await response.json();
-
-      if (!response.ok) {
-        throw new Error(resJson.error?.message || ("HTTP " + response.status));
-      }
-
-      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      finalData = cleanAndParseJSON(rawText);
-      activeModel = currentModel;
-      break;
-    } catch (err) {
-      console.warn("Attempt with " + currentModel + " failed: " + err.message);
-      lastErrMsg = err.message;
-    }
-  }
-
-  if (finalData) {
-    return res.json({
-      success: true,
-      provider: activeModel,
-      data: finalData
-    });
-  }
-
-  return res.status(500).json({
-    error: "Classification failed: " + lastErrMsg
-  });
-});
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log("Server actively running on port " + PORT);
-});
+writeFileSync("server.js", src);
+console.log(log.join("\n"));
+try { execSync("node --check server.js", {stdio:"inherit"}); console.log("\nSYNTAX OK — patch done ✔"); }
+catch { console.error("SYNTAX ERROR after patch"); process.exit(1); }
