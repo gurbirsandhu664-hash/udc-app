@@ -1,22 +1,18 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const { GoogleGenAI } = require('@google/genai');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// ਰੈਫਰੈਂਸ ਇੰਡੈਕਸ ਲੋਡਿੰਗ (ਸੁਰੱਖਿਅਤ ਤਰੀਕੇ ਨਾਲ)
+// ਰੈਫਰੈਂਸ ਇੰਡੈਕਸ ਲੋਡਿੰਗ (Safe Mode)
 let udcIndex = [];
 let ddcIndex = [];
 
@@ -26,19 +22,22 @@ try {
   if (fs.existsSync(udcPath)) udcIndex = JSON.parse(fs.readFileSync(udcPath, 'utf8'));
   if (fs.existsSync(ddcPath)) ddcIndex = JSON.parse(fs.readFileSync(ddcPath, 'utf8'));
 } catch (e) {
-  console.warn("Reference index read warning:", e.message);
+  console.warn("Index files reading error:", e.message);
 }
 
-// Gemini ਕਲਾਇੰਟ
+// Gemini ਕਲਾਇੰਟ ਇਨੀਸ਼ੀਅਲਾਈਜ਼ੇਸ਼ਨ
 const apiKey = process.env.GEMINI_API_KEY;
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+let ai = null;
+if (apiKey) {
+  ai = new GoogleGenAI({ apiKey });
+}
 
 function getClassificationPrompt(title, subject) {
   return `You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).
 Title: "${title}"
 Subject/Context: "${subject || 'General'}"
 
-Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no explanations) with this exact schema:
+Return ONLY a valid, raw JSON object (no markdown, no backticks, no comments) with this exact schema:
 {
   "ddc": {
     "number": "string",
@@ -55,7 +54,7 @@ Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no e
 }
 
 function cleanAndParseJSON(rawText) {
-  if (!rawText) throw new Error("AI ਤੋਂ ਕੋਈ ਜਵਾਬ ਨਹੀਂ ਮਿਲਿਆ");
+  if (!rawText) throw new Error("AI ਤੋਂ ਕੋਈ ਜਵਾਬ ਪ੍ਰਾਪਤ ਨਹੀਂ ਹੋਇਆ");
   let cleaned = rawText.trim();
   cleaned = cleaned.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
   const firstBrace = cleaned.indexOf('{');
@@ -66,12 +65,12 @@ function cleanAndParseJSON(rawText) {
   return JSON.parse(cleaned);
 }
 
-// ਹੈਲਥ ਚੈੱਕ ਰੂਟ (ਡਿਪਲਾਇਮੈਂਟ ਸਰਵਰਾਂ ਲਈ)
+// ਸਰਵਰ ਹੈਲਥ ਚੈੱਕ (ਕਲਾਊਡ ਹੋਸਟਿੰਗ ਕ੍ਰੈਸ਼ ਚੈੱਕ ਲਈ)
 app.get('/health', (req, res) => {
   res.status(200).send("OK");
 });
 
-// ਵਰਗੀਕਰਣ API ਐਂਡਪੁਆਇੰਟ
+// ਮੁੱਖ ਵਰਗੀਕਰਣ ਐਂਡਪੁਆਇੰਟ
 app.post('/api/classify', async (req, res) => {
   const { title, subject } = req.body;
 
@@ -81,7 +80,7 @@ app.post('/api/classify', async (req, res) => {
 
   if (!ai) {
     return res.status(500).json({ 
-      error: "GEMINI_API_KEY ਸਰਵਰ ਉੱਤੇ ਸੈੱਟ ਨਹੀਂ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ Environment Variables ਵਿੱਚ ਚੈੱਕ ਕਰੋ।" 
+      error: "GEMINI_API_KEY ਮੌਜੂਦ ਨਹੀਂ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਹੋਸਟਿੰਗ ਦੇ Environment Variables ਵਿੱਚ ਕੀਅ ਸ਼ਾਮਲ ਕਰੋ।" 
     });
   }
 
@@ -103,20 +102,20 @@ app.post('/api/classify', async (req, res) => {
       data: parsedData
     });
   } catch (error) {
-    console.error("Classification error:", error.message);
+    console.error("Gemini classification error:", error.message);
     return res.status(500).json({
-      error: "ਜਵਾਬ ਲੈਣ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+      error: "ਜਵਾਬ ਤਿਆਰ ਕਰਨ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
       details: error.message
     });
   }
 });
 
-// ਕਿਸੇ ਵੀ ਹੋਰ ਰੂਟ ਲਈ index.html ਸਰਵ ਕਰਨਾ
+// ਫਰੰਟਐਂਡ ਰੂਟ
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ਕਲਾਊਡ ਪੋਰਟ ਲਿਸਨਰ
+// ਕਲਾਊਡ ਪੋਰਟ ਬਾਇੰਡਿੰਗ
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server actively running on port ${PORT}`);
