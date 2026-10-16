@@ -128,13 +128,13 @@
     <p class="subtitle">ਲਾਈਬ੍ਰੇਰੀ ਕਿਤਾਬਾਂ ਦਾ ਆਟੋਮੈਟਿਕ ਵਰਗੀਕਰਨ</p>
 
     <div style="text-align: center;">
-      <span class="badge">Powered by Gemini 2.5 Flash</span>
+      <span class="badge" id="modelBadge">Powered by Gemini Flash</span>
     </div>
 
     <form id="classifyForm">
       <div class="form-group">
         <label for="titleInput">ਕਿਤਾਬ ਦਾ ਨਾਮ (Book Title) *</label>
-        <input type="text" id="titleInput" placeholder="ਜਿਵੇਂ: History of india" required autocomplete="off">
+        <input type="text" id="titleInput" placeholder="ਜਿਵੇਂ: History of italy" required autocomplete="off">
       </div>
 
       <button type="submit" id="classifyBtn">Classify</button>
@@ -170,6 +170,7 @@
     const titleInput = document.getElementById('titleInput');
     const resultBox = document.getElementById('resultBox');
     const errorBox = document.getElementById('errorBox');
+    const modelBadge = document.getElementById('modelBadge');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -196,6 +197,9 @@
         }
 
         const data = resData.data;
+        if (resData.provider) {
+          modelBadge.innerText = 'Powered by ' + resData.provider;
+        }
 
         document.getElementById('ddcNumber').innerText = data.ddc?.number || 'N/A';
         document.getElementById('ddcHeading').innerText = data.ddc?.heading || 'N/A';
