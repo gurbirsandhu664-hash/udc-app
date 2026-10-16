@@ -1,23 +1,198 @@
-<script>
-  const classifyBtn = document.getElementById('classifyBtn');
-  const titleInput = document.getElementById('titleInput');
-  const subjectInput = document.getElementById('subjectInput');
-  const resultDiv = document.getElementById('resultDiv');
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UDC & DDC Library Classifier</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    body {
+      background-color: #f0f4f8;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 600px;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+    h1 {
+      font-size: 24px;
+      color: #1a365d;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    p.subtitle {
+      font-size: 14px;
+      color: #718096;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      background: #e2e8f0;
+      color: #2b6cb0;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #3182ce;
+    }
+    button {
+      width: 100%;
+      background: #3182ce;
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      margin-top: 8px;
+    }
+    button:hover {
+      background: #2b6cb0;
+    }
+    button:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+    }
+    .result-box {
+      margin-top: 24px;
+      display: none;
+    }
+    .card {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: #2b6cb0;
+      margin-bottom: 8px;
+    }
+    .field {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .field strong {
+      color: #4a5568;
+    }
+    .error-box {
+      background: #fff5f5;
+      color: #c53030;
+      border: 1px solid #feb2b2;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
 
-  if (classifyBtn) {
-    classifyBtn.addEventListener('click', async (e) => {
+  <div class="container">
+    <h1>UDC & DDC Classifier</h1>
+    <p class="subtitle">ਲਾਈਬ੍ਰੇਰੀ ਕਿਤਾਬਾਂ ਦਾ ਆਟੋਮੈਟਿਕ ਵਰਗੀਕਰਨ</p>
+
+    <div style="text-align: center;">
+      <span class="badge">Powered by Gemini 2.5 Flash</span>
+    </div>
+
+    <form id="classifyForm">
+      <div class="form-group">
+        <label for="titleInput">ਕਿਤਾਬ ਦਾ ਨਾਮ (Book Title) *</label>
+        <input type="text" id="titleInput" placeholder="ਜਿਵੇਂ: A Brief History of Time" required autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="subjectInput">ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ (Subject/Keyword)</label>
+        <input type="text" id="subjectInput" placeholder="ਜਿਵੇਂ: Physics, Cosmology" autocomplete="off">
+      </div>
+
+      <button type="submit" id="classifyBtn">Classify</button>
+    </form>
+
+    <div id="errorBox" class="error-box"></div>
+
+    <div id="resultBox" class="result-box">
+      <div class="card">
+        <h3>Dewey Decimal Classification (DDC)</h3>
+        <div class="field"><strong>ਨੰਬਰ:</strong> <span id="ddcNumber">-</span></div>
+        <div class="field"><strong>ਸਿਰਲੇਖ:</strong> <span id="ddcHeading">-</span></div>
+        <div class="field"><strong>ਭਰੋਸੇਯੋਗਤਾ (Confidence):</strong> <span id="ddcConfidence">-</span></div>
+      </div>
+
+      <div class="card">
+        <h3>Universal Decimal Classification (UDC)</h3>
+        <div class="field"><strong>ਨੰਬਰ:</strong> <span id="udcNumber">-</span></div>
+        <div class="field"><strong>ਸਿਰਲੇਖ:</strong> <span id="udcHeading">-</span></div>
+        <div class="field"><strong>ਭਰੋਸੇਯੋਗਤਾ (Confidence):</strong> <span id="udcConfidence">-</span></div>
+      </div>
+
+      <div class="card" style="background:#edf2f7;">
+        <h3>ਵੇਰਵਾ / ਸੰਖੇਪ (Summary)</h3>
+        <p id="summaryText" style="font-size: 14px; color: #4a5568; line-height: 1.5;">-</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('classifyForm');
+    const classifyBtn = document.getElementById('classifyBtn');
+    const titleInput = document.getElementById('titleInput');
+    const subjectInput = document.getElementById('subjectInput');
+    const resultBox = document.getElementById('resultBox');
+    const errorBox = document.getElementById('errorBox');
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const title = titleInput ? titleInput.value.trim() : '';
-      const subject = subjectInput ? subjectInput.value.trim() : '';
+      const title = titleInput.value.trim();
+      const subject = subjectInput.value.trim();
 
-      if (!title) {
-        alert("ਕਿਰਪਾ ਕਰਕੇ ਪਹਿਲਾਂ ਕਿਤਾਬ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ।");
-        return;
-      }
+      if (!title) return;
 
+      errorBox.style.display = 'none';
+      resultBox.style.display = 'none';
       classifyBtn.disabled = true;
-      classifyBtn.innerText = "ਵਰਗੀਕਰਨ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...";
+      classifyBtn.innerText = 'ਵਰਗੀਕਰਨ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...';
 
       try {
         const response = await fetch('/api/classify', {
@@ -29,35 +204,33 @@
         const resData = await response.json();
 
         if (!response.ok || !resData.success) {
-          throw new Error(resData.error || "ਵਰਗੀਕਰਨ ਵਿੱਚ ਅਸਫਲ ਰਿਹਾ");
+          throw new Error(resData.error || 'ਵਰਗੀਕਰਨ ਕਰਨ ਵਿੱਚ ਅਸਮਰੱਥ ਰਿਹਾ');
         }
 
-        const { ddc, udc, summary } = resData.data;
+        const data = resData.data;
 
-        resultDiv.innerHTML = `
-          <div style="background:#f4f9f4; padding:15px; border-radius:8px; border:1px solid #4CAF50; margin-top:15px;">
-            <span style="background:#4CAF50; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px;">Gemini 2.5 Flash</span>
-            <h3 style="margin:12px 0 6px 0;">DDC ਵਰਗੀਕਰਨ</h3>
-            <p style="margin:4px 0;"><strong>ਨੰਬਰ:</strong> ${ddc?.number || 'N/A'}</p>
-            <p style="margin:4px 0;"><strong>ਵਿਸ਼ਾ:</strong> ${ddc?.heading || 'N/A'}</p>
-            <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;" />
-            <h3 style="margin:6px 0;">UDC ਵਰਗੀਕਰਨ</h3>
-            <p style="margin:4px 0;"><strong>ਨੰਬਰ:</strong> ${udc?.number || 'N/A'}</p>
-            <p style="margin:4px 0;"><strong>ਵਿਸ਼ਾ:</strong> ${udc?.heading || 'N/A'}</p>
-            <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;" />
-            <p style="margin:4px 0;"><strong>ਵੇਰਵਾ:</strong> ${summary || 'ਕੋਈ ਵੇਰਵਾ ਨਹੀਂ ਮਿਲਿਆ'}</p>
-          </div>
-        `;
+        // DDC ਡਾਟਾ ਭਰੋ
+        document.getElementById('ddcNumber').innerText = data.ddc?.number || 'N/A';
+        document.getElementById('ddcHeading').innerText = data.ddc?.heading || 'N/A';
+        document.getElementById('ddcConfidence').innerText = data.ddc?.confidence || 'High';
+
+        // UDC ਡਾਟਾ ਭਰੋ
+        document.getElementById('udcNumber').innerText = data.udc?.number || 'N/A';
+        document.getElementById('udcHeading').innerText = data.udc?.heading || 'N/A';
+        document.getElementById('udcConfidence').innerText = data.udc?.confidence || 'High';
+
+        // ਸੰਖੇਪ ਭਰੋ
+        document.getElementById('summaryText').innerText = data.summary || 'ਕੋਈ ਵੇਰਵਾ ਨਹੀਂ ਮਿਲਿਆ।';
+
+        resultBox.style.display = 'block';
       } catch (err) {
-        resultDiv.innerHTML = `
-          <div style="background:#ffebee; padding:15px; border-radius:8px; border:1px solid #f44336; margin-top:15px; color:#c62828;">
-            <strong>ਗਲਤੀ:</strong> ${err.message}
-          </div>
-        `;
+        errorBox.innerText = err.message;
+        errorBox.style.display = 'block';
       } finally {
         classifyBtn.disabled = false;
-        classifyBtn.innerText = "Classify";
+        classifyBtn.innerText = 'Classify';
       }
     });
-  }
-</script>
+  </script>
+</body>
+</html>
