@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// ਰੈਫਰੈਂਸ ਇੰਡੈਕਸ ਲੋਡਿੰਗ (ਜੇ ਉਪਲਬਧ ਹੋਵੇ)
+// ਰੈਫਰੈਂਸ ਇੰਡੈਕਸ ਲੋਡਿੰਗ (ਸੁਰੱਖਿਅਤ ਤਰੀਕੇ ਨਾਲ)
 let udcIndex = [];
 let ddcIndex = [];
 
@@ -26,19 +26,19 @@ try {
   if (fs.existsSync(udcPath)) udcIndex = JSON.parse(fs.readFileSync(udcPath, 'utf8'));
   if (fs.existsSync(ddcPath)) ddcIndex = JSON.parse(fs.readFileSync(ddcPath, 'utf8'));
 } catch (e) {
-  console.error("Reference files read error:", e.message);
+  console.warn("Reference index read warning:", e.message);
 }
 
-// ਸਿਰਫ਼ Gemini API ਕਲਾਇੰਟ
-const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+// Gemini ਕਲਾਇੰਟ
+const apiKey = process.env.GEMINI_API_KEY;
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
-// ਕਲਾਸੀਫ਼ਿਕੇਸ਼ਨ ਪ੍ਰੋਂਪਟ
 function getClassificationPrompt(title, subject) {
   return `You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).
 Title: "${title}"
 Subject/Context: "${subject || 'General'}"
 
-Return ONLY a valid, raw JSON object (no markdown, no backticks, no markdown code block) with this exact schema:
+Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no explanations) with this exact schema:
 {
   "ddc": {
     "number": "string",
@@ -50,13 +50,12 @@ Return ONLY a valid, raw JSON object (no markdown, no backticks, no markdown cod
     "heading": "string",
     "confidence": "High/Medium/Low"
   },
-  "summary": "Brief explanation of the classification"
+  "summary": "Brief explanation"
 }`;
 }
 
-// ਸੁਰੱਖਿਅਤ JSON ਕਲੀਨਰ
 function cleanAndParseJSON(rawText) {
-  if (!rawText) throw new Error("AI ਤੋਂ ਕੋਈ ਜਵਾਬ ਪ੍ਰਾਪਤ ਨਹੀਂ ਹੋਇਆ");
+  if (!rawText) throw new Error("AI ਤੋਂ ਕੋਈ ਜਵਾਬ ਨਹੀਂ ਮਿਲਿਆ");
   let cleaned = rawText.trim();
   cleaned = cleaned.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
   const firstBrace = cleaned.indexOf('{');
@@ -67,16 +66,23 @@ function cleanAndParseJSON(rawText) {
   return JSON.parse(cleaned);
 }
 
-// ਮੁੱਖ ਵਰਗੀਕਰਣ ਰੂਟ
+// ਹੈਲਥ ਚੈੱਕ ਰੂਟ (ਡਿਪਲਾਇਮੈਂਟ ਸਰਵਰਾਂ ਲਈ)
+app.get('/health', (req, res) => {
+  res.status(200).send("OK");
+});
+
+// ਵਰਗੀਕਰਣ API ਐਂਡਪੁਆਇੰਟ
 app.post('/api/classify', async (req, res) => {
   const { title, subject } = req.body;
 
   if (!title || typeof title !== 'string' || !title.trim()) {
-    return res.status(400).json({ error: "ਕਿਰਪਾ ਕਰਕੇ ਕਿਤਾਬ ਦਾ ਨਾਮ (Title) ਦਰਜ ਕਰੋ।" });
+    return res.status(400).json({ error: "ਕਿਰਪਾ ਕਰਕੇ ਕਿਤਾਬ ਜਾਂ ਟੌਪਿਕ ਦਾ ਨਾਮ ਦਰਜ ਕਰੋ।" });
   }
 
   if (!ai) {
-    return res.status(500).json({ error: "GEMINI_API_KEY ਸਰਵਰ 'ਤੇ ਸੈੱਟ ਨਹੀਂ ਹੈ।" });
+    return res.status(500).json({ 
+      error: "GEMINI_API_KEY ਸਰਵਰ ਉੱਤੇ ਸੈੱਟ ਨਹੀਂ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ Environment Variables ਵਿੱਚ ਚੈੱਕ ਕਰੋ।" 
+    });
   }
 
   try {
@@ -97,15 +103,21 @@ app.post('/api/classify', async (req, res) => {
       data: parsedData
     });
   } catch (error) {
-    console.error("Gemini 2.5 Flash Error:", error.message);
+    console.error("Classification error:", error.message);
     return res.status(500).json({
-      error: "ਜਵਾਬ ਤਿਆਰ ਕਰਨ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ ਹੈ, ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+      error: "ਜਵਾਬ ਲੈਣ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
       details: error.message
     });
   }
 });
 
+// ਕਿਸੇ ਵੀ ਹੋਰ ਰੂਟ ਲਈ index.html ਸਰਵ ਕਰਨਾ
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ਕਲਾਊਡ ਪੋਰਟ ਲਿਸਨਰ
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running smoothly on port ${PORT} using Gemini 2.5 Flash`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server actively running on port ${PORT}`);
 });
