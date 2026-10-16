@@ -19,7 +19,7 @@ function getClassificationPrompt(title) {
   return `You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).
 Title: "${title}"
 
-Return ONLY a valid, raw JSON object (no markdown, no backticks, no markdown code block) with this exact schema:
+Return ONLY a valid, raw JSON object (no markdown, no backticks, no comments) with this exact schema:
 {
   "ddc": {
     "number": "string",
@@ -64,29 +64,43 @@ app.post('/api/classify', async (req, res) => {
     });
   }
 
-  try {
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: "application/json"
-      }
-    });
+  // ਮਾਡਲ ਲਿਸਟ: ਪਹਿਲਾਂ gemini-3.8-flash, ਜੇਕਰ ਕੋਈ ਸਮੱਸਿਆ ਆਵੇ ਤਾਂ gemini-2.5-flash / gemini-1.5-flash
+  const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+  let lastError = null;
+  let parsedData = null;
+  let usedModel = '';
 
-    const result = await model.generateContent(getClassificationPrompt(title.trim()));
-    const response = await result.response;
-    const parsedData = cleanAndParseJSON(response.text());
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json"
+        }
+      });
 
+      const result = await model.generateContent(getClassificationPrompt(title.trim()));
+      const response = await result.response;
+      parsedData = cleanAndParseJSON(response.text());
+      usedModel = modelName;
+      break; // ਜੇਕਰ ਕਾਲ ਸਫ਼ਲ ਹੋ ਜਾਵੇ ਤਾਂ ਲੂਪ ਰੋਕੋ
+    } catch (err) {
+      console.warn(`Model ${modelName} failed, trying next... Error:`, err.message);
+      lastError = err;
+    }
+  }
+
+  if (parsedData) {
     return res.json({
       success: true,
-      provider: "Gemini 2.5 Flash",
+      provider: usedModel,
       data: parsedData
     });
-  } catch (error) {
-    console.error("Gemini Classification Error:", error);
+  } else {
     return res.status(500).json({
-      error: "ਵਰਗੀਕਰਨ ਕਰਨ ਦੌਰਾਨ ਸਮੱਸਿਆ ਆਈ ਹੈ: " + error.message,
-      details: error.message
+      error: "ਵਰਗੀਕਰਨ ਕਰਨ ਦੌਰਾਨ ਸਮੱਸਿਆ ਆਈ ਹੈ: " + (lastError ? lastError.message : "ਅਣਜਾਣ ਗਲਤੀ"),
+      details: lastError ? lastError.message : null
     });
   }
 });
