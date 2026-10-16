@@ -10,26 +10,25 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = (process.env.GEMINI_API_KEY || '').trim();
 
 function getPrompt(title) {
-  return `You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).
-Title: "${title}"
-
-Return ONLY a valid, raw JSON object (no markdown, no backticks, no comments) with this exact schema:
-{
-  "ddc": {
-    "number": "string",
-    "heading": "string",
-    "confidence": "High/Medium/Low"
-  },
-  "udc": {
-    "number": "string",
-    "heading": "string",
-    "confidence": "High/Medium/Low"
-  },
-  "summary": "Brief explanation"
-}`;
+  return "You are an expert library cataloger. Classify the following work under Dewey Decimal Classification (DDC) and Universal Decimal Classification (UDC).\n" +
+    "Title: \"" + title + "\"\n\n" +
+    "Return ONLY a valid, raw JSON object (no markdown, no backticks, no comments) with this exact schema:\n" +
+    "{\n" +
+    "  \"ddc\": {\n" +
+    "    \"number\": \"string\",\n" +
+    "    \"heading\": \"string\",\n" +
+    "    \"confidence\": \"High/Medium/Low\"\n" +
+    "  },\n" +
+    "  \"udc\": {\n" +
+    "    \"number\": \"string\",\n" +
+    "    \"heading\": \"string\",\n" +
+    "    \"confidence\": \"High/Medium/Low\"\n" +
+    "  },\n" +
+    "  \"summary\": \"Brief explanation\"\n" +
+    "}";
 }
 
 function cleanAndParseJSON(rawText) {
@@ -44,30 +43,6 @@ function cleanAndParseJSON(rawText) {
   return JSON.parse(cleaned);
 }
 
-// Function to fetch available models for your specific API key
-async function findWorkingModel(apiKey) {
-  try {
-    const res = await fetch(`[https://generativelanguage.googleapis.com/v1beta/models?key=$](https://generativelanguage.googleapis.com/v1beta/models?key=$){apiKey}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.models && Array.isArray(data.models)) {
-      const available = data.models
-        .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-        .map(m => m.name.replace('models/', ''));
-
-      // Prefer gemini-3.8-flash, then any flash model
-      const preferred = available.find(m => m === 'gemini-3.8-flash') ||
-                        available.find(m => m.includes('3.8')) ||
-                        available.find(m => m.includes('flash')) ||
-                        available[0];
-      return preferred || null;
-    }
-  } catch (err) {
-    console.warn("Could not list models dynamically:", err.message);
-  }
-  return null;
-}
-
 app.get('/health', (req, res) => {
   res.status(200).send("OK");
 });
@@ -76,29 +51,28 @@ app.post('/api/classify', async (req, res) => {
   const { title } = req.body;
 
   if (!title || typeof title !== 'string' || !title.trim()) {
-    return res.status(400).json({ error: "Please enter a valid book title." });
+    return res.status(400).json({ error: "Please enter a book title." });
   }
 
   if (!API_KEY) {
     return res.status(500).json({ 
-      error: "GEMINI_API_KEY is missing. Please add it to your Render Environment Variables." 
+      error: "GEMINI_API_KEY is not configured in Render Environment Variables." 
     });
   }
 
-  // Determine candidate models in order of priority
-  const candidates = ['gemini-3.8-flash'];
-  const dynamicModel = await findWorkingModel(API_KEY);
-  if (dynamicModel && !candidates.includes(dynamicModel)) {
-    candidates.push(dynamicModel);
-  }
-
+  const modelList = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
   let finalData = null;
-  let modelUsed = '';
-  let lastError = null;
+  let activeModel = '';
+  let lastErrMsg = '';
 
-  for (const model of candidates) {
+  for (let i = 0; i < modelList.length; i++) {
+    const currentModel = modelList[i];
     try {
-      const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${API_KEY}`;
+      const endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)" + 
+        encodeURIComponent(currentModel) + 
+        ":generateContent?key=" + 
+        encodeURIComponent(API_KEY);
+
       const payload = {
         contents: [
           {
@@ -111,38 +85,38 @@ app.post('/api/classify', async (req, res) => {
         }
       };
 
-      const response = await fetch(url, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      const jsonResponse = await response.json();
+      const resJson = await response.json();
 
       if (!response.ok) {
-        throw new Error(jsonResponse.error?.message || `HTTP ${response.status}`);
+        throw new Error(resJson.error?.message || ("HTTP " + response.status));
       }
 
-      const rawText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
       finalData = cleanAndParseJSON(rawText);
-      modelUsed = model;
+      activeModel = currentModel;
       break;
     } catch (err) {
-      console.warn(`Attempt with ${model} failed: ${err.message}`);
-      lastError = err;
+      console.warn("Attempt with " + currentModel + " failed: " + err.message);
+      lastErrMsg = err.message;
     }
   }
 
   if (finalData) {
     return res.json({
       success: true,
-      provider: modelUsed,
+      provider: activeModel,
       data: finalData
     });
   }
 
   return res.status(500).json({
-    error: "Classification failed: " + (lastError ? lastError.message : "Unknown error")
+    error: "Classification failed: " + lastErrMsg
   });
 });
 
@@ -152,5 +126,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server actively running on port ${PORT}`);
+  console.log("Server actively running on port " + PORT);
 });
