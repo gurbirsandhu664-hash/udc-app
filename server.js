@@ -9,10 +9,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Aapki original index.html aur assets bina version change kiye root se load honge[span_7](start_span)[span_7](end_span)
+// ਦੋਵੇਂ ਥਾਵਾਂ ਤੋਂ ਸਟੈਟਿਕ ਫ਼ਾਈਲਾਂ ਸਰਵ ਕਰਨਾ
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Reference index data safely load karna[span_8](start_span)[span_8](end_span)
+// ਰੈਫ਼ਰੈਂਸ ਡਾਟਾ ਲੋਡ ਕਰਨਾ
 let udcData = [];
 let ddcData = [];
 
@@ -26,19 +27,17 @@ try {
   if (fs.existsSync(ddcPath)) {
     ddcData = JSON.parse(fs.readFileSync(ddcPath, 'utf8'));
   }
-  console.log(`Data Loaded: UDC (${udcData.length}), DDC (${ddcData.length})`);
+  console.log(`Loaded UDC: ${udcData.length}, DDC: ${ddcData.length}`);
 } catch (err) {
   console.error("Index load error:", err.message);
 }
 
-// Smart Ranking & Intelligence Logic[span_9](start_span)[span_9](end_span)
+// ਸਮਾਰਟ ਸਰਚ ਲੌਜਿਕ
 function searchSmartClassification(query) {
   const cleanQuery = (query || '').toLowerCase().trim();
   if (!cleanQuery) return [];
 
-  // Stop-words filtering (behtar matching ke liye)
-  const stopWords = new Set(['the', 'is', 'in', 'and', 'to', 'of', 'for', 'with', 'on', 'at', 'a', 'an']);
-  const tokens = cleanQuery.split(/[\s,.-]+/).filter(t => t.length > 1 && !stopWords.has(t));
+  const tokens = cleanQuery.split(/[\s,.-]+/).filter(t => t.length > 1);
 
   function calculateScore(item, systemType) {
     const title = (item.title || item.name || '').toLowerCase();
@@ -46,23 +45,10 @@ function searchSmartClassification(query) {
     const code = (item.code || item.class || item.number || '').toString().toLowerCase();
 
     let score = 0;
+    if (code === cleanQuery) score += 120;
+    if (title.includes(cleanQuery)) score += 60;
+    if (description.includes(cleanQuery)) score += 30;
 
-    // 1. Exact code match (Sabse zyada priority)
-    if (code === cleanQuery) {
-      score += 120;
-    }
-
-    // 2. Exact phrase match in title
-    if (title.includes(cleanQuery)) {
-      score += 60;
-    }
-
-    // 3. Exact phrase match in description
-    if (description.includes(cleanQuery)) {
-      score += 30;
-    }
-
-    // 4. Token-level matching (Spelling aur parts match karne ke liye)
     tokens.forEach(tok => {
       if (title.includes(tok)) score += 15;
       if (description.includes(tok)) score += 6;
@@ -72,54 +58,57 @@ function searchSmartClassification(query) {
     return { ...item, systemType, score };
   }
 
-  const udcMatches = udcData.map(item => calculateScore(item, 'UDC')); //[span_10](start_span)[span_10](end_span)
-  const ddcMatches = ddcData.map(item => calculateScore(item, 'DDC')); //[span_11](start_span)[span_11](end_span)
-
+  const udcMatches = udcData.map(item => calculateScore(item, 'UDC'));
+  const ddcMatches = ddcData.map(item => calculateScore(item, 'DDC'));
   const combined = [...udcMatches, ...ddcMatches].filter(res => res.score > 0);
 
-  // Highest score results sabse upar
   combined.sort((a, b) => b.score - a.score);
-
   return combined.slice(0, 5);
 }
 
-// API Routes (Purane frontend ke compatibility ke sath)
+// API ਐਂਡਪੁਆਇੰਟ
 app.post(['/api/classify', '/api/ask', '/classify'], (req, res) => {
   try {
     const input = req.body.message || req.body.query || req.body.text || req.body.input || '';
-
     if (!input.trim()) {
-      return res.json({ reply: "Kripya koi topic ya keyword likhein.", matches: [] });
+      return res.json({ reply: "ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ ਲਿਖੋ।", matches: [] });
     }
 
     const results = searchSmartClassification(input);
-
     if (results.length === 0) {
       return res.json({
-        reply: `Query "${input}" ke liye koi satik match nahi mila. Kripya alag keywords use karein.`,
+        reply: `"${input}" ਲਈ ਕੋਈ ਸਹੀ ਮੈਚ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਹੋਰ ਸ਼ਬਦ ਲਿਖੋ।`,
         matches: []
       });
     }
 
-    // Clean human-readable response format[span_12](start_span)[span_12](end_span)
-    let replyText = `Results for "${input}":\n\n`;
+    let replyText = `"${input}" ਲਈ ਨਤੀਜੇ:\n\n`;
     results.forEach((item, index) => {
       const code = item.code || item.class || item.number || 'N/A';
       const heading = item.title || item.name || 'Untitled';
-      replyText += `${index + 1}. [${item.systemType}] Code: ${code} | ${heading}\n`;
+      replyText += `${index + 1}. [${item.systemType}] ਕੋਡ: ${code} | ${heading}\n`;
     });
 
     res.json({ reply: replyText, matches: results });
   } catch (err) {
-    res.status(500).json({ error: "Processing error", details: err.message });
+    res.status(500).json({ error: "ਪ੍ਰੋਸੈਸਿੰਗ ਵਿੱਚ ਗਲਤੀ ਆਈ।" });
   }
 });
 
-// Original index.html ko bina kisi badlav ke serve karna[span_13](start_span)[span_13](end_span)
+// index.html ਨੂੰ ਆਪਣੇ-ਆਪ ਦੋਵਾਂ ਥਾਵਾਂ 'ਤੇ ਲੱਭਣਾ
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  const rootIndex = path.join(__dirname, 'index.html');
+  const publicIndex = path.join(__dirname, 'public', 'index.html');
+
+  if (fs.existsSync(rootIndex)) {
+    return res.sendFile(rootIndex);
+  } else if (fs.existsSync(publicIndex)) {
+    return res.sendFile(publicIndex);
+  } else {
+    res.status(404).send("index.html ਫ਼ਾਈਲ ਨਹੀਂ ਮਿਲੀ।");
+  }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`ਸਰਵਰ ਪੋਰਟ ${PORT} 'ਤੇ ਚੱਲ ਰਿਹਾ ਹੈ।`);
 });
