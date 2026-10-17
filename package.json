@@ -1,9 +1,0 @@
-{
-  "name": "udc-app",
-  "version": "1.0.0",
-  "description": "UDC and DDC Classifier",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  }
-}
