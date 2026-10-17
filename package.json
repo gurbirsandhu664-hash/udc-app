@@ -1,14 +1,9 @@
 {
-  "name": "udc-ddc-accuracy-boost-classifier",
-  "version": "127.0.0",
-  "type": "module",
+  "name": "udc-app",
+  "version": "1.0.0",
+  "description": "UDC and DDC Classifier",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.21.2"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
