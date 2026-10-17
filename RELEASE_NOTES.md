@@ -202,3 +202,9 @@ Validation: JavaScript syntax checks performed. Live Render deployment and end-t
 - The result now displays the exact title received, all extracted title concepts, and any concepts not explicitly covered in the explanation.
 - API responses now expose `exact_title_received` and `coverage_complete` in `title_coverage_audit`.
 - Preserved the existing classification logic, UDC/DDC separation, and evidence gate. No unsupported number is promoted to authority-verified merely to make the answer look complete.
+
+## V142 — Title-first semantic recovery
+- Improved reference evidence ranking using title-token coverage and adjacent phrase matches.
+- Strengthened model instructions to identify the semantic head topic and preserve occupational/place/time/form qualifiers.
+- Added a guarded candidate rule for labour unions of librarians to prevent “librarians” alone from forcing class 02.
+- Exact authority verification is still required for arbitrary titles; no system can guarantee an exact number from title text alone.
