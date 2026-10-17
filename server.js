@@ -1,136 +1,149 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// ਬਿਨਾਂ ਬਾਹਰੀ ਪੈਕੇਜ ਦੇ CORS ਅਤੇ JSON ਸਪੋਰਟ
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.use(express.json());
 
-// ਰੂਟ ਅਤੇ public ਦੋਵੇਂ ਫ਼ੋਲਡਰਾਂ ਤੋਂ ਸਟੈਟਿਕ ਫ਼ਾਈਲਾਂ ਸਰਵ ਕਰਨਾ
+// ਰੂਟ ਅਤੇ public ਦੋਵੇਂ ਫ਼ੋਲਡਰਾਂ ਤੋਂ ਫ਼ਾਈਲਾਂ ਸਰਵ ਕਰਨਾ
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ਰੈਫ਼ਰੈਂਸ ਡਾਟਾ ਮੈਮੋਰੀ ਵਿੱਚ ਲੋਡ ਕਰਨਾ
-let udcData = [];
-let ddcData = [];
+// ਰੈਫ਼ਰੈਂਸ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਤਰੀਕੇ ਨਾਲ ਲੋਡ ਕਰਨਾ (ਮੈਮਰੀ ਕ੍ਰੈਸ਼ ਤੋਂ ਬਚਾਅ)
+let records = [];
 
-try {
-  const udcPath = path.join(__dirname, 'udc-1961-reference-index.json');
-  const ddcPath = path.join(__dirname, 'ddc-23-reference-index.json');
+function loadCompactData() {
+  const files = [
+    { name: 'udc-1961-reference-index.json', type: 'UDC' },
+    { name: 'ddc-23-reference-index.json', type: 'DDC' }
+  ];
 
-  if (fs.existsSync(udcPath)) {
-    udcData = JSON.parse(fs.readFileSync(udcPath, 'utf8'));
+  for (const f of files) {
+    const fullPath = path.join(__dirname, f.name);
+    if (!fs.existsSync(fullPath)) continue;
+
+    try {
+      const raw = fs.readFileSync(fullPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      const list = Array.isArray(parsed) ? parsed : Object.values(parsed);
+
+      for (let i = 0; i < list.length; i++) {
+        const item = list[i];
+        if (!item) continue;
+
+        const code = String(item.code || item.class || item.number || item.id || '').trim();
+        const text = String(item.title || item.name || item.description || item.heading || '').trim();
+
+        if (code || text) {
+          records.push({
+            type: f.type,
+            code: code,
+            text: text,
+            searchKey: (code + ' ' + text).toLowerCase()
+          });
+        }
+      }
+      console.log(`Loaded: ${f.name}`);
+    } catch (err) {
+      console.error(`Skipping ${f.name} due to error:`, err.message);
+    }
   }
-  if (fs.existsSync(ddcPath)) {
-    ddcData = JSON.parse(fs.readFileSync(ddcPath, 'utf8'));
-  }
-  console.log(`ਡਾਟਾ ਲੋਡ ਹੋ ਗਿਆ: UDC (${udcData.length}), DDC (${ddcData.length})`);
-} catch (err) {
-  console.error("Index file load karan vich error:", err.message);
 }
 
-// ਸਮਾਰਟ ਟੋਕਨਾਈਜ਼ੇਸ਼ਨ ਅਤੇ ਫ਼ਜ਼ੀ ਮੈਚਿੰਗ ਫੰਕਸ਼ਨ
-function searchSmartClassification(query) {
-  const cleanQuery = (query || '').toLowerCase().trim();
-  if (!cleanQuery) return [];
+// ਸਰਵਰ ਸ਼ੁਰੂ ਹੋਣ 'ਤੇ ਡਾਟਾ ਲੋਡ ਕਰਨਾ
+loadCompactData();
 
-  // ਸਟਾਪ-ਵਰਡਜ਼ ਹਟਾਉਣਾ ਤਾਂ ਜੋ ਸਿਰਫ਼ ਮੁੱਖ ਵਿਸ਼ੇ 'ਤੇ ਧਿਆਨ ਰਹੇ
-  const stopWords = new Set(['the', 'is', 'in', 'and', 'to', 'of', 'for', 'with', 'on', 'at', 'a', 'an']);
-  const tokens = cleanQuery.split(/[\s,.-]+/).filter(t => t.length > 1 && !stopWords.has(t));
+// ਸਮਾਰਟ ਸਰਚ ਲੌਜਿਕ
+function searchIndex(query) {
+  const clean = (query || '').toLowerCase().trim();
+  if (!clean) return [];
 
-  function calculateScore(item, systemType) {
-    const title = (item.title || item.name || '').toLowerCase();
-    const description = (item.description || item.notes || '').toLowerCase();
-    const code = (item.code || item.class || item.number || '').toString().toLowerCase();
+  const tokens = clean.split(/[\s,.-]+/).filter(t => t.length > 1);
+  const matches = [];
 
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
     let score = 0;
 
-    // 1. ਐਗਜ਼ੈਕਟ ਕੋਡ ਮੈਚ (ਸਭ ਤੋਂ ਵੱਧ ਪ੍ਰਾਥਮਿਕਤਾ)
-    if (code === cleanQuery) {
+    if (r.code.toLowerCase() === clean) {
       score += 150;
+    } else if (r.code.toLowerCase().startsWith(clean)) {
+      score += 70;
     }
 
-    // 2. ਟਾਈਟਲ ਵਿੱਚ ਪੂਰਾ ਵਾਕ ਮਿਲਣਾ
-    if (title.includes(cleanQuery)) {
-      score += 80;
+    if (r.text.toLowerCase().includes(clean)) {
+      score += 50;
     }
 
-    // 3. ਵੇਰਵੇ (Description) ਵਿੱਚ ਪੂਰਾ ਵਾਕ ਮਿਲਣਾ
-    if (description.includes(cleanQuery)) {
-      score += 40;
+    for (let j = 0; j < tokens.length; j++) {
+      if (r.searchKey.includes(tokens[j])) {
+        score += 15;
+      }
     }
 
-    // 4. ਟੋਕਨ ਪੱਧਰ 'ਤੇ ਮੈਚਿੰਗ (ਕੀਵਰਡ ਦੇ ਹਿੱਸੇ)
-    tokens.forEach(tok => {
-      if (code.startsWith(tok)) score += 30;
-      if (title.includes(tok)) score += 20;
-      if (description.includes(tok)) score += 8;
-    });
-
-    return { ...item, systemType, score };
+    if (score > 0) {
+      matches.push({ type: r.type, code: r.code, text: r.text, score: score });
+    }
   }
 
-  const udcMatches = udcData.map(item => calculateScore(item, 'UDC'));
-  const ddcMatches = ddcData.map(item => calculateScore(item, 'DDC'));
-
-  // ਸਿਰਫ਼ ਉਹ ਰਿਕਾਰਡ ਰੱਖਣੇ ਜਿਨ੍ਹਾਂ ਦਾ ਸਕੋਰ 0 ਤੋਂ ਵੱਧ ਹੋਵੇ
-  const combined = [...udcMatches, ...ddcMatches].filter(res => res.score > 0);
-
-  // ਸਕੋਰ ਅਨੁਸਾਰ ਘਟਦੇ ਕ੍ਰਮ ਵਿੱਚ ਲਗਾਉਣਾ (ਸਭ ਤੋਂ ਸਹੀ ਜਵਾਬ ਸਭ ਤੋਂ ਉੱਪਰ)
-  combined.sort((a, b) => b.score - a.score);
-
-  return combined.slice(0, 5);
+  matches.sort((a, b) => b.score - a.score);
+  return matches.slice(0, 5);
 }
 
-// API ਐਂਡਪੁਆਇੰਟਸ (ਸਾਰੇ ਆਮ ਰੂਟਾਂ ਦੀ ਸੁਵਿਧਾ)
+// API ਐਂਡਪੁਆਇੰਟਸ
 app.post(['/api/classify', '/api/ask', '/classify'], (req, res) => {
   try {
     const input = req.body.message || req.body.query || req.body.text || req.body.input || '';
 
     if (!input.trim()) {
-      return res.json({ reply: "ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ ਲਿਖੋ।", matches: [] });
+      return res.json({ reply: 'ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ ਲਿਖੋ।', matches: [] });
     }
 
-    const results = searchSmartClassification(input);
+    const results = searchIndex(input);
 
     if (results.length === 0) {
       return res.json({
-        reply: `ਕੁਐਰੀ "${input}" ਲਈ ਕੋਈ ਸਹੀ ਮੈਚ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਵੱਖਰੇ ਸ਼ਬਦ ਵਰਤ ਕੇ ਦੇਖੋ।`,
+        reply: `"${input}" ਲਈ ਕੋਈ ਸਹੀ ਮੈਚ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਸ਼ਬਦ ਬਦਲ ਕੇ ਦੇਖੋ।`,
         matches: []
       });
     }
 
-    // ਸਾਫ਼ ਅਤੇ ਸਪਸ਼ਟ ਫਾਰਮੈਟ
     let replyText = `"${input}" ਲਈ ਸਭ ਤੋਂ ਸਹੀ ਨਤੀਜੇ:\n\n`;
     results.forEach((item, index) => {
-      const code = item.code || item.class || item.number || 'N/A';
-      const heading = item.title || item.name || 'ਬਿਨਾਂ ਸਿਰਲੇਖ';
-      replyText += `${index + 1}. [${item.systemType}] ਕੋਡ: ${code} | ${heading}\n`;
+      replyText += `${index + 1}. [${item.type}] ਕੋਡ: ${item.code || 'N/A'} | ${item.text}\n`;
     });
 
     res.json({ reply: replyText, matches: results });
   } catch (err) {
-    res.status(500).json({ error: "ਪ੍ਰੋਸੈਸਿੰਗ ਵਿੱਚ ਗਲਤੀ ਆਈ।", details: err.message });
+    res.status(500).json({ error: 'ਪ੍ਰੋਸੈਸਿੰਗ ਵਿੱਚ ਗਲਤੀ ਆਈ।' });
   }
 });
 
-// index.html ਨੂੰ ਰੂਟ ਅਤੇ public ਦੋਵਾਂ ਥਾਵਾਂ 'ਤੇ ਆਪਣੇ-ਆਪ ਲੱਭਣਾ
+// index.html ਸਰਵ ਕਰਨਾ
 app.get('*', (req, res) => {
   const rootIndex = path.join(__dirname, 'index.html');
   const publicIndex = path.join(__dirname, 'public', 'index.html');
 
   if (fs.existsSync(rootIndex)) {
-    return res.sendFile(rootIndex);
+    res.sendFile(rootIndex);
   } else if (fs.existsSync(publicIndex)) {
-    return res.sendFile(publicIndex);
+    res.sendFile(publicIndex);
   } else {
-    res.status(404).send("ਗ਼ਲਤੀ: index.html ਫ਼ਾਈਲ ਨਹੀਂ ਮਿਲੀ।");
+    res.status(404).send('index.html ਨਹੀਂ ਮਿਲੀ।');
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`ਸਰਵਰ ਪੋਰਟ ${PORT} 'ਤੇ ਸਫ਼ਲਤਾਪੂਰਵਕ ਚੱਲ ਰਿਹਾ ਹੈ।`);
+  console.log(`Server running on port ${PORT}`);
 });
