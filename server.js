@@ -1,29 +1,14 @@
-const express = require('express');
-const path = require('path');
+const http = require('http');
 const fs = require('fs');
+const path = require('path');
+const url = require('url');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-// ਬਿਨਾਂ ਬਾਹਰੀ ਪੈਕੇਜ ਦੇ CORS ਅਤੇ JSON ਸਪੋਰਟ
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
-
-app.use(express.json());
-
-// ਰੂਟ ਅਤੇ public ਦੋਵੇਂ ਫ਼ੋਲਡਰਾਂ ਤੋਂ ਫ਼ਾਈਲਾਂ ਸਰਵ ਕਰਨਾ
-app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ਰੈਫ਼ਰੈਂਸ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਤਰੀਕੇ ਨਾਲ ਲੋਡ ਕਰਨਾ (ਮੈਮਰੀ ਕ੍ਰੈਸ਼ ਤੋਂ ਬਚਾਅ)
+// ਰੈਫ਼ਰੈਂਸ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਲੋਡ ਕਰਨਾ
 let records = [];
 
-function loadCompactData() {
+function loadData() {
   const files = [
     { name: 'udc-1961-reference-index.json', type: 'UDC' },
     { name: 'ddc-23-reference-index.json', type: 'DDC' }
@@ -34,8 +19,8 @@ function loadCompactData() {
     if (!fs.existsSync(fullPath)) continue;
 
     try {
-      const raw = fs.readFileSync(fullPath, 'utf8');
-      const parsed = JSON.parse(raw);
+      const content = fs.readFileSync(fullPath, 'utf8');
+      const parsed = JSON.parse(content);
       const list = Array.isArray(parsed) ? parsed : Object.values(parsed);
 
       for (let i = 0; i < list.length; i++) {
@@ -55,17 +40,16 @@ function loadCompactData() {
         }
       }
       console.log(`Loaded: ${f.name}`);
-    } catch (err) {
-      console.error(`Skipping ${f.name} due to error:`, err.message);
+    } catch (e) {
+      console.error(`Error loading ${f.name}:`, e.message);
     }
   }
 }
 
-// ਸਰਵਰ ਸ਼ੁਰੂ ਹੋਣ 'ਤੇ ਡਾਟਾ ਲੋਡ ਕਰਨਾ
-loadCompactData();
+loadData();
 
 // ਸਮਾਰਟ ਸਰਚ ਲੌਜਿਕ
-function searchIndex(query) {
+function searchSmart(query) {
   const clean = (query || '').toLowerCase().trim();
   if (!clean) return [];
 
@@ -101,49 +85,102 @@ function searchIndex(query) {
   return matches.slice(0, 5);
 }
 
-// API ਐਂਡਪੁਆਇੰਟਸ
-app.post(['/api/classify', '/api/ask', '/classify'], (req, res) => {
-  try {
-    const input = req.body.message || req.body.query || req.body.text || req.body.input || '';
+// MIME Types
+const mimeTypes = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml'
+};
 
-    if (!input.trim()) {
-      return res.json({ reply: 'ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ ਲਿਖੋ।', matches: [] });
-    }
+// Pure Node.js ਸਰਵਰ
+const server = http.createServer((req, res) => {
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    const results = searchIndex(input);
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
 
-    if (results.length === 0) {
-      return res.json({
-        reply: `"${input}" ਲਈ ਕੋਈ ਸਹੀ ਮੈਚ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਸ਼ਬਦ ਬਦਲ ਕੇ ਦੇਖੋ।`,
-        matches: []
-      });
-    }
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname;
 
-    let replyText = `"${input}" ਲਈ ਸਭ ਤੋਂ ਸਹੀ ਨਤੀਜੇ:\n\n`;
-    results.forEach((item, index) => {
-      replyText += `${index + 1}. [${item.type}] ਕੋਡ: ${item.code || 'N/A'} | ${item.text}\n`;
+  // API Requests
+  if (req.method === 'POST' && (pathname === '/api/classify' || pathname === '/api/ask' || pathname === '/classify')) {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        const input = data.message || data.query || data.text || data.input || '';
+
+        if (!input.trim()) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ reply: 'ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਵਿਸ਼ਾ ਜਾਂ ਕੀਵਰਡ ਲਿਖੋ।', matches: [] }));
+          return;
+        }
+
+        const results = searchSmart(input);
+
+        if (results.length === 0) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            reply: `"${input}" ਲਈ ਕੋਈ ਸਹੀ ਮੈਚ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਸ਼ਬਦ ਬਦਲ ਕੇ ਦੇਖੋ।`,
+            matches: []
+          }));
+          return;
+        }
+
+        let replyText = `"${input}" ਲਈ ਸਭ ਤੋਂ ਸਹੀ ਨਤੀਜੇ:\n\n`;
+        results.forEach((item, index) => {
+          replyText += `${index + 1}. [${item.type}] ਕੋਡ: ${item.code || 'N/A'} | ${item.text}\n`;
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ reply: replyText, matches: results }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'ਪ੍ਰੋਸੈਸਿੰਗ ਵਿੱਚ ਗਲਤੀ ਆਈ।' }));
+      }
     });
-
-    res.json({ reply: replyText, matches: results });
-  } catch (err) {
-    res.status(500).json({ error: 'ਪ੍ਰੋਸੈਸਿੰਗ ਵਿੱਚ ਗਲਤੀ ਆਈ।' });
+    return;
   }
-});
 
-// index.html ਸਰਵ ਕਰਨਾ
-app.get('*', (req, res) => {
-  const rootIndex = path.join(__dirname, 'index.html');
-  const publicIndex = path.join(__dirname, 'public', 'index.html');
+  // Static File Serving (Root ਅਤੇ Public ਦੋਵਾਂ ਤੋਂ)
+  let safePath = pathname === '/' ? '/index.html' : pathname;
+  let filePath = path.join(__dirname, safePath);
 
-  if (fs.existsSync(rootIndex)) {
-    res.sendFile(rootIndex);
-  } else if (fs.existsSync(publicIndex)) {
-    res.sendFile(publicIndex);
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(__dirname, 'public', safePath);
+  }
+
+  // ਜੇ ਫ਼ਾਈਲ ਨਹੀਂ ਮਿਲਦੀ ਤਾਂ index.html ਵੱਲ ਰੀਡਾਇਰੈਕਟ
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(__dirname, 'index.html');
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join(__dirname, 'public', 'index.html');
+    }
+  }
+
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    res.writeHead(200, { 'Content-Type': contentType });
+    fs.createReadStream(filePath).pipe(res);
   } else {
-    res.status(404).send('index.html ਨਹੀਂ ਮਿਲੀ।');
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('404 Not Found');
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
 });
