@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 10000;
 const ENGINE_VERSION = "V148-GEMINI-SAFE-FALLBACK";
 
 // 👇 ਇੱਥੇ ਆਪਣੀ GEMINI API KEY ਪਾਓ 👇
-const GEMINI_KEY = "AQ.Ab8RN6Ie-d87d1k80gSCHG2VKnFgWIZnlbX_28AWBH_4is7rkA";
+const GEMINI_KEY = "AQ.Ab8RN6LxD2xmVlZc9Pe9Q00fRikw7GKLtn1NLllgnu794znOXA";
 const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
 
 // Helper functions
