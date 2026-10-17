@@ -9,26 +9,22 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS headers ensure frontend doesn't get blocked
+// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
-// Serve frontend assets
 app.use(express.static(__dirname));
 
 // ============================================================
-// 1. In-Memory Caching (DDC & UDC Reference Indices)
+// 1. In-Memory Caching (Safe Load)
 // ============================================================
 let ddcIndex = [];
 let udcIndex = [];
@@ -37,211 +33,190 @@ function loadIndices() {
   try {
     const ddcPath = path.join(__dirname, 'ddc-23-reference-index.json');
     if (fs.existsSync(ddcPath)) {
-      ddcIndex = JSON.parse(fs.readFileSync(ddcPath, 'utf-8'));
-      console.log(`[Cache] DDC Index loaded: ${ddcIndex.length} records`);
+      const data = JSON.parse(fs.readFileSync(ddcPath, 'utf-8'));
+      ddcIndex = Array.isArray(data) ? data : (data.records || data.items || []);
     }
+  } catch (e) {
+    console.error('Error loading DDC index:', e.message);
+  }
 
+  try {
     const udcPath = path.join(__dirname, 'udc-1961-reference-index.json');
     if (fs.existsSync(udcPath)) {
-      udcIndex = JSON.parse(fs.readFileSync(udcPath, 'utf-8'));
-      console.log(`[Cache] UDC Index loaded: ${udcIndex.length} records`);
+      const data = JSON.parse(fs.readFileSync(udcPath, 'utf-8'));
+      udcIndex = Array.isArray(data) ? data : (data.records || data.items || []);
     }
-  } catch (error) {
-    console.error('[Cache Error] Failed to load JSON files:', error.message);
+  } catch (e) {
+    console.error('Error loading UDC index:', e.message);
   }
 }
-
 loadIndices();
 
 // ============================================================
-// 2. Curated Exact Matches (For Standard Authority Titles)
+// 2. Exact Title Rules (Standard Authority Data)
 // ============================================================
-const exactTitleRules = {
+const exactRules = {
   "snake farming in south india": {
     udc: "638.8(540)",
     ddc: "639.39",
-    class: "Snake Farming / Animal Culture",
-    authority: "UDC/DDC Exact-Title Rule"
+    class: "Snake Farming / Animal Culture"
   },
   "electrotherapy for economically useful animals": {
     udc: "619:615.84",
     ddc: "636.089584",
-    class: "Veterinary Electrotherapy",
-    authority: "UDC/DDC Exact-Title Rule"
+    class: "Veterinary Electrotherapy"
   },
   "design and construction of cement floor": {
     udc: "69.025.331",
     ddc: "690.16",
-    class: "Floors / Cement Construction",
-    authority: "UDC/DDC Exact-Title Rule"
+    class: "Floors / Cement Construction"
   },
   "sobha singh — reproductions of his paintings": {
     udc: "75(540)(084)",
     ddc: "759.954",
-    class: "Indian Painting Reproductions",
-    authority: "UDC/DDC Exact-Title Rule"
+    class: "Indian Painting Reproductions"
   },
   "sobha singh": {
     udc: "75(540)",
     ddc: "759.954",
-    class: "Indian Painters / Biography",
-    authority: "UDC/DDC Exact-Title Rule"
+    class: "Indian Painters / Biography"
   },
   "dictionary of language and literature": {
     udc: "80(038)",
     ddc: "403",
-    class: "Language & Literature Dictionaries",
-    authority: "UDC/DDC Exact-Title Rule"
+    class: "Language & Literature Dictionaries"
   }
 };
 
-// ============================================================
-// 3. Normalization & Search Helpers
-// ============================================================
-function normalize(str) {
-  if (!str) return '';
-  return String(str).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+function safeStr(val) {
+  return typeof val === 'string' ? val : (val ? String(val) : '');
 }
 
-function cleanTitle(str) {
-  if (!str) return '';
-  return String(str).toLowerCase().trim().replace(/—/g, '-');
+function cleanInput(val) {
+  return safeStr(val).toLowerCase().replace(/—/g, '-').trim();
 }
 
-function classifyQuery(query, system = 'all') {
-  const cleaned = cleanTitle(query);
-  const normalized = normalize(query);
+// ============================================================
+// 3. Robust Classifier Logic (No Null Crashes)
+// ============================================================
+function getClassification(query, system = 'all') {
+  const cleaned = cleanInput(query);
+  const sys = cleanInput(system);
 
-  // Step 1: Check Configured Exact-Title Authority Rules
-  if (exactTitleRules[cleaned]) {
-    const item = exactTitleRules[cleaned];
-    return [{
-      code: system === 'ddc' ? item.ddc : item.udc,
-      udc: item.udc,
-      ddc: item.ddc,
-      title: query,
-      heading: item.class,
-      matchType: 'exact_rule',
+  // 1. Exact match from predefined rules
+  if (exactRules[cleaned]) {
+    const r = exactRules[cleaned];
+    const targetCode = (sys === 'ddc') ? r.ddc : r.udc;
+    return {
+      status: 'success',
+      found: true,
+      number: targetCode,
+      code: targetCode,
+      udcNumber: r.udc,
+      ddcNumber: r.ddc,
+      heading: r.class,
       confidence: 1.0,
-      authority: item.authority
-    }];
+      ruleType: 'exact_title_rule',
+      matches: [{
+        number: targetCode,
+        caption: r.class,
+        system: sys === 'ddc' ? 'DDC-23' : 'UDC-1961'
+      }]
+    };
   }
 
-  // Step 2: Pool search across UDC and DDC datasets
+  // 2. Pool Search
   let pool = [];
-  if (system === 'ddc') pool = ddcIndex;
-  else if (system === 'udc') pool = udcIndex;
+  if (sys === 'ddc') pool = ddcIndex;
+  else if (sys === 'udc') pool = udcIndex;
   else pool = [...udcIndex, ...ddcIndex];
 
-  // Exact Code Match
-  const exactCode = pool.filter(item => {
-    const code = normalize(item.code || item.class || item.notation || '');
-    return code === normalized;
-  });
-  if (exactCode.length > 0) {
-    return exactCode.map(x => ({ ...x, matchType: 'exact_code', confidence: 1.0 }));
-  }
+  for (const item of pool) {
+    if (!item) continue;
+    const title = cleanInput(item.title || item.heading || item.name || item.description);
+    const code = cleanInput(item.number || item.code || item.class || item.notation);
 
-  // Exact Title / Keyword Match
-  const exactTitle = pool.filter(item => {
-    const heading = (item.title || item.heading || item.description || '').toLowerCase();
-    return heading === cleaned || heading.includes(cleaned);
-  });
-  if (exactTitle.length > 0) {
-    return exactTitle.slice(0, 5).map(x => ({ ...x, matchType: 'exact_title', confidence: 0.95 }));
-  }
-
-  // Token-based matching
-  const tokens = cleaned.split(/\s+/).filter(w => w.length > 2);
-  if (tokens.length > 0) {
-    const matched = pool.filter(item => {
-      const text = (item.title || item.heading || item.description || '').toLowerCase();
-      return tokens.some(tok => text.includes(tok));
-    });
-    if (matched.length > 0) {
-      return matched.slice(0, 5).map(x => ({ ...x, matchType: 'token_match', confidence: 0.8 }));
+    if (title === cleaned || code === cleaned) {
+      const matchNum = safeStr(item.number || item.code || item.class || item.notation);
+      const matchHeading = safeStr(item.title || item.heading || item.name || item.description);
+      return {
+        status: 'success',
+        found: true,
+        number: matchNum,
+        code: matchNum,
+        heading: matchHeading,
+        confidence: 0.95,
+        matches: [{ number: matchNum, caption: matchHeading }]
+      };
     }
   }
 
-  return [];
+  // 3. Fallback: Clean response instead of throwing 500
+  return {
+    status: 'unresolved',
+    found: false,
+    number: null,
+    code: null,
+    message: 'Could not validate authoritative classification number.',
+    matches: []
+  };
 }
 
 // ============================================================
-// 4. Unified API Endpoint (Guaranteed JSON Response)
+// 4. Controller (Handles Both Frontend Formats)
 // ============================================================
-function handleClassification(req, res) {
-  // Supports GET query, POST body (JSON & URL-encoded)
-  const input = req.body?.title || req.body?.query || req.body?.q ||
-                req.query?.title || req.query?.query || req.query?.q || '';
-  const system = (req.body?.system || req.query?.system || 'all').toLowerCase();
+function handleRequest(req, res) {
+  try {
+    const raw = req.body || {};
+    const q = req.query || {};
 
-  if (!input || String(input).trim() === '') {
-    return res.status(400).json({
-      success: false,
-      found: false,
-      error: 'Please provide a title or notation code to classify.'
-    });
-  }
+    const input = raw.title || raw.query || raw.q || raw.input || q.title || q.query || q.q || '';
+    const system = raw.system || q.system || 'all';
 
-  const results = classifyQuery(input, system);
+    if (!safeStr(input).trim()) {
+      return res.status(200).json({
+        status: 'error',
+        found: false,
+        message: 'No title provided.'
+      });
+    }
 
-  if (results.length === 0) {
-    return res.json({
+    const result = getClassification(input, system);
+
+    // Frontend expectations response mapping
+    return res.status(200).json({
       success: true,
-      found: false,
       title: input,
-      message: 'No exact classification validated for this input.',
-      results: []
+      ...result
+    });
+  } catch (err) {
+    console.error('[Error in handleRequest]:', err);
+    // Even if an unexpected error occurs, send clean JSON instead of 500 HTML
+    return res.status(200).json({
+      status: 'error',
+      found: false,
+      message: 'Failed to process request safely.'
     });
   }
-
-  return res.json({
-    success: true,
-    found: true,
-    title: input,
-    count: results.length,
-    classification: results[0],
-    results: results
-  });
 }
 
-// Map ALL possible routes that frontend calls
-app.post('/api/classify', handleClassification);
-app.get('/api/classify', handleClassification);
-app.post('/classify', handleClassification);
-app.get('/classify', handleClassification);
-app.post('/api/search', handleClassification);
-app.get('/api/search', handleClassification);
-app.post('/search', handleClassification);
-app.get('/search', handleClassification);
+// Map all endpoints called by frontend
+app.post('/api/classify', handleRequest);
+app.get('/api/classify', handleRequest);
+app.post('/classify', handleRequest);
+app.get('/classify', handleRequest);
+app.post('/api/search', handleRequest);
+app.get('/api/search', handleRequest);
 
-// Health check endpoint
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
-// Root route serves UI
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Fallback: ALWAYS return JSON (prevents "non-JSON response" error on missing routes)
+// Always return JSON for 404s
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    found: false,
-    error: `Endpoint ${req.method} ${req.url} not found on server.`
-  });
-});
-
-// Error-handling middleware
-app.use((err, req, res, next) => {
-  console.error('[Unhandled Server Error]', err);
-  res.status(500).json({
-    success: false,
-    found: false,
-    error: 'Internal server error occurred.'
-  });
+  res.status(404).json({ status: 'error', message: 'Route not found' });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
