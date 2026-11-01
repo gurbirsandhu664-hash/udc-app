@@ -88,7 +88,7 @@ function ensureReferencesLoaded() {
   _refsLoaded = true;
 }
 
-const ENGINE_VERSION = "V164 UNIVERSAL ACCURACY ENGINE";
+const ENGINE_VERSION = "V165 GEMINI-FIRST ULTRA PRECISION ENGINE";
 
 function cleanTitle(s) {
   return String(s || "")
@@ -101,12 +101,49 @@ function cleanTitle(s) {
 }
 
 // ====================================================================
-// 🧠 TIER 1: HIGH-PRECISION CANONICAL MATRIX (DDC-23 & UDC 1961)
+// 🧠 CANONICAL LOOKUP (DENTISTRY, RAILWAYS, SCIENCES, EDUCATION)
 // ====================================================================
 function canonicalScheduleLookup(rawTitle) {
   const t = cleanTitle(rawTitle);
 
-  // 1. TEACHING OF SPECIFIC DISCIPLINES
+  // 1. DENTAL DISEASES & TREATMENT (Fixes "Treatment of Dental Diseases")
+  if (/\b(dent|dental|tooth|teeth|odontolog)\b/i.test(t)) {
+    const isTreatment = /\b(treat|treatment|therapy|therapeutics|cure|surgery|operative)\b/i.test(t);
+    const isDiseases = /\b(disease|diseases|pathology|caries|decay|disorder|disorders)\b/i.test(t);
+    const isElectro = /\b(electro|electric|x-ray|radiotherapy)\b/i.test(t);
+
+    let udc = "616.314";
+    let ddc = "617.6";
+    let sub = "Dentistry / Diseases of Teeth";
+
+    if (isElectro) {
+      udc = "616.314:615.84";
+      ddc = "617.6064";
+      sub = "Dentistry / Dental Electrotherapy";
+    } else if (isTreatment) {
+      udc = "616.314-08";
+      ddc = "617.605";
+      sub = "Dentistry / Treatment & Surgery of Teeth";
+    } else if (isDiseases) {
+      udc = "616.314";
+      ddc = "617.63";
+      sub = "Dentistry / Dental Diseases";
+    }
+
+    return {
+      status: "classified", title: rawTitle, full_title: rawTitle,
+      udc_number: udc, udc_answer: udc, ddc_number: ddc, ddc_answer: ddc,
+      main_subject: sub, sub_subject: rawTitle,
+      ddc_title: "Dentistry",
+      breakdown: `UDC (1961 p. 84): 616.314 = Teeth & Dentistry${isTreatment ? "; -08 = Treatment" : ""}. Complete: ${udc}`,
+      ddc_breakdown: `DDC-23 (Vol 3 p. 144): Base 617.6 = Dentistry; ${isTreatment ? "617.605 = Dental surgery/treatment" : "617.63 = Dental diseases"}. Complete: ${ddc}`,
+      explanation: `Specific clinical dentistry classification for "${rawTitle}".`,
+      confidence: "EXACT DENTAL SCHEDULE MATCH",
+      sources: ["UDC B.S. 1000A:1961 Class 616.314", `DDC-23 Schedule ${ddc}`]
+    };
+  }
+
+  // 2. TEACHING OF SPECIFIC DISCIPLINES
   if (/\b(teach|teaching|instruction|pedagogy|education in)\b/i.test(t)) {
     if (/\b(physics)\b/i.test(t)) {
       return {
@@ -116,8 +153,8 @@ function canonicalScheduleLookup(rawTitle) {
         main_subject: "Education / Teaching of Physics",
         sub_subject: rawTitle,
         ddc_title: "Education and teaching in physics",
-        breakdown: "UDC (B.S. 1000A:1961): 53 = Physics; :371.3 = Teaching methods. Complete: 53:371.3",
-        ddc_breakdown: "DDC-23 (Vol 1 Table 1 -071 / Vol 2): 530 Physics + Table 1 -071 Education. Complete: 530.071",
+        breakdown: "UDC (B.S. 1000A:1961): 53 = Physics; :371.3 = Methods of instruction. Complete: 53:371.3",
+        ddc_breakdown: "DDC-23: 530 Physics + Table 1 -071 = Education. Complete: 530.071",
         explanation: "Discipline-specific synthesis for physics teaching.",
         confidence: "EXACT DISCIPLINE SYNTHESIS",
         sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 530.071"]
@@ -153,24 +190,9 @@ function canonicalScheduleLookup(rawTitle) {
         sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 540.71"]
       };
     }
-    if (/\b(science|sciences)\b/i.test(t)) {
-      return {
-        status: "classified", title: rawTitle, full_title: rawTitle,
-        udc_number: "5:371.3", udc_answer: "5:371.3",
-        ddc_number: "507.1", ddc_answer: "507.1",
-        main_subject: "Education / Teaching of General Science",
-        sub_subject: rawTitle,
-        ddc_title: "Education and teaching in science",
-        breakdown: "UDC: 5 = Pure sciences; :371.3 = Methods of instruction. Complete: 5:371.3",
-        ddc_breakdown: "DDC-23: 500 General science + Table 1 -071. Complete: 507.1",
-        explanation: "General science instructional synthesis.",
-        confidence: "EXACT GENERAL SCIENCE SYNTHESIS",
-        sources: ["UDC 1961 Class 371.3", "DDC-23 Schedule 507.1"]
-      };
-    }
   }
 
-  // 2. RAILWAYS & TRANSPORTATION
+  // 3. RAILWAYS & TRANSPORTATION
   if (/\b(railway|railways|railroad|railroads|train|trains|locomotive)\b/i.test(t)) {
     const isIndia = /\b(india|indian|bharat)\b/i.test(t);
     const isEng = /\b(engineering|construction|track|tracks)\b/i.test(t);
@@ -194,7 +216,7 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 3. CHEMISTRY SPECIFIC SUB-DIVISIONS
+  // 4. CHEMISTRY BRANCHES
   if (/\b(organic chemistry|carbon compounds)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -209,7 +231,7 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 4. COMPUTER NETWORKS
+  // 5. COMPUTER NETWORKS
   if (/\b(computer network|computer networks|networking|data communication)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -224,7 +246,7 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 5. FOLKLORE & FOLKTAIL / FOLKTALES
+  // 6. FOLKLORE & FOLKTAIL
   const isFolk = /\b(folk[- ]?tale|folk[- ]?tail|folktales|folktails|folklore|focktail)\b/i.test(t);
   const isPlant = /\b(rose|flower|flowers|plant|plants|tree)\b/i.test(t);
   if (isFolk) {
@@ -250,11 +272,11 @@ function canonicalScheduleLookup(rawTitle) {
       ddc_breakdown: "DDC-23 Schedule 398.2.",
       explanation: "General folklore classification.",
       confidence: "EXACT FOLKLORE MATCH",
-      sources: ["UDC 1961 Class 398.2", "DDC-23 Schedule 398.2"]
+      sources: ["UDC 1961 Class 398.2", "DDC Class 398.2"]
     };
   }
 
-  // 6. INDIAN LIBRARY ASSOCIATION
+  // 7. INDIAN LIBRARY ASSOCIATION
   if (/\b(indian library association|ila)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -269,44 +291,23 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 7. PHYSIOGNOMY
-  if (/\b(face|facial|physiognom)\b/i.test(t) && /\b(psycholog|mental|expression)\b/i.test(t)) {
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "159.925.2", udc_answer: "159.925.2", ddc_number: "138", ddc_answer: "138",
-      main_subject: "Psychology / Physiognomy", sub_subject: rawTitle,
-      ddc_title: "Physiognomy",
-      breakdown: "UDC: 159.925.2. DDC-23: 138.",
-      ddc_breakdown: "DDC-23 Schedule 138.",
-      explanation: "Verified physiognomy classification.",
-      confidence: "EXACT PSYCHOLOGY MATCH",
-      sources: ["UDC 1961 p. 31", "DDC-23 Schedule 138"]
-    };
-  }
-
   return null;
 }
 
 // ====================================================================
-// ⚡ TIER 2: GEMINI MULTI-MODEL REAL-TIME DISPATCH (UNIVERSAL AI)
+// ⚡ GEMINI MULTI-MODEL LIVE DISPATCH (WITH PROPER UI BADGES)
 // ====================================================================
 async function callGeminiUniversal(title, model) {
   if (!GEMINI_KEY) return null;
 
-  const prompt = `You are a certified senior library cataloger using:
-1. Universal Decimal Classification (UDC B.S. 1000A:1961)
-2. Dewey Decimal Classification (DDC-23 Volumes 1-4)
-
+  const prompt = `You are a certified professional cataloger in UDC (B.S. 1000A:1961) and DDC-23.
 Classify this title: "${title}".
-Input can be in any case (upper, lower, mixed). Ignore casing.
+Users can type in ANY case.
 
-STRICT INSTRUCTIONS:
-1. Provide the SPECIFIC sub-discipline or synthesized notation for BOTH UDC and DDC.
-2. NEVER output general main class fallbacks like 0, 00, 000, 001, 500, 507.1, 540, 600, 610, 820 when a precise sub-topic exists.
-   - Example "Teaching of Physics" -> UDC: 53:371.3, DDC: 530.071 (NOT 507.1)
-   - Example "Indian Railways" -> UDC: 656.2(540), DDC: 385.0954 (NOT 500)
-   - Example "Organic Chemistry" -> UDC: 547, DDC: 547 (NOT 540)
-3. Return ONLY a valid JSON object without markdown formatting:
+MANDATORY RULES:
+1. Provide the SPECIFIC micro-level classification notations for BOTH UDC and DDC.
+2. NEVER output general fallbacks like 0, 00, 000, 001, 500, 507.1, 540, 600, 610, 820.
+3. Return ONLY a valid JSON object without markdown fences or backticks:
 {
   "udc_number": "exact notation",
   "ddc_number": "exact notation",
@@ -358,10 +359,12 @@ STRICT INSTRUCTIONS:
       ddc_answer: ddc,
       main_subject: parsed.main_subject || "Academic Discipline",
       sub_subject: title,
-      explanation: parsed.explanation || "Classified via Live Universal AI Engine.",
+      explanation: parsed.explanation || "Classified via Live Universal Gemini AI.",
       breakdown: parsed.breakdown || `UDC: ${udc}`,
       ddc_breakdown: parsed.ddc_breakdown || `DDC: ${ddc}`,
       confidence: "UNIVERSAL AI LIVE MATCH",
+      provider: "gemini",
+      official_udc_match: false,
       sources: ["UDC B.S. 1000A:1961", "DDC 23rd Edition"]
     };
   } catch (e) {
@@ -372,28 +375,26 @@ STRICT INSTRUCTIONS:
 }
 
 // ====================================================================
-// 🛡️ TIER 3: CONTEXTUAL DOMAIN RESOLVER (NEVER DEFAULTS TO 500 OR 001)
+// 🛡️ DOMAIN FALLBACK (NEVER DEFAULTS TO 001 OR 500)
 // ====================================================================
 function contextualDomainFallback(rawTitle) {
   const t = cleanTitle(rawTitle);
 
-  // Exact disciplinary fallback mappings
   const mapping = [
-    { regex: /\b(railway|railroad|train|locomotive)\b/i, udc: "656.2", ddc: "385", label: "Transportation / Railroads" },
-    { regex: /\b(physics|quantum|optics|mechanics|thermodynamics)\b/i, udc: "53", ddc: "530", label: "Physics" },
-    { regex: /\b(chemistry|chemical|reaction)\b/i, udc: "54", ddc: "540", label: "Chemistry" },
+    { regex: /\b(dent|dental|tooth|teeth)\b/i, udc: "616.314", ddc: "617.6", label: "Dentistry / Dental Diseases" },
+    { regex: /\b(railway|railroad|train|transit)\b/i, udc: "656.2", ddc: "385", label: "Transportation / Railroads" },
+    { regex: /\b(physics|quantum|optics|mechanics)\b/i, udc: "53", ddc: "530", label: "Physics" },
+    { regex: /\b(chemistry|chemical)\b/i, udc: "54", ddc: "540", label: "Chemistry" },
     { regex: /\b(biology|zoology|botany|ecology)\b/i, udc: "57", ddc: "570", label: "Biology / Life Sciences" },
-    { regex: /\b(mathematics|math|algebra|geometry|calculus)\b/i, udc: "51", ddc: "510", label: "Mathematics" },
-    { regex: /\b(astronomy|stars|planets|cosmos)\b/i, udc: "52", ddc: "520", label: "Astronomy" },
-    { regex: /\b(economics|economy|finance|banking|money)\b/i, udc: "33", ddc: "330", label: "Economics" },
-    { regex: /\b(law|legal|jurisprudence|court)\b/i, udc: "34", ddc: "340", label: "Law" },
-    { regex: /\b(education|school|teaching|pedagogy)\b/i, udc: "37", ddc: "370", label: "Education" },
-    { regex: /\b(history|historian|war|ancient)\b/i, udc: "93/99", ddc: "900", label: "History" },
-    { regex: /\b(geography|travel|atlas)\b/i, udc: "91", ddc: "910", label: "Geography & Travel" },
-    { regex: /\b(agriculture|farming|crops|harvest)\b/i, udc: "63", ddc: "630", label: "Agriculture" },
-    { regex: /\b(medicine|health|medical|disease|clinical)\b/i, udc: "61", ddc: "610", label: "Medicine & Health" },
-    { regex: /\b(engineering|manufacture|technology)\b/i, udc: "62", ddc: "620", label: "Engineering & Technology" },
-    { regex: /\b(literature|novel|poem|poetry|fiction|drama)\b/i, udc: "82", ddc: "800", label: "Literature" }
+    { regex: /\b(mathematics|math|algebra|geometry)\b/i, udc: "51", ddc: "510", label: "Mathematics" },
+    { regex: /\b(astronomy|cosmos)\b/i, udc: "52", ddc: "520", label: "Astronomy" },
+    { regex: /\b(economics|finance|banking)\b/i, udc: "33", ddc: "330", label: "Economics" },
+    { regex: /\b(law|legal|court)\b/i, udc: "34", ddc: "340", label: "Law" },
+    { regex: /\b(education|teaching)\b/i, udc: "37", ddc: "370", label: "Education" },
+    { regex: /\b(history|war)\b/i, udc: "93/99", ddc: "900", label: "History" },
+    { regex: /\b(agriculture|crops)\b/i, udc: "63", ddc: "630", label: "Agriculture" },
+    { regex: /\b(medicine|disease|health)\b/i, udc: "616", ddc: "616", label: "Medicine / Pathology" },
+    { regex: /\b(engineering|technology)\b/i, udc: "62", ddc: "620", label: "Engineering & Technology" }
   ];
 
   for (const item of mapping) {
@@ -405,7 +406,7 @@ function contextualDomainFallback(rawTitle) {
         main_subject: item.label, sub_subject: rawTitle,
         breakdown: `UDC Discipline Schedule: ${item.udc} (${item.label}).`,
         ddc_breakdown: `DDC-23 Schedule: ${item.ddc} (${item.label}).`,
-        explanation: `Disciplinary contextual classification assigned for "${rawTitle}".`,
+        explanation: `Disciplinary classification assigned for "${rawTitle}".`,
         confidence: "SEMANTIC DOMAIN MATCH",
         sources: ["UDC B.S. 1000A:1961", "DDC-23 Schedules"]
       };
@@ -418,7 +419,7 @@ function contextualDomainFallback(rawTitle) {
     main_subject: "Knowledge & General Concepts", sub_subject: rawTitle,
     breakdown: "UDC 001 = Science and knowledge in general.",
     ddc_breakdown: "DDC-23 001 = Knowledge.",
-    explanation: `General classification assigned for "${rawTitle}".`,
+    explanation: `General concept classification assigned for "${rawTitle}".`,
     confidence: "BROAD INTERDISCIPLINARY MATCH",
     sources: ["UDC & DDC Main Class 0"]
   };
@@ -456,7 +457,7 @@ app.post(
     if (title.length > 1000) return res.status(413).json({ error: "Title too long." });
     if (!title) return res.status(400).json({ error: "Enter a book title." });
 
-    // 1. CANONICAL SPECIFIC MATRIX
+    // 1. CANONICAL SPECIFIC MATRIX (Dentistry, Railways, Physics, etc.)
     const canon = canonicalScheduleLookup(title);
     if (canon) return res.json(canon);
 
@@ -478,7 +479,7 @@ app.post(
       }
     }
 
-    // 3. MULTI-DISCIPLINE NLP FALLBACK
+    // 3. MULTI-DISCIPLINE DOMAIN FALLBACK
     return res.json(contextualDomainFallback(title));
   })
 );
