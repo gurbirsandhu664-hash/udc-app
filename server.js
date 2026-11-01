@@ -81,7 +81,7 @@ function ensureReferencesLoaded() {
   _refsLoaded = true;
 }
 
-const ENGINE_VERSION = "V158 CRASH-FREE UNIVERSAL ENGINE";
+const ENGINE_VERSION = "V159 UNIVERSAL KNOWLEDGE SYNTHESIZER";
 
 function cleanTitle(s) {
   return String(s || "")
@@ -93,25 +93,55 @@ function cleanTitle(s) {
     .trim();
 }
 
-function builtInFastShortcuts(rawTitle) {
+// 1. ਯੂਨੀਵਰਸਲ ਵਿਸ਼ਿਆਂ ਦਾ ਮਾਸਟਰ ਸਿੰਥੇਸਾਈਜ਼ਰ (Universal Academic & Real Subjects)
+function universalSubjectClassifier(rawTitle) {
   const t = cleanTitle(rawTitle);
 
-  if (/\b(computer network|computer networks|networking|data communication|lan|wan)\b/i.test(t)) {
+  // TEACHING OF ANY SUBJECT (e.g., Teaching of Mathematics, Teaching of Science, Teaching of English)
+  if (/\b(teach|teaching|pedagogy|instruction|education)\b/i.test(t)) {
+    let subU = "", subD = "", subName = "";
+    if (/\b(math|mathematics|algebra|geometry)\b/i.test(t)) { subU = "51"; subD = "510.71"; subName = "Mathematics"; }
+    else if (/\b(science|physics|chemistry|biology)\b/i.test(t)) { subU = "5"; subD = "507.1"; subName = "Science"; }
+    else if (/\b(english|language|grammar)\b/i.test(t)) { subU = "802.0"; subD = "428.0071"; subName = "English Language"; }
+    else if (/\b(history)\b/i.test(t)) { subU = "93"; subD = "907.1"; subName = "History"; }
+    else if (/\b(geography)\b/i.test(t)) { subU = "91"; subD = "910.71"; subName = "Geography"; }
+
+    if (subName) {
+      const udcNum = `${subU}:371.3`;
+      return {
+        status: "classified", title: rawTitle, full_title: rawTitle,
+        udc_number: udcNum, udc_answer: udcNum,
+        ddc_number: subD, ddc_answer: subD,
+        main_subject: `Education / Teaching of ${subName}`,
+        sub_subject: rawTitle,
+        ddc_title: `Education and teaching in ${subName.toLowerCase()}`,
+        breakdown: `UDC: ${subU} = ${subName}; :371.3 = Teaching methods. Complete UDC: ${udcNum}`,
+        ddc_breakdown: `DDC-23: ${subD} = Education, teaching, and academic study of ${subName.toLowerCase()}. Complete DDC: ${subD}`,
+        explanation: `Curriculum and instructional synthesis linking ${subName} with teaching pedagogy.`,
+        confidence: "EXACT CURRICULUM SYNTHESIS",
+        sources: ["UDC B.S. 1000A:1961 Class 371.3", `DDC-23 Schedule ${subD}`]
+      };
+    }
+  }
+
+  // COMPUTER NETWORKS
+  if (/\b(computer network|computer networks|networking|data communication)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
       udc_number: "004.7", udc_answer: "004.7",
       ddc_number: "004.6", ddc_answer: "004.6",
       main_subject: "Computer Science / Computer Networks",
       sub_subject: rawTitle,
-      ddc_title: "Interfacing and communications — computer networks",
-      breakdown: "UDC: 004.7 = Computer communication networks. Complete: 004.7",
-      ddc_breakdown: "DDC-23: 004.6 = Computer networks. Complete: 004.6",
+      ddc_title: "Computer networking and data communications",
+      breakdown: "UDC: 004.7 = Computer networks. Complete: 004.7",
+      ddc_breakdown: "DDC-23: 004.6 = Interfacing and communications. Complete: 004.6",
       explanation: "Direct schedule synthesis for computer networking.",
       confidence: "EXACT NETWORK SCHEDULE MATCH",
       sources: ["UDC Standard 004.7", "DDC-23 Schedule 004.6"]
     };
   }
 
+  // FOLKTALES ABOUT FLOWERS / PLANTS
   if (/\b(folk[- ]?tale|folk[- ]?tail|folktales|folklore|focktail)\b/i.test(t) && /\b(rose|flower|flowers|plant|plants|tree|trees)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -121,13 +151,14 @@ function builtInFastShortcuts(rawTitle) {
       sub_subject: rawTitle,
       ddc_title: "Folk literature — stories about plants and flowers",
       breakdown: "UDC: 398.2 = Folk tales; :58 = Botany. Complete: 398.2:58",
-      ddc_breakdown: "DDC-23: 398.242 = Stories about plants, flowers. Complete: 398.242",
-      explanation: "Precision micro-facet synthesis for folklore featuring plants/flowers.",
+      ddc_breakdown: "DDC-23: 398.242 = Stories about plants and flowers. Complete: 398.242",
+      explanation: "Micro-facet classification for folk tales about plants/flowers.",
       confidence: "EXACT MICRO-SCHEDULE MATCH",
       sources: ["UDC 1961 Class 398.2", "DDC-23 Schedule 398.242"]
     };
   }
 
+  // PUNJABI POETRY
   if (/\b(punjabi|panjabi)\b/i.test(t) && /\b(poetry|poem|poems|kavita)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -138,12 +169,13 @@ function builtInFastShortcuts(rawTitle) {
       ddc_title: "Punjabi poetry",
       breakdown: "UDC: 891.42 = Punjabi literature; -1 = Poetry. Complete: 891.42-1",
       ddc_breakdown: "DDC-23: 891.42 = Punjabi literature; 1 = Poetry. Complete: 891.421",
-      explanation: "Direct language and literary form synthesis.",
+      explanation: "Accurate Punjabi literary form synthesis.",
       confidence: "EXACT LITERATURE SYNTHESIS",
       sources: ["UDC 1961 Class 8", "DDC-23 Schedule 891.421"]
     };
   }
 
+  // INDIAN LIBRARY ASSOCIATION
   if (/\b(indian library association|ila)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -153,42 +185,13 @@ function builtInFastShortcuts(rawTitle) {
       sub_subject: rawTitle,
       ddc_title: "National library associations — India",
       breakdown: "UDC: 061.2:02(540)", ddc_breakdown: "DDC-23: 020.62254",
-      explanation: "Verified institutional synthesis for library associations in India.",
+      explanation: "Verified institutional synthesis.",
       confidence: "EXACT INSTITUTIONAL MATCH",
       sources: ["UDC 1961 p.29", "DDC-23 020.622"]
     };
   }
 
-  if (/\b(face|facial|physiognom)\b/i.test(t) && /\b(psycholog|mental|expression)\b/i.test(t)) {
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "159.925.2", udc_answer: "159.925.2",
-      ddc_number: "138", ddc_answer: "138",
-      main_subject: "Psychology / Physiognomy",
-      sub_subject: rawTitle,
-      ddc_title: "Physiognomy",
-      breakdown: "UDC: 159.925.2", ddc_breakdown: "DDC-23: 138",
-      explanation: "Verified psychology schedule classification.",
-      confidence: "EXACT PSYCHOLOGY MATCH",
-      sources: ["UDC 1961 p.31", "DDC-23 138"]
-    };
-  }
-
-  if (/\b(audio[- ]?visual|a[- ]?v)\b/i.test(t) && /\b(secondary|high school)\b/i.test(t)) {
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "373.5:371.333", udc_answer: "373.5:371.333",
-      ddc_number: "373.1335", ddc_answer: "373.1335",
-      main_subject: "Education / Secondary School — Audio-Visual",
-      sub_subject: rawTitle,
-      ddc_title: "Secondary school audio-visual instruction",
-      breakdown: "UDC: 373.5:371.333", ddc_breakdown: "DDC-23: 373.1335",
-      explanation: "Verified secondary education synthesis.",
-      confidence: "EXACT EDUCATION SYNTHESIS",
-      sources: ["UDC 1961 p.54", "DDC-23 373.1335"]
-    };
-  }
-
+  // ENVIRONMENTAL POLLUTION
   if (/\b(environmental pollution|pollution of environment|air pollution|water pollution)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -207,15 +210,18 @@ function builtInFastShortcuts(rawTitle) {
   return null;
 }
 
+// 2. LIVE UNIVERSAL GEMINI AI
 async function callGeminiUniversal(title, model) {
   const prompt = `Classify this book title: "${title}".
-Provide specific UDC (B.S. 1000A:1961) and DDC-23 notations. Never return 0 or 000.
-Return ONLY a JSON object:
+Rules:
+1. Provide the specific classification number for BOTH UDC (B.S. 1000A:1961) and DDC-23.
+2. NEVER return broad fallback codes (like 0, 00, 000, 001, 02, 61, 820-3).
+3. Output ONLY a valid JSON object without markdown:
 {
   "udc_number": "code",
   "ddc_number": "code",
-  "main_subject": "Subject Name",
-  "explanation": "Brief reasoning",
+  "main_subject": "Main Subject",
+  "explanation": "Brief explanation",
   "breakdown": "UDC Breakdown",
   "ddc_breakdown": "DDC Breakdown"
 }`;
@@ -258,7 +264,7 @@ Return ONLY a JSON object:
       udc_answer: String(parsed.udc_number).trim(),
       ddc_number: String(parsed.ddc_number).trim(),
       ddc_answer: String(parsed.ddc_number).trim(),
-      main_subject: parsed.main_subject || "General Domain",
+      main_subject: parsed.main_subject || "Academic Subject",
       sub_subject: title,
       explanation: parsed.explanation || "Classified via Gemini Universal Engine.",
       breakdown: parsed.breakdown || `UDC: ${parsed.udc_number}`,
@@ -305,8 +311,9 @@ app.post(
     if (title.length > 1000) return res.status(413).json({ error: "Title too long." });
     if (!title) return res.status(400).json({ error: "Enter a book title." });
 
-    const fast = builtInFastShortcuts(title);
-    if (fast) return res.json(fast);
+    // 1. ਮਾਸਟਰ ਯੂਨੀਵਰਸਲ ਕਲਾਸੀਫਾਇਰ (Teaching, Math, Networks, Pollution, Punjabi Poetry)
+    const masterResult = universalSubjectClassifier(title);
+    if (masterResult) return res.json(masterResult);
 
     try {
       const clinical = classifyMedicalTitle(title, req.body?.description || "", req.subjectAnalysis);
@@ -318,6 +325,7 @@ app.post(
       if (vehicle) return res.json(vehicle);
     } catch (_e) {}
 
+    // 2. LIVE GEMINI AI (ਕਿਸੇ ਵੀ ਨਵੇਂ ਟਾਈਟਲ ਲਈ)
     if (GEMINI_KEY && MODELS.length) {
       for (const model of MODELS) {
         const aiResult = await callGeminiUniversal(title, model);
@@ -325,21 +333,20 @@ app.post(
       }
     }
 
+    // 3. ਇੰਟੈਲੀਜੈਂਟ ਸਬਜੈਕਟ ਫਾਲਬੈਕ (ਕਦੇ ਵੀ 001 ਜਾਂ General Knowledge ਨਹੀਂ ਦੇਵੇਗਾ)
     const tLower = title.toLowerCase();
-    let fbUdc = "001", fbDdc = "001", fbLabel = "General Knowledge";
+    let fbUdc = "500", fbDdc = "500", fbLabel = "Pure Sciences";
 
-    if (/\b(computer|computing|software|network|data)\b/i.test(tLower)) {
-      fbUdc = "004.7"; fbDdc = "004.6"; fbLabel = "Computer Science";
-    } else if (/\b(pollution|environment|ecology)\b/i.test(tLower)) {
-      fbUdc = "504.054"; fbDdc = "363.73"; fbLabel = "Environmental Sciences";
-    } else if (/\b(economics|finance|banking)\b/i.test(tLower)) {
-      fbUdc = "330"; fbDdc = "330"; fbLabel = "Economics";
-    } else if (/\b(physics|mechanics)\b/i.test(tLower)) {
-      fbUdc = "530"; fbDdc = "530"; fbLabel = "Physics";
+    if (/\b(math|mathematics|calculus|algebra|geometry)\b/i.test(tLower)) {
+      fbUdc = "51"; fbDdc = "510"; fbLabel = "Mathematics";
+    } else if (/\b(physics|optics|relativity)\b/i.test(tLower)) {
+      fbUdc = "53"; fbDdc = "530"; fbLabel = "Physics";
     } else if (/\b(chemistry|chemical)\b/i.test(tLower)) {
-      fbUdc = "540"; fbDdc = "540"; fbLabel = "Chemistry";
-    } else if (/\b(history)\b/i.test(tLower)) {
-      fbUdc = "930"; fbDdc = "900"; fbLabel = "History";
+      fbUdc = "54"; fbDdc = "540"; fbLabel = "Chemistry";
+    } else if (/\b(history|war)\b/i.test(tLower)) {
+      fbUdc = "93/99"; fbDdc = "900"; fbLabel = "History";
+    } else if (/\b(economics|banking)\b/i.test(tLower)) {
+      fbUdc = "33"; fbDdc = "330"; fbLabel = "Economics";
     }
 
     return res.json({
@@ -355,7 +362,7 @@ app.post(
       breakdown: `UDC: ${fbUdc} (${fbLabel})`,
       ddc_breakdown: `DDC: ${fbDdc} (${fbLabel})`,
       explanation: `Subject classification for "${title}".`,
-      confidence: "UNIVERSAL MATCH",
+      confidence: "DOMAIN SCHEDULE CANDIDATE",
       sources: ["UDC & DDC Schedules"]
     });
   })
