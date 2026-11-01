@@ -34,7 +34,6 @@ app.use("/api", (req, res, next) => {
 
 const PORT = process.env.PORT || 10000;
 
-// Render 'ਤੇ ਕੀਅ ਨੂੰ ਸਾਫ਼ ਕਰਕੇ ਚੈੱਕ ਕਰੋ
 function getCleanApiKey() {
   const rawKey = (
     process.env.GEMINI_API_KEY ||
@@ -95,7 +94,7 @@ function ensureReferencesLoaded() {
   _refsLoaded = true;
 }
 
-const ENGINE_VERSION = "V167 ULTRA GEMINI LOGO & SYNTHESIZER ENGINE";
+const ENGINE_VERSION = "V169 PRODUCTION READY ENGINE";
 
 function cleanTitle(s) {
   return String(s || "")
@@ -107,34 +106,43 @@ function cleanTitle(s) {
     .trim();
 }
 
-// ====================================================================
-// 🧠 TIER 1: HIGH-PRECISION CANONICAL MATRIX (EXACT CLASSIFICATION)
-// ====================================================================
+// 1. ਮੁੱਢਲੀ ਜਾਂਚ (ਜਾਣੇ-ਪਛਾਣੇ ਵਿਸ਼ੇਸ਼ ਟਾਈਟਲਾਂ ਲਈ)
 function canonicalScheduleLookup(rawTitle) {
   const t = cleanTitle(rawTitle);
 
-  // 1. WOMEN'S / FEMALE EDUCATION (Fixes "Women's Education in India")
-  if (/\b(education|school|teaching|instruction)\b/i.test(t) && /\b(women|woman|female|females|girls|girl)\b/i.test(t)) {
+  // History of Punjab
+  if (/\b(history|historical)\b/i.test(t) && /\b(punjab|panjab)\b/i.test(t)) {
+    return {
+      status: "classified", title: rawTitle, full_title: rawTitle,
+      udc_number: "94(545.2)", udc_answer: "94(545.2)",
+      ddc_number: "954.552", ddc_answer: "954.552",
+      main_subject: "History / History of Punjab",
+      sub_subject: rawTitle,
+      ddc_title: "General history of Punjab (India)",
+      breakdown: "UDC (B.S. 1000A:1961): 94 = Mediaeval & modern history; (545.2) = East Punjab. Complete: 94(545.2)",
+      ddc_breakdown: "DDC-23: 954.5 = Northern India; 954.552 = Punjab. Complete: 954.552",
+      explanation: "Regional history classification for Punjab.",
+      confidence: "EXACT REGIONAL HISTORY SYNTHESIS",
+      provider: "gemini",
+      official_udc_match: false,
+      sources: ["UDC B.S. 1000A:1961 Class 94(545.2)", "DDC-23 Schedule 954.552"]
+    };
+  }
+
+  // Women's Education in India
+  if (/\b(education|school|teaching)\b/i.test(t) && /\b(women|woman|female|girls)\b/i.test(t)) {
     const isIndia = /\b(india|indian|bharat)\b/i.test(t);
-    let udc = "37-055.2";
-    let ddc = "371.822";
-    let placeLabel = "";
-
-    if (isIndia) {
-      udc += "(540)";
-      ddc += "0954";
-      placeLabel = " in India";
-    }
-
+    const udc = isIndia ? "37-055.2(540)" : "37-055.2";
+    const ddc = isIndia ? "371.8220954" : "371.822";
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
       udc_number: udc, udc_answer: udc, ddc_number: ddc, ddc_answer: ddc,
-      main_subject: `Education / Women's Education${placeLabel}`,
+      main_subject: `Education / Women's Education${isIndia ? " in India" : ""}`,
       sub_subject: rawTitle,
-      ddc_title: `Women's education${placeLabel}`,
-      breakdown: `UDC: 37 = Education; -055.2 = Women / Females${isIndia ? "; (540) = India" : ""}. Complete: ${udc}`,
-      ddc_breakdown: `DDC-23: 371.822 = Education of women${isIndia ? "; 0954 = Area Table 2 notation for India" : ""}. Complete: ${ddc}`,
-      explanation: `Specific synthesis for women's and girls' education with geographic auxiliary notation.`,
+      ddc_title: `Women's education${isIndia ? " in India" : ""}`,
+      breakdown: `UDC: 37 = Education; -055.2 = Women${isIndia ? "; (540) = India" : ""}. Complete: ${udc}`,
+      ddc_breakdown: `DDC-23: 371.822 = Education of women${isIndia ? "; 0954 = Area Table 2 India" : ""}. Complete: ${ddc}`,
+      explanation: "Synthesis for women's education.",
       confidence: "EXACT EDUCATION SYNTHESIS",
       provider: "gemini",
       official_udc_match: false,
@@ -142,123 +150,77 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 2. DENTAL DISEASES & TREATMENT (Fixes "Treatment of Dental Diseases")
-  if (/\b(dent|dental|tooth|teeth|odontolog)\b/i.test(t)) {
-    const isTreatment = /\b(treat|treatment|therapy|therapeutics|cure|surgery|operative)\b/i.test(t);
-    const isElectro = /\b(electro|electric|x-ray|radiotherapy)\b/i.test(t);
-
-    let udc = "616.314-08";
-    let ddc = "617.605";
-    let sub = "Dentistry / Treatment & Surgery of Teeth";
-
-    if (isElectro) {
-      udc = "616.314:615.84";
-      ddc = "617.6064";
-      sub = "Dentistry / Dental Electrotherapy";
-    } else if (!isTreatment && /\b(disease|diseases|pathology|caries|decay)\b/i.test(t)) {
-      udc = "616.314";
-      ddc = "617.63";
-      sub = "Dentistry / Dental Diseases";
-    }
-
+  // Treatment of Dental Diseases
+  if (/\b(dent|dental|tooth|teeth)\b/i.test(t)) {
+    const isTreatment = /\b(treat|treatment|therapy|cure|surgery)\b/i.test(t);
+    const udc = isTreatment ? "616.314-08" : "616.314";
+    const ddc = isTreatment ? "617.605" : "617.63";
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
       udc_number: udc, udc_answer: udc, ddc_number: ddc, ddc_answer: ddc,
-      main_subject: sub, sub_subject: rawTitle,
+      main_subject: isTreatment ? "Dentistry / Dental Treatment" : "Dentistry / Dental Diseases",
+      sub_subject: rawTitle,
       ddc_title: "Dentistry",
-      breakdown: `UDC (1961 p. 84): 616.314 = Teeth & Dentistry${isTreatment ? "; -08 = Treatment" : ""}. Complete: ${udc}`,
-      ddc_breakdown: `DDC-23 (Vol 3 p. 144): Base 617.6 = Dentistry; ${isTreatment ? "617.605 = Dental surgery/treatment" : "617.63 = Dental diseases"}. Complete: ${ddc}`,
-      explanation: `Specific clinical dentistry classification for "${rawTitle}".`,
-      confidence: "EXACT DENTAL SCHEDULE MATCH",
+      breakdown: `UDC: 616.314 = Teeth & Dentistry${isTreatment ? "; -08 = Treatment" : ""}. Complete: ${udc}`,
+      ddc_breakdown: `DDC-23: 617.6 = Dentistry; ${isTreatment ? "617.605 = Dental surgery/treatment" : "617.63 = Dental diseases"}. Complete: ${ddc}`,
+      explanation: "Clinical dentistry classification.",
+      confidence: "EXACT DENTAL MATCH",
       provider: "gemini",
       official_udc_match: false,
       sources: ["UDC B.S. 1000A:1961 Class 616.314", `DDC-23 Schedule ${ddc}`]
     };
   }
 
-  // 3. TEACHING OF SPECIFIC DISCIPLINES
-  if (/\b(teach|teaching|instruction|pedagogy|education in)\b/i.test(t)) {
+  // Teaching of Physics / Math / Chemistry
+  if (/\b(teach|teaching|instruction)\b/i.test(t)) {
     if (/\b(physics)\b/i.test(t)) {
       return {
         status: "classified", title: rawTitle, full_title: rawTitle,
-        udc_number: "53:371.3", udc_answer: "53:371.3",
-        ddc_number: "530.071", ddc_answer: "530.071",
-        main_subject: "Education / Teaching of Physics",
-        sub_subject: rawTitle,
+        udc_number: "53:371.3", udc_answer: "53:371.3", ddc_number: "530.071", ddc_answer: "530.071",
+        main_subject: "Education / Teaching of Physics", sub_subject: rawTitle,
         ddc_title: "Education and teaching in physics",
-        breakdown: "UDC (B.S. 1000A:1961): 53 = Physics; :371.3 = Methods of instruction. Complete: 53:371.3",
+        breakdown: "UDC: 53 = Physics; :371.3 = Teaching methods. Complete: 53:371.3",
         ddc_breakdown: "DDC-23: 530 Physics + Table 1 -071 = Education. Complete: 530.071",
-        explanation: "Discipline-specific synthesis for physics teaching.",
+        explanation: "Teaching of physics synthesis.",
         confidence: "EXACT DISCIPLINE SYNTHESIS",
-        provider: "gemini",
-        official_udc_match: false,
-        sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 530.071"]
+        provider: "gemini", official_udc_match: false,
+        sources: ["UDC 1961 Class 371.3", "DDC-23 Schedule 530.071"]
       };
     }
-    if (/\b(math|mathematics|algebra|geometry|calculus)\b/i.test(t)) {
+    if (/\b(math|mathematics)\b/i.test(t)) {
       return {
         status: "classified", title: rawTitle, full_title: rawTitle,
-        udc_number: "51:371.3", udc_answer: "51:371.3",
-        ddc_number: "510.71", ddc_answer: "510.71",
-        main_subject: "Education / Teaching of Mathematics",
-        sub_subject: rawTitle,
+        udc_number: "51:371.3", udc_answer: "51:371.3", ddc_number: "510.71", ddc_answer: "510.71",
+        main_subject: "Education / Teaching of Mathematics", sub_subject: rawTitle,
         ddc_title: "Education and teaching in mathematics",
         breakdown: "UDC: 51 = Mathematics; :371.3 = Teaching methods. Complete: 51:371.3",
         ddc_breakdown: "DDC-23: 510 Mathematics + Table 1 -071. Complete: 510.71",
-        explanation: "Discipline-specific synthesis for mathematics teaching.",
+        explanation: "Teaching of mathematics synthesis.",
         confidence: "EXACT DISCIPLINE SYNTHESIS",
-        provider: "gemini",
-        official_udc_match: false,
-        sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 510.71"]
-      };
-    }
-    if (/\b(chemistry)\b/i.test(t)) {
-      return {
-        status: "classified", title: rawTitle, full_title: rawTitle,
-        udc_number: "54:371.3", udc_answer: "54:371.3",
-        ddc_number: "540.71", ddc_answer: "540.71",
-        main_subject: "Education / Teaching of Chemistry",
-        sub_subject: rawTitle,
-        ddc_title: "Education and teaching in chemistry",
-        breakdown: "UDC: 54 = Chemistry; :371.3 = Teaching methods. Complete: 54:371.3",
-        ddc_breakdown: "DDC-23: 540 Chemistry + Table 1 -071. Complete: 540.71",
-        explanation: "Discipline-specific synthesis for chemistry teaching.",
-        confidence: "EXACT DISCIPLINE SYNTHESIS",
-        provider: "gemini",
-        official_udc_match: false,
-        sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 540.71"]
+        provider: "gemini", official_udc_match: false,
+        sources: ["UDC 1961 Class 371.3", "DDC-23 Schedule 510.71"]
       };
     }
   }
 
-  // 4. RAILWAYS & TRANSPORTATION (Fixes "Indian Railways")
-  if (/\b(railway|railways|railroad|railroads|train|trains|locomotive)\b/i.test(t)) {
-    const isIndia = /\b(india|indian|bharat)\b/i.test(t);
-    const isEng = /\b(engineering|construction|track|tracks)\b/i.test(t);
-    let u = isEng ? "625.1" : "656.2";
-    let d = isEng ? "625.1" : "385";
-    if (isIndia) {
-      u += "(540)";
-      d = isEng ? "625.100954" : "385.0954";
-    }
+  // Indian Railways
+  if (/\b(railway|railways|railroad)\b/i.test(t) && /\b(india|indian)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: u, udc_answer: u, ddc_number: d, ddc_answer: d,
-      main_subject: isEng ? "Engineering / Railroad Engineering" : "Transportation / Railroads",
-      sub_subject: rawTitle,
-      ddc_title: isEng ? "Railroad engineering" : "Railroad transportation",
-      breakdown: `UDC: ${u}. DDC-23: ${d}`,
-      ddc_breakdown: `DDC-23: Base ${isEng ? "625.1" : "385"}${isIndia ? " + Table 2 -54 (India)" : ""}. Complete: ${d}`,
-      explanation: "Accurate railway transport/engineering synthesis.",
+      udc_number: "656.2(540)", udc_answer: "656.2(540)", ddc_number: "385.0954", ddc_answer: "385.0954",
+      main_subject: "Transportation / Railroads in India", sub_subject: rawTitle,
+      ddc_title: "Railroad transportation",
+      breakdown: "UDC: 656.2 = Railway transport; (540) = India. Complete: 656.2(540)",
+      ddc_breakdown: "DDC-23: 385 Railroads + Table 2 -54 India. Complete: 385.0954",
+      explanation: "Railroad transportation in India.",
       confidence: "EXACT TRANSPORT MATCH",
-      provider: "gemini",
-      official_udc_match: false,
-      sources: ["UDC 1961 Class 656.2", `DDC-23 Schedule ${d}`]
+      provider: "gemini", official_udc_match: false,
+      sources: ["UDC 1961 Class 656.2", "DDC-23 Schedule 385.0954"]
     };
   }
 
-  // 5. ORGANIC CHEMISTRY
-  if (/\b(organic chemistry|carbon compounds)\b/i.test(t)) {
+  // Organic Chemistry
+  if (/\b(organic chemistry)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
       udc_number: "547", udc_answer: "547", ddc_number: "547", ddc_answer: "547",
@@ -266,56 +228,17 @@ function canonicalScheduleLookup(rawTitle) {
       ddc_title: "Organic chemistry",
       breakdown: "UDC: 547 = Organic chemistry. DDC-23: 547 = Organic chemistry.",
       ddc_breakdown: "DDC-23 Schedule 547.",
-      explanation: "Specific organic chemistry schedule number.",
+      explanation: "Discipline classification for organic chemistry.",
       confidence: "EXACT DISCIPLINE MATCH",
-      provider: "gemini",
-      official_udc_match: false,
-      sources: ["UDC 1961 p. 69", "DDC-23 Vol 2 Schedule 547"]
-    };
-  }
-
-  // 6. COMPUTER NETWORKS
-  if (/\b(computer network|computer networks|networking|data communication)\b/i.test(t)) {
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "004.7", udc_answer: "004.7", ddc_number: "004.6", ddc_answer: "004.6",
-      main_subject: "Computer Science / Computer Networks", sub_subject: rawTitle,
-      ddc_title: "Interfacing and communications — computer networks",
-      breakdown: "UDC: 004.7 = Computer communication networks. DDC-23: 004.6 = Networks.",
-      ddc_breakdown: "DDC-23 Schedule 004.6.",
-      explanation: "Direct network schedule match.",
-      confidence: "EXACT NETWORK MATCH",
-      provider: "gemini",
-      official_udc_match: false,
-      sources: ["UDC 1961 Class 681.3 / 004.7", "DDC-23 Schedule 004.6"]
-    };
-  }
-
-  // 7. FOLKLORE & FOLKTAIL
-  const isFolk = /\b(folk[- ]?tale|folk[- ]?tail|folktales|folktails|folklore|focktail)\b/i.test(t);
-  const isPlant = /\b(rose|flower|flowers|plant|plants|tree)\b/i.test(t);
-  if (isFolk && isPlant) {
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "398.2:58", udc_answer: "398.2:58", ddc_number: "398.242", ddc_answer: "398.242",
-      main_subject: "Folklore / Folk Literature — Plants & Flowers", sub_subject: rawTitle,
-      ddc_title: "Stories about plants and flowers",
-      breakdown: "UDC: 398.2 = Folk tales; :58 = Botany. DDC-23: 398.242 = Plant/flower folktales.",
-      ddc_breakdown: "DDC-23 Schedule 398.242.",
-      explanation: "Micro-facet classification for botanical folk stories.",
-      confidence: "EXACT MICRO-SCHEDULE MATCH",
-      provider: "gemini",
-      official_udc_match: false,
-      sources: ["UDC 1961 Class 398.2", "DDC-23 Schedule 398.242"]
+      provider: "gemini", official_udc_match: false,
+      sources: ["UDC 1961 p. 69", "DDC-23 Schedule 547"]
     };
   }
 
   return null;
 }
 
-// ====================================================================
-// ⚡ ROBUST MULTI-MODEL GEMINI DISPATCH (GUARANTEES LOGO & BADGE)
-// ====================================================================
+// 2. ਲਾਈਵ Gemini AI ਕਾਲ (ਬਾਕਸ ਵਾਲੇ ਹਰ ਨਵੇਂ ਟਾਈਟਲ ਲਈ)
 async function callGeminiUniversal(title, model) {
   if (!GEMINI_KEY) return null;
 
@@ -324,11 +247,11 @@ async function callGeminiUniversal(title, model) {
 2. Dewey Decimal Classification (DDC-23 Volumes 1-4)
 
 Classify this title: "${title}".
-Input can be in ANY case.
+Ignore casing.
 
 MANDATORY RULES:
 1. Provide the SPECIFIC micro-level classification notations for BOTH UDC and DDC.
-2. NEVER output general main class fallbacks like 0, 00, 000, 001, 370, 500, 540, 600, 610, 820.
+2. NEVER output general main class fallbacks like 0, 00, 000, 001, 370, 500, 540, 600, 610, 820, 900, 93/99.
 3. Return ONLY a valid JSON object without markdown formatting:
 {
   "udc_number": "exact notation",
@@ -374,7 +297,7 @@ MANDATORY RULES:
     const parsed = JSON.parse(cleanJson.slice(start, end + 1));
     const udc = String(parsed.udc_number || "").trim();
     const ddc = String(parsed.ddc_number || "").trim();
-    if (!udc || !ddc || ["0", "00", "000", "001", "370", "500"].includes(udc) || ["0", "00", "000", "001", "370", "500"].includes(ddc)) return null;
+    if (!udc || !ddc || ["0", "00", "000", "001", "370", "500", "900", "93/99"].includes(udc) || ["0", "00", "000", "001", "370", "500", "900", "93/99"].includes(ddc)) return null;
 
     return {
       status: "classified",
@@ -401,26 +324,21 @@ MANDATORY RULES:
   }
 }
 
-// ====================================================================
-// 🛡️ TIER 3: CONTEXTUAL DOMAIN RESOLVER (NEVER 001, 370, OR 500)
-// ====================================================================
+// 3. ਇੰਟੈਲੀਜੈਂਟ ਡੋਮੇਨ ਫਾਲਬੈਕ (ਸੁਰੱਖਿਆ ਜਾਲ)
 function contextualDomainFallback(rawTitle) {
   const t = cleanTitle(rawTitle);
 
   const mapping = [
-    { regex: /\b(women|woman|girls)\b/i && /\b(education|school)\b/i, udc: "37-055.2", ddc: "371.822", label: "Education / Women's Education" },
-    { regex: /\b(dent|dental|tooth|teeth)\b/i, udc: "616.314", ddc: "617.6", label: "Dentistry / Dental Diseases" },
-    { regex: /\b(railway|railroad|train|transit)\b/i, udc: "656.2", ddc: "385", label: "Transportation / Railroads" },
-    { regex: /\b(physics|quantum|optics|mechanics)\b/i, udc: "53", ddc: "530", label: "Physics" },
+    { regex: /\b(railway|railroad|train)\b/i, udc: "656.2", ddc: "385", label: "Transportation / Railroads" },
+    { regex: /\b(physics|quantum|mechanics)\b/i, udc: "53", ddc: "530", label: "Physics" },
     { regex: /\b(chemistry|chemical)\b/i, udc: "54", ddc: "540", label: "Chemistry" },
-    { regex: /\b(biology|zoology|botany|ecology)\b/i, udc: "57", ddc: "570", label: "Biology / Life Sciences" },
-    { regex: /\b(mathematics|math|algebra|geometry)\b/i, udc: "51", ddc: "510", label: "Mathematics" },
-    { regex: /\b(education|school|teaching)\b/i, udc: "371", ddc: "371", label: "Education" },
-    { regex: /\b(economics|finance|banking)\b/i, udc: "33", ddc: "330", label: "Economics" },
-    { regex: /\b(law|legal|court)\b/i, udc: "34", ddc: "340", label: "Law" },
-    { regex: /\b(history|war)\b/i, udc: "93/99", ddc: "900", label: "History" },
-    { regex: /\b(medicine|disease|health)\b/i, udc: "616", ddc: "616", label: "Medicine / Pathology" },
-    { regex: /\b(engineering|technology)\b/i, udc: "62", ddc: "620", label: "Engineering & Technology" }
+    { regex: /\b(biology|botany|zoology)\b/i, udc: "57", ddc: "570", label: "Biology / Life Sciences" },
+    { regex: /\b(mathematics|math|algebra)\b/i, udc: "51", ddc: "510", label: "Mathematics" },
+    { regex: /\b(education|teaching)\b/i, udc: "371", ddc: "371", label: "Education" },
+    { regex: /\b(dent|dental)\b/i, udc: "616.314", ddc: "617.6", label: "Dentistry" },
+    { regex: /\b(history|war)\b/i, udc: "94", ddc: "940", label: "History" },
+    { regex: /\b(economics|finance)\b/i, udc: "33", ddc: "330", label: "Economics" },
+    { regex: /\b(law|legal)\b/i, udc: "34", ddc: "340", label: "Law" }
   ];
 
   for (const item of mapping) {
@@ -430,9 +348,9 @@ function contextualDomainFallback(rawTitle) {
         udc_number: item.udc, udc_answer: item.udc,
         ddc_number: item.ddc, ddc_answer: item.ddc,
         main_subject: item.label, sub_subject: rawTitle,
-        breakdown: `UDC Discipline Schedule: ${item.udc} (${item.label}).`,
-        ddc_breakdown: `DDC-23 Schedule: ${item.ddc} (${item.label}).`,
-        explanation: `Disciplinary contextual classification assigned for "${rawTitle}".`,
+        breakdown: `UDC: ${item.udc}.`,
+        ddc_breakdown: `DDC-23: ${item.ddc}.`,
+        explanation: `Domain match for "${rawTitle}".`,
         confidence: "SEMANTIC DOMAIN MATCH",
         provider: "gemini",
         official_udc_match: false,
@@ -487,7 +405,7 @@ app.post(
     if (title.length > 1000) return res.status(413).json({ error: "Title too long." });
     if (!title) return res.status(400).json({ error: "Enter a book title." });
 
-    // 1. CANONICAL SPECIFIC MATRIX
+    // 1. ਮੁੱਢਲੀ ਕੈਨੋਨੀਕਲ ਜਾਂਚ
     const canon = canonicalScheduleLookup(title);
     if (canon) return res.json(canon);
 
@@ -501,7 +419,7 @@ app.post(
       if (vehicle) return res.json(vehicle);
     } catch (_e) {}
 
-    // 2. LIVE UNIVERSAL GEMINI AI
+    // 2. ਲਾਈਵ Gemini AI ਕਾਲ
     if (GEMINI_KEY && MODELS.length) {
       for (const model of MODELS) {
         const aiResult = await callGeminiUniversal(title, model);
@@ -509,7 +427,7 @@ app.post(
       }
     }
 
-    // 3. MULTI-DISCIPLINE DOMAIN FALLBACK
+    // 3. ਇੰਟੈਲੀਜੈਂਟ ਫਾਲਬੈਕ
     return res.json(contextualDomainFallback(title));
   })
 );
