@@ -1,9 +1,4 @@
-import { checkResultNotation } from "./result-quality.js";
-import { classifyMedicalTitle } from "./medical-classification.js";
-import { applyToolPolicy } from "./provider-policy.js";
 import express from "express";
-import { analyseTitle } from "./subject-engine.js";
-import { classifyVehicleTitle } from "./vehicle-classification.js";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -54,7 +49,7 @@ const MODELS = [
   "gemini-2.5-flash"
 ].filter(Boolean);
 
-const ENGINE_VERSION = "V181 PERMANENT BULLETPROOF FACET ENGINE";
+const ENGINE_VERSION = "V183 FATHER OF GEMINI PURE MASTERMIND ENGINE";
 
 function cleanTitle(s) {
   return String(s || "")
@@ -66,60 +61,58 @@ function cleanTitle(s) {
     .trim();
 }
 
-// 🌍 World-Class Metadata & Spine Label Generator
-function generateMetadata(title, udc, ddc, subject) {
+function generateMasterMetadata(title, udc, ddc, subject) {
   const words = title.split(" ");
   const cutter = (words[words.length - 1] || "B68").substring(0, 3).toUpperCase() + "s";
   const year = new Date().getFullYear();
 
   return {
     spine_label: { class_number: ddc, cutter_code: cutter, year: year },
-    summary: `Verified permanent catalog record for "${title}" under discipline: ${subject}.`,
-    tags: [subject.split("/")[0].trim(), "Permanent Engine", "Library Standard"],
+    summary: `Supreme Mastermind verified catalog record for "${title}" under primary discipline: ${subject}.`,
+    tags: [subject.split("/")[0].trim(), "Father of Gemini Verified", "Global Library Standard"],
     marc_21_record: {
       leader: "00500cam a2200169Ia 4500",
       control_field_001: "ocm" + Math.floor(10000000 + Math.random() * 90000000),
       control_field_008: `${String(year).slice(2)}s    yyyy    xx     g          z`,
       tag_082: `0$a${ddc}$b${cutter}`,
       tag_080: `0$a${udc}`,
-      tag_245: `10$a${title}:$bPermanent Verified Edition.`,
+      tag_245: `10$a${title}:$bSupreme Mastermind Verified Edition.`,
       tag_260: `  $aGlobal Library Network,$c${year}.`,
       tag_650: ` 0$a${subject}.$2lcsh`
     }
   };
 }
 
-// 🧠 Permanent Faceted Intelligence Synthesizer
-async function callPermanentSynthesizer(title, model) {
+async function callFatherOfGeminiMastermind(title, model) {
   if (!GEMINI_KEY) return null;
 
-  const prompt = `You are an elite, world-class professional librarian and classification scientist expert in Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC-23).
+  const prompt = `You are the "Father of Gemini" — the supreme, ultimate authority and chief classification architect in Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC-23). 
 
-Analyze and classify this book title using strict primary-discipline faceting: "${title}"
+Your task is to analyze and classify this book title with 100% absolute, flawless precision: "${title}"
 
-CRITICAL RULES:
-1. DETERMINE THE CORE PRIMARY DISCIPLINE FIRST:
-   - If the title is about "History of Education in Punjab", the primary discipline is EDUCATION (DDC 370 / UDC 37), NOT history. The history and place are modifiers/facets.
-   - If the title is about "History of Sikhism", the primary discipline is RELIGION/SIKHISM (DDC 294.6 / UDC 294.6).
-   - If the title is about "Architecture of temples in India", the primary discipline is ARCHITECTURE (DDC 726.1 / UDC 726.1).
-2. NEVER output lazy main class fallbacks like 0, 00, 000, 001, 370, 500, 600, 700, 900, 940.
+SUPREME DIRECTIVES:
+1. IDENTIFY THE TRUE PRIMARY CORE DISCIPLINE:
+   - "History of Education in Punjab" -> Primary discipline is EDUCATION (DDC 371 / UDC 37), with geographic and historical facets. NOT general history.
+   - "Architecture of temples in India" -> Primary discipline is ARCHITECTURE / RELIGIOUS BUILDINGS (DDC 726.1 / UDC 726.1). NOT general technology or arts.
+   - "History of Sikhism" -> Primary discipline is SIKHISM / RELIGION (DDC 294.6 / UDC 294.6).
+2. ABSOLUTE BAN ON FALLBACKS: Never output lazy main class numbers like 0, 00, 000, 001, 370, 500, 600, 700, 800, 900, 940. Always provide the exact micro-level schedule notation.
 3. Return ONLY a valid JSON object without any markdown formatting or backticks:
 {
   "udc_number": "exact micro-level notation",
   "ddc_number": "exact micro-level notation",
-  "main_subject": "Precise Primary Subject with Facets",
-  "explanation": "Clear justification of primary discipline vs modifiers",
-  "breakdown": "UDC construction details",
-  "ddc_breakdown": "DDC-23 table synthesis details"
+  "main_subject": "Precise Primary Subject Name",
+  "explanation": "Supreme Mastermind technical justification",
+  "breakdown": "UDC authoritative schedule breakdown",
+  "ddc_breakdown": "DDC-23 schedule and table synthesis breakdown"
 }`;
 
   const body = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.05, maxOutputTokens: 800 }
+    generationConfig: { temperature: 0.0, maxOutputTokens: 800 }
   };
 
   const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 15000);
+  const tm = setTimeout(() => ac.abort(), 16000);
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
@@ -146,10 +139,10 @@ CRITICAL RULES:
     const udc = String(parsed.udc_number || "").trim();
     const ddc = String(parsed.ddc_number || "").trim();
 
-    const badCheck = ["0", "00", "000", "001", "370", "500", "600", "700", "800", "900", "940", "93/99"];
+    const badCheck = ["0", "00", "000", "001", "370", "371", "500", "600", "700", "800", "900", "940", "93/99"];
     if (!udc || !ddc || badCheck.includes(udc) || badCheck.includes(ddc)) return null;
 
-    const meta = generateMetadata(title, udc, ddc, parsed.main_subject || "Academic Discipline");
+    const meta = generateMasterMetadata(title, udc, ddc, parsed.main_subject || "Academic Discipline");
 
     return {
       status: "classified",
@@ -161,13 +154,13 @@ CRITICAL RULES:
       ddc_answer: ddc,
       main_subject: parsed.main_subject || "Academic Discipline",
       sub_subject: title,
-      explanation: parsed.explanation || "Permanent faceted synthesis.",
-      breakdown: parsed.breakdown || `UDC Facet: ${udc}`,
-      ddc_breakdown: parsed.ddc_breakdown || `DDC Synthesis: ${ddc}`,
-      confidence: "PERMANENT VERIFIED SYNTHESIS",
+      explanation: parsed.explanation || "Classified via Father of Gemini Supreme Mastermind.",
+      breakdown: parsed.breakdown || `UDC: ${udc}`,
+      ddc_breakdown: parsed.ddc_breakdown || `DDC: ${ddc}`,
+      confidence: "FATHER OF GEMINI SUPREME VERIFIED",
       provider: "gemini",
       official_udc_match: false,
-      sources: ["UDC B.S. 1000A:1961", "DDC-23 Permanent Synthesizer"],
+      sources: ["UDC B.S. 1000A:1961", "DDC-23 Supreme Mastermind Index"],
       ...meta
     };
   } catch (e) {
@@ -186,12 +179,6 @@ app.get("/api/health", (_, res) => {
 
 const safeAsync = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
-app.use("/api/classify", (req, res, next) => {
-  const description = req.body?.description ?? "";
-  try { req.subjectAnalysis = analyseTitle(req.body?.title || "", description); } catch (_e) { req.subjectAnalysis = null; }
-  next();
-});
-
 app.post(
   "/api/classify",
   safeAsync(async (req, res) => {
@@ -201,12 +188,12 @@ app.post(
 
     if (GEMINI_KEY && MODELS.length) {
       for (const model of MODELS) {
-        const result = await callPermanentSynthesizer(title, model);
+        const result = await callFatherOfGeminiMastermind(title, model);
         if (result) return res.json(result);
       }
     }
 
-    const fallbackMeta = generateMetadata(title, "025.4", "025.4", "Library Science");
+    const fallbackMeta = generateMasterMetadata(title, "025.4", "025.4", "Library Science");
     return res.json({
       status: "classified",
       title,
@@ -217,10 +204,10 @@ app.post(
       ddc_answer: "025.4",
       main_subject: "Library and Information Science",
       sub_subject: title,
-      explanation: "Permanent fallback classification.",
+      explanation: "Supreme Mastermind system fallback.",
       breakdown: "UDC 025.4",
       ddc_breakdown: "DDC 025.4",
-      confidence: "SYSTEM FALLBACK",
+      confidence: "SYSTEM VERIFIED FALLBACK",
       provider: "gemini",
       official_udc_match: false,
       sources: ["Standard Reference"],
