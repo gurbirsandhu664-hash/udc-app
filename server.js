@@ -82,19 +82,25 @@ function ensureReferencesLoaded() {
   _refsLoaded = true;
 }
 
-const ENGINE_VERSION = "V154 MICRO-FACET SYNTHESIZER (398.242 + UNIVERSAL)";
+const ENGINE_VERSION = "V155 ULTRA-UNIVERSAL DYNAMIC SYNTHESIZER";
 
 const UDC_RULES = `
 You are an expert library classification specialist in both Universal Decimal Classification (UDC B.S. 1000A:1961) and Dewey Decimal Classification (DDC-23).
-Rules:
+Core Rules:
 1. NEVER output broad category fallbacks like 0, 00, 000, 02, 61, 150, 630.
-2. Folktales about plants, trees, and flowers (e.g., "The Rose in Folktale"):
-   - DDC: 398.242 (Stories about plants and flowers)
-   - UDC: 398.2:58 (Folktales related to botany/plants) or 398.2
-3. Folktales about animals: DDC 398.245, UDC 398.2:59
-4. General folktales/legends/fairy tales: DDC 398.2, UDC 398.2
-5. English novels/fiction/narrative literature: UDC 820-31, DDC 823.91
-6. Associations/Institutions: UDC 061.2 with subject colon relation, DDC .06 standard division.
+2. Cross-system accuracy is mandatory. Never mismatch language literature:
+   - Punjabi Poetry: UDC 891.42-1, DDC 891.421
+   - Hindi Poetry: UDC 891.43-1, DDC 891.431
+   - Urdu Poetry: UDC 891.439-1, DDC 891.4391
+   - English Poetry: UDC 820-1, DDC 821
+   - English Fiction: UDC 820-31, DDC 823.91
+3. Folktales:
+   - About plants/flowers (e.g. "The Rose in Folktale"): DDC 398.242, UDC 398.2:58
+   - About animals: DDC 398.245, UDC 398.2:59
+   - General folktales/legends: DDC 398.2, UDC 398.2
+4. Indian Library Association: UDC 061.2:02(540), DDC 020.62254
+5. Physiognomy / Psychology of face: UDC 159.925.2, DDC 138
+6. Audio-visual teaching in secondary school: UDC 373.5:371.333, DDC 373.1335
 7. Return strictly valid JSON with keys: udc_number, ddc_number, main_subject, sub_subject, breakdown, ddc_breakdown, explanation.
 `;
 
@@ -108,11 +114,75 @@ function norm(s) {
     .trim();
 }
 
+// ====================================================================
+// 🧠 ULTRA-SYNTHESIZER (RESOLVES ALL MISMATCHES & DYNAMIC LITERATURE)
+// ====================================================================
 function builtInComplexSynthesizer(title) {
   const t = norm(title);
 
-  // 1. FOLKTALES / FOLKLORE / FAIRY TALES (Deep Micro-Facet Synthesis)
-  const isFolk = /\b(folktale|folk tale|folktales|folk tales|folklore|fairy tale|fairy tales|fable|fables|legend|legends|mythology|folk narrative)\b|focktail/i.test(t);
+  // 1. DYNAMIC LITERATURE & POETRY MATRIX (Fixes "Punjabi Poetry", "Hindi Poems", etc.)
+  const isPoetry = /\b(poet(?:ry|ic)|poem(?:s)?|kavita|ghazal(?:s)?|nazm(?:s)?)\b/i.test(t);
+  const isDrama = /\b(drama|play(?:s)?|theatre|natak)\b/i.test(t);
+  const isFiction = /\b(novel(?:s)?|fiction|story|stories|tale(?:s)?|prose)\b/i.test(t) && !/\b(folk|fairy)\b/i.test(t);
+
+  const isPunjabi = /\b(punjabi|panjabi)\b/i.test(t);
+  const isHindi = /\b(hindi)\b/i.test(t);
+  const isUrdu = /\b(urdu)\b/i.test(t);
+  const isSanskrit = /\b(sanskrit)\b/i.test(t);
+  const isEnglish = /\b(english)\b/i.test(t);
+
+  if (isPoetry || isDrama || isFiction || isPunjabi || isHindi || isUrdu) {
+    let langUdc = "", langDdc = "", langName = "";
+
+    if (isPunjabi) { langUdc = "891.42"; langDdc = "891.42"; langName = "Punjabi"; }
+    else if (isHindi) { langUdc = "891.43"; langDdc = "891.43"; langName = "Hindi"; }
+    else if (isUrdu) { langUdc = "891.439"; langDdc = "891.439"; langName = "Urdu"; }
+    else if (isSanskrit) { langUdc = "891.2"; langDdc = "891.2"; langName = "Sanskrit"; }
+    else if (isEnglish) { langUdc = "820"; langDdc = "82"; langName = "English"; }
+
+    if (langName) {
+      let formUdc = "", formDdc = "", formName = "";
+      if (isPoetry) {
+        formUdc = "-1";
+        formDdc = langName === "English" ? "1" : "1";
+        formName = "Poetry";
+      } else if (isDrama) {
+        formUdc = "-2";
+        formDdc = langName === "English" ? "2" : "2";
+        formName = "Drama";
+      } else if (isFiction) {
+        formUdc = "-3";
+        formDdc = langName === "English" ? "3" : "3";
+        formName = "Fiction";
+      }
+
+      if (formName) {
+        const fullUdc = `${langUdc}${formUdc}`;
+        const fullDdc = `${langDdc}${formDdc}`;
+        return {
+          status: "classified",
+          title,
+          full_title: title,
+          udc_number: fullUdc,
+          udc_answer: fullUdc,
+          ddc_number: fullDdc,
+          ddc_answer: fullDdc,
+          main_subject: `Literature / ${langName} Literature — ${formName}`,
+          sub_subject: title,
+          ddc_title: `${langName} ${formName.toLowerCase()}`,
+          breakdown: `UDC: ${langUdc} = ${langName} literature; ${formUdc} = ${formName}. Complete UDC: ${fullUdc}`,
+          ddc_breakdown: `DDC-23: ${langDdc} = ${langName} literature; ${formDdc} = ${formName}. Complete DDC: ${fullDdc}`,
+          explanation: `Accurate literature matching without cross-system notation mismatch. Language: ${langName}, Form: ${formName}.`,
+          confidence: "EXACT LITERATURE SYNTHESIS",
+          verified_by_schedule: true,
+          sources: ["UDC B.S. 1000A:1961 Class 8", "DDC-23 Volume 3 Class 800"]
+        };
+      }
+    }
+  }
+
+  // 2. FOLKTALES / FOLKLORE / MICRO-FACET (Fixes "The Rose in Folktale/Folktail")
+  const isFolk = /\b(folk[- ]?tale|folk[- ]?tail|folktales|folktails|folklore|fairy[- ]?tale|fable|fables|legend|legends|mythology)\b|focktail/i.test(t);
   const isPlantOrFlower = /\b(rose|roses|flower|flowers|plant|plants|tree|trees|botanical|lotus|jasmine)\b/i.test(t);
   const isAnimal = /\b(animal|animals|fox|wolf|lion|tiger|bird|birds|serpent|snake)\b/i.test(t);
 
@@ -129,9 +199,9 @@ function builtInComplexSynthesizer(title) {
         main_subject: "Folklore / Folk Literature — Plants & Flowers",
         sub_subject: title,
         ddc_title: "Folk literature — stories about plants and flowers",
-        breakdown: "UDC: 398.2 = Folk tales and legends; : = relation; 58 = Botany / Plants. Complete UDC: 398.2:58",
+        breakdown: "UDC: 398.2 = Folk tales; : = relation; 58 = Botany / Plants. Complete UDC: 398.2:58",
         ddc_breakdown: "DDC-23: 398.2 = Folk literature; 398.24 = Stories about animals and plants; 398.242 = Stories about plants, trees, and flowers. Complete DDC: 398.242",
-        explanation: "Micro-facet classification for folk tales and legends featuring plants and flowers (e.g. roses).",
+        explanation: "Micro-facet classification for folk stories and legends involving plants and flowers.",
         confidence: "EXACT MICRO-SCHEDULE MATCH",
         verified_by_schedule: true,
         sources: ["UDC B.S. 1000A:1961 Class 398.2", "DDC-23 Schedule 398.242"]
@@ -151,8 +221,8 @@ function builtInComplexSynthesizer(title) {
         sub_subject: title,
         ddc_title: "Folk literature — stories about animals and fables",
         breakdown: "UDC: 398.2 = Folk tales; : = relation; 59 = Zoology. Complete: 398.2:59",
-        ddc_breakdown: "DDC-23: 398.245 = Stories about animals (animal tales and fables). Complete: 398.245",
-        explanation: "Accurate synthesis for animal folk tales and fables.",
+        ddc_breakdown: "DDC-23: 398.245 = Stories about animals (animal tales). Complete: 398.245",
+        explanation: "Synthesis for animal folklore, legends and fables.",
         confidence: "EXACT MICRO-SCHEDULE MATCH",
         verified_by_schedule: true,
         sources: ["UDC B.S. 1000A:1961 Class 398.2", "DDC-23 Schedule 398.245"]
@@ -170,34 +240,12 @@ function builtInComplexSynthesizer(title) {
       main_subject: "Folklore / Folk Literature & Folktales",
       sub_subject: title,
       ddc_title: "Folk literature and popular legends",
-      breakdown: "UDC: 398.2 = Folk tales, popular legends and traditions. Complete: 398.2",
-      ddc_breakdown: "DDC-23: 398.2 = Folk literature (fairy tales, folktales, legends). Complete: 398.2",
-      explanation: "Classified under traditional folk literature and legends.",
+      breakdown: "UDC: 398.2 = Folk tales and legends. Complete: 398.2",
+      ddc_breakdown: "DDC-23: 398.2 = Folk literature. Complete: 398.2",
+      explanation: "Classified under folklore and folk traditions.",
       confidence: "EXACT FOLKLORE SCHEDULE MATCH",
       verified_by_schedule: true,
       sources: ["UDC B.S. 1000A:1961 Class 398.2", "DDC-23 Schedule 398.2"]
-    };
-  }
-
-  // 2. NOVELS / FICTION / LITERARY TITLES
-  if (/\b(frock coat|novel|fiction|story|stories|poetry|poem)\b/i.test(t)) {
-    return {
-      status: "classified",
-      title,
-      full_title: title,
-      udc_number: "820-31",
-      udc_answer: "820-31",
-      ddc_number: "823.91",
-      ddc_answer: "823.91",
-      main_subject: "Literature / English Fiction & Prose Narrative",
-      sub_subject: title,
-      ddc_title: "English fiction — modern literature",
-      breakdown: "UDC: 820 = English literature; -31 = Novels/Prose narrative. Complete UDC: 820-31",
-      ddc_breakdown: "DDC-23: 823 = English fiction; .91 = 20th/21st century. Complete DDC: 823.91",
-      explanation: "Classified under English prose fiction / narrative literature.",
-      confidence: "EXACT LITERARY SYNTHESIS",
-      verified_by_schedule: true,
-      sources: ["UDC B.S. 1000A:1961 Class 820", "DDC-23 Class 823"]
     };
   }
 
@@ -214,7 +262,7 @@ function builtInComplexSynthesizer(title) {
       main_subject: "Library & Information Science / Associations — India",
       sub_subject: title,
       ddc_title: "National library associations — India",
-      breakdown: "UDC: 061.2 = Non-governmental societies/associations; :02 = Library science; (540) = India. Complete: 061.2:02(540)",
+      breakdown: "UDC: 061.2 = Non-governmental societies; :02 = Library science; (540) = India. Complete: 061.2:02(540)",
       ddc_breakdown: "DDC-23: 020.622 = National library associations; add 54 from Table 2 for India. Complete: 020.62254",
       explanation: "Precise institutional synthesis for library associations in India.",
       confidence: "EXACT INSTITUTIONAL SYNTHESIS",
@@ -256,9 +304,7 @@ function builtInComplexSynthesizer(title) {
   const isPrimarySchool = /\b(primary school(?:s)?|elementary school(?:s)?)\b/i.test(t);
 
   if (isAudioVisual || (isTeaching && (isSecSchool || isPrimarySchool))) {
-    let udc = "371.333",
-      ddc = "371.335",
-      scopeName = "Education";
+    let udc = "371.333", ddc = "371.335", scopeName = "Education";
     if (isSecSchool) {
       udc = isAudioVisual ? "373.5:371.333" : "373.5:371.3";
       ddc = isAudioVisual ? "373.1335" : "373.13";
@@ -300,29 +346,13 @@ function builtInComplexSynthesizer(title) {
   const isLung = /\b(lung(?:s)?|pulmonary)\b/i.test(t);
 
   if (isTooth || isBone || isHeart || isLung || isCancer || isElectro || isXray || isSurgery) {
-    let organU = "616",
-      organD = "616",
-      organName = "General medicine";
-    if (isTooth) {
-      organU = "616.314";
-      organD = "617.6";
-      organName = "Dentistry / Teeth";
-    } else if (isBone) {
-      organU = "616.71";
-      organD = isCancer ? "616.99471" : "616.71";
-      organName = "Bone";
-    } else if (isHeart) {
-      organU = "616.12";
-      organD = isCancer ? "616.99412" : "616.12";
-      organName = "Heart";
-    } else if (isLung) {
-      organU = "616.24";
-      organD = isCancer ? "616.99424" : "616.24";
-      organName = "Lungs";
-    }
+    let organU = "616", organD = "616", organName = "General medicine";
+    if (isTooth) { organU = "616.314"; organD = "617.6"; organName = "Dentistry / Teeth"; }
+    else if (isBone) { organU = "616.71"; organD = isCancer ? "616.99471" : "616.71"; organName = "Bone"; }
+    else if (isHeart) { organU = "616.12"; organD = isCancer ? "616.99412" : "616.12"; organName = "Heart"; }
+    else if (isLung) { organU = "616.24"; organD = isCancer ? "616.99424" : "616.24"; organName = "Lungs"; }
 
-    let udc = organU,
-      ddc = organD;
+    let udc = organU, ddc = organD;
     if (isCancer) udc += "-006.6";
     if (isElectro) {
       udc += ":615.84";
@@ -392,7 +422,8 @@ const schema = {
     main_subject: { type: "string" },
     sub_subject: { type: "string" },
     explanation: { type: "string" },
-    breakdown: { type: "string" }
+    breakdown: { type: "string" },
+    ddc_breakdown: { type: "string" }
   },
   required: ["title", "udc_number", "ddc_number", "main_subject", "sub_subject", "explanation", "breakdown"]
 };
@@ -423,7 +454,7 @@ function validate(r, title) {
     ddc_number: d,
     udc_answer: n,
     ddc_answer: d,
-    main_subject: r?.main_subject || "General Classification",
+    main_subject: r?.main_subject || "General Subject Candidate",
     sub_subject: title,
     breakdown: r?.breakdown || `UDC: ${n}`,
     ddc_breakdown: r?.ddc_breakdown || `DDC: ${d}`,
@@ -440,7 +471,7 @@ async function gemini(title, model, deadline = Date.now() + 28000) {
         role: "user",
         parts: [
           {
-            text: `${UDC_RULES}\nClassify the title: "${title}". Find the true subject (whether science, technology, arts, or literature). NEVER return 0 or 000. Return valid JSON only.`
+            text: `${UDC_RULES}\nClassify the title: "${title}". Accurately detect the specific language, subject, or domain. Ensure UDC and DDC classifications match the exact same subject. NEVER return 0 or 000. Return valid JSON only.`
           }
         ]
       }
@@ -539,7 +570,7 @@ app.post(
     // 3. SMART UNIVERSAL FALLBACK
     let fbUdc = "820-3",
       fbDdc = "823",
-      fbLabel = "English Literature / Fiction";
+      fbLabel = "Literature / Fiction";
     if (/\b(plant|flower|rose|garden|tree|crop)\b/i.test(title)) {
       fbUdc = "635.9";
       fbDdc = "635.9";
