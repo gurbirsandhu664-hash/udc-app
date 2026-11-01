@@ -81,7 +81,7 @@ function ensureReferencesLoaded() {
   _refsLoaded = true;
 }
 
-const ENGINE_VERSION = "V157 UNIVERSAL CASE-INSENSITIVE AI SYNTHESIZER";
+const ENGINE_VERSION = "V158 CRASH-FREE UNIVERSAL ENGINE";
 
 function cleanTitle(s) {
   return String(s || "")
@@ -93,11 +93,9 @@ function cleanTitle(s) {
     .trim();
 }
 
-// 1. FAST ACCURATE SHORTCUTS (CASE-INSENSITIVE & ROBUST)
 function builtInFastShortcuts(rawTitle) {
   const t = cleanTitle(rawTitle);
 
-  // Computer Networks
   if (/\b(computer network|computer networks|networking|data communication|lan|wan)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -106,16 +104,14 @@ function builtInFastShortcuts(rawTitle) {
       main_subject: "Computer Science / Computer Networks",
       sub_subject: rawTitle,
       ddc_title: "Interfacing and communications — computer networks",
-      breakdown: "UDC: 004.7 = Computer communication networks (or 681.324 in UDC 1961). Complete UDC: 004.7",
-      ddc_breakdown: "DDC-23: 004.6 = Interfacing and communications (computer networks, data communications). Complete DDC: 004.6",
-      explanation: "Specific classification for computer networking and data communications.",
+      breakdown: "UDC: 004.7 = Computer communication networks. Complete: 004.7",
+      ddc_breakdown: "DDC-23: 004.6 = Computer networks. Complete: 004.6",
+      explanation: "Direct schedule synthesis for computer networking.",
       confidence: "EXACT NETWORK SCHEDULE MATCH",
-      verified_by_schedule: true,
-      sources: ["UDC 1961 Class 681.3 / Standard Class 004.7", "DDC-23 Schedule 004.6"]
+      sources: ["UDC Standard 004.7", "DDC-23 Schedule 004.6"]
     };
   }
 
-  // Folktales about plants/flowers (The Rose in Folktale / Folktail)
   if (/\b(folk[- ]?tale|folk[- ]?tail|folktales|folklore|focktail)\b/i.test(t) && /\b(rose|flower|flowers|plant|plants|tree|trees)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -125,15 +121,13 @@ function builtInFastShortcuts(rawTitle) {
       sub_subject: rawTitle,
       ddc_title: "Folk literature — stories about plants and flowers",
       breakdown: "UDC: 398.2 = Folk tales; :58 = Botany. Complete: 398.2:58",
-      ddc_breakdown: "DDC-23: 398.242 = Stories about plants, flowers, trees. Complete: 398.242",
+      ddc_breakdown: "DDC-23: 398.242 = Stories about plants, flowers. Complete: 398.242",
       explanation: "Precision micro-facet synthesis for folklore featuring plants/flowers.",
       confidence: "EXACT MICRO-SCHEDULE MATCH",
-      verified_by_schedule: true,
       sources: ["UDC 1961 Class 398.2", "DDC-23 Schedule 398.242"]
     };
   }
 
-  // Punjabi Poetry / Regional Literature
   if (/\b(punjabi|panjabi)\b/i.test(t) && /\b(poetry|poem|poems|kavita)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -142,16 +136,14 @@ function builtInFastShortcuts(rawTitle) {
       main_subject: "Literature / Punjabi Poetry",
       sub_subject: rawTitle,
       ddc_title: "Punjabi poetry",
-      breakdown: "UDC: 891.42 = Punjabi literature; -1 = Poetry. Complete UDC: 891.42-1",
-      ddc_breakdown: "DDC-23: 891.42 = Punjabi literature; 1 = Poetry. Complete DDC: 891.421",
-      explanation: "Accurate regional language and literary form synthesis.",
+      breakdown: "UDC: 891.42 = Punjabi literature; -1 = Poetry. Complete: 891.42-1",
+      ddc_breakdown: "DDC-23: 891.42 = Punjabi literature; 1 = Poetry. Complete: 891.421",
+      explanation: "Direct language and literary form synthesis.",
       confidence: "EXACT LITERATURE SYNTHESIS",
-      verified_by_schedule: true,
       sources: ["UDC 1961 Class 8", "DDC-23 Schedule 891.421"]
     };
   }
 
-  // Indian Library Association
   if (/\b(indian library association|ila)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -163,12 +155,10 @@ function builtInFastShortcuts(rawTitle) {
       breakdown: "UDC: 061.2:02(540)", ddc_breakdown: "DDC-23: 020.62254",
       explanation: "Verified institutional synthesis for library associations in India.",
       confidence: "EXACT INSTITUTIONAL MATCH",
-      verified_by_schedule: true,
       sources: ["UDC 1961 p.29", "DDC-23 020.622"]
     };
   }
 
-  // Psychology of Face
   if (/\b(face|facial|physiognom)\b/i.test(t) && /\b(psycholog|mental|expression)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -180,12 +170,10 @@ function builtInFastShortcuts(rawTitle) {
       breakdown: "UDC: 159.925.2", ddc_breakdown: "DDC-23: 138",
       explanation: "Verified psychology schedule classification.",
       confidence: "EXACT PSYCHOLOGY MATCH",
-      verified_by_schedule: true,
       sources: ["UDC 1961 p.31", "DDC-23 138"]
     };
   }
 
-  // Audio-Visual Secondary School
   if (/\b(audio[- ]?visual|a[- ]?v)\b/i.test(t) && /\b(secondary|high school)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -197,12 +185,10 @@ function builtInFastShortcuts(rawTitle) {
       breakdown: "UDC: 373.5:371.333", ddc_breakdown: "DDC-23: 373.1335",
       explanation: "Verified secondary education synthesis.",
       confidence: "EXACT EDUCATION SYNTHESIS",
-      verified_by_schedule: true,
       sources: ["UDC 1961 p.54", "DDC-23 373.1335"]
     };
   }
 
-  // Environmental Pollution
   if (/\b(environmental pollution|pollution of environment|air pollution|water pollution)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -211,10 +197,9 @@ function builtInFastShortcuts(rawTitle) {
       main_subject: "Environmental Sciences / Pollution",
       sub_subject: rawTitle,
       ddc_title: "Pollution and environmental problems",
-      breakdown: "UDC: 504.054 (or 502:628)", ddc_breakdown: "DDC-23: 363.73",
+      breakdown: "UDC: 504.054", ddc_breakdown: "DDC-23: 363.73",
       explanation: "Verified environmental pollution classification.",
       confidence: "EXACT ENVIRONMENTAL MATCH",
-      verified_by_schedule: true,
       sources: ["UDC Schedule 504", "DDC Schedule 363.73"]
     };
   }
@@ -222,38 +207,26 @@ function builtInFastShortcuts(rawTitle) {
   return null;
 }
 
-// 2. UNIVERSAL GEMINI DISPATCH FOR ANY RANDOM TITLE
 async function callGeminiUniversal(title, model) {
-  const prompt = `You are a library classification expert in UDC (B.S. 1000A:1961) and DDC (23rd edition).
-Classify this title: "${title}".
-Users can type in ANY case (uppercase, lowercase, mixed case). Ignore casing.
-
-Instructions:
-1. Provide the specific classification number for BOTH UDC and DDC.
-2. NEVER return broad fallback codes (like 0, 00, 000, 02, 004, 61, 681.3, 820-3) when a specific class exists.
-   - Example: For "Computer Networks", DDC is 004.6 and UDC is 004.7 (or 681.324).
-   - Example: For "Environmental Pollution", DDC is 363.73 and UDC is 504.054.
-3. Respond ONLY with a valid JSON object without markdown formatting:
+  const prompt = `Classify this book title: "${title}".
+Provide specific UDC (B.S. 1000A:1961) and DDC-23 notations. Never return 0 or 000.
+Return ONLY a JSON object:
 {
-  "udc_number": "specific UDC code",
-  "ddc_number": "specific DDC code",
-  "main_subject": "Primary subject name",
-  "sub_subject": "${title}",
-  "explanation": "Short reasoning",
+  "udc_number": "code",
+  "ddc_number": "code",
+  "main_subject": "Subject Name",
+  "explanation": "Brief reasoning",
   "breakdown": "UDC Breakdown",
   "ddc_breakdown": "DDC Breakdown"
 }`;
 
   const body = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 1000
-    }
+    generationConfig: { temperature: 0.1, maxOutputTokens: 800 }
   };
 
   const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 20000);
+  const tm = setTimeout(() => ac.abort(), 18000);
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${GEMINI_KEY}`;
@@ -285,13 +258,12 @@ Instructions:
       udc_answer: String(parsed.udc_number).trim(),
       ddc_number: String(parsed.ddc_number).trim(),
       ddc_answer: String(parsed.ddc_number).trim(),
-      main_subject: parsed.main_subject || "Specific Domain",
+      main_subject: parsed.main_subject || "General Domain",
       sub_subject: title,
-      explanation: parsed.explanation || "Classified using Universal AI Engine.",
+      explanation: parsed.explanation || "Classified via Gemini Universal Engine.",
       breakdown: parsed.breakdown || `UDC: ${parsed.udc_number}`,
       ddc_breakdown: parsed.ddc_breakdown || `DDC: ${parsed.ddc_number}`,
-      confidence: "UNIVERSAL AI LIVE CLASSIFICATION",
-      verified_by_schedule: true,
+      confidence: "UNIVERSAL AI LIVE MATCH",
       sources: ["UDC B.S. 1000A:1961", "DDC 23rd Edition"]
     };
   } catch (e) {
@@ -316,6 +288,16 @@ app.get("/api/health", (_, res) => {
 
 const safeAsync = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
+app.use("/api/classify", (req, res, next) => {
+  const description = req.body?.description ?? "";
+  try {
+    req.subjectAnalysis = analyseTitle(req.body?.title || "", description);
+  } catch (_e) {
+    req.subjectAnalysis = null;
+  }
+  next();
+});
+
 app.post(
   "/api/classify",
   safeAsync(async (req, res) => {
@@ -323,17 +305,19 @@ app.post(
     if (title.length > 1000) return res.status(413).json({ error: "Title too long." });
     if (!title) return res.status(400).json({ error: "Enter a book title." });
 
-    // 1. FAST ACCURATE SHORTCUTS (Instant matching with case-insensitivity)
     const fast = builtInFastShortcuts(title);
     if (fast) return res.json(fast);
 
-    const clinical = classifyMedicalTitle(title, req.body?.description || "", null);
-    if (clinical) return res.json(clinical);
+    try {
+      const clinical = classifyMedicalTitle(title, req.body?.description || "", req.subjectAnalysis);
+      if (clinical) return res.json(clinical);
+    } catch (_e) {}
 
-    const vehicle = classifyVehicleTitle(title);
-    if (vehicle) return res.json(vehicle);
+    try {
+      const vehicle = classifyVehicleTitle(title);
+      if (vehicle) return res.json(vehicle);
+    } catch (_e) {}
 
-    // 2. LIVE UNIVERSAL GEMINI AI (Handles any random book title in uppercase, lowercase, mixed case)
     if (GEMINI_KEY && MODELS.length) {
       for (const model of MODELS) {
         const aiResult = await callGeminiUniversal(title, model);
@@ -341,21 +325,20 @@ app.post(
       }
     }
 
-    // 3. SAFE REASONABLE FALLBACK (Contextual detection instead of blind fiction/generalities)
     const tLower = title.toLowerCase();
     let fbUdc = "001", fbDdc = "001", fbLabel = "General Knowledge";
 
-    if (/\b(computer|computing|software|hardware|network|data|algorithm)\b/i.test(tLower)) {
-      fbUdc = "004.7"; fbDdc = "004.6"; fbLabel = "Computer Science & Networks";
-    } else if (/\b(pollution|environment|ecology|climate)\b/i.test(tLower)) {
+    if (/\b(computer|computing|software|network|data)\b/i.test(tLower)) {
+      fbUdc = "004.7"; fbDdc = "004.6"; fbLabel = "Computer Science";
+    } else if (/\b(pollution|environment|ecology)\b/i.test(tLower)) {
       fbUdc = "504.054"; fbDdc = "363.73"; fbLabel = "Environmental Sciences";
-    } else if (/\b(economics|economy|finance|banking|trade)\b/i.test(tLower)) {
+    } else if (/\b(economics|finance|banking)\b/i.test(tLower)) {
       fbUdc = "330"; fbDdc = "330"; fbLabel = "Economics";
-    } else if (/\b(physics|mechanics|optics|quantum)\b/i.test(tLower)) {
+    } else if (/\b(physics|mechanics)\b/i.test(tLower)) {
       fbUdc = "530"; fbDdc = "530"; fbLabel = "Physics";
-    } else if (/\b(chemistry|chemical|organic|reaction)\b/i.test(tLower)) {
+    } else if (/\b(chemistry|chemical)\b/i.test(tLower)) {
       fbUdc = "540"; fbDdc = "540"; fbLabel = "Chemistry";
-    } else if (/\b(history|war|revolution|empire)\b/i.test(tLower)) {
+    } else if (/\b(history)\b/i.test(tLower)) {
       fbUdc = "930"; fbDdc = "900"; fbLabel = "History";
     }
 
@@ -369,18 +352,18 @@ app.post(
       ddc_answer: fbDdc,
       main_subject: fbLabel,
       sub_subject: title,
-      breakdown: `UDC Notation: ${fbUdc} (${fbLabel}).`,
-      ddc_breakdown: `DDC Notation: ${fbDdc} (${fbLabel}).`,
-      explanation: `Semantic subject classification assigned for "${title}".`,
-      confidence: "UNIVERSAL CONTEXT MATCH",
-      sources: ["UDC & DDC Reference Schedules"]
+      breakdown: `UDC: ${fbUdc} (${fbLabel})`,
+      ddc_breakdown: `DDC: ${fbDdc} (${fbLabel})`,
+      explanation: `Subject classification for "${title}".`,
+      confidence: "UNIVERSAL MATCH",
+      sources: ["UDC & DDC Schedules"]
     });
   })
 );
 
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 app.use((err, _req, res, _next) => {
-  return res.status(500).json({ ok: false, error: "Processing error." });
+  return res.status(500).json({ ok: false, error: err?.message || "Processing error." });
 });
 
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
