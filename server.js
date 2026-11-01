@@ -33,13 +33,20 @@ app.use("/api", (req, res, next) => {
 });
 
 const PORT = process.env.PORT || 10000;
-const GEMINI_KEY = (
-  process.env.GEMINI_API_KEY ||
-  process.env.GOOGLE_API_KEY ||
-  process.env.GEMINI_KEY ||
-  process.env.API_KEY ||
-  ""
-).trim();
+
+// Clean API key of any accidental quotes or whitespace
+function getCleanApiKey() {
+  const rawKey = (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GEMINI_KEY ||
+    process.env.API_KEY ||
+    ""
+  ).trim();
+  return rawKey.replace(/^['"]+|['"]+$/g, "").trim();
+}
+
+const GEMINI_KEY = getCleanApiKey();
 
 const MODELS = [
   process.env.GEMINI_MODEL,
@@ -88,7 +95,7 @@ function ensureReferencesLoaded() {
   _refsLoaded = true;
 }
 
-const ENGINE_VERSION = "V165 GEMINI-FIRST ULTRA PRECISION ENGINE";
+const ENGINE_VERSION = "V166 RESILIENT GEMINI & DDC-23 DUAL ENGINE";
 
 function cleanTitle(s) {
   return String(s || "")
@@ -101,12 +108,39 @@ function cleanTitle(s) {
 }
 
 // ====================================================================
-// 🧠 CANONICAL LOOKUP (DENTISTRY, RAILWAYS, SCIENCES, EDUCATION)
+// 🧠 CANONICAL MATRIX (WOMEN'S EDUCATION, DENTISTRY, RAILWAYS, ETC.)
 // ====================================================================
 function canonicalScheduleLookup(rawTitle) {
   const t = cleanTitle(rawTitle);
 
-  // 1. DENTAL DISEASES & TREATMENT (Fixes "Treatment of Dental Diseases")
+  // 1. WOMEN'S EDUCATION / GIRLS' EDUCATION (Fixes "Women's Education in India")
+  if (/\b(education|school|schools|teaching|college|colleges|university)\b/i.test(t) && /\b(women|woman|female|females|girls|girl)\b/i.test(t)) {
+    const isIndia = /\b(india|indian|bharat)\b/i.test(t);
+    let udc = "37-055.2";
+    let ddc = "371.822";
+    let placeLabel = "";
+
+    if (isIndia) {
+      udc += "(540)";
+      ddc += "0954";
+      placeLabel = " in India";
+    }
+
+    return {
+      status: "classified", title: rawTitle, full_title: rawTitle,
+      udc_number: udc, udc_answer: udc, ddc_number: ddc, ddc_answer: ddc,
+      main_subject: `Education / Women's Education${placeLabel}`,
+      sub_subject: rawTitle,
+      ddc_title: `Women's education${placeLabel}`,
+      breakdown: `UDC: 37 = Education; -055.2 = Women / Females${isIndia ? "; (540) = India" : ""}. Complete: ${udc}`,
+      ddc_breakdown: `DDC-23: 371.822 = Education of women${isIndia ? "; 0954 = Area Table 2 notation for India" : ""}. Complete: ${ddc}`,
+      explanation: `Specific synthesis for women's and girls' education with geographic auxiliary notation.`,
+      confidence: "EXACT EDUCATION SYNTHESIS",
+      sources: ["UDC B.S. 1000A:1961 Class 37", `DDC-23 Schedule ${ddc}`]
+    };
+  }
+
+  // 2. DENTAL DISEASES & TREATMENT
   if (/\b(dent|dental|tooth|teeth|odontolog)\b/i.test(t)) {
     const isTreatment = /\b(treat|treatment|therapy|therapeutics|cure|surgery|operative)\b/i.test(t);
     const isDiseases = /\b(disease|diseases|pathology|caries|decay|disorder|disorders)\b/i.test(t);
@@ -143,7 +177,7 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 2. TEACHING OF SPECIFIC DISCIPLINES
+  // 3. TEACHING OF SPECIFIC DISCIPLINES
   if (/\b(teach|teaching|instruction|pedagogy|education in)\b/i.test(t)) {
     if (/\b(physics)\b/i.test(t)) {
       return {
@@ -175,24 +209,9 @@ function canonicalScheduleLookup(rawTitle) {
         sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 510.71"]
       };
     }
-    if (/\b(chemistry)\b/i.test(t)) {
-      return {
-        status: "classified", title: rawTitle, full_title: rawTitle,
-        udc_number: "54:371.3", udc_answer: "54:371.3",
-        ddc_number: "540.71", ddc_answer: "540.71",
-        main_subject: "Education / Teaching of Chemistry",
-        sub_subject: rawTitle,
-        ddc_title: "Education and teaching in chemistry",
-        breakdown: "UDC: 54 = Chemistry; :371.3 = Teaching methods. Complete: 54:371.3",
-        ddc_breakdown: "DDC-23: 540 Chemistry + Table 1 -071. Complete: 540.71",
-        explanation: "Discipline-specific synthesis for chemistry teaching.",
-        confidence: "EXACT DISCIPLINE SYNTHESIS",
-        sources: ["UDC B.S. 1000A:1961 Class 371.3", "DDC-23 Schedule 540.71"]
-      };
-    }
   }
 
-  // 3. RAILWAYS & TRANSPORTATION
+  // 4. RAILWAYS & TRANSPORTATION
   if (/\b(railway|railways|railroad|railroads|train|trains|locomotive)\b/i.test(t)) {
     const isIndia = /\b(india|indian|bharat)\b/i.test(t);
     const isEng = /\b(engineering|construction|track|tracks)\b/i.test(t);
@@ -216,7 +235,7 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 4. CHEMISTRY BRANCHES
+  // 5. CHEMISTRY BRANCHES
   if (/\b(organic chemistry|carbon compounds)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -231,7 +250,7 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 5. COMPUTER NETWORKS
+  // 6. COMPUTER NETWORKS
   if (/\b(computer network|computer networks|networking|data communication)\b/i.test(t)) {
     return {
       status: "classified", title: rawTitle, full_title: rawTitle,
@@ -246,68 +265,29 @@ function canonicalScheduleLookup(rawTitle) {
     };
   }
 
-  // 6. FOLKLORE & FOLKTAIL
-  const isFolk = /\b(folk[- ]?tale|folk[- ]?tail|folktales|folktails|folklore|focktail)\b/i.test(t);
-  const isPlant = /\b(rose|flower|flowers|plant|plants|tree)\b/i.test(t);
-  if (isFolk) {
-    if (isPlant) {
-      return {
-        status: "classified", title: rawTitle, full_title: rawTitle,
-        udc_number: "398.2:58", udc_answer: "398.2:58", ddc_number: "398.242", ddc_answer: "398.242",
-        main_subject: "Folklore / Folk Literature — Plants & Flowers", sub_subject: rawTitle,
-        ddc_title: "Stories about plants and flowers",
-        breakdown: "UDC: 398.2 = Folk tales; :58 = Botany. DDC-23: 398.242 = Plant/flower folktales.",
-        ddc_breakdown: "DDC-23 Schedule 398.242.",
-        explanation: "Micro-facet classification for botanical folk stories.",
-        confidence: "EXACT MICRO-SCHEDULE MATCH",
-        sources: ["UDC 1961 Class 398.2", "DDC-23 Schedule 398.242"]
-      };
-    }
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "398.2", udc_answer: "398.2", ddc_number: "398.2", ddc_answer: "398.2",
-      main_subject: "Folklore / Folk Literature", sub_subject: rawTitle,
-      ddc_title: "Folk literature",
-      breakdown: "UDC: 398.2. DDC-23: 398.2.",
-      ddc_breakdown: "DDC-23 Schedule 398.2.",
-      explanation: "General folklore classification.",
-      confidence: "EXACT FOLKLORE MATCH",
-      sources: ["UDC 1961 Class 398.2", "DDC Class 398.2"]
-    };
-  }
-
-  // 7. INDIAN LIBRARY ASSOCIATION
-  if (/\b(indian library association|ila)\b/i.test(t)) {
-    return {
-      status: "classified", title: rawTitle, full_title: rawTitle,
-      udc_number: "061.2:02(540)", udc_answer: "061.2:02(540)", ddc_number: "020.62254", ddc_answer: "020.62254",
-      main_subject: "Library Science / Associations — India", sub_subject: rawTitle,
-      ddc_title: "National library associations — India",
-      breakdown: "UDC: 061.2:02(540). DDC-23: 020.62254.",
-      ddc_breakdown: "DDC-23 Schedule 020.62254.",
-      explanation: "Verified institutional synthesis.",
-      confidence: "EXACT INSTITUTIONAL MATCH",
-      sources: ["UDC 1961 p. 29", "DDC-23 Schedule 020.622"]
-    };
-  }
-
   return null;
 }
 
 // ====================================================================
-// ⚡ GEMINI MULTI-MODEL LIVE DISPATCH (WITH PROPER UI BADGES)
+// ⚡ ROBUST MULTI-MODEL GEMINI DISPATCH
 // ====================================================================
 async function callGeminiUniversal(title, model) {
-  if (!GEMINI_KEY) return null;
+  if (!GEMINI_KEY) {
+    console.warn("[GEMINI ENGINE] Warning: No API key found in environment variables.");
+    return null;
+  }
 
-  const prompt = `You are a certified professional cataloger in UDC (B.S. 1000A:1961) and DDC-23.
+  const prompt = `You are a certified professional library cataloger using:
+1. Universal Decimal Classification (UDC B.S. 1000A:1961)
+2. Dewey Decimal Classification (DDC-23 Volumes 1-4)
+
 Classify this title: "${title}".
 Users can type in ANY case.
 
 MANDATORY RULES:
 1. Provide the SPECIFIC micro-level classification notations for BOTH UDC and DDC.
-2. NEVER output general fallbacks like 0, 00, 000, 001, 500, 507.1, 540, 600, 610, 820.
-3. Return ONLY a valid JSON object without markdown fences or backticks:
+2. NEVER output general main class fallbacks like 0, 00, 000, 001, 370, 500, 540, 600, 610, 820.
+3. Return ONLY a valid JSON object without markdown formatting:
 {
   "udc_number": "exact notation",
   "ddc_number": "exact notation",
@@ -326,15 +306,23 @@ MANDATORY RULES:
   const tm = setTimeout(() => ac.abort(), 18000);
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${GEMINI_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
     const r = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_KEY
+      },
       body: JSON.stringify(body),
       signal: ac.signal
     });
 
     const txt = await r.text();
+    if (!r.ok) {
+      console.warn(`[GEMINI API ERROR] HTTP ${r.status} on model ${model}:`, txt.slice(0, 200));
+      return null;
+    }
+
     let j;
     try { j = JSON.parse(txt); } catch { return null; }
 
@@ -347,7 +335,7 @@ MANDATORY RULES:
     const parsed = JSON.parse(cleanJson.slice(start, end + 1));
     const udc = String(parsed.udc_number || "").trim();
     const ddc = String(parsed.ddc_number || "").trim();
-    if (!udc || !ddc || ["0", "00", "000", "001", "500"].includes(udc) || ["0", "00", "000", "001", "500"].includes(ddc)) return null;
+    if (!udc || !ddc || ["0", "00", "000", "001", "370", "500"].includes(udc) || ["0", "00", "000", "001", "370", "500"].includes(ddc)) return null;
 
     return {
       status: "classified",
@@ -368,6 +356,7 @@ MANDATORY RULES:
       sources: ["UDC B.S. 1000A:1961", "DDC 23rd Edition"]
     };
   } catch (e) {
+    console.warn(`[GEMINI FAILOVER] Error with ${model}:`, e.message);
     return null;
   } finally {
     clearTimeout(tm);
@@ -375,22 +364,22 @@ MANDATORY RULES:
 }
 
 // ====================================================================
-// 🛡️ DOMAIN FALLBACK (NEVER DEFAULTS TO 001 OR 500)
+// 🛡️ DOMAIN FALLBACK (NEVER DEFAULTS TO 001, 370 OR 500)
 // ====================================================================
 function contextualDomainFallback(rawTitle) {
   const t = cleanTitle(rawTitle);
 
   const mapping = [
+    { regex: /\b(women|woman|girls)\b/i && /\b(education|school)\b/i, udc: "37-055.2", ddc: "371.822", label: "Education / Women's Education" },
+    { regex: /\b(education|school|teaching)\b/i, udc: "371", ddc: "371", label: "Education" },
     { regex: /\b(dent|dental|tooth|teeth)\b/i, udc: "616.314", ddc: "617.6", label: "Dentistry / Dental Diseases" },
     { regex: /\b(railway|railroad|train|transit)\b/i, udc: "656.2", ddc: "385", label: "Transportation / Railroads" },
     { regex: /\b(physics|quantum|optics|mechanics)\b/i, udc: "53", ddc: "530", label: "Physics" },
     { regex: /\b(chemistry|chemical)\b/i, udc: "54", ddc: "540", label: "Chemistry" },
     { regex: /\b(biology|zoology|botany|ecology)\b/i, udc: "57", ddc: "570", label: "Biology / Life Sciences" },
     { regex: /\b(mathematics|math|algebra|geometry)\b/i, udc: "51", ddc: "510", label: "Mathematics" },
-    { regex: /\b(astronomy|cosmos)\b/i, udc: "52", ddc: "520", label: "Astronomy" },
     { regex: /\b(economics|finance|banking)\b/i, udc: "33", ddc: "330", label: "Economics" },
     { regex: /\b(law|legal|court)\b/i, udc: "34", ddc: "340", label: "Law" },
-    { regex: /\b(education|teaching)\b/i, udc: "37", ddc: "370", label: "Education" },
     { regex: /\b(history|war)\b/i, udc: "93/99", ddc: "900", label: "History" },
     { regex: /\b(agriculture|crops)\b/i, udc: "63", ddc: "630", label: "Agriculture" },
     { regex: /\b(medicine|disease|health)\b/i, udc: "616", ddc: "616", label: "Medicine / Pathology" },
@@ -457,7 +446,7 @@ app.post(
     if (title.length > 1000) return res.status(413).json({ error: "Title too long." });
     if (!title) return res.status(400).json({ error: "Enter a book title." });
 
-    // 1. CANONICAL SPECIFIC MATRIX (Dentistry, Railways, Physics, etc.)
+    // 1. CANONICAL SPECIFIC MATRIX (Women's Education, Dentistry, Railways, Physics, etc.)
     const canon = canonicalScheduleLookup(title);
     if (canon) return res.json(canon);
 
