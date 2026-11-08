@@ -19,15 +19,19 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z\'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// DDC-23 Synthesizer
+// ============================================================================
+// DDC-23 MATHEMATICAL SYNTHESIZER (Standard Subdivisions Table 1 & Table 2)
+// ============================================================================
 function buildDDC(baseDdc, formT1, placeT2) {
   let res = String(baseDdc || '001').trim();
 
+  // 1. Form Auxiliaries (Table 1: Standard Subdivisions)
   if (formT1) {
     if (res === '500') {
       if (formT1 === '03') res = '503';
       else if (formT1 === '071') res = '507.1';
       else if (formT1 === '02') res = '502';
+      else if (formT1 === '05') res = '505';
       else res = `50${formT1}`;
     } else if (res === '600') {
       res = formT1 === '03' ? '603' : `60${formT1}`;
@@ -44,7 +48,7 @@ function buildDDC(baseDdc, formT1, placeT2) {
     } else if (res === '300') {
       res = formT1 === '03' ? '300.3' : `300.${formT1}`;
     } else if (res === '530') {
-      res = `530.${formT1}`;
+      res = `530.${formT1}`; // 530.03 for Physics Dictionary
     } else if (res === '510') {
       if (formT1 === '03') res = '510.3';
       else if (formT1 === '071') res = '510.71';
@@ -70,13 +74,15 @@ function buildDDC(baseDdc, formT1, placeT2) {
     } else {
       res = `${res}.${formT1}`;
     }
-  } else if (placeT2) {
+  }
+  // 2. Geographic / Area Subdivisions (Table 2)
+  else if (placeT2) {
     if (res.includes('.')) {
       res = `${res}${placeT2}`;
     } else if (res.endsWith('00')) {
-      res = `${res.charAt(0)}${placeT2}`;
+      res = `${res.charAt(0)}${placeT2}`; // 900 + 52 -> 952 (History of Japan)
     } else if (res.endsWith('0')) {
-      res = `${res}.9${placeT2}`;
+      res = `${res}.9${placeT2}`; // 330 + 52 -> 330.952 (Economy of Japan)
     } else {
       res = `${res}.${placeT2}`;
     }
@@ -87,6 +93,66 @@ function buildDDC(baseDdc, formT1, placeT2) {
   }
   return res;
 }
+
+// Comprehensive Geographic Entities (UDC Table 1e & DDC Table 2)
+const GEOGRAPHY = [
+  // Asia
+  { regex: /\b(japan|japanese)\b/i, udc: '(520)', ddc: '52', name: 'Japan' },
+  { regex: /\b(china|chinese)\b/i, udc: '(510)', ddc: '51', name: 'China' },
+  { regex: /\b(punjab)\b/i, udc: '(540.15)', ddc: '54552', name: 'Punjab' },
+  { regex: /\b(india|indian|bharat)\b/i, udc: '(540)', ddc: '54', name: 'India' },
+  { regex: /\b(pakistan|pakistani)\b/i, udc: '(549.1)', ddc: '5491', name: 'Pakistan' },
+  { regex: /\b(bangladesh|bengali)\b/i, udc: '(549.3)', ddc: '5493', name: 'Bangladesh' },
+  { regex: /\b(sri lanka|ceylon)\b/i, udc: '(548.7)', ddc: '5487', name: 'Sri Lanka' },
+  { regex: /\b(nepal|nepali)\b/i, udc: '(549.6)', ddc: '5496', name: 'Nepal' },
+  { regex: /\b(afghanistan|afghan)\b/i, udc: '(581)', ddc: '581', name: 'Afghanistan' },
+  { regex: /\b(iran|persia|persian)\b/i, udc: '(55)', ddc: '55', name: 'Iran' },
+  { regex: /\b(iraq|iraqi)\b/i, udc: '(567)', ddc: '567', name: 'Iraq' },
+  { regex: /\b(israel|israeli|palestine)\b/i, udc: '(569.4)', ddc: '5694', name: 'Israel / Palestine' },
+  { regex: /\b(saudi arabia|arabia|saudi|arab)\b/i, udc: '(53)', ddc: '53', name: 'Arabian Peninsula' },
+  { regex: /\b(turkey|turkish|ottoman)\b/i, udc: '(560)', ddc: '56', name: 'Turkey' },
+  { regex: /\b(russia|russian|soviet|ussr)\b/i, udc: '(470)', ddc: '47', name: 'Russia' },
+  { regex: /\b(korea|korean|south korea|north korea)\b/i, udc: '(519)', ddc: '519', name: 'Korea' },
+  { regex: /\b(indonesia|indonesian)\b/i, udc: '(594)', ddc: '598', name: 'Indonesia' },
+  { regex: /\b(malaysia|malaysian)\b/i, udc: '(595)', ddc: '595', name: 'Malaysia' },
+  { regex: /\b(singapore)\b/i, udc: '(595.13)', ddc: '5957', name: 'Singapore' },
+  { regex: /\b(thailand|thai|siam)\b/i, udc: '(593)', ddc: '593', name: 'Thailand' },
+  
+  // Europe
+  { regex: /\b(united kingdom|uk|britain|british|england)\b/i, udc: '(410)', ddc: '41', name: 'United Kingdom' },
+  { regex: /\b(scotland|scottish)\b/i, udc: '(411)', ddc: '411', name: 'Scotland' },
+  { regex: /\b(ireland|irish)\b/i, udc: '(415)', ddc: '415', name: 'Ireland' },
+  { regex: /\b(germany|german)\b/i, udc: '(430)', ddc: '43', name: 'Germany' },
+  { regex: /\b(france|french)\b/i, udc: '(44)', ddc: '44', name: 'France' },
+  { regex: /\b(italy|italian|rome|roman)\b/i, udc: '(450)', ddc: '45', name: 'Italy' },
+  { regex: /\b(spain|spanish)\b/i, udc: '(460)', ddc: '46', name: 'Spain' },
+  { regex: /\b(portugal|portuguese)\b/i, udc: '(469)', ddc: '469', name: 'Portugal' },
+  { regex: /\b(netherlands|holland|dutch)\b/i, udc: '(492)', ddc: '492', name: 'Netherlands' },
+  { regex: /\b(switzerland|swiss)\b/i, udc: '(494)', ddc: '494', name: 'Switzerland' },
+  { regex: /\b(greece|greek)\b/i, udc: '(495)', ddc: '495', name: 'Greece' },
+  { regex: /\b(sweden|swedish)\b/i, udc: '(485)', ddc: '485', name: 'Sweden' },
+  { regex: /\b(norway|norwegian)\b/i, udc: '(481)', ddc: '481', name: 'Norway' },
+  { regex: /\b(poland|polish)\b/i, udc: '(438)', ddc: '438', name: 'Poland' },
+  
+  // Americas
+  { regex: /\b(united states|usa|u\.s\.a\.|america|american)\b/i, udc: '(73)', ddc: '73', name: 'United States' },
+  { regex: /\b(canada|canadian)\b/i, udc: '(71)', ddc: '71', name: 'Canada' },
+  { regex: /\b(mexico|mexican)\b/i, udc: '(72)', ddc: '72', name: 'Mexico' },
+  { regex: /\b(brazil|brazilian)\b/i, udc: '(81)', ddc: '81', name: 'Brazil' },
+  { regex: /\b(argentina|argentine)\b/i, udc: '(82)', ddc: '82', name: 'Argentina' },
+  
+  // Africa & Australasia
+  { regex: /\b(egypt|egyptian)\b/i, udc: '(620)', ddc: '62', name: 'Egypt' },
+  { regex: /\b(south africa|south african)\b/i, udc: '(680)', ddc: '68', name: 'South Africa' },
+  { regex: /\b(australia|australian)\b/i, udc: '(94)', ddc: '94', name: 'Australia' },
+  { regex: /\b(new zealand)\b/i, udc: '(931)', ddc: '93', name: 'New Zealand' },
+  
+  // Continents
+  { regex: /\b(europe|european)\b/i, udc: '(4)', ddc: '4', name: 'Europe' },
+  { regex: /\b(asia|asian)\b/i, udc: '(5)', ddc: '5', name: 'Asia' },
+  { regex: /\b(africa|african)\b/i, udc: '(6)', ddc: '6', name: 'Africa' },
+  { regex: /\b(latin america|south america)\b/i, udc: '(8)', ddc: '8', name: 'South America' }
+];
 
 // Master Context-Aware Classifier
 function masterClassify(title) {
@@ -110,7 +176,7 @@ function masterClassify(title) {
     'animal physiology': { udc: '591.1', ddc: '571.1', breakdown: '591.1 = Animal physiology. DDC 571.1 = Animal physiology.', desc: 'Animal Physiology.' },
     'plant physiology': { udc: '581.1', ddc: '571.2', breakdown: '581.1 = Plant physiology. DDC 571.2 = Plant physiology.', desc: 'Plant Physiology.' },
     'human physiology': { udc: '612', ddc: '612', breakdown: '612 = Human physiology.', desc: 'Human Physiology.' },
-    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' }
+    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation & Phonetics. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' }
   };
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
 
@@ -168,14 +234,16 @@ function masterClassify(title) {
     }
   }
 
-  // Auxiliaries
+  // 3. Extract Place from Comprehensive Geographic Entities
   let placeUdc = '', placeDdc = '', placeName = '';
-  if (/\b(punjab)\b/i.test(t)) { placeUdc = '(540.15)'; placeDdc = '54552'; placeName = 'Punjab'; }
-  else if (/\b(india|indian|bharat)\b/i.test(t)) { placeUdc = '(540)'; placeDdc = '54'; placeName = 'India'; }
-  else if (/\b(pakistan|pakistani)\b/i.test(t)) { placeUdc = '(549.1)'; placeDdc = '5491'; placeName = 'Pakistan'; }
-  else if (/\b(united states|usa|america|american)\b/i.test(t)) { placeUdc = '(73)'; placeDdc = '73'; placeName = 'United States'; }
-  else if (/\b(united kingdom|uk|britain|england)\b/i.test(t)) { placeUdc = '(410)'; placeDdc = '41'; placeName = 'United Kingdom'; }
-  else if (/\b(europe|european)\b/i.test(t)) { placeUdc = '(4)'; placeDdc = '4'; placeName = 'Europe'; }
+  for (const geo of GEOGRAPHY) {
+    if (geo.regex.test(t)) {
+      placeUdc = geo.udc;
+      placeDdc = geo.ddc;
+      placeName = geo.name;
+      break;
+    }
+  }
 
   let langUdc = '', langName = '';
   if (/\b(in english)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; }
@@ -188,6 +256,7 @@ function masterClassify(title) {
   else if (/\b(dictionary|shabdakosh|glossary)\b/i.test(t)) { formUdc = '(038)'; formT1 = '03'; formDesc = 'Dictionary'; }
   else if (/\b(handbook|manual|guidebook)\b/i.test(t)) { formUdc = '(035)'; formT1 = '02'; formDesc = 'Handbook'; }
 
+  // 4. Domains
   const DOMAINS = [
     { regex: /\b(animal physiology|veterinary physiology)\b/i, udc: '591.1', ddc: '571.1', name: 'Animal Physiology' },
     { regex: /\b(plant physiology)\b/i, udc: '581.1', ddc: '571.2', name: 'Plant Physiology' },
@@ -235,11 +304,12 @@ function masterClassify(title) {
     }
   }
 
+  // Pure geographic history fallback
   if (placeUdc && /\bhistory\b/i.test(t)) {
     return {
       udc: `94${placeUdc}`,
       ddc: buildDDC('900', null, placeDdc),
-      breakdown: `94 = History · ${placeUdc} = ${placeName}`,
+      breakdown: `94 = General History · ${placeUdc} = ${placeName}`,
       explanation: `History of ${placeName}.`,
       source: 'Geographical History Synthesis'
     };
@@ -337,7 +407,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
     </div>
     <div class="card">
       <label for="title">Book Title</label>
-      <textarea id="title" placeholder="Enter book title...">Dictionary of Physics</textarea>
+      <textarea id="title" placeholder="Enter book title...">History of Japan</textarea>
       <div class="action-row">
         <button id="go" class="btn-classify">⚡ CLASSIFY</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
@@ -421,7 +491,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
 
 // PURE Node.js HTTP Server (Zero Dependencies, Zero npm issues!)
 const server = http.createServer(async (req, res) => {
-  // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Frame-Options', 'DENY');
