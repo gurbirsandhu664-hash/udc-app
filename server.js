@@ -37,7 +37,6 @@ function buildDDC(baseDdc, formT1) {
 function masterClassify(title) {
   const t = norm(title);
 
-  // Exact Verified Dictionary & High-Precision Index
   const EXACT = {
     'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics & Phonology. DDC 451.52 = Italian phonology.", desc: 'Italian Phonetics & Phonology.' },
     'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' },
@@ -62,7 +61,7 @@ function masterClassify(title) {
 }
 
 // ============================================================================
-// HIGH-MODEL GEMINI & NEURAL AI INTEGRATION
+// HIGH-MODEL GEMINI 3.8 / 2.5 FLASH INTEGRATION
 // ============================================================================
 async function queryHighModelAI(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
@@ -103,7 +102,7 @@ Output ONLY valid JSON in this exact structure:
         if (txt) {
           const parsed = JSON.parse(txt);
           if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-            return { ...parsed, source: 'Google Gemini High Model (3.8/2.5 Pro)' };
+            return { ...parsed, source: 'Google Gemini 3.8 High Model (Live)' };
           }
         }
       }
@@ -139,13 +138,13 @@ function superWatchman(title, initialResult) {
   return res;
 }
 
-// Clean Professional HTML UI with Accept Toggle & Password Masked Key Box
+// Clean Professional HTML UI with Show/Hide toggle & Accept Toggle
 const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UDC One-Click V149 — Library Classification</title>
+  <title>UDC & DDC Professional Classification Tool</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
@@ -177,9 +176,12 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #334155; line-height: 1.5; }
     .meta-box b { color: #0f172a; }
     .source-tag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; }
+    
     .api-settings { margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
     .api-settings label { font-size: 11px; color: #334155; margin-bottom: 4px; }
-    .api-settings input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
+    .input-group { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+    .api-settings input[type="password"], .api-settings input[type="text"] { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
+    .btn-show { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #e2e8f0; font-weight: 700; font-size: 13px; cursor: pointer; color: #1e293b; }
     .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; font-weight: 700; color: #1e293b; cursor: pointer; }
     .toggle-row input { width: 18px; height: 18px; cursor: pointer; }
     @media (max-width: 600px) { .grid-results { grid-template-columns: 1fr; } .action-row { flex-direction: column; } }
@@ -195,14 +197,17 @@ const HTML_CONTENT = `<!DOCTYPE html>
       <label for="title">Book Title / Subject Query</label>
       <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Italian Phonetics</textarea>
       <div class="action-row">
-        <button id="go" class="btn-classify">⚡ PROFESSIONAL CLASSIFY</button>
+        <button id="go" class="btn-classify">⚡ GEMINI 3.8 CLASSIFY</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
       </div>
       <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
       
       <div class="api-settings">
-        <label for="geminiKey">Gemini 3.8 / 2.5 API Key (Masked & Secure)</label>
-        <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
+        <label for="geminiKey">Gemini 3.8 / 2.5 API Key</label>
+        <div class="input-group">
+          <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
+          <button type="button" id="toggleShow" class="btn-show">👁️ Show</button>
+        </div>
         <label class="toggle-row">
           <input type="checkbox" id="acceptToggle" checked>
           <span>Accept & Enable Gemini High Model (Gemini 3.8 Flash)</span>
@@ -250,6 +255,18 @@ const HTML_CONTENT = `<!DOCTYPE html>
       localStorage.setItem('pro_accept_toggle', $('acceptToggle').checked);
     });
 
+    // Show/Hide toggle for editing/backspacing
+    $('toggleShow').addEventListener('click', () => {
+      const k = $('geminiKey');
+      if (k.type === 'password') {
+        k.type = 'text';
+        $('toggleShow').textContent = '🔒 Hide';
+      } else {
+        k.type = 'password';
+        $('toggleShow').textContent = '👁️ Show';
+      }
+    });
+
     $('go').addEventListener('click', async () => {
       const title = $('title').value.trim();
       const errBox = $('err');
@@ -264,7 +281,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
         return;
       }
 
-      $('go').disabled = true; $('go').textContent = '⚡ GEMINI HIGH MODEL SEARCHING...';
+      $('go').disabled = true; $('go').textContent = '⚡ GEMINI 3.8 HIGH MODEL SEARCHING...';
       try {
         const response = await fetch('/api/classify', {
           method: 'POST',
@@ -289,7 +306,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
         errBox.textContent = err.message || 'Error classifying title.';
         errBox.style.display = 'block';
       } finally {
-        $('go').disabled = false; $('go').textContent = '⚡ PROFESSIONAL CLASSIFY';
+        $('go').disabled = false; $('go').textContent = '⚡ GEMINI 3.8 CLASSIFY';
       }
     });
     (() => {
@@ -315,7 +332,6 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   const url = req.url.split('?')[0];
 
-  // HEALTH CHECK (Required for Render deployment success)
   if (req.method === 'GET' && url === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', bundledUDCReferencePages: 100, bundledDdcReferencePages: 100 }));
@@ -350,7 +366,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // 1. High-Model AI First
+        // 1. High-Model AI First (Gemini 3.8 / 2.5 Flash via user key)
         const aiRes = await queryHighModelAI(title, clientApiKey);
 
         // 2. Expert Master Classifier Fallback
