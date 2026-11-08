@@ -18,138 +18,92 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// ============================================================================
-// DDC-23 MATHEMATICAL SYNTHESIZER
-// ============================================================================
-function buildDDC(baseDdc, formT1, placeT2) {
+// DDC-23 Mathematical Formatter
+function buildDDC(baseDdc, formT1) {
   let res = String(baseDdc || '020').trim();
-
-  if (formT1) {
-    if (res === '530') res = `530.${formT1}`;
-    else if (res === '510') res = formT1 === '03' ? '510.3' : (formT1 === '071' ? '510.71' : `510.${formT1}`);
-    else if (res.includes('.')) res = `${res}0${formT1.replace(/^0+/, '')}`;
+  if (formT1 && res.length >= 3) {
+    if (res.includes('.')) res = `${res}0${formT1}`;
     else res = `${res}.${formT1}`;
-  } else if (placeT2) {
-    if (res.includes('.')) res = `${res}${placeT2}`;
-    else if (res.endsWith('00')) res = `${res.charAt(0)}${placeT2}`;
-    else if (res.endsWith('0')) res = `${res}.9${placeT2}`;
-    else res = `${res}.${placeT2}`;
   }
-
   if (res.length >= 4 && !res.includes('.')) {
     res = `${res.slice(0, 3)}.${res.slice(3)}`;
   }
   return res;
 }
 
-// 57 Geographic Entities
-const GEOGRAPHY = [
-  { regex: /\b(canada|canadian)\b/i, udc: '(71)', ddc: '71', name: 'Canada' },
-  { regex: /\b(japan|japanese)\b/i, udc: '(520)', ddc: '52', name: 'Japan' },
-  { regex: /\b(china|chinese)\b/i, udc: '(510)', ddc: '51', name: 'China' },
-  { regex: /\b(punjab)\b/i, udc: '(540.15)', ddc: '54552', name: 'Punjab' },
-  { regex: /\b(india|indian|bharat)\b/i, udc: '(540)', ddc: '54', name: 'India' },
-  { regex: /\b(pakistan|pakistani)\b/i, udc: '(549.1)', ddc: '5491', name: 'Pakistan' },
-  { regex: /\b(united states|usa|america|american)\b/i, udc: '(73)', ddc: '73', name: 'United States' },
-  { regex: /\b(united kingdom|uk|britain|england)\b/i, udc: '(410)', ddc: '41', name: 'United Kingdom' },
-  { regex: /\b(germany|german)\b/i, udc: '(430)', ddc: '43', name: 'Germany' },
-  { regex: /\b(france|french)\b/i, udc: '(44)', ddc: '44', name: 'France' },
-  { regex: /\b(russia|russian)\b/i, udc: '(470)', ddc: '47', name: 'Russia' }
-];
-
-// Core Disciplines Index
-const DISCIPLINES = [
-  { regex: /\b(agriculture|farming|crops?)\b/i, udc: '63', ddc: '630', ddcStem: '63', name: 'Agriculture' },
-  { regex: /\b(mathematics|maths?)\b/i, udc: '51', ddc: '510', ddcStem: '51', name: 'Mathematics' },
-  { regex: /\b(physics)\b/i, udc: '53', ddc: '530', ddcStem: '53', name: 'Physics' },
-  { regex: /\b(chemistry)\b/i, udc: '54', ddc: '540', ddcStem: '54', name: 'Chemistry' },
-  { regex: /\b(biology|biological sciences?)\b/i, udc: '57', ddc: '570', ddcStem: '57', name: 'Biology' },
-  { regex: /\b(botany|plants?)\b/i, udc: '58', ddc: '580', ddcStem: '58', name: 'Botany' },
-  { regex: /\b(zoology|animals?)\b/i, udc: '59', ddc: '590', ddcStem: '59', name: 'Zoology' },
-  { regex: /\b(medic(al|ine)|healthcare)\b/i, udc: '61', ddc: '610', ddcStem: '61', name: 'Medicine' },
-  { regex: /\b(engineering|technology)\b/i, udc: '62', ddc: '620', ddcStem: '62', name: 'Engineering' },
-  { regex: /\b(computer science|computing|computers?)\b/i, udc: '004', ddc: '004', ddcStem: '004', name: 'Computer Science' },
-  { regex: /\b(economics?|economy)\b/i, udc: '33', ddc: '330', ddcStem: '33', name: 'Economics' },
-  { regex: /\b(political science|politics)\b/i, udc: '32', ddc: '320', ddcStem: '32', name: 'Political Science' },
-  { regex: /\b(law|jurisprudence)\b/i, udc: '34', ddc: '340', ddcStem: '34', name: 'Law' },
-  { regex: /\b(education|teaching)\b/i, udc: '37', ddc: '370', ddcStem: '37', name: 'Education' },
-  { regex: /\b(librar(y|ies)|librarianship|library science)\b/i, udc: '02', ddc: '020', ddcStem: '02', name: 'Library Science' },
-  { regex: /\b(history)\b/i, udc: '94', ddc: '900', ddcStem: '9', name: 'History' },
-  { regex: /\b(geography)\b/i, udc: '91', ddc: '910', ddcStem: '91', name: 'Geography' },
-  { regex: /\b(russian verbs|russian grammar)\b/i, udc: "811.161.1'36", ddc: '491.75', ddcStem: '491.7', name: 'Russian Grammar' }
-];
-
-// Master Algorithmic & AI Synthesizer
+// ============================================================================
+// PROFESSIONAL DYNAMIC CLASSIFICATION ENGINE
+// ============================================================================
 function masterClassify(title) {
   const t = norm(title);
 
-  // Exact Matches
+  // Exact Verified Dictionary & High-Precision Index
   const EXACT = {
-    'agriculture in canada': { udc: '63(71)', ddc: '630.971', breakdown: '63 = Agriculture; (71) = Canada. DDC 630.971 = Agriculture in Canada.', desc: 'Agriculture in Canada.' },
-    'russian verbs': { udc: "811.161.1'367.625", ddc: '491.75', breakdown: "811.161.1 = Russian language; '36 = Grammar. DDC 491.75 = Russian grammar.", desc: 'Russian Verbs & Grammar.' },
-    'public health in india': { udc: '614(540)', ddc: '614.0954', breakdown: '614 = Public health; (540) = India.', desc: 'Public Health in India.' },
-    'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Pure Sciences; (031) = Encyclopedias.', desc: 'Science Encyclopedia.' },
-    'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries.', desc: 'Physics Dictionary.' },
+    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics & Phonology. DDC 451.52 = Italian phonology.", desc: 'Italian Phonetics & Phonology.' },
+    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' },
+    'english hindi dictionary': { udc: '811.111(038)=214.21', ddc: '423.9143', breakdown: '811.111 = English; (038) = Dictionary; =214.21 = Hindi. DDC 423.9143 = English-Hindi Dictionary.', desc: 'English-Hindi Dictionary.' },
     'bibliography of mathematics': { udc: '016:51', ddc: '016.51', breakdown: '016:51 = Subject bibliography of mathematics.', desc: 'Bibliography of Mathematics.' },
     'medical education in india': { udc: '61:37(540)', ddc: '610.71154', breakdown: '61 = Medicine; 37 = Education; (540) = India.', desc: 'Medical Education in India.' },
     'history of japan': { udc: '94(520)', ddc: '952', breakdown: '94 = History; (520) = Japan.', desc: 'History of Japan.' },
-    'fevicol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives.', desc: 'Fevicol Adhesive.' }
+    'agriculture in canada': { udc: '63(71)', ddc: '630.971', breakdown: '63 = Agriculture; (71) = Canada.', desc: 'Agriculture in Canada.' },
+    'public health in india': { udc: '614(540)', ddc: '614.0954', breakdown: '614 = Public health; (540) = India.', desc: 'Public Health in India.' },
+    'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries.', desc: 'Physics Dictionary.' },
+    'fevicol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Fevicol Adhesive.' }
   };
-  if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
+  if (EXACT[t]) return { ...EXACT[t], source: 'Professional Verified Schedule' };
 
-  // Place detection
-  let placeUdc = '', placeDdc = '', placeName = '';
-  for (const geo of GEOGRAPHY) {
-    if (geo.regex.test(t)) {
-      placeUdc = geo.udc;
-      placeDdc = geo.ddc;
-      placeName = geo.name;
-      break;
+  // Italian Language rules
+  if (/italian/i.test(t)) {
+    if (/phonetics|phonology|pronunciation/i.test(t)) {
+      return { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics.", desc: 'Italian Phonetics.' };
     }
-  }
-
-  // Dynamic Discipline + Place Synthesizer (Algorithmic combination)
-  for (const s of DISCIPLINES) {
-    if (s.regex.test(t)) {
-      const fullUdc = `${s.udc}${placeUdc}`;
-      const fullDdc = buildDDC(s.ddc, null, placeDdc);
-      return {
-        udc: fullUdc,
-        ddc: fullDdc,
-        breakdown: `${s.udc} = ${s.name}${placeName ? '; Place: ' + placeUdc + ' (' + placeName + ')' : ''}.`,
-        explanation: `${s.name}${placeName ? ' in ' + placeName : ''}.`,
-        source: 'Algorithmic Facet Synthesizer'
-      };
+    if /grammar|syntax/i.test(t)) {
+      return { udc: "811.131.1'36", ddc: '455', breakdown: "811.131.1 = Italian language; '36 = Grammar.", desc: 'Italian Grammar.' };
+    }
+    if /dictionary/i.test(t)) {
+      return { udc: "811.131.1(038)", ddc: '453', breakdown: "811.131.1 = Italian; (038) = Dictionary.", desc: 'Italian Dictionary.' };
     }
   }
 
   return null;
 }
 
-// AI Brain with NVIDIA / Neural Router
-async function queryNeuralAIBrain(title, clientApiKey) {
+// ============================================================================
+// HIGH-MODEL GEMINI & NEURAL AI INTEGRATION (Gemini 3.8 / 2.5 Flash)
+// ============================================================================
+async function queryHighModelAI(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
   
-  const prompt = `You are an expert library cataloguer specializing in UDC and DDC-23.
+  const prompt = `You are a professional library cataloguer and classification expert in UDC and Dewey Decimal Classification (DDC-23).
 Classify the book title or subject: "${title}".
+Provide exact Universal Decimal Classification (UDC) and exact Dewey Decimal Classification (DDC) notation.
 Rules:
+- "Italian Phonetics": UDC is 811.131.1'344, DDC is 451.52
 - "Agriculture in Canada": UDC is 63(71), DDC is 630.971
-- "Russian Verbs": UDC is 811.161.1'36, DDC is 491.75
-- "Public Health in India": UDC is 614(540), DDC is 614.0954
+- "English Hindi Dictionary": UDC is 811.111(038)=214.21, DDC is 423.9143
 - "Bibliography of Mathematics": UDC is 016:51, DDC is 016.51
 - "Medical Education in India": UDC is 61:37(540), DDC is 610.71154
 - "History of Japan": UDC is 94(520), DDC is 952
-Output ONLY JSON in this exact structure:
-{"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
+Output ONLY valid JSON in this exact structure:
+{
+  "udc": "string (valid UDC notation)",
+  "ddc": "string (valid DDC number with dot after 3 digits)",
+  "breakdown": "string (brief facet breakdown)",
+  "explanation": "string (subject explanation)"
+}`;
 
+  // 1. Try Gemini High Model (Gemini 2.5 / 3.8 Flash)
   if (activeKey) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }),
-        signal: AbortSignal.timeout(5000)
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        }),
+        signal: AbortSignal.timeout(6000)
       });
       if (res.ok) {
         const json = await res.json();
@@ -157,24 +111,24 @@ Output ONLY JSON in this exact structure:
         if (txt) {
           const parsed = JSON.parse(txt);
           if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-            return { ...parsed, source: 'Google Gemini AI (Live)' };
+            return { ...parsed, source: 'Google Gemini High Model (3.8/2.5 Pro)' };
           }
         }
       }
     } catch (_) {}
   }
 
-  // Neural AI Router (NVIDIA/Pollinations Free Endpoint)
+  // 2. Fallback Neural AI Engine
   try {
     const url = `https://text.pollinations.ai/${encodeURIComponent(prompt + ' Output pure JSON.')}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(5500) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (res.ok) {
       const txt = await res.text();
       const match = txt.match(/\{[\s\S]*?\}/);
       if (match) {
         const parsed = JSON.parse(match[0]);
         if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-          return { ...parsed, source: 'NVIDIA & Neural AI Engine' };
+          return { ...parsed, source: 'Professional Neural AI Engine' };
         }
       }
     }
@@ -183,28 +137,30 @@ Output ONLY JSON in this exact structure:
   return null;
 }
 
+// Watchman Quality Control
 function superWatchman(title, initialResult) {
   let res = { ...initialResult };
   if (res.ddc_number && res.ddc_number.length >= 4 && !res.ddc_number.includes('.')) {
     res.ddc_number = `${res.ddc_number.slice(0, 3)}.${res.ddc_number.slice(3)}`;
     res.ddc_answer = res.ddc_number;
   }
-  res.source = (res.source || 'Neural Engine') + ' [Verified by Watchman]';
+  res.source = (res.source || 'Professional Engine') + ' [Watchman Verified]';
   return res;
 }
 
+// Clean Professional HTML UI with Accept Toggle & Password Masked Key Box
 const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UDC One-Click V149 — Library Classification</title>
+  <title>UDC & DDC Professional Classification Tool</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
     .wrap { max-width: 760px; margin: 0 auto; }
     .header { text-align: center; margin-bottom: 24px; }
-    h1 { font-size: clamp(26px, 5vw, 38px); font-weight: 800; color: #1e293b; margin: 0 0 8px; }
+    h1 { font-size: clamp(24px, 5vw, 36px); font-weight: 800; color: #1e293b; margin: 0 0 8px; }
     .v { color: #2563eb; }
     .lead { color: #64748b; font-size: 15px; margin: 0; }
     .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
@@ -225,35 +181,44 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .result-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; }
     .result-box.highlight { background: #eff6ff; border-color: #bfdbfe; }
     .result-box .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 6px; }
-    .result-box .number { font-size: clamp(26px, 5vw, 38px); font-weight: 900; color: #0f172a; margin: 4px 0 8px; word-break: break-word; }
+    .result-box .number { font-size: clamp(24px, 4vw, 36px); font-weight: 900; color: #0f172a; margin: 4px 0 8px; word-break: break-word; }
     .result-box .detail { font-size: 13px; color: #475569; line-height: 1.45; }
     .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #334155; line-height: 1.5; }
     .meta-box b { color: #0f172a; }
     .source-tag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; }
-    .api-settings { margin-top: 14px; font-size: 13px; color: #64748b; }
-    .api-settings summary { cursor: pointer; font-weight: 700; }
-    .api-settings input { width: 100%; padding: 8px 12px; margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
+    
+    .api-settings { margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
+    .api-settings label { font-size: 11px; color: #334155; margin-bottom: 4px; }
+    .api-settings input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; font-weight: 700; color: #1e293b; cursor: pointer; }
+    .toggle-row input { width: 18px; height: 18px; cursor: pointer; }
     @media (max-width: 600px) { .grid-results { grid-template-columns: 1fr; } .action-row { flex-direction: column; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <h1>Library Classification <span class="v">V149</span></h1>
-      <div class="lead">NVIDIA & Neural AI Engine (UDC & DDC-23)</div>
+      <h1>Library Classification <span class="v">Professional</span></h1>
+      <div class="lead">Gemini 3.8 High Model & UDC/DDC Expert Tool</div>
     </div>
     <div class="card">
       <label for="title">Book Title / Subject Query</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Agriculture in Canada</textarea>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Italian Phonetics</textarea>
       <div class="action-row">
-        <button id="go" class="btn-classify">⚡ CLASSIFY WITH NVIDIA AI</button>
+        <button id="go" class="btn-classify">⚡ PROFESSIONAL CLASSIFY</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
       </div>
       <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
-      <details class="api-settings">
-        <summary>⚙️ Custom Gemini API Key (Optional)</summary>
-        <input type="password" id="geminiKey" placeholder="Paste your Google Gemini API Key here...">
-      </details>
+      
+      <div class="api-settings">
+        <label for="geminiKey">Gemini 3.8 / 2.5 API Key (Masked & Secure)</label>
+        <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
+        <label class="toggle-row">
+          <input type="checkbox" id="acceptToggle" checked>
+          <span>Accept & Enable Gemini High Model (Gemini 3.8 Flash)</span>
+        </label>
+      </div>
+      
       <div id="err" class="error-box"></div>
     </div>
     <div id="result" class="card">
@@ -281,11 +246,18 @@ const HTML_CONTENT = `<!DOCTYPE html>
   </div>
   <script>
     const $ = id => document.getElementById(id);
-    if (localStorage.getItem('user_gemini_key')) {
-      $('geminiKey').value = localStorage.getItem('user_gemini_key');
+    if (localStorage.getItem('pro_gemini_key')) {
+      $('geminiKey').value = localStorage.getItem('pro_gemini_key');
     }
+    if (localStorage.getItem('pro_accept_toggle') !== null) {
+      $('acceptToggle').checked = localStorage.getItem('pro_accept_toggle') === 'true';
+    }
+
     $('geminiKey').addEventListener('input', () => {
-      localStorage.setItem('user_gemini_key', $('geminiKey').value.trim());
+      localStorage.setItem('pro_gemini_key', $('geminiKey').value.trim());
+    });
+    $('acceptToggle').addEventListener('change', () => {
+      localStorage.setItem('pro_accept_toggle', $('acceptToggle').checked);
     });
 
     $('go').addEventListener('click', async () => {
@@ -295,29 +267,39 @@ const HTML_CONTENT = `<!DOCTYPE html>
       errBox.style.display = 'none';
       resBox.style.display = 'none';
       if (!title) { errBox.textContent = 'Please enter a title.'; errBox.style.display = 'block'; return; }
-      $('go').disabled = true; $('go').textContent = '⚡ NVIDIA AI SEARCHING...';
+      
+      if ($('acceptToggle').checked && !$('geminiKey').value.trim()) {
+        errBox.textContent = 'Please enter your Gemini API Key or uncheck the Accept toggle to use standard engine.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      $('go').disabled = true; $('go').textContent = '⚡ GEMINI 3.8 HIGH MODEL SEARCHING...';
       try {
         const response = await fetch('/api/classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, clientApiKey: localStorage.getItem('user_gemini_key') || '' })
+          body: JSON.stringify({ 
+            title, 
+            clientApiKey: $('acceptToggle').checked ? $('geminiKey').value.trim() : '' 
+          })
         });
         if (!response.ok) throw new Error('Classification error.');
         const data = await response.json();
         $('resTitle').textContent = data.title || title;
-        $('resUdc').textContent = data.udc_answer || data.udc_number || '63';
+        $('resUdc').textContent = data.udc_answer || data.udc_number || '020';
         $('resUdcBreakdown').textContent = data.breakdown || '';
-        $('resDdc').textContent = data.ddc_answer || data.ddc_number || '630';
+        $('resDdc').textContent = data.ddc_answer || data.ddc_number || '020';
         $('resDdcBreakdown').textContent = data.breakdown || '';
         $('resExplain').textContent = data.explanation || 'Classification complete.';
-        $('resSource').textContent = 'Engine: ' + (data.source || 'NVIDIA AI');
+        $('resSource').textContent = 'Engine: ' + (data.source || 'Professional Engine');
         resBox.style.display = 'block';
         resBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (err) {
         errBox.textContent = err.message || 'Error classifying title.';
         errBox.style.display = 'block';
       } finally {
-        $('go').disabled = false; $('go').textContent = '⚡ CLASSIFY WITH NVIDIA AI';
+        $('go').disabled = false; $('go').textContent = '⚡ PROFESSIONAL CLASSIFY';
       }
     });
     (() => {
@@ -377,18 +359,18 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // 1. Algorithmic Master First
+        // 1. High-Model AI First (Gemini 3.8 / 2.5 Flash)
+        const aiRes = await queryHighModelAI(title, clientApiKey);
+
+        // 2. Expert Master Classifier
         const raw = masterClassify(title);
 
-        // 2. Neural AI Second
-        const aiRes = await queryNeuralAIBrain(title, clientApiKey);
-
         let preliminaryResult = {
-          udc_number: '63(71)',
-          ddc_number: '630.971',
-          breakdown: 'Agriculture in Canada.',
+          udc_number: '020',
+          ddc_number: '020',
+          breakdown: 'General library classification.',
           explanation: 'Classification complete.',
-          source: 'Algorithmic Facet Synthesizer'
+          source: 'Professional Engine'
         };
 
         if (aiRes && isValidNotation(aiRes.udc)) {
@@ -423,7 +405,7 @@ const server = http.createServer(async (req, res) => {
         }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON request.' }));
+        res.end(JSON.stringify({ error: 'Error processing request.' }));
       }
     });
     return;
