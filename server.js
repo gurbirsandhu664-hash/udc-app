@@ -23,46 +23,148 @@ function norm(s) {
 function isValidNotation(val) {
   if (!val || typeof val !== 'string') return false;
   const s = val.trim();
-  return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z\s]*$/.test(s) && /\d/.test(s);
+  return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z\'\s]*$/.test(s) && /\d/.test(s);
 }
 
 // ============================================================================
-// CONTEXT-AWARE TWO-PASS TAXONOMY (Specific multi-word phrases first!)
+// COMPREHENSIVE CLASSIFIER MATRIX (UDC & DDC-23)
 // ============================================================================
-function deepClassify(title) {
+function masterClassify(title) {
   const t = norm(title);
 
-  // --- PASS 1: Exact High-Value Titles ---
+  // 1. EXACT PROTECTED TITLES
   const EXACT = {
-    'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Pure Sciences; (031) = Encyclopedias.', desc: 'Science Encyclopedia.' },
+    'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Pure Sciences; (031) = Encyclopedias.', desc: 'General Science Encyclopedia.' },
     'dictionary of science': { udc: '5(038)', ddc: '503', breakdown: '5 = Pure Sciences; (038) = Dictionaries.', desc: 'Science Dictionary.' },
     'harvesting of wheat and maize': { udc: '633.11+633.15:631.55', ddc: '633.1', breakdown: '633.11 = wheat; 633.15 = maize; 631.55 = harvesting.', desc: 'Harvesting of wheat & maize.' },
-    'harvesting of cereals': { udc: '633.1:631.55', ddc: '633.1', breakdown: '633.1 = cereals; 631.55 = harvesting.', desc: 'Harvesting of cereal crops.' },
+    'harvesting of cereals': { udc: '633.1:631.55', ddc: '633.1', breakdown: '633.1 = cereals; 631.55 = harvesting.', desc: 'Cereal crops harvesting.' },
     'flood damage to wheat': { udc: '633.11:632.166', ddc: '633.11917', breakdown: '633.11 = wheat; 632.166 = flood damage.', desc: 'Flood damage to wheat.' },
-    'fishing the whale fishes': { udc: '639.28', ddc: '639.28', breakdown: '639.28 = Whaling / whale fishing.', desc: 'Whale fishing.' },
-    'hindu chronological calendar': { udc: '529.324.5', ddc: '529.3245', breakdown: '529.324.5 = Hindu calendar.', desc: 'Hindu calendar.' },
+    'fishing the whale fishes': { udc: '639.28', ddc: '639.28', breakdown: '639.28 = Whaling / whale fishing.', desc: 'Commercial whaling.' },
+    'hindu chronological calendar': { udc: '529.324.5', ddc: '529.3245', breakdown: '529.324.5 = Hindu calendar.', desc: 'Hindu calendar chronology.' },
     'sobha singh': { udc: '75(084.1)SOB', ddc: '759.954', breakdown: '75 = Painting; (084.1) = pictorial; SOB = Sobha Singh.', desc: 'Sobha Singh reproductions.' },
-    'bible': { udc: '27-23', ddc: '220', breakdown: '27-23 = The Bible; 220 = Bible.', desc: 'Christian Bible scriptures.' }
+    'bible': { udc: '27-23', ddc: '220', breakdown: '27-23 = The Bible; 220 = Bible.', desc: 'Christian Bible scriptures.' },
+    'colon classification': { udc: '025.4', ddc: '025.4', breakdown: '025.4 = Library classification (Ranganathan Colon Classification).', desc: 'Colon Classification.' },
+    'five laws of library science': { udc: '02', ddc: '020', breakdown: '02 = Librarianship (Ranganathan Five Laws).', desc: 'Foundations of Library Science.' }
   };
-  if (EXACT[t]) return { ...EXACT[t], source: 'Standard Schedule Match' };
+  if (EXACT[t]) return { ...EXACT[t], source: 'Verified Schedule Record' };
 
-  // --- PASS 2: Extract Auxiliary Facets (Place, Language, Form) ---
+  // 2. LINGUISTICS & LANGUAGES (Handles Pronunciation, Grammar, etc.)
+  const LANG_MAP = [
+    { regex: /\b(french)\b/i, name: 'French', udcLang: '811.133.1', ddcBase: '44', ddcStandard: '440', udcLit: '821.133.1', ddcLit: '840' },
+    { regex: /\b(english)\b/i, name: 'English', udcLang: '811.111', ddcBase: '42', ddcStandard: '420', udcLit: '821.111', ddcLit: '820' },
+    { regex: /\b(german)\b/i, name: 'German', udcLang: '811.112.2', ddcBase: '43', ddcStandard: '430', udcLit: '821.112.2', ddcLit: '830' },
+    { regex: /\b(spanish)\b/i, name: 'Spanish', udcLang: '811.134.2', ddcBase: '46', ddcStandard: '460', udcLit: '821.134.2', ddcLit: '860' },
+    { regex: /\b(italian)\b/i, name: 'Italian', udcLang: '811.131.1', ddcBase: '45', ddcStandard: '450', udcLit: '821.131.1', ddcLit: '850' },
+    { regex: /\b(punjabi|panjabi)\b/i, name: 'Punjabi', udcLang: '811.214.27', ddcBase: '491.42', ddcStandard: '491.42', udcLit: '821.214.27', ddcLit: '891.42' },
+    { regex: /\b(hindi)\b/i, name: 'Hindi', udcLang: '811.214.21', ddcBase: '491.43', ddcStandard: '491.43', udcLit: '821.214.21', ddcLit: '891.43' },
+    { regex: /\b(urdu)\b/i, name: 'Urdu', udcLang: '811.214.22', ddcBase: '491.439', ddcStandard: '491.439', udcLit: '821.214.22', ddcLit: '891.439' },
+    { regex: /\b(sanskrit)\b/i, name: 'Sanskrit', udcLang: '811.211', ddcBase: '491.2', ddcStandard: '491.2', udcLit: '821.211', ddcLit: '891.2' },
+    { regex: /\b(arabic)\b/i, name: 'Arabic', udcLang: '811.411.21', ddcBase: '492.7', ddcStandard: '492.7', udcLit: '821.411.21', ddcLit: '892.7' },
+    { regex: /\b(russian)\b/i, name: 'Russian', udcLang: '811.161.1', ddcBase: '491.7', ddcStandard: '491.7', udcLit: '821.161.1', ddcLit: '891.7' },
+    { regex: /\b(chinese)\b/i, name: 'Chinese', udcLang: '811.581', ddcBase: '495.1', ddcStandard: '495.1', udcLit: '821.581', ddcLit: '895.1' },
+    { regex: /\b(japanese)\b/i, name: 'Japanese', udcLang: '811.521', ddcBase: '495.6', ddcStandard: '495.6', udcLit: '821.521', ddcLit: '895.6' }
+  ];
+
+  for (const lang of LANG_MAP) {
+    if (lang.regex.test(t)) {
+      // 1. Pronunciation / Phonetics / Phonology (e.g. "French Pronunciation")
+      if (/\b(pronunciation|phonetics|phonology|accent|speech sounds)\b/i.test(t)) {
+        const ddcNum = lang.ddcBase.length === 2 ? `${lang.ddcBase}1.52` : `${lang.ddcBase}152`;
+        return {
+          udc: `${lang.udcLang}'344`,
+          ddc: ddcNum,
+          breakdown: `${lang.udcLang} = ${lang.name} language; '344 = Pronunciation & Phonetics. DDC ${ddcNum} = ${lang.name} phonology.`,
+          explanation: `Linguistics: ${lang.name} pronunciation and phonetics.`,
+          source: 'Linguistics Schedule (UDC & DDC Table 4)'
+        };
+      }
+      // 2. Grammar / Syntax
+      if (/\b(grammar|syntax|morphology|parts of speech)\b/i.test(t)) {
+        const ddcNum = `${lang.ddcBase}5`;
+        return {
+          udc: `${lang.udcLang}'36`,
+          ddc: ddcNum,
+          breakdown: `${lang.udcLang} = ${lang.name} language; '36 = Grammar. DDC ${ddcNum} = ${lang.name} grammar.`,
+          explanation: `Linguistics: ${lang.name} grammar.`,
+          source: 'Linguistics Schedule'
+        };
+      }
+      // 3. Language Dictionary
+      if (/\b(dictionary|shabdakosh|glossary|vocabulary)\b/i.test(t) && !/\b(literature|poetry)\b/i.test(t)) {
+        const ddcNum = `${lang.ddcBase}3`;
+        return {
+          udc: `${lang.udcLang}(038)`,
+          ddc: ddcNum,
+          breakdown: `${lang.udcLang} = ${lang.name} language; (038) = Dictionary. DDC ${ddcNum} = ${lang.name} dictionary.`,
+          explanation: `Linguistics: ${lang.name} dictionary.`,
+          source: 'Linguistics Schedule'
+        };
+      }
+      // 4. Literature Genres
+      if (/\b(poetry|poem|poems|kavita)\b/i.test(t)) {
+        return {
+          udc: `${lang.udcLit}-1`,
+          ddc: `${lang.ddcLit}1`,
+          breakdown: `${lang.udcLit} = ${lang.name} literature; -1 = Poetry. DDC ${lang.ddcLit}1 = ${lang.name} poetry.`,
+          explanation: `Literature: ${lang.name} poetry.`,
+          source: 'Literature Schedule'
+        };
+      }
+      if (/\b(drama|play|plays|natak)\b/i.test(t)) {
+        return {
+          udc: `${lang.udcLit}-2`,
+          ddc: `${lang.ddcLit}2`,
+          breakdown: `${lang.udcLit} = ${lang.name} literature; -2 = Drama. DDC ${lang.ddcLit}2 = ${lang.name} drama.`,
+          explanation: `Literature: ${lang.name} drama.`,
+          source: 'Literature Schedule'
+        };
+      }
+      if (/\b(novel|novels|fiction|prose)\b/i.test(t)) {
+        return {
+          udc: `${lang.udcLit}-3`,
+          ddc: `${lang.ddcLit}3`,
+          breakdown: `${lang.udcLit} = ${lang.name} literature; -3 = Fiction / Prose narrative.`,
+          explanation: `Literature: ${lang.name} fiction.`,
+          source: 'Literature Schedule'
+        };
+      }
+      if (/\b(literature|sahitya)\b/i.test(t)) {
+        return {
+          udc: lang.udcLit,
+          ddc: lang.ddcLit,
+          breakdown: `${lang.udcLit} = ${lang.name} literature; DDC ${lang.ddcLit}.`,
+          explanation: `Literature: ${lang.name} literature.`,
+          source: 'Literature Schedule'
+        };
+      }
+      if (/\b(language|bhasha|boli)\b/i.test(t) || t === norm(lang.name)) {
+        return {
+          udc: lang.udcLang,
+          ddc: lang.ddcStandard,
+          breakdown: `${lang.udcLang} = ${lang.name} language; DDC ${lang.ddcStandard}.`,
+          explanation: `Linguistics: ${lang.name} language.`,
+          source: 'Linguistics Schedule'
+        };
+      }
+    }
+  }
+
+  // 3. AUXILIARIES (Place, Language, Form) FOR GENERAL SUBJECTS
   let placeUdc = '', placeDdc = '', placeName = '';
   if (/\b(punjab)\b/i.test(t)) { placeUdc = '(540.15)'; placeDdc = '54552'; placeName = 'Punjab'; }
   else if (/\b(india|indian|bharat)\b/i.test(t)) { placeUdc = '(540)'; placeDdc = '54'; placeName = 'India'; }
   else if (/\b(pakistan|pakistani)\b/i.test(t)) { placeUdc = '(549.1)'; placeDdc = '5491'; placeName = 'Pakistan'; }
   else if (/\b(united states|usa|u\.s\.a\.|america|american)\b/i.test(t)) { placeUdc = '(73)'; placeDdc = '73'; placeName = 'United States'; }
   else if (/\b(united kingdom|uk|britain|british|england)\b/i.test(t)) { placeUdc = '(410)'; placeDdc = '41'; placeName = 'United Kingdom'; }
-  else if (/\b(germany|german)\b/i.test(t) && !/\b(language|literature)\b/i.test(t)) { placeUdc = '(430)'; placeDdc = '43'; placeName = 'Germany'; }
-  else if (/\b(france|french)\b/i.test(t) && !/\b(language|literature)\b/i.test(t)) { placeUdc = '(44)'; placeDdc = '44'; placeName = 'France'; }
-  else if (/\b(china|chinese)\b/i.test(t) && !/\b(language|literature)\b/i.test(t)) { placeUdc = '(510)'; placeDdc = '51'; placeName = 'China'; }
+  else if (/\b(germany|german)\b/i.test(t)) { placeUdc = '(430)'; placeDdc = '43'; placeName = 'Germany'; }
+  else if (/\b(france|french)\b/i.test(t)) { placeUdc = '(44)'; placeDdc = '44'; placeName = 'France'; }
+  else if (/\b(china|chinese)\b/i.test(t)) { placeUdc = '(510)'; placeDdc = '51'; placeName = 'China'; }
   else if (/\b(europe|european)\b/i.test(t)) { placeUdc = '(4)'; placeDdc = '4'; placeName = 'Europe'; }
 
   let langUdc = '', langName = '';
-  if (/\b(in english|english language)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; }
-  else if (/\b(in punjabi|punjabi language)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi'; }
-  else if (/\b(in hindi|hindi language)\b/i.test(t)) { langUdc = '=214.21'; langName = 'Hindi'; }
-  else if (/\b(in urdu|urdu language)\b/i.test(t)) { langUdc = '=214.22'; langName = 'Urdu'; }
+  if (/\b(in english|english edition)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; }
+  else if (/\b(in punjabi|punjabi edition)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi'; }
+  else if (/\b(in hindi|hindi edition)\b/i.test(t)) { langUdc = '=214.21'; langName = 'Hindi'; }
 
   let formUdc = '', formDdc = '', formDesc = '';
   if (/\b(textbook|text book|course book|syllabus book)\b/i.test(t)) { formUdc = '(075)'; formDdc = '.071'; formDesc = 'Textbook'; }
@@ -71,9 +173,8 @@ function deepClassify(title) {
   else if (/\b(handbook|manual|guidebook)\b/i.test(t)) { formUdc = '(035)'; formDdc = '.02'; formDesc = 'Handbook'; }
   else if (/\b(directory|yearbook)\b/i.test(t)) { formUdc = '(058)'; formDdc = '.025'; formDesc = 'Directory'; }
 
-  // --- PASS 3: Specific Multi-Word Contextual Rules (Checked BEFORE generic words) ---
-  const SPECIFIC_RULES = [
-    // Animal vs Plant vs Human Physiology / Anatomy
+  // 4. DETAILED SUBJECT HIERARCHY
+  const DOMAINS = [
     { regex: /\b(animal physiology|veterinary physiology)\b/i, udc: '591.1', ddc: '571.1', name: 'Animal Physiology' },
     { regex: /\b(plant physiology)\b/i, udc: '581.1', ddc: '571.2', name: 'Plant Physiology' },
     { regex: /\b(human physiology|medical physiology|physiology)\b/i, udc: '612', ddc: '612', name: 'Human Physiology' },
@@ -81,18 +182,16 @@ function deepClassify(title) {
     { regex: /\b(plant anatomy)\b/i, udc: '581.4', ddc: '571.32', name: 'Plant Anatomy' },
     { regex: /\b(human anatomy|anatomy)\b/i, udc: '611', ddc: '611', name: 'Human Anatomy' },
 
-    // Libraries Sub-types
     { regex: /\b(public librar(y|ies))\b/i, udc: '027.4', ddc: '027.4', name: 'Public libraries' },
     { regex: /\b(academic librar(y|ies)|university librar(y|ies)|college librar(y|ies))\b/i, udc: '027.7', ddc: '027.7', name: 'University libraries' },
     { regex: /\b(school librar(y|ies))\b/i, udc: '027.8', ddc: '027.8', name: 'School libraries' },
     { regex: /\b(national librar(y|ies))\b/i, udc: '027.5', ddc: '027.5', name: 'National libraries' },
     { regex: /\b(special librar(y|ies))\b/i, udc: '026', ddc: '026', name: 'Special libraries' },
-    { regex: /\b(library classification|classification scheme)\b/i, udc: '025.4', ddc: '025.4', name: 'Library classification' },
-    { regex: /\b(library catalogu?ing)\b/i, udc: '025.3', ddc: '025.3', name: 'Library cataloguing' },
+    { regex: /\b(library classification|colon classification|dewey decimal|ddc|udc)\b/i, udc: '025.4', ddc: '025.4', name: 'Library classification' },
+    { regex: /\b(library catalogu?ing|cataloguing rules|marc)\b/i, udc: '025.3', ddc: '025.3', name: 'Library cataloguing' },
     { regex: /\b(library automation|digital librar(y|ies))\b/i, udc: '02:004', ddc: '025.04', name: 'Library automation' },
-    { regex: /\b(librar(y|ies)|librarianship|library science)\b/i, udc: '02', ddc: '020', name: 'Library Science' },
+    { regex: /\b(librar(y|ies)|librarianship|library science|information science)\b/i, udc: '02', ddc: '020', name: 'Library Science' },
 
-    // Crop / Agriculture Specifics
     { regex: /\b(wheat)\b/i, udc: '633.11', ddc: '633.11', name: 'Wheat' },
     { regex: /\b(maize|corn)\b/i, udc: '633.15', ddc: '633.15', name: 'Maize' },
     { regex: /\b(barley)\b/i, udc: '633.16', ddc: '633.16', name: 'Barley' },
@@ -100,21 +199,19 @@ function deepClassify(title) {
     { regex: /\b(horticulture|gardening)\b/i, udc: '635', ddc: '635', name: 'Horticulture' },
     { regex: /\b(animal husbandry|livestock|dairy farming)\b/i, udc: '636', ddc: '636', name: 'Animal Husbandry' },
     { regex: /\b(veterinary medicine|veterinary science)\b/i, udc: '636.09', ddc: '636.089', name: 'Veterinary Medicine' },
-    { regex: /\b(agriculture|farming|agronomy)\b/i, udc: '63', ddc: '630', name: 'Agriculture' },
+    { regex: /\b(agriculture|farming|agronomy|crops?)\b/i, udc: '63', ddc: '630', name: 'Agriculture' },
 
-    // Computer Science Specifics
-    { regex: /\b(artificial intelligence|machine learning|deep learning)\b/i, udc: '004.8', ddc: '006.3', name: 'Artificial Intelligence' },
+    { regex: /\b(artificial intelligence|machine learning|deep learning|neural networks?)\b/i, udc: '004.8', ddc: '006.3', name: 'Artificial Intelligence' },
     { regex: /\b(data science|big data|analytics)\b/i, udc: '004.6', ddc: '005.7', name: 'Data Science' },
     { regex: /\b(cyber security|network security|cryptography)\b/i, udc: '004.056', ddc: '005.8', name: 'Cyber Security' },
     { regex: /\b(computer programming|software engineering|python|java|c\+\+)\b/i, udc: '004.4', ddc: '005.1', name: 'Programming & Software' },
     { regex: /\b(computer science|computing|computers?)\b/i, udc: '004', ddc: '004', name: 'Computer Science' },
 
-    // Sciences
     { regex: /\b(biochemistry)\b/i, udc: '577.1', ddc: '572', name: 'Biochemistry' },
     { regex: /\b(microbiology)\b/i, udc: '579', ddc: '579', name: 'Microbiology' },
     { regex: /\b(genetics)\b/i, udc: '575', ddc: '576.5', name: 'Genetics' },
     { regex: /\b(botany|plant biology|plants?)\b/i, udc: '58', ddc: '580', name: 'Botany' },
-    { regex: /\b(zoology|animals?)\b/i, udc: '59', ddc: '590', name: 'Zoology' },
+    { regex: /\b(zoology|animal biology|animals?)\b/i, udc: '59', ddc: '590', name: 'Zoology' },
     { regex: /\b(biology|biological sciences?)\b/i, udc: '57', ddc: '570', name: 'Biology' },
     { regex: /\b(algebra)\b/i, udc: '512', ddc: '512', name: 'Algebra' },
     { regex: /\b(geometry)\b/i, udc: '514', ddc: '516', name: 'Geometry' },
@@ -131,26 +228,22 @@ function deepClassify(title) {
     { regex: /\b(astronomy|astrophysics)\b/i, udc: '52', ddc: '520', name: 'Astronomy' },
     { regex: /\b(science|pure sciences?)\b/i, udc: '5', ddc: '500', name: 'Science' },
 
-    // Medicine
     { regex: /\b(pharmacology|pharmacy|drugs?)\b/i, udc: '615', ddc: '615', name: 'Pharmacology' },
     { regex: /\b(surgery)\b/i, udc: '617', ddc: '617', name: 'Surgery' },
-    { regex: /\b(pediatrics)\b/i, udc: '616-053.2', ddc: '618.92', name: 'Pediatrics' },
     { regex: /\b(pathology|diseases?)\b/i, udc: '616', ddc: '616', name: 'Pathology' },
     { regex: /\b(medicine|medical sciences?|healthcare)\b/i, udc: '61', ddc: '610', name: 'Medicine' },
 
-    // Engineering
     { regex: /\b(civil engineering|structural engineering|construction)\b/i, udc: '624', ddc: '624', name: 'Civil Engineering' },
     { regex: /\b(electrical engineering|electronics)\b/i, udc: '621.3', ddc: '621.3', name: 'Electrical Engineering' },
     { regex: /\b(mechanical engineering)\b/i, udc: '621', ddc: '621', name: 'Mechanical Engineering' },
     { regex: /\b(engineering|technology)\b/i, udc: '62', ddc: '620', name: 'Engineering' },
 
-    // Social Sciences, Humanities, Arts
-    { regex: /\b(economics?|economy)\b/i, udc: '33', ddc: '330', name: 'Economics' },
-    { regex: /\b(political science|politics)\b/i, udc: '32', ddc: '320', name: 'Political Science' },
     { regex: /\b(international relations|foreign policy)\b/i, udc: '327', ddc: '327', name: 'International Relations' },
-    { regex: /\b(law|jurisprudence|legal system)\b/i, udc: '34', ddc: '340', name: 'Law' },
-    { regex: /\b(education|teaching|pedagogy)\b/i, udc: '37', ddc: '370', name: 'Education' },
+    { regex: /\b(political science|politics)\b/i, udc: '32', ddc: '320', name: 'Political Science' },
+    { regex: /\b(economics?|economy)\b/i, udc: '33', ddc: '330', name: 'Economics' },
+    { regex: /\b(law|jurisprudence|legal system|constitution)\b/i, udc: '34', ddc: '340', name: 'Law' },
     { regex: /\b(higher education|universit(y|ies))\b/i, udc: '378', ddc: '378', name: 'Higher Education' },
+    { regex: /\b(education|teaching|pedagogy)\b/i, udc: '37', ddc: '370', name: 'Education' },
     { regex: /\b(sociology)\b/i, udc: '316', ddc: '301', name: 'Sociology' },
     { regex: /\b(psychology)\b/i, udc: '159.9', ddc: '150', name: 'Psychology' },
     { regex: /\b(philosophy)\b/i, udc: '1', ddc: '100', name: 'Philosophy' },
@@ -158,21 +251,17 @@ function deepClassify(title) {
     { regex: /\b(sikhism)\b/i, udc: '235', ddc: '294.6', name: 'Sikhism' },
     { regex: /\b(hinduism)\b/i, udc: '233', ddc: '294.5', name: 'Hinduism' },
     { regex: /\b(islam)\b/i, udc: '28', ddc: '297', name: 'Islam' },
-    { regex: /\b(literature)\b/i, udc: '82', ddc: '800', name: 'Literature' },
-    { regex: /\b(linguistics|languages?)\b/i, udc: '81', ddc: '410', name: 'Linguistics' },
     { regex: /\b(architecture)\b/i, udc: '72', ddc: '720', name: 'Architecture' },
     { regex: /\b(painting)\b/i, udc: '75', ddc: '750', name: 'Painting' },
     { regex: /\b(music)\b/i, udc: '78', ddc: '780', name: 'Music' },
-    { regex: /\b(history)\b/i, udc: '94', ddc: '900', name: 'History' },
-    { regex: /\b(geography)\b/i, udc: '91', ddc: '910', name: 'Geography' }
+    { regex: /\b(geography)\b/i, udc: '91', ddc: '910', name: 'Geography' },
+    { regex: /\b(history)\b/i, udc: '94', ddc: '900', name: 'History' }
   ];
 
-  for (const s of SPECIFIC_RULES) {
+  for (const s of DOMAINS) {
     if (s.regex.test(t)) {
-      // Build UDC with Place, Form, Language
       const fullUdc = `${s.udc}${placeUdc}${formUdc}${langUdc}`;
 
-      // Build DDC with Area & Standard Subdivisions
       let fullDdc = s.ddc;
       if (placeDdc) {
         if (fullDdc.includes('.')) fullDdc = fullDdc + placeDdc;
@@ -193,13 +282,12 @@ function deepClassify(title) {
         udc: fullUdc,
         ddc: fullDdc,
         breakdown: breakdownParts.join(' · '),
-        explanation: `${s.name} with synthesized facets: ${[placeName, formDesc, langName].filter(Boolean).join(', ')}.`,
-        source: 'Deep Contextual Facet Synthesizer'
+        explanation: `${s.name} classified with facets: ${[placeName, formDesc, langName].filter(Boolean).join(', ')}.`,
+        source: 'Master Facet Classification Matrix'
       };
     }
   }
 
-  // Pure geographic history fallback
   if (placeUdc && /\bhistory\b/i.test(t)) {
     return {
       udc: `94${placeUdc}`,
@@ -214,22 +302,20 @@ function deepClassify(title) {
 }
 
 // ============================================================================
-// GEMINI AI INTEGRATION (For unseen / complex cross-domain titles)
+// GEMINI AI INTEGRATION (If API Key Configured)
 // ============================================================================
 async function queryGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
-    const prompt = `You are a professional library cataloguer specializing in Universal Decimal Classification (UDC) and Dewey Decimal Classification (DDC).
+    const prompt = `You are a professional library cataloguer specializing in Universal Decimal Classification (UDC) and Dewey Decimal Classification (DDC-23).
 Analyze the title: "${title}"
-Rules:
-- If it is Animal Physiology: UDC is 591.1, DDC is 571.1 (NOT human anatomy 611/612).
-- If it is Plant Physiology: UDC is 581.1, DDC is 571.2.
-- If it is Public Libraries in India: UDC is 027.4(540), DDC is 027.454.
-- Synthesize all facets: place auxiliaries like (540), form auxiliaries like (075), language auxiliaries like =111.
+Provide:
+- Precise UDC notation (including form auxiliaries like (075), language auxiliaries like =111, place auxiliaries like (540), or special linguistic facets like '344 for pronunciation).
+- Precise DDC notation (e.g. 441.52 for French pronunciation, 571.1 for animal physiology).
 Output ONLY valid JSON:
 {
-  "udc": "string (valid notation only)",
-  "ddc": "string (valid notation only)",
+  "udc": "string (valid classification notation only)",
+  "ddc": "string (valid DDC number only)",
   "breakdown": "string (notation breakdown)",
   "explanation": "string (subject explanation)"
 }`;
@@ -251,7 +337,7 @@ Output ONLY valid JSON:
       if (txt) {
         const parsed = JSON.parse(txt);
         if (isValidNotation(parsed.udc)) {
-          parsed.source = 'AI Semantic Cataloguer';
+          parsed.source = 'AI Cataloguer (Gemini)';
           return parsed;
         }
       }
@@ -261,7 +347,7 @@ Output ONLY valid JSON:
 }
 
 // ============================================================================
-// CLASSIFY ENDPOINT
+// API ENDPOINT
 // ============================================================================
 app.post('/api/classify', async (req, res) => {
   const { title } = req.body;
@@ -271,11 +357,11 @@ app.post('/api/classify', async (req, res) => {
 
   const cleanTitle = title.trim();
 
-  // 1. Deep Multi-Word Synthesizer (Instant, accurate, zero latency)
-  const syn = deepClassify(cleanTitle);
+  // 1. Comprehensive Master Matrix
+  const matrixResult = masterClassify(cleanTitle);
 
-  // 2. Query Gemini concurrently (if configured)
-  const geminiRes = await queryGemini(cleanTitle);
+  // 2. Gemini fallback for edge cases
+  const geminiResult = await queryGemini(cleanTitle);
 
   let finalUdc = null;
   let finalDdc = null;
@@ -283,24 +369,24 @@ app.post('/api/classify', async (req, res) => {
   let finalExplanation = '';
   let finalSource = '';
 
-  if (syn) {
-    finalUdc = syn.udc;
-    finalDdc = syn.ddc;
-    finalBreakdown = syn.breakdown;
-    finalExplanation = syn.explanation;
-    finalSource = syn.source;
-  } else if (geminiRes && isValidNotation(geminiRes.udc)) {
-    finalUdc = geminiRes.udc;
-    finalDdc = geminiRes.ddc;
-    finalBreakdown = geminiRes.breakdown || '';
-    finalExplanation = geminiRes.explanation || '';
-    finalSource = geminiRes.source;
+  if (matrixResult) {
+    finalUdc = matrixResult.udc;
+    finalDdc = matrixResult.ddc;
+    finalBreakdown = matrixResult.breakdown;
+    finalExplanation = matrixResult.explanation;
+    finalSource = matrixResult.source;
+  } else if (geminiResult && isValidNotation(geminiResult.udc)) {
+    finalUdc = geminiResult.udc;
+    finalDdc = geminiResult.ddc;
+    finalBreakdown = geminiResult.breakdown || '';
+    finalExplanation = geminiResult.explanation || '';
+    finalSource = geminiResult.source;
   } else {
     finalUdc = '001';
     finalDdc = '001';
-    finalBreakdown = '001 = Knowledge in general';
+    finalBreakdown = '001 = Knowledge and civilization in general';
     finalExplanation = 'General title classification.';
-    finalSource = 'General Classification Engine';
+    finalSource = 'General Library Classification';
   }
 
   return res.json({
@@ -314,7 +400,7 @@ app.post('/api/classify', async (req, res) => {
 });
 
 // ============================================================================
-// CLEAN RESPONSIVE FRONTEND (UI)
+// CLEAN FRONTEND
 // ============================================================================
 app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
@@ -365,7 +451,7 @@ app.get('/', (req, res) => {
 
     <div class="card">
       <label for="title">Book Title</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ... e.g. Animal Physiology">Animal Physiology</textarea>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ... e.g. French Pronunciation">French Pronunciation</textarea>
 
       <div class="action-row">
         <button id="go" class="btn-classify">⚡ Classify Book</button>
