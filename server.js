@@ -19,19 +19,15 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z\'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// ============================================================================
-// DDC-23 MATHEMATICAL SYNTHESIZER (Standard Subdivisions Table 1 & Table 2)
-// ============================================================================
+// DDC Synthesizer: ਹਮੇਸ਼ਾ 3 ਅੰਕਾਂ ਬਾਅਦ ਡੌਟ ਲਾਉਂਦਾ ਹੈ
 function buildDDC(baseDdc, formT1, placeT2) {
-  let res = String(baseDdc || '001').trim();
+  let res = String(baseDdc || '020').trim();
 
-  // 1. Form Auxiliaries (Table 1: Standard Subdivisions)
   if (formT1) {
     if (res === '500') {
       if (formT1 === '03') res = '503';
       else if (formT1 === '071') res = '507.1';
       else if (formT1 === '02') res = '502';
-      else if (formT1 === '05') res = '505';
       else res = `50${formT1}`;
     } else if (res === '600') {
       res = formT1 === '03' ? '603' : `60${formT1}`;
@@ -48,7 +44,7 @@ function buildDDC(baseDdc, formT1, placeT2) {
     } else if (res === '300') {
       res = formT1 === '03' ? '300.3' : `300.${formT1}`;
     } else if (res === '530') {
-      res = `530.${formT1}`; // 530.03 for Physics Dictionary
+      res = `530.${formT1}`; // Physics Dictionary -> 530.03
     } else if (res === '510') {
       if (formT1 === '03') res = '510.3';
       else if (formT1 === '071') res = '510.71';
@@ -74,15 +70,13 @@ function buildDDC(baseDdc, formT1, placeT2) {
     } else {
       res = `${res}.${formT1}`;
     }
-  }
-  // 2. Geographic / Area Subdivisions (Table 2)
-  else if (placeT2) {
+  } else if (placeT2) {
     if (res.includes('.')) {
       res = `${res}${placeT2}`;
     } else if (res.endsWith('00')) {
-      res = `${res.charAt(0)}${placeT2}`; // 900 + 52 -> 952 (History of Japan)
+      res = `${res.charAt(0)}${placeT2}`;
     } else if (res.endsWith('0')) {
-      res = `${res}.9${placeT2}`; // 330 + 52 -> 330.952 (Economy of Japan)
+      res = `${res}.9${placeT2}`;
     } else {
       res = `${res}.${placeT2}`;
     }
@@ -94,9 +88,8 @@ function buildDDC(baseDdc, formT1, placeT2) {
   return res;
 }
 
-// Comprehensive Geographic Entities (UDC Table 1e & DDC Table 2)
+// ਸਾਰੇ 57 ਦੇਸ਼ ਅਤੇ ਖੇਤਰ (UDC Table 1e & DDC Table 2)
 const GEOGRAPHY = [
-  // Asia
   { regex: /\b(japan|japanese)\b/i, udc: '(520)', ddc: '52', name: 'Japan' },
   { regex: /\b(china|chinese)\b/i, udc: '(510)', ddc: '51', name: 'China' },
   { regex: /\b(punjab)\b/i, udc: '(540.15)', ddc: '54552', name: 'Punjab' },
@@ -117,8 +110,6 @@ const GEOGRAPHY = [
   { regex: /\b(malaysia|malaysian)\b/i, udc: '(595)', ddc: '595', name: 'Malaysia' },
   { regex: /\b(singapore)\b/i, udc: '(595.13)', ddc: '5957', name: 'Singapore' },
   { regex: /\b(thailand|thai|siam)\b/i, udc: '(593)', ddc: '593', name: 'Thailand' },
-  
-  // Europe
   { regex: /\b(united kingdom|uk|britain|british|england)\b/i, udc: '(410)', ddc: '41', name: 'United Kingdom' },
   { regex: /\b(scotland|scottish)\b/i, udc: '(411)', ddc: '411', name: 'Scotland' },
   { regex: /\b(ireland|irish)\b/i, udc: '(415)', ddc: '415', name: 'Ireland' },
@@ -133,36 +124,29 @@ const GEOGRAPHY = [
   { regex: /\b(sweden|swedish)\b/i, udc: '(485)', ddc: '485', name: 'Sweden' },
   { regex: /\b(norway|norwegian)\b/i, udc: '(481)', ddc: '481', name: 'Norway' },
   { regex: /\b(poland|polish)\b/i, udc: '(438)', ddc: '438', name: 'Poland' },
-  
-  // Americas
   { regex: /\b(united states|usa|u\.s\.a\.|america|american)\b/i, udc: '(73)', ddc: '73', name: 'United States' },
   { regex: /\b(canada|canadian)\b/i, udc: '(71)', ddc: '71', name: 'Canada' },
   { regex: /\b(mexico|mexican)\b/i, udc: '(72)', ddc: '72', name: 'Mexico' },
   { regex: /\b(brazil|brazilian)\b/i, udc: '(81)', ddc: '81', name: 'Brazil' },
   { regex: /\b(argentina|argentine)\b/i, udc: '(82)', ddc: '82', name: 'Argentina' },
-  
-  // Africa & Australasia
   { regex: /\b(egypt|egyptian)\b/i, udc: '(620)', ddc: '62', name: 'Egypt' },
   { regex: /\b(south africa|south african)\b/i, udc: '(680)', ddc: '68', name: 'South Africa' },
   { regex: /\b(australia|australian)\b/i, udc: '(94)', ddc: '94', name: 'Australia' },
   { regex: /\b(new zealand)\b/i, udc: '(931)', ddc: '93', name: 'New Zealand' },
-  
-  // Continents
   { regex: /\b(europe|european)\b/i, udc: '(4)', ddc: '4', name: 'Europe' },
   { regex: /\b(asia|asian)\b/i, udc: '(5)', ddc: '5', name: 'Asia' },
   { regex: /\b(africa|african)\b/i, udc: '(6)', ddc: '6', name: 'Africa' },
   { regex: /\b(latin america|south america)\b/i, udc: '(8)', ddc: '8', name: 'South America' }
 ];
 
-// Master Context-Aware Classifier
 function masterClassify(title) {
   const t = norm(title);
 
-  // 1. Exact Titles
+  // 1. ਸਿੱਧੇ ਵੈਰੀਫਾਈਡ ਟਾਈਟਲ
   const EXACT = {
     'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Pure Sciences; (031) = Encyclopedias.', desc: 'Science Encyclopedia.' },
     'dictionary of science': { udc: '5(038)', ddc: '503', breakdown: '5 = Pure Sciences; (038) = Dictionaries.', desc: 'Science Dictionary.' },
-    'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries. DDC-23: 530.03 = Physics dictionaries.', desc: 'Physics Dictionary.' },
+    'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries. DDC 530.03 = Physics dictionaries.', desc: 'Physics Dictionary.' },
     'encyclopedia of physics': { udc: '53(031)', ddc: '530.03', breakdown: '53 = Physics; (031) = Encyclopedias.', desc: 'Physics Encyclopedia.' },
     'harvesting of wheat and maize': { udc: '633.11+633.15:631.55', ddc: '633.1', breakdown: '633.11 = wheat; 633.15 = maize; 631.55 = harvesting.', desc: 'Harvesting of wheat & maize.' },
     'harvesting of cereals': { udc: '633.1:631.55', ddc: '633.1', breakdown: '633.1 = cereals; 631.55 = harvesting.', desc: 'Cereal crops harvesting.' },
@@ -173,14 +157,77 @@ function masterClassify(title) {
     'bible': { udc: '27-23', ddc: '220', breakdown: '27-23 = The Bible; 220 = Bible.', desc: 'Christian Bible scriptures.' },
     'colon classification': { udc: '025.4', ddc: '025.4', breakdown: '025.4 = Library classification (Ranganathan Colon Classification).', desc: 'Colon Classification.' },
     'five laws of library science': { udc: '02', ddc: '020', breakdown: '02 = Librarianship (Ranganathan Five Laws).', desc: 'Foundations of Library Science.' },
-    'animal physiology': { udc: '591.1', ddc: '571.1', breakdown: '591.1 = Animal physiology. DDC 571.1 = Animal physiology.', desc: 'Animal Physiology.' },
+    'animal physiology': { udc: '591.1', ddc: '571.1', breakdown: '591.1 = Animal physiology (General zoology). DDC 571.1 = Animal physiology.', desc: 'Animal Physiology.' },
     'plant physiology': { udc: '581.1', ddc: '571.2', breakdown: '581.1 = Plant physiology. DDC 571.2 = Plant physiology.', desc: 'Plant Physiology.' },
     'human physiology': { udc: '612', ddc: '612', breakdown: '612 = Human physiology.', desc: 'Human Physiology.' },
     'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation & Phonetics. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' }
   };
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
 
-  // 2. Languages & Linguistics
+  // ਦੇਸ਼ ਦੀ ਪਛਾਣ
+  let placeUdc = '', placeDdc = '', placeName = '';
+  for (const geo of GEOGRAPHY) {
+    if (geo.regex.test(t)) {
+      placeUdc = geo.udc;
+      placeDdc = geo.ddc;
+      placeName = geo.name;
+      break;
+    }
+  }
+
+  // 2. ਕੰਪਾਊਂਡ ਕਰਾਸ-ਡਿਸਿਪਲਿਨ (ਜਦੋਂ ਦੋ ਵਿਸ਼ੇ ਮਿਲ ਕੇ ਆਉਣ)
+  // ਮੈਡੀਕਲ + ਐਜੂਕੇਸ਼ਨ (ਜਿਵੇਂ Medical Education in India)
+  if (/\b(medic(al|ine)|healthcare|nursing)\b/i.test(t) && /\b(educat(ion|ional)|teaching|colleges?|schools?|curriculum|training)\b/i.test(t)) {
+    const u = `61:37${placeUdc}`;
+    const d = placeDdc ? `610.711${placeDdc}` : `610.711`;
+    return {
+      udc: u,
+      ddc: d,
+      breakdown: `61 = Medical Sciences; 37 = Education${placeName ? '; ' + placeUdc + ' = ' + placeName : ''}. DDC ${d} = Medical Education.`,
+      explanation: `Interdisciplinary: Medical education${placeName ? ' in ' + placeName : ''}.`,
+      source: 'Cross-Discipline Synthesis (Medicine + Education)'
+    };
+  }
+
+  // ਏ.ਆਈ. + ਸਿਹਤ / ਹਸਪਤਾਲ
+  if (/\b(ai|artificial intelligence|machine learning)\b/i.test(t) && /\b(health|medic(al|ine)|hospital|clinical)\b/i.test(t)) {
+    const u = `004.8:61${placeUdc}`;
+    const d = placeDdc ? `610.285${placeDdc}` : `610.285`;
+    return {
+      udc: u,
+      ddc: d,
+      breakdown: `004.8 = Artificial Intelligence; 61 = Medicine${placeName ? '; ' + placeUdc + ' = ' + placeName : ''}.`,
+      explanation: `Applied Artificial Intelligence in Medicine & Healthcare.`,
+      source: 'Cross-Discipline Synthesis (AI + Medicine)'
+    };
+  }
+
+  // ਖੇਤੀਬਾੜੀ + ਅਰਥਸ਼ਾਸਤਰ
+  if (/\b(agricultur(e|al)|farming|crops?)\b/i.test(t) && /\b(econom(y|ics)|market|business)\b/i.test(t)) {
+    const u = `63:33${placeUdc}`;
+    const d = placeDdc ? `338.1${placeDdc}` : `338.1`;
+    return {
+      udc: u,
+      ddc: d,
+      breakdown: `63 = Agriculture; 33 = Economics${placeName ? '; ' + placeUdc + ' = ' + placeName : ''}. DDC ${d} = Agricultural Economics.`,
+      explanation: `Agricultural Economics${placeName ? ' in ' + placeName : ''}.`,
+      source: 'Cross-Discipline Synthesis (Agriculture + Economics)'
+    };
+  }
+
+  // ਲਾਇਬ੍ਰੇਰੀ + ਕੰਪਿਊਟਰ / ਆਟੋਮੇਸ਼ਨ
+  if (/\b(librar(y|ies)|librarianship)\b/i.test(t) && /\b(automat(ion|ed)|computer|software|digital)\b/i.test(t)) {
+    const u = `02:004${placeUdc}`;
+    return {
+      udc: u,
+      ddc: '025.04',
+      breakdown: `02 = Library Science; 004 = Computing. DDC 025.04 = Automated information retrieval.`,
+      explanation: `Library Automation & Information Systems.`,
+      source: 'Cross-Discipline Synthesis (Library + Automation)'
+    };
+  }
+
+  // 3. ਭਾਸ਼ਾ ਸ਼ਾਸਤਰ (Linguistics & Literature)
   const LANG_MAP = [
     { regex: /\b(french)\b/i, name: 'French', udcLang: '811.133.1', ddcBase: '44', ddcStandard: '440', udcLit: '821.133.1', ddcLit: '840' },
     { regex: /\b(english)\b/i, name: 'English', udcLang: '811.111', ddcBase: '42', ddcStandard: '420', udcLit: '821.111', ddcLit: '820' },
@@ -234,17 +281,7 @@ function masterClassify(title) {
     }
   }
 
-  // 3. Extract Place from Comprehensive Geographic Entities
-  let placeUdc = '', placeDdc = '', placeName = '';
-  for (const geo of GEOGRAPHY) {
-    if (geo.regex.test(t)) {
-      placeUdc = geo.udc;
-      placeDdc = geo.ddc;
-      placeName = geo.name;
-      break;
-    }
-  }
-
+  // ਸਹਾਇਕ ਚਿੰਨ੍ਹ
   let langUdc = '', langName = '';
   if (/\b(in english)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; }
   else if (/\b(in punjabi)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi'; }
@@ -256,7 +293,7 @@ function masterClassify(title) {
   else if (/\b(dictionary|shabdakosh|glossary)\b/i.test(t)) { formUdc = '(038)'; formT1 = '03'; formDesc = 'Dictionary'; }
   else if (/\b(handbook|manual|guidebook)\b/i.test(t)) { formUdc = '(035)'; formT1 = '02'; formDesc = 'Handbook'; }
 
-  // 4. Domains
+  // 4. ਸਾਰੇ ਮੁੱਖ ਵਿਸ਼ਿਆਂ ਦੀ ਪੱਕੀ ਲੜੀ
   const DOMAINS = [
     { regex: /\b(animal physiology|veterinary physiology)\b/i, udc: '591.1', ddc: '571.1', name: 'Animal Physiology' },
     { regex: /\b(plant physiology)\b/i, udc: '581.1', ddc: '571.2', name: 'Plant Physiology' },
@@ -276,10 +313,11 @@ function masterClassify(title) {
     { regex: /\b(biology|biological sciences?)\b/i, udc: '57', ddc: '570', name: 'Biology' },
     { regex: /\b(botany|plants?)\b/i, udc: '58', ddc: '580', name: 'Botany' },
     { regex: /\b(zoology|animals?)\b/i, udc: '59', ddc: '590', name: 'Zoology' },
-    { regex: /\b(medicine|medical sciences?)\b/i, udc: '61', ddc: '610', name: 'Medicine' },
+    { regex: /\b(medic(al|ine)|health|diseases?)\b/i, udc: '61', ddc: '610', name: 'Medicine' },
     { regex: /\b(engineering|technology)\b/i, udc: '62', ddc: '620', name: 'Engineering' },
     { regex: /\b(economics?|economy)\b/i, udc: '33', ddc: '330', name: 'Economics' },
     { regex: /\b(political science|politics)\b/i, udc: '32', ddc: '320', name: 'Political Science' },
+    { regex: /\b(educat(ion|ional)|teaching|schools?)\b/i, udc: '37', ddc: '370', name: 'Education' },
     { regex: /\b(history)\b/i, udc: '94', ddc: '900', name: 'History' },
     { regex: /\b(geography)\b/i, udc: '91', ddc: '910', name: 'Geography' }
   ];
@@ -304,12 +342,12 @@ function masterClassify(title) {
     }
   }
 
-  // Pure geographic history fallback
+  // ਸਿਰਫ਼ ਦੇਸ਼ + ਇਤਿਹਾਸ
   if (placeUdc && /\bhistory\b/i.test(t)) {
     return {
       udc: `94${placeUdc}`,
       ddc: buildDDC('900', null, placeDdc),
-      breakdown: `94 = General History · ${placeUdc} = ${placeName}`,
+      breakdown: `94 = History · ${placeUdc} = ${placeName}`,
       explanation: `History of ${placeName}.`,
       source: 'Geographical History Synthesis'
     };
@@ -318,12 +356,16 @@ function masterClassify(title) {
   return null;
 }
 
-// Gemini AI fallback
+// Gemini AI ਫਾਲਬੈਕ (ਅਣਜਾਣ ਟਾਈਟਲਾਂ ਲਈ)
 async function queryGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
     const prompt = `Classify this book title into Universal Decimal Classification (UDC) and Dewey Decimal Classification (DDC).
 Title: "${title}"
+Rules:
+- Medical Education in India: UDC 61:37(540), DDC 610.71154
+- History of Japan: UDC 94(520), DDC 952
+- Dictionary of Physics: UDC 53(038), DDC 530.03
 Output ONLY valid JSON:
 {
   "udc": "string (valid classification notation)",
@@ -358,7 +400,7 @@ Output ONLY valid JSON:
   return null;
 }
 
-// Clean HTML UI
+// ਕਲੀਨ ਫਰੰਟਐਂਡ
 const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -407,7 +449,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
     </div>
     <div class="card">
       <label for="title">Book Title</label>
-      <textarea id="title" placeholder="Enter book title...">History of Japan</textarea>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Medical Education in India</textarea>
       <div class="action-row">
         <button id="go" class="btn-classify">⚡ CLASSIFY</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
@@ -457,9 +499,9 @@ const HTML_CONTENT = `<!DOCTYPE html>
         if (!response.ok) throw new Error('Classification error.');
         const data = await response.json();
         $('resTitle').textContent = data.title || title;
-        $('resUdc').textContent = data.udc_answer || data.udc_number || '001';
+        $('resUdc').textContent = data.udc_answer || data.udc_number || '020';
         $('resUdcBreakdown').textContent = data.breakdown || '';
-        $('resDdc').textContent = data.ddc_answer || data.ddc_number || '001';
+        $('resDdc').textContent = data.ddc_answer || data.ddc_number || '020';
         $('resDdcBreakdown').textContent = data.breakdown || '';
         $('resExplain').textContent = data.explanation || 'Classification complete.';
         $('resSource').textContent = 'Engine: ' + (data.source || 'Standard Schedule');
@@ -561,10 +603,10 @@ const server = http.createServer(async (req, res) => {
           finalExplanation = geminiRes.explanation || '';
           finalSource = geminiRes.source;
         } else {
-          finalUdc = '001';
-          finalDdc = '001';
-          finalBreakdown = '001 = Knowledge in general';
-          finalExplanation = 'General title classification.';
+          finalUdc = '020';
+          finalDdc = '020';
+          finalBreakdown = 'General library classification.';
+          finalExplanation = 'General subject classification.';
           finalSource = 'General Library Classification';
         }
 
