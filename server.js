@@ -19,7 +19,9 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z\'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// DDC Synthesizer: ਹਮੇਸ਼ਾ 3 ਅੰਕਾਂ ਬਾਅਦ ਡੌਟ ਲਾਉਂਦਾ ਹੈ
+// ============================================================================
+// DDC-23 MATHEMATICAL SYNTHESIZER
+// ============================================================================
 function buildDDC(baseDdc, formT1, placeT2) {
   let res = String(baseDdc || '020').trim();
 
@@ -44,7 +46,7 @@ function buildDDC(baseDdc, formT1, placeT2) {
     } else if (res === '300') {
       res = formT1 === '03' ? '300.3' : `300.${formT1}`;
     } else if (res === '530') {
-      res = `530.${formT1}`; // Physics Dictionary -> 530.03
+      res = `530.${formT1}`;
     } else if (res === '510') {
       if (formT1 === '03') res = '510.3';
       else if (formT1 === '071') res = '510.71';
@@ -88,7 +90,7 @@ function buildDDC(baseDdc, formT1, placeT2) {
   return res;
 }
 
-// ਸਾਰੇ 57 ਦੇਸ਼ ਅਤੇ ਖੇਤਰ (UDC Table 1e & DDC Table 2)
+// 57 Geographic Entities
 const GEOGRAPHY = [
   { regex: /\b(japan|japanese)\b/i, udc: '(520)', ddc: '52', name: 'Japan' },
   { regex: /\b(china|chinese)\b/i, udc: '(510)', ddc: '51', name: 'China' },
@@ -139,14 +141,14 @@ const GEOGRAPHY = [
   { regex: /\b(latin america|south america)\b/i, udc: '(8)', ddc: '8', name: 'South America' }
 ];
 
-function masterClassify(title) {
+function rawClassify(title) {
   const t = norm(title);
 
-  // 1. ਸਿੱਧੇ ਵੈਰੀਫਾਈਡ ਟਾਈਟਲ
+  // Exact Titles
   const EXACT = {
     'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Pure Sciences; (031) = Encyclopedias.', desc: 'Science Encyclopedia.' },
     'dictionary of science': { udc: '5(038)', ddc: '503', breakdown: '5 = Pure Sciences; (038) = Dictionaries.', desc: 'Science Dictionary.' },
-    'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries. DDC 530.03 = Physics dictionaries.', desc: 'Physics Dictionary.' },
+    'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries. DDC-23: 530.03 = Physics dictionaries.', desc: 'Physics Dictionary.' },
     'encyclopedia of physics': { udc: '53(031)', ddc: '530.03', breakdown: '53 = Physics; (031) = Encyclopedias.', desc: 'Physics Encyclopedia.' },
     'harvesting of wheat and maize': { udc: '633.11+633.15:631.55', ddc: '633.1', breakdown: '633.11 = wheat; 633.15 = maize; 631.55 = harvesting.', desc: 'Harvesting of wheat & maize.' },
     'harvesting of cereals': { udc: '633.1:631.55', ddc: '633.1', breakdown: '633.1 = cereals; 631.55 = harvesting.', desc: 'Cereal crops harvesting.' },
@@ -157,14 +159,19 @@ function masterClassify(title) {
     'bible': { udc: '27-23', ddc: '220', breakdown: '27-23 = The Bible; 220 = Bible.', desc: 'Christian Bible scriptures.' },
     'colon classification': { udc: '025.4', ddc: '025.4', breakdown: '025.4 = Library classification (Ranganathan Colon Classification).', desc: 'Colon Classification.' },
     'five laws of library science': { udc: '02', ddc: '020', breakdown: '02 = Librarianship (Ranganathan Five Laws).', desc: 'Foundations of Library Science.' },
-    'animal physiology': { udc: '591.1', ddc: '571.1', breakdown: '591.1 = Animal physiology (General zoology). DDC 571.1 = Animal physiology.', desc: 'Animal Physiology.' },
+    'animal physiology': { udc: '591.1', ddc: '571.1', breakdown: '591.1 = Animal physiology. DDC 571.1 = Animal physiology.', desc: 'Animal Physiology.' },
     'plant physiology': { udc: '581.1', ddc: '571.2', breakdown: '581.1 = Plant physiology. DDC 571.2 = Plant physiology.', desc: 'Plant Physiology.' },
     'human physiology': { udc: '612', ddc: '612', breakdown: '612 = Human physiology.', desc: 'Human Physiology.' },
-    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation & Phonetics. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' }
+    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation & Phonetics. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' },
+    'fevicol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives. Glues. Synthetic resin adhesives (Polyvinyl Acetate). DDC 668.3 = Adhesives and related products.', desc: 'Fevicol (Synthetic resin adhesive / glue).' },
+    'favikol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives. Glues. Synthetic resin adhesives (Polyvinyl Acetate). DDC 668.3 = Adhesives and related products.', desc: 'Fevicol (Synthetic resin adhesive / glue).' },
+    'fevikol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives. Glues. Synthetic resin adhesives (Polyvinyl Acetate). DDC 668.3 = Adhesives and related products.', desc: 'Fevicol (Synthetic resin adhesive / glue).' },
+    'adhesive': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Adhesives technology.' },
+    'adhesives': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Adhesives technology.' },
+    'glue': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Glues and adhesives.' }
   };
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
 
-  // ਦੇਸ਼ ਦੀ ਪਛਾਣ
   let placeUdc = '', placeDdc = '', placeName = '';
   for (const geo of GEOGRAPHY) {
     if (geo.regex.test(t)) {
@@ -175,8 +182,7 @@ function masterClassify(title) {
     }
   }
 
-  // 2. ਕੰਪਾਊਂਡ ਕਰਾਸ-ਡਿਸਿਪਲਿਨ (ਜਦੋਂ ਦੋ ਵਿਸ਼ੇ ਮਿਲ ਕੇ ਆਉਣ)
-  // ਮੈਡੀਕਲ + ਐਜੂਕੇਸ਼ਨ (ਜਿਵੇਂ Medical Education in India)
+  // Cross-discipline
   if (/\b(medic(al|ine)|healthcare|nursing)\b/i.test(t) && /\b(educat(ion|ional)|teaching|colleges?|schools?|curriculum|training)\b/i.test(t)) {
     const u = `61:37${placeUdc}`;
     const d = placeDdc ? `610.711${placeDdc}` : `610.711`;
@@ -189,7 +195,6 @@ function masterClassify(title) {
     };
   }
 
-  // ਏ.ਆਈ. + ਸਿਹਤ / ਹਸਪਤਾਲ
   if (/\b(ai|artificial intelligence|machine learning)\b/i.test(t) && /\b(health|medic(al|ine)|hospital|clinical)\b/i.test(t)) {
     const u = `004.8:61${placeUdc}`;
     const d = placeDdc ? `610.285${placeDdc}` : `610.285`;
@@ -202,7 +207,6 @@ function masterClassify(title) {
     };
   }
 
-  // ਖੇਤੀਬਾੜੀ + ਅਰਥਸ਼ਾਸਤਰ
   if (/\b(agricultur(e|al)|farming|crops?)\b/i.test(t) && /\b(econom(y|ics)|market|business)\b/i.test(t)) {
     const u = `63:33${placeUdc}`;
     const d = placeDdc ? `338.1${placeDdc}` : `338.1`;
@@ -215,7 +219,6 @@ function masterClassify(title) {
     };
   }
 
-  // ਲਾਇਬ੍ਰੇਰੀ + ਕੰਪਿਊਟਰ / ਆਟੋਮੇਸ਼ਨ
   if (/\b(librar(y|ies)|librarianship)\b/i.test(t) && /\b(automat(ion|ed)|computer|software|digital)\b/i.test(t)) {
     const u = `02:004${placeUdc}`;
     return {
@@ -227,7 +230,7 @@ function masterClassify(title) {
     };
   }
 
-  // 3. ਭਾਸ਼ਾ ਸ਼ਾਸਤਰ (Linguistics & Literature)
+  // Languages
   const LANG_MAP = [
     { regex: /\b(french)\b/i, name: 'French', udcLang: '811.133.1', ddcBase: '44', ddcStandard: '440', udcLit: '821.133.1', ddcLit: '840' },
     { regex: /\b(english)\b/i, name: 'English', udcLang: '811.111', ddcBase: '42', ddcStandard: '420', udcLit: '821.111', ddcLit: '820' },
@@ -281,7 +284,6 @@ function masterClassify(title) {
     }
   }
 
-  // ਸਹਾਇਕ ਚਿੰਨ੍ਹ
   let langUdc = '', langName = '';
   if (/\b(in english)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; }
   else if (/\b(in punjabi)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi'; }
@@ -293,7 +295,6 @@ function masterClassify(title) {
   else if (/\b(dictionary|shabdakosh|glossary)\b/i.test(t)) { formUdc = '(038)'; formT1 = '03'; formDesc = 'Dictionary'; }
   else if (/\b(handbook|manual|guidebook)\b/i.test(t)) { formUdc = '(035)'; formT1 = '02'; formDesc = 'Handbook'; }
 
-  // 4. ਸਾਰੇ ਮੁੱਖ ਵਿਸ਼ਿਆਂ ਦੀ ਪੱਕੀ ਲੜੀ
   const DOMAINS = [
     { regex: /\b(animal physiology|veterinary physiology)\b/i, udc: '591.1', ddc: '571.1', name: 'Animal Physiology' },
     { regex: /\b(plant physiology)\b/i, udc: '581.1', ddc: '571.2', name: 'Plant Physiology' },
@@ -309,6 +310,7 @@ function masterClassify(title) {
     { regex: /\b(computer science|computing|computers?|software)\b/i, udc: '004', ddc: '004', name: 'Computer Science' },
     { regex: /\b(mathematics|maths?)\b/i, udc: '51', ddc: '510', name: 'Mathematics' },
     { regex: /\b(physics)\b/i, udc: '53', ddc: '530', name: 'Physics' },
+    { regex: /\b(fevicol|favikol|fevikol|adhesives?|glues?|synthetic resin adhesives?)\b/i, udc: '668.3', ddc: '668.3', name: 'Adhesives & Glues (Fevicol)' },
     { regex: /\b(chemistry)\b/i, udc: '54', ddc: '540', name: 'Chemistry' },
     { regex: /\b(biology|biological sciences?)\b/i, udc: '57', ddc: '570', name: 'Biology' },
     { regex: /\b(botany|plants?)\b/i, udc: '58', ddc: '580', name: 'Botany' },
@@ -342,7 +344,6 @@ function masterClassify(title) {
     }
   }
 
-  // ਸਿਰਫ਼ ਦੇਸ਼ + ਇਤਿਹਾਸ
   if (placeUdc && /\bhistory\b/i.test(t)) {
     return {
       udc: `94${placeUdc}`,
@@ -356,7 +357,68 @@ function masterClassify(title) {
   return null;
 }
 
-// Gemini AI ਫਾਲਬੈਕ (ਅਣਜਾਣ ਟਾਈਟਲਾਂ ਲਈ)
+// ============================================================================
+// WATCHMAN & QUALITY INSPECTOR
+// ============================================================================
+function watchmanVerify(title, initialResult) {
+  const t = norm(title);
+  let res = { ...initialResult };
+
+  // 1. DDC ਫਾਰਮੈਟ ਵਾਚ: ਕਦੇ ਵੀ ਬਿਨਾਂ ਡੌਟ ਵਾਲਾ ਲੰਬਾ ਨੰਬਰ ਨਾ ਨਿਕਲੇ
+  if (res.ddc_number && res.ddc_number.length >= 4 && !res.ddc_number.includes('.')) {
+    res.ddc_number = `${res.ddc_number.slice(0, 3)}.${res.ddc_number.slice(3)}`;
+    res.ddc_answer = res.ddc_number;
+  }
+
+  // 2. ਡਿਫੌਲਟ 001 ਨੂੰ ਰੋਕਣਾ: ਜੇ ਨਤੀਜਾ 001 ਹੋਵੇ, ਤਾਂ ਵਿਸ਼ੇ ਦੇ ਮੁੱਖ ਸ਼ਬਦ ਅਨੁਸਾਰ ਠੀਕ ਕਰਨਾ
+  if (res.udc_number === '001' || !res.udc_number || res.udc_number === '020') {
+    if (/\b(science)\b/i.test(t)) { res.udc_number = '5'; res.ddc_number = '500'; }
+    else if (/\b(history)\b/i.test(t)) { res.udc_number = '94'; res.ddc_number = '900'; }
+    else if (/\b(education|teaching)\b/i.test(t)) { res.udc_number = '37'; res.ddc_number = '370'; }
+    else if (/\b(health|medicine)\b/i.test(t)) { res.udc_number = '61'; res.ddc_number = '610'; }
+    else if (/\b(computer)\b/i.test(t)) { res.udc_number = '004'; res.ddc_number = '004'; }
+    else if (/\b(library)\b/i.test(t)) { res.udc_number = '02'; res.ddc_number = '020'; }
+    res.udc_answer = res.udc_number;
+    res.ddc_answer = res.ddc_number;
+  }
+
+  // 3. ਦੇਸ਼ ਵਾਚ (Missing Place Guard): ਜੇਕਰ ਟਾਈਟਲ 'ਚ ਦੇਸ਼ ਹੈ ਪਰ UDC 'ਚ ਨਹੀਂ
+  if (!res.udc_number.includes('(')) {
+    for (const geo of GEOGRAPHY) {
+      if (geo.regex.test(t)) {
+        res.udc_number = `${res.udc_number}${geo.udc}`;
+        res.udc_answer = res.udc_number;
+        res.ddc_number = buildDDC(res.ddc_number, null, geo.ddc);
+        res.ddc_answer = res.ddc_number;
+        break;
+      }
+    }
+  }
+
+  // 4. ਲਾਇਬ੍ਰੇਰੀ ਪਬਲਿਕ ਵਾਚ
+  if (/\b(public librar(y|ies))\b/i.test(t) && !res.udc_number.startsWith('027.4')) {
+    const hasIndia = /\b(india|indian)\b/i.test(t);
+    res.udc_number = hasIndia ? '027.4(540)' : '027.4';
+    res.ddc_number = hasIndia ? '027.454' : '027.4';
+    res.udc_answer = res.udc_number;
+    res.ddc_answer = res.ddc_number;
+  }
+
+  // 5. ਫ਼ੈਵੀਕੋਲ ਵਾਚ
+  if (/\b(fevicol|favikol|fevikol)\b/i.test(t)) {
+    res.udc_number = '668.3';
+    res.ddc_number = '668.3';
+    res.udc_answer = '668.3';
+    res.ddc_answer = '668.3';
+    res.breakdown = '668.3 = Adhesives. Glues. Synthetic resin adhesives (Polyvinyl Acetate).';
+    res.explanation = 'Fevicol (Synthetic resin adhesive / glue).';
+  }
+
+  res.source = (res.source || 'Standard Schedule') + ' [Watchman Verified]';
+  return res;
+}
+
+// Gemini AI fallback
 async function queryGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
@@ -400,7 +462,7 @@ Output ONLY valid JSON:
   return null;
 }
 
-// ਕਲੀਨ ਫਰੰਟਐਂਡ
+// Clean HTML UI
 const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -449,7 +511,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
     </div>
     <div class="card">
       <label for="title">Book Title</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Medical Education in India</textarea>
+      <textarea id="title" placeholder="Enter book title...">Medical Education in India</textarea>
       <div class="action-row">
         <button id="go" class="btn-classify">⚡ CLASSIFY</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
@@ -531,7 +593,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// PURE Node.js HTTP Server (Zero Dependencies, Zero npm issues!)
+// PURE Node.js HTTP Server
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -539,7 +601,7 @@ const server = http.createServer(async (req, res) => {
 
   const url = req.url.split('?')[0];
 
-  // 1. Health check (Render verification)
+  // 1. Health check
   if (req.method === 'GET' && url === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -585,44 +647,49 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const syn = masterClassify(title);
+        const raw = rawClassify(title);
         const geminiRes = await queryGemini(title);
 
-        let finalUdc = null, finalDdc = null, finalBreakdown = '', finalExplanation = '', finalSource = '';
+        let preliminaryResult = {
+          udc_number: '020',
+          ddc_number: '020',
+          breakdown: 'General library classification.',
+          explanation: 'Classification complete.',
+          source: 'Standard Schedule'
+        };
 
-        if (syn) {
-          finalUdc = syn.udc;
-          finalDdc = syn.ddc;
-          finalBreakdown = syn.breakdown;
-          finalExplanation = syn.explanation;
-          finalSource = syn.source;
+        if (raw) {
+          preliminaryResult.udc_number = raw.udc;
+          preliminaryResult.ddc_number = raw.ddc;
+          preliminaryResult.breakdown = raw.breakdown;
+          preliminaryResult.explanation = raw.explanation;
+          preliminaryResult.source = raw.source;
         } else if (geminiRes && isValidNotation(geminiRes.udc)) {
-          finalUdc = geminiRes.udc;
-          finalDdc = geminiRes.ddc;
-          finalBreakdown = geminiRes.breakdown || '';
-          finalExplanation = geminiRes.explanation || '';
-          finalSource = geminiRes.source;
-        } else {
-          finalUdc = '020';
-          finalDdc = '020';
-          finalBreakdown = 'General library classification.';
-          finalExplanation = 'General subject classification.';
-          finalSource = 'General Library Classification';
+          preliminaryResult.udc_number = geminiRes.udc;
+          preliminaryResult.ddc_number = geminiRes.ddc;
+          preliminaryResult.breakdown = geminiRes.breakdown || '';
+          preliminaryResult.explanation = geminiRes.explanation || '';
+          preliminaryResult.source = geminiRes.source;
         }
+
+        // =========================================================
+        // WATCHMAN: ਜਵਾਬ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਜਾਂਚ ਕਰਕੇ ਗਲਤੀ ਠੀਕ ਕਰਦਾ ਹੈ
+        // =========================================================
+        const finalResult = watchmanVerify(title, preliminaryResult);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           status: 'classified',
           title,
           full_title: title,
-          udc_number: finalUdc,
-          udc_answer: finalUdc,
-          ddc_number: finalDdc,
-          ddc_answer: finalDdc,
-          breakdown: finalBreakdown,
-          explanation: finalExplanation,
+          udc_number: finalResult.udc_number,
+          udc_answer: finalResult.udc_number,
+          ddc_number: finalResult.ddc_number,
+          ddc_answer: finalResult.ddc_number,
+          breakdown: finalResult.breakdown,
+          explanation: finalResult.explanation,
           title_coverage_audit: { verified: true },
-          source: finalSource
+          source: finalResult.source
         }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
