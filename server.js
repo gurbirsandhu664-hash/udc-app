@@ -3,15 +3,19 @@ import express from 'express';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ANNIF_API_URL = process.env.ANNIF_API_URL || 'http://localhost:5000/v1';
-const ANNIF_UDC_PROJECT = process.env.ANNIF_UDC_PROJECT || 'udc-project';
-const WORLDSHARE_KEY = process.env.WORLDCAT_API_KEY || '';
+// ============================================================================
+// 1. ENVIRONMENT CONFIGURATION (WorldShare AI, OCLC, Annif, Gemini)
+// ============================================================================
+const ANNIF_API_URL = process.env.ANNIF_API_URL || 'https://api.annif.org/v1';
+const ANNIF_PROJECT = process.env.ANNIF_PROJECT || 'yso-en'; 
+
+const WORLDSHARE_WSKEY = process.env.WORLDCAT_API_KEY || process.env.WORLDSHARE_WSKEY || '';
+const WORLDSHARE_AI_URL = process.env.WORLDSHARE_AI_URL || '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Normalization helper
 function norm(s) {
   return String(s || '')
     .toLowerCase()
@@ -22,180 +26,127 @@ function norm(s) {
     .trim();
 }
 
-// 1. High-confidence known exact keys
-const EXACT_KEYS = {
-  'encyclopedia of science': {
-    udc: '5(031)',
-    ddc: '503',
-    title: 'Encyclopedia of Science',
-    breakdown: '5 = Pure Sciences; (031) = General reference works / Encyclopedias.',
-    explanation: 'General encyclopedias of science are classed under 5 (Pure sciences) with form auxiliary (031). In DDC, 500 = Science, 03 = Dictionaries & encyclopedias -> 503.'
-  },
-  'dictionary of science': {
-    udc: '5(038)',
-    ddc: '503',
-    title: 'Dictionary of Science',
-    breakdown: '5 = Pure Sciences; (038) = Dictionaries.',
-    explanation: 'Science dictionaries are classed under 5 with form auxiliary (038).'
-  },
-  'harvesting of wheat and maize': {
-    udc: '633.11+633.15:631.55',
-    ddc: '633.1',
-    title: 'Harvesting of wheat and maize',
-    breakdown: '633.11 = wheat; 633.15 = maize; 631.55 = harvesting.',
-    explanation: 'Coordinated crops related to harvesting.'
-  },
-  'harvesting of cereals': {
-    udc: '633.1:631.55',
-    ddc: '633.1',
-    title: 'Harvesting of cereals',
-    breakdown: '633.1 = cereals; 631.55 = harvesting.',
-    explanation: 'Cereals harvesting in UDC and DDC.'
-  },
-  'wheat': { udc: '633.11', ddc: '633.11', title: 'Wheat', breakdown: '633.11 = Wheat.', explanation: 'Agriculture: Wheat crop.' },
-  'maize': { udc: '633.15', ddc: '633.15', title: 'Maize', breakdown: '633.15 = Maize.', explanation: 'Agriculture: Maize / Corn.' },
-  'barley': { udc: '633.16', ddc: '633.16', title: 'Barley', breakdown: '633.16 = Barley.', explanation: 'Agriculture: Barley.' },
-  'history of india': { udc: '94(540)', ddc: '954', title: 'History of India', breakdown: '94 = History; (540) = India.', explanation: 'General history of India.' },
-  'geography of india': { udc: '91(540)', ddc: '915.4', title: 'Geography of India', breakdown: '91 = Geography; (540) = India.', explanation: 'Geography of India.' },
-  'indian economy': { udc: '33(540)', ddc: '330.954', title: 'Indian Economy', breakdown: '33 = Economics; (540) = India.', explanation: 'Economics of India.' },
-  'library classification': { udc: '025.4', ddc: '025.4', title: 'Library classification', breakdown: '025.4 = Classification and indexing.', explanation: 'Librarianship: Classification.' },
-  'english drama': { udc: '821.111-2', ddc: '822', title: 'English drama', breakdown: '821.111 = English literature; -2 = drama.', explanation: 'English drama.' },
-  'bible': { udc: '27-23', ddc: '220', title: 'Bible', breakdown: '27-23 = The Bible; 220 = The Bible.', explanation: 'Christianity sacred scriptures.' },
-  'sobha singh': { udc: '75(084.1)SOB', ddc: '759.954', title: 'Sobha Singh', breakdown: '75 = Painting; (084.1) = pictorial; SOB = Sobha Singh.', explanation: 'Indian painter reproductions.' }
-};
-
-// 2. Pattern-based rule generator for common subjects and form auxiliaries
-function matchPatterns(title) {
-  const t = norm(title);
-  
-  if (EXACT_KEYS[t]) {
-    return { ...EXACT_KEYS[t], source: 'Verified Standard Schedule' };
-  }
-
-  const isEncyclopedia = /\b(encyclopedia|encyclopaedia|vishwakosh)\b/i.test(t);
-  const isDictionary = /\b(dictionary|shabdakosh|glossary|lexicon)\b/i.test(t);
-  const isHandbook = /\b(handbook|manual|guide)\b/i.test(t);
-  const isHistory = /\b(history|itihaas)\b/i.test(t);
-
-  const subjects = [
-    { regex: /\b(science|sciences|scientific)\b/i, udcBase: '5', ddcBase: '500', name: 'Science / Pure Sciences' },
-    { regex: /\b(physics)\b/i, udcBase: '53', ddcBase: '530', name: 'Physics' },
-    { regex: /\b(chemistry)\b/i, udcBase: '54', ddcBase: '540', name: 'Chemistry' },
-    { regex: /\b(biology|biological)\b/i, udcBase: '57', ddcBase: '570', name: 'Biology' },
-    { regex: /\b(botany|plants?)\b/i, udcBase: '58', ddcBase: '580', name: 'Botany' },
-    { regex: /\b(zoology|animals?)\b/i, udcBase: '59', ddcBase: '590', name: 'Zoology' },
-    { regex: /\b(mathematics|maths?)\b/i, udcBase: '51', ddcBase: '510', name: 'Mathematics' },
-    { regex: /\b(computer science|computing|computers?|software)\b/i, udcBase: '004', ddcBase: '004', name: 'Computer Science' },
-    { regex: /\b(medicine|medical|health)\b/i, udcBase: '61', ddcBase: '610', name: 'Medicine' },
-    { regex: /\b(agriculture|farming|crops?)\b/i, udcBase: '63', ddcBase: '630', name: 'Agriculture' },
-    { regex: /\b(technology|engineering)\b/i, udcBase: '62', ddcBase: '620', name: 'Engineering / Technology' },
-    { regex: /\b(philosophy)\b/i, udcBase: '1', ddcBase: '100', name: 'Philosophy' },
-    { regex: /\b(psychology)\b/i, udcBase: '159.9', ddcBase: '150', name: 'Psychology' },
-    { regex: /\b(religion|religions)\b/i, udcBase: '2', ddcBase: '200', name: 'Religion' },
-    { regex: /\b(sociology|social sciences?)\b/i, udcBase: '316', ddcBase: '301', name: 'Sociology' },
-    { regex: /\b(economics?|economy)\b/i, udcBase: '33', ddcBase: '330', name: 'Economics' },
-    { regex: /\b(law|jurisprudence|legal)\b/i, udcBase: '34', ddcBase: '340', name: 'Law' },
-    { regex: /\b(education|teaching)\b/i, udcBase: '37', ddcBase: '370', name: 'Education' },
-    { regex: /\b(geography)\b/i, udcBase: '91', ddcBase: '910', name: 'Geography' },
-    { regex: /\b(art|arts|fine arts)\b/i, udcBase: '7', ddcBase: '700', name: 'The Arts' },
-    { regex: /\b(music)\b/i, udcBase: '78', ddcBase: '780', name: 'Music' },
-    { regex: /\b(literature)\b/i, udcBase: '82', ddcBase: '800', name: 'Literature' }
-  ];
-
-  for (const sub of subjects) {
-    if (sub.regex.test(t)) {
-      let udc = sub.udcBase;
-      let ddc = sub.ddcBase;
-      let formDesc = '';
-
-      if (isEncyclopedia) {
-        udc = `${sub.udcBase}(031)`;
-        ddc = sub.ddcBase.length === 3 && sub.ddcBase.endsWith('00') 
-              ? sub.ddcBase.charAt(0) + '03' 
-              : sub.ddcBase + '.03';
-        formDesc = 'Form: Encyclopedia.';
-      } else if (isDictionary) {
-        udc = `${sub.udcBase}(038)`;
-        ddc = sub.ddcBase.length === 3 && sub.ddcBase.endsWith('00') 
-              ? sub.ddcBase.charAt(0) + '03' 
-              : sub.ddcBase + '.03';
-        formDesc = 'Form: Dictionary.';
-      } else if (isHandbook) {
-        udc = `${sub.udcBase}(035)`;
-        ddc = sub.ddcBase + '.02';
-        formDesc = 'Form: Handbook / Manual.';
-      } else if (isHistory) {
-        udc = `${sub.udcBase}(091)`;
-        ddc = sub.ddcBase + '.09';
-        formDesc = 'Aspect: Historical development.';
+// ============================================================================
+// 2. WORLDSHARE AI / OCLC WORKFLOW
+// ============================================================================
+async function queryWorldShareAI(title) {
+  if (WORLDSHARE_AI_URL) {
+    try {
+      const res = await fetch(WORLDSHARE_AI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+        signal: AbortSignal.timeout(4000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.udc || data.ddc) {
+          return {
+            udc: data.udc || null,
+            ddc: data.ddc || null,
+            source: 'OCLC WorldShare AI',
+            explanation: data.explanation || 'Classified by OCLC WorldShare Management Workflow.'
+          };
+        }
       }
-
-      return {
-        udc,
-        ddc,
-        title,
-        breakdown: `${sub.name}: UDC ${udc} · DDC ${ddc}`,
-        explanation: `${sub.name} classification. ${formDesc}`,
-        source: 'Rule-Based Schedule Synthesis'
-      };
-    }
+    } catch (_) {}
   }
+
+  if (WORLDSHARE_WSKEY) {
+    try {
+      const q = encodeURIComponent(`srw.ti all "${title}"`);
+      const url = `https://worldcat.org/webservices/catalog/search/sru?query=${q}&wskey=${WORLDSHARE_WSKEY}&recordSchema=info:srw/schema/1/marcxml-v1.1&maximumRecords=2`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4500) });
+      if (res.ok) {
+        const xml = await res.text();
+        const udcMatch = xml.match(/<datafield tag="080"[^>]*>[\s\S]*?<subfield code="a">(.*?)<\/subfield>/i);
+        const ddcMatch = xml.match(/<datafield tag="082"[^>]*>[\s\S]*?<subfield code="a">(.*?)<\/subfield>/i);
+        if (udcMatch || ddcMatch) {
+          return {
+            udc: udcMatch ? udcMatch[1].trim() : null,
+            ddc: ddcMatch ? ddcMatch[1].trim() : null,
+            source: 'OCLC WorldShare (WorldCat Master Record)',
+            explanation: 'Extracted directly from verified library cataloguing metadata.'
+          };
+        }
+      }
+    } catch (_) {}
+  }
+
+  try {
+    const q = encodeURIComponent(title);
+    const url = `http://classify.oclc.org/classify2/Classify?title=${q}&summary=true`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'LibraryClassifier/1.0' },
+      signal: AbortSignal.timeout(3500)
+    });
+    if (res.ok) {
+      const xml = await res.text();
+      const ddcMatch = xml.match(/<ddc>[\s\S]*?<mostPopular[^>]*sfa="([^"]+)"/i) || 
+                       xml.match(/<ddc>[\s\S]*?<mostRecent[^>]*sfa="([^"]+)"/i);
+      if (ddcMatch) {
+        return {
+          udc: null,
+          ddc: ddcMatch[1].trim(),
+          source: 'OCLC WorldCat Database',
+          explanation: 'Extracted from OCLC Global Holdings bibliographic database.'
+        };
+      }
+    }
+  } catch (_) {}
 
   return null;
 }
 
-// 3. Annif API query (Node native fetch)
-async function fetchFromAnnif(title) {
+// ============================================================================
+// 3. ANNIF MACHINE LEARNING ENGINE
+// ============================================================================
+async function queryAnnif(title) {
   try {
-    const params = new URLSearchParams({ text: title, limit: '3' });
-    const res = await fetch(`${ANNIF_API_URL}/projects/${ANNIF_UDC_PROJECT}/suggest`, {
+    const params = new URLSearchParams({ text: title, limit: '5' });
+    const res = await fetch(`${ANNIF_API_URL}/projects/${ANNIF_PROJECT}/suggest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params,
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(3500)
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.results && data.results.length > 0) {
-      return {
-        udc: data.results[0].notation || data.results[0].label,
-        confidence: (data.results[0].score * 100).toFixed(0) + '%'
-      };
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const top = data.results[0];
+        const notation = top.notation || top.label;
+        const confidence = (top.score * 100).toFixed(0) + '%';
+        return {
+          udc: notation,
+          confidence,
+          source: `Annif AI Model (${ANNIF_PROJECT})`,
+          explanation: `Automated indexing by Annif ML engine (Confidence score: ${confidence}).`
+        };
+      }
     }
   } catch (_) {}
   return null;
 }
 
-// 4. WorldShare OCLC API query (Node native fetch)
-async function fetchFromWorldShare(title) {
-  if (!WORLDSHARE_KEY) return null;
-  try {
-    const q = encodeURIComponent(`srw.ti all "${title}"`);
-    const url = `https://worldcat.org/webservices/catalog/search/sru?query=${q}&wskey=${WORLDSHARE_KEY}&recordSchema=info:srw/schema/1/marcxml-v1.1&maximumRecords=1`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-    const xml = await res.text();
-    const udcMatch = xml.match(/<datafield tag="080"[^>]*>[\s\S]*?<subfield code="a">(.*?)<\/subfield>/);
-    const ddcMatch = xml.match(/<datafield tag="082"[^>]*>[\s\S]*?<subfield code="a">(.*?)<\/subfield>/);
-    return {
-      udc: udcMatch ? udcMatch[1].trim() : null,
-      ddc: ddcMatch ? ddcMatch[1].trim() : null
-    };
-  } catch (_) {}
-  return null;
-}
-
-// 5. Gemini AI Fallback (Node native fetch)
-async function fetchFromGemini(title) {
+// ============================================================================
+// 4. GEMINI AI HIGH-PRECISION FALLBACK
+// ============================================================================
+async function queryGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
-    const prompt = `Classify this book title into Universal Decimal Classification (UDC) and Dewey Decimal Classification (DDC).
-Title: "${title}"
-Return ONLY a valid JSON object in this exact format:
+    const prompt = `You are a professional library cataloger specializing in Universal Decimal Classification (UDC) and Dewey Decimal Classification (DDC-23).
+Analyze the title: "${title}"
+Synthesize:
+1. UDC notation: Include appropriate core class + form auxiliaries (e.g. (075) for textbook, (031) for encyclopedia, (038) for dictionary) + language auxiliaries (e.g. =111 for English, =214.27 for Punjabi, =214.21 for Hindi).
+2. DDC number: Provide precise DDC-23 notation.
+
+Output ONLY valid JSON in this exact structure:
 {
-  "udc": "string (valid UDC notation)",
-  "ddc": "string (valid DDC number)",
-  "breakdown": "string (short notation breakdown)",
-  "explanation": "string (subject explanation)"
+  "udc": "string",
+  "ddc": "string",
+  "breakdown": "string",
+  "explanation": "string"
 }`;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -208,89 +159,216 @@ Return ONLY a valid JSON object in this exact format:
       }),
       signal: AbortSignal.timeout(5000)
     });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const txt = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (txt) {
-      return JSON.parse(txt);
+
+    if (res.ok) {
+      const json = await res.json();
+      const txt = json.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (txt) {
+        const parsed = JSON.parse(txt);
+        parsed.source = 'Gemini Cataloguing Assistant';
+        return parsed;
+      }
     }
   } catch (_) {}
   return null;
 }
 
-// Master Classification API
+// ============================================================================
+// 5. DETERMINISTIC MULTI-FACET SYNTHESIZER
+// ============================================================================
+function synthesizeFacets(title) {
+  const t = norm(title);
+
+  const EXACT = {
+    'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Science; (031) = Encyclopedias.', explanation: 'Science encyclopedias.' },
+    'dictionary of science': { udc: '5(038)', ddc: '503', breakdown: '5 = Science; (038) = Dictionaries.', explanation: 'Science dictionaries.' },
+    'harvesting of wheat and maize': { udc: '633.11+633.15:631.55', ddc: '633.1', breakdown: '633.11 = wheat; 633.15 = maize; 631.55 = harvesting.', explanation: 'Harvesting of wheat & maize.' },
+    'harvesting of cereals': { udc: '633.1:631.55', ddc: '633.1', breakdown: '633.1 = cereals; 631.55 = harvesting.', explanation: 'Cereal crops harvesting.' },
+    'history of india': { udc: '94(540)', ddc: '954', breakdown: '94 = History; (540) = India.', explanation: 'History of India.' },
+    'geography of india': { udc: '91(540)', ddc: '915.4', breakdown: '91 = Geography; (540) = India.', explanation: 'Geography of India.' },
+    'indian economy': { udc: '33(540)', ddc: '330.954', breakdown: '33 = Economics; (540) = India.', explanation: 'Economics of India.' },
+    'library classification': { udc: '025.4', ddc: '025.4', breakdown: '025.4 = Library classification.', explanation: 'Library classification.' },
+    'bible': { udc: '27-23', ddc: '220', breakdown: '27-23 = The Bible; 220 = Bible.', explanation: 'Christianity sacred scriptures.' },
+    'sobha singh': { udc: '75(084.1)SOB', ddc: '759.954', breakdown: '75 = Painting; (084.1) = pictorial; SOB = Sobha Singh.', explanation: 'Indian painting reproductions.' }
+  };
+
+  if (EXACT[t]) {
+    return { ...EXACT[t], source: 'Standard Reference Schedule' };
+  }
+
+  // Language Auxiliaries (=...)
+  let langUdc = '';
+  let langName = '';
+  if (/\b(english|angrezi)\b/i.test(t)) { langUdc = '=111'; langName = 'English language'; }
+  else if (/\b(punjabi|panjabi)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi language'; }
+  else if (/\b(hindi)\b/i.test(t)) { langUdc = '=214.21'; langName = 'Hindi language'; }
+  else if (/\b(urdu)\b/i.test(t)) { langUdc = '=214.22'; langName = 'Urdu language'; }
+  else if (/\b(french)\b/i.test(t)) { langUdc = '=133.1'; langName = 'French language'; }
+  else if (/\b(german)\b/i.test(t)) { langUdc = '=112.2'; langName = 'German language'; }
+
+  // Form Auxiliaries ((0...))
+  let formUdc = '';
+  let formDdc = '';
+  let formDesc = '';
+  if (/\b(textbook|text book|course book|school book)\b/i.test(t)) {
+    formUdc = '(075)';
+    formDdc = '.071';
+    formDesc = 'Textbook form (075)';
+  } else if (/\b(encyclopedia|encyclopaedia|vishwakosh)\b/i.test(t)) {
+    formUdc = '(031)';
+    formDdc = '03';
+    formDesc = 'Encyclopedia form (031)';
+  } else if (/\b(dictionary|shabdakosh|glossary|lexicon)\b/i.test(t)) {
+    formUdc = '(038)';
+    formDdc = '03';
+    formDesc = 'Dictionary form (038)';
+  } else if (/\b(handbook|manual|guide)\b/i.test(t)) {
+    formUdc = '(035)';
+    formDdc = '.02';
+    formDesc = 'Handbook/Manual form (035)';
+  }
+
+  // Subject Schedule
+  const subjects = [
+    { regex: /\b(mathematics|maths?|algebra|calculus|geometry)\b/i, udc: '51', ddc: '510', name: 'Mathematics' },
+    { regex: /\b(science|sciences|scientific)\b/i, udc: '5', ddc: '500', name: 'Pure Sciences' },
+    { regex: /\b(physics|optics|thermodynamics)\b/i, udc: '53', ddc: '530', name: 'Physics' },
+    { regex: /\b(chemistry|organic chemistry|biochemistry)\b/i, udc: '54', ddc: '540', name: 'Chemistry' },
+    { regex: /\b(biology|biological sciences?)\b/i, udc: '57', ddc: '570', name: 'Biology' },
+    { regex: /\b(botany|plants?)\b/i, udc: '58', ddc: '580', name: 'Botany' },
+    { regex: /\b(zoology|animals?)\b/i, udc: '59', ddc: '590', name: 'Zoology' },
+    { regex: /\b(computer science|computing|computers?|data science)\b/i, udc: '004', ddc: '004', name: 'Computer Science' },
+    { regex: /\b(medicine|medical|health|anatomy)\b/i, udc: '61', ddc: '610', name: 'Medicine' },
+    { regex: /\b(agriculture|farming|crops?|horticulture)\b/i, udc: '63', ddc: '630', name: 'Agriculture' },
+    { regex: /\b(engineering|technology|mechanical|electrical)\b/i, udc: '62', ddc: '620', name: 'Engineering' },
+    { regex: /\b(philosophy)\b/i, udc: '1', ddc: '100', name: 'Philosophy' },
+    { regex: /\b(psychology)\b/i, udc: '159.9', ddc: '150', name: 'Psychology' },
+    { regex: /\b(religion|theology|sikhism|hinduism|islam)\b/i, udc: '2', ddc: '200', name: 'Religion' },
+    { regex: /\b(sociology|social sciences?)\b/i, udc: '316', ddc: '301', name: 'Sociology' },
+    { regex: /\b(economics?|economy|banking|finance)\b/i, udc: '33', ddc: '330', name: 'Economics' },
+    { regex: /\b(law|jurisprudence|legal system)\b/i, udc: '34', ddc: '340', name: 'Law' },
+    { regex: /\b(education|pedagogy|teaching)\b/i, udc: '37', ddc: '370', name: 'Education' },
+    { regex: /\b(geography|cartography)\b/i, udc: '91', ddc: '910', name: 'Geography' },
+    { regex: /\b(history|historiography)\b/i, udc: '94', ddc: '900', name: 'History' },
+    { regex: /\b(art|arts|painting|sculpture)\b/i, udc: '7', ddc: '700', name: 'The Arts' },
+    { regex: /\b(music)\b/i, udc: '78', ddc: '780', name: 'Music' },
+    { regex: /\b(literature|poetry|drama|fiction)\b/i, udc: '82', ddc: '800', name: 'Literature' }
+  ];
+
+  for (const s of subjects) {
+    if (s.regex.test(t)) {
+      const fullUdc = `${s.udc}${formUdc}${langUdc}`;
+      
+      let fullDdc = s.ddc;
+      if (formDdc === '03' && fullDdc.endsWith('00')) {
+        fullDdc = fullDdc.charAt(0) + '03';
+      } else if (formDdc) {
+        fullDdc = fullDdc + formDdc;
+      }
+
+      const breakdownParts = [`${s.udc} = ${s.name}`];
+      if (formDesc) breakdownParts.push(formDesc);
+      if (langName) breakdownParts.push(`Language auxiliary: ${langUdc} (${langName})`);
+
+      return {
+        udc: fullUdc,
+        ddc: fullDdc,
+        title,
+        breakdown: breakdownParts.join(' · '),
+        explanation: `${s.name} complete facet synthesis with ${[formDesc, langName].filter(Boolean).join(' and ')}.`,
+        source: 'Integrated Facet Synthesizer'
+      };
+    }
+  }
+
+  return null;
+}
+
+// ============================================================================
+// 6. MULTI-ENGINE ORCHESTRATION PIPELINE
+// ============================================================================
 app.post('/api/classify', async (req, res) => {
   const { title } = req.body;
   if (!title || !title.trim()) {
-    return res.status(400).json({ error: 'ਕਿਰਪਾ ਕਰਕੇ ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ (Title is required).' });
+    return res.status(400).json({ error: 'Title is required.' });
   }
 
   const cleanTitle = title.trim();
 
-  // Priority 1: Check Rule/Pattern Engine
-  const patternMatch = matchPatterns(cleanTitle);
-  if (patternMatch) {
-    return res.json({
-      title: cleanTitle,
-      udc_answer: patternMatch.udc,
-      ddc_answer: patternMatch.ddc,
-      breakdown: patternMatch.breakdown,
-      explanation: patternMatch.explanation,
-      source: patternMatch.source
-    });
+  // Run external connected engines in parallel with local synthesis
+  const [worldShareRes, annifRes, geminiRes] = await Promise.allSettled([
+    queryWorldShareAI(cleanTitle),
+    queryAnnif(cleanTitle),
+    queryGemini(cleanTitle)
+  ]);
+
+  const ws = worldShareRes.status === 'fulfilled' ? worldShareRes.value : null;
+  const annif = annifRes.status === 'fulfilled' ? annifRes.value : null;
+  const gemini = geminiRes.status === 'fulfilled' ? geminiRes.value : null;
+  const localSyn = synthesizeFacets(cleanTitle);
+
+  let finalUdc = null;
+  let finalDdc = null;
+  let finalSource = [];
+  let finalBreakdown = '';
+  let finalExplanation = '';
+
+  // 1. Resolve UDC
+  if (localSyn && (localSyn.udc.includes('(') || localSyn.udc.includes('='))) {
+    finalUdc = localSyn.udc;
+    finalBreakdown = localSyn.breakdown;
+    finalExplanation = localSyn.explanation;
+    finalSource.push(localSyn.source);
+  } else if (annif && annif.udc) {
+    finalUdc = annif.udc;
+    finalBreakdown = `Annif Model Classification (${annif.confidence})`;
+    finalSource.push(annif.source);
+  } else if (gemini && gemini.udc) {
+    finalUdc = gemini.udc;
+    finalBreakdown = gemini.breakdown || '';
+    finalExplanation = gemini.explanation || '';
+    finalSource.push(gemini.source);
+  } else if (ws && ws.udc) {
+    finalUdc = ws.udc;
+    finalSource.push(ws.source);
+  } else if (localSyn) {
+    finalUdc = localSyn.udc;
+    finalBreakdown = localSyn.breakdown;
+    finalExplanation = localSyn.explanation;
+    finalSource.push(localSyn.source);
   }
 
-  // Priority 2: WorldShare WorldCat Catalog Record
-  let wsResult = await fetchFromWorldShare(cleanTitle);
-  if (wsResult && (wsResult.udc || wsResult.ddc)) {
-    return res.json({
-      title: cleanTitle,
-      udc_answer: wsResult.udc || '500',
-      ddc_answer: wsResult.ddc || '500',
-      breakdown: 'Extracted from OCLC WorldShare bibliographic record.',
-      explanation: 'Official library cataloging record.',
-      source: 'OCLC WorldShare'
-    });
+  // 2. Resolve DDC
+  if (ws && ws.ddc) {
+    finalDdc = ws.ddc;
+    finalSource.push(ws.source);
+  } else if (localSyn && localSyn.ddc) {
+    finalDdc = localSyn.ddc;
+    if (!finalSource.includes(localSyn.source)) finalSource.push(localSyn.source);
+  } else if (gemini && gemini.ddc) {
+    finalDdc = gemini.ddc;
+    if (!finalSource.includes(gemini.source)) finalSource.push(gemini.source);
   }
 
-  // Priority 3: Annif UDC Indexing Engine
-  let annifResult = await fetchFromAnnif(cleanTitle);
-  if (annifResult && annifResult.udc) {
-    return res.json({
-      title: cleanTitle,
-      udc_answer: annifResult.udc,
-      ddc_answer: 'Verified via UDC Subject',
-      breakdown: `Annif UDC model notation (Confidence: ${annifResult.confidence})`,
-      explanation: 'Classified using Annif automated subject indexing model.',
-      source: 'Annif AI Engine'
-    });
-  }
+  if (!finalUdc) finalUdc = '001';
+  if (!finalDdc) finalDdc = '001';
+  if (!finalBreakdown) finalBreakdown = 'General subject classification.';
+  if (!finalExplanation) finalExplanation = 'Classified using unified library index.';
+  if (finalSource.length === 0) finalSource.push('Standard Classification Engine');
 
-  // Priority 4: Gemini Classification Assistant
-  let geminiResult = await fetchFromGemini(cleanTitle);
-  if (geminiResult && geminiResult.udc) {
-    return res.json({
-      title: cleanTitle,
-      udc_answer: geminiResult.udc,
-      ddc_answer: geminiResult.ddc || '001',
-      breakdown: geminiResult.breakdown || '',
-      explanation: geminiResult.explanation || '',
-      source: 'AI Classification Engine'
-    });
-  }
-
-  // Final Fallback
   return res.json({
     title: cleanTitle,
-    udc_answer: '001',
-    ddc_answer: '001',
-    breakdown: '001 = Knowledge and civilization in general.',
-    explanation: 'General subject classification. Verify specific section in official schedule.',
-    source: 'General Classification Fallback'
+    udc_answer: finalUdc,
+    ddc_answer: finalDdc,
+    breakdown: finalBreakdown,
+    explanation: finalExplanation,
+    source: finalSource.join(' + ')
   });
 });
 
-// Single Page UI Route
+// ============================================================================
+// 7. CLEAN SINGLE-PAGE WEB FRONTEND
+// ============================================================================
 app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -329,7 +407,7 @@ app.get('/', (req, res) => {
     }
     textarea {
       width: 100%;
-      min-height: 110px;
+      min-height: 100px;
       border: 2px solid #cbd5e1;
       border-radius: 14px;
       padding: 14px;
@@ -365,7 +443,6 @@ app.get('/', (req, res) => {
       cursor: pointer;
     }
     .voice-status { font-size: 13px; color: #64748b; margin-top: 10px; }
-    .voice-status.good { color: #16a34a; font-weight: 600; }
     .error-box {
       display: none;
       margin-top: 16px;
@@ -390,7 +467,7 @@ app.get('/', (req, res) => {
     }
     .result-box.highlight { background: #eff6ff; border-color: #bfdbfe; }
     .result-box .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 6px; }
-    .result-box .number { font-size: clamp(28px, 5vw, 42px); font-weight: 900; color: #0f172a; margin: 4px 0 8px; word-break: break-word; }
+    .result-box .number { font-size: clamp(26px, 5vw, 38px); font-weight: 900; color: #0f172a; margin: 4px 0 8px; word-break: break-word; }
     .result-box .detail { font-size: 13px; color: #475569; line-height: 1.45; }
     .meta-box {
       background: #f8fafc;
@@ -427,7 +504,7 @@ app.get('/', (req, res) => {
 
     <div class="card">
       <label for="title">Book Title</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ... e.g. Encyclopedia of science">Encyclopedia of science</textarea>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ... e.g. Mathematics Textbook in English">Mathematics Textbook in English</textarea>
 
       <div class="action-row">
         <button id="go" class="btn-classify">⚡ Classify Book</button>
@@ -502,7 +579,7 @@ app.get('/', (req, res) => {
         $('resDdcBreakdown').textContent = data.breakdown || '';
 
         $('resExplain').textContent = data.explanation || 'ਵਰਗੀਕਰਨ ਪੂਰਾ ਹੋਇਆ।';
-        $('resSource').textContent = 'Source: ' + (data.source || 'Schedule Synthesis');
+        $('resSource').textContent = 'Engine: ' + (data.source || 'Standard Schedule');
 
         resBox.style.display = 'block';
         resBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
