@@ -18,11 +18,13 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// Expert Matcher & Fallback
+// Expert Matcher & Linguistic Fallback Matrix
 function expertFallbackClassify(title) {
   const t = norm(title);
   
   const EXACT = {
+    'english adverbs': { udc: "811.111'367.623", ddc: '425', breakdown: "811.111 = English language; '36 = Grammar / Parts of speech. DDC 425 = English grammar.", desc: 'English Adverbs & Grammar.' },
+    'english grammar': { udc: "811.111'36", ddc: '425', breakdown: "811.111 = English language; '36 = Grammar.", desc: 'English Grammar.' },
     'sanskrit numerals': { udc: "811.211'365", ddc: '491.2', breakdown: "811.211 = Sanskrit language; '365 = Numerals.", desc: 'Sanskrit Numerals & Grammar.' },
     'german pronouns': { udc: "811.112.2'36", ddc: '435', breakdown: "German grammar and pronouns.", desc: 'German Pronouns & Grammar.' },
     'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "Italian phonetics and phonology.", desc: 'Italian Phonetics.' },
@@ -39,6 +41,7 @@ function expertFallbackClassify(title) {
   
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
 
+  if (/english adverbs|english grammar|english verbs/i.test(t)) return { udc: "811.111'36", ddc: '425', breakdown: "811.111 = English language; '36 = Grammar.", desc: 'English Language Grammar.' };
   if (/sanskrit/i.test(t)) return { udc: "811.211'36", ddc: '491.2', breakdown: "Sanskrit language and grammar.", desc: 'Sanskrit Language.' };
   if (/german/i.test(t)) return { udc: "811.112.2'36", ddc: '435', breakdown: "German language and grammar.", desc: 'German Language.' };
   if (/italian/i.test(t)) return { udc: "811.131.1'344", ddc: '451.52', breakdown: "Italian language and phonetics.", desc: 'Italian Language.' };
@@ -46,15 +49,13 @@ function expertFallbackClassify(title) {
   return null;
 }
 
-// ============================================================================
-// REAL GEMINI AI WITH GOOGLE SEARCH GROUNDING INTEGRATION
-// ============================================================================
+// REAL GEMINI AI WITH GOOGLE SEARCH GROUNDING
 async function queryRealGeminiWithSearch(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
   if (!activeKey) return null;
 
   const prompt = `You are a professional library cataloguer specializing in UDC and Dewey Decimal Classification (DDC-23). 
-Search Google if needed to verify standard library classifications, then classify this book title or subject: "${title}".
+Classify this book title or subject: "${title}".
 Provide exact Universal Decimal Classification (UDC) and exact Dewey Decimal Classification (DDC) notation.
 Output ONLY valid JSON in this exact structure:
 {"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
@@ -68,7 +69,6 @@ Output ONLY valid JSON in this exact structure:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          // Google Search Grounding Tool Enabled (ਅਸਲ ਗੂਗਲ ਸਰਚ ਮੋਡ)
           tools: [{ googleSearch: {} }],
           generationConfig: { responseMimeType: "application/json" }
         }),
@@ -81,7 +81,7 @@ Output ONLY valid JSON in this exact structure:
         if (txt) {
           const parsed = JSON.parse(txt);
           if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-            return { ...parsed, source: `Google Gemini AI + Google Search (${m})` };
+            return { ...parsed, source: `Google Gemini AI + Search (${m})` };
           }
         }
       }
@@ -96,7 +96,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UDC & DDC Professional Classification Tool with Google Search</title>
+  <title>UDC & DDC Professional Classification Tool</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
@@ -132,18 +132,19 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .input-group { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
     .api-settings input[type="password"] { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
     .btn-lock { padding: 10px 18px; border: 0; border-radius: 10px; background: #10b981; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
+    .btn-clear { padding: 10px 14px; border: 0; border-radius: 10px; background: #ef4444; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
     .status-msg { margin-top: 6px; font-size: 12px; font-weight: 700; color: #10b981; display: none; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <h1>Library Classification <span class="v">Pro with Google Search</span></h1>
-      <div class="lead">Gemini AI + Google Internet Search Grounding</div>
+      <h1>Library Classification <span class="v">Pro</span></h1>
+      <div class="lead">Gemini AI + Google Search Grounding</div>
     </div>
     <div class="card">
       <label for="title">Book Title / Subject Query</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Sanskrit Numerals</textarea>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">English Adverbs</textarea>
       <div class="action-row">
         <button id="go" class="btn-classify">⚡ CLASSIFY WITH GOOGLE SEARCH</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
@@ -154,6 +155,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
         <div class="input-group">
           <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
           <button type="button" id="btnLock" class="btn-lock">🔒 Lock</button>
+          <button type="button" id="btnClear" class="btn-clear">🗑️ Clear</button>
         </div>
         <div id="lockStatus" class="status-msg">✓ Key locked & secured!</div>
       </div>
@@ -200,6 +202,14 @@ const HTML_CONTENT = `<!DOCTYPE html>
       k.disabled = true;
       $('btnLock').textContent = '🔒 Locked';
       $('lockStatus').style.display = 'block';
+    });
+    $('btnClear').addEventListener('click', () => {
+      localStorage.removeItem('perm_gemini_key');
+      const k = $('geminiKey');
+      k.value = '';
+      k.disabled = false;
+      $('btnLock').textContent = '🔒 Lock';
+      $('lockStatus').style.display = 'none';
     });
     $('go').addEventListener('click', async () => {
       const title = $('title').value.trim();
@@ -252,8 +262,9 @@ const server = http.createServer(async (req, res) => {
         const title = String(body.title || '').trim();
         const clientApiKey = String(body.clientApiKey || '').trim();
         
-        // Real Gemini with Google Search Grounding First
+        // 1. AI with Google Search Grounding First
         const aiRes = await queryRealGeminiWithSearch(title, clientApiKey);
+        // 2. Expert Matrix Fallback Second
         const expertRes = expertFallbackClassify(title);
 
         const finalRes = aiRes || expertRes || { 
