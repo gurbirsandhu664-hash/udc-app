@@ -18,26 +18,17 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z'\s]*$/.test(s) && /\d/.test(s);
 }
 
-function buildDDC(baseDdc, formT1) {
-  let res = String(baseDdc || '020').trim();
-  if (formT1 && res.length >= 3) {
-    if (res.includes('.')) res = `${res}0${formT1}`;
-    else res = `${res}.${formT1}`;
-  }
-  if (res.length >= 4 && !res.includes('.')) {
-    res = `${res.slice(0, 3)}.${res.slice(3)}`;
-  }
-  return res;
-}
-
-function masterClassify(title) {
+// Expert Matcher & Fallback
+function expertFallbackClassify(title) {
   const t = norm(title);
+  
   const EXACT = {
+    'sanskrit numerals': { udc: "811.211'365", ddc: '491.2', breakdown: "811.211 = Sanskrit language; '365 = Numerals.", desc: 'Sanskrit Numerals & Grammar.' },
     'german pronouns': { udc: "811.112.2'36", ddc: '435', breakdown: "German grammar and pronouns.", desc: 'German Pronouns & Grammar.' },
-    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "Italian phonetics.", desc: 'Italian Phonetics & Phonology.' },
+    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "Italian phonetics and phonology.", desc: 'Italian Phonetics.' },
     'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "French pronunciation.", desc: 'French Pronunciation.' },
-    'english hindi dictionary': { udc: '811.111(038)=214.21', ddc: '423.9143', breakdown: 'English-Hindi Dictionary.', desc: 'English-Hindi Dictionary.' },
-    'bibliography of mathematics': { udc: '016:51', ddc: '016.51', breakdown: 'Bibliography of Mathematics.', desc: 'Bibliography of Mathematics.' },
+    'english hindi dictionary': { udc: '811.111(038)=214.21', ddc: '423.9143', breakdown: 'English-Hindi bilingual dictionary.', desc: 'English-Hindi Dictionary.' },
+    'bibliography of mathematics': { udc: '016:51', ddc: '016.51', breakdown: 'Subject bibliography of mathematics.', desc: 'Bibliography of Mathematics.' },
     'medical education in india': { udc: '61:37(540)', ddc: '610.71154', breakdown: 'Medical Education in India.', desc: 'Medical Education in India.' },
     'history of japan': { udc: '94(520)', ddc: '952', breakdown: 'History of Japan.', desc: 'History of Japan.' },
     'agriculture in canada': { udc: '63(71)', ddc: '630.971', breakdown: 'Agriculture in Canada.', desc: 'Agriculture in Canada.' },
@@ -45,35 +36,58 @@ function masterClassify(title) {
     'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: 'Physics Dictionary.', desc: 'Physics Dictionary.' },
     'fevicol': { udc: '668.3', ddc: '668.3', breakdown: 'Adhesives and glues.', desc: 'Fevicol Adhesive.' }
   };
+  
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
+
+  if (/sanskrit/i.test(t)) return { udc: "811.211'36", ddc: '491.2', breakdown: "Sanskrit language and grammar.", desc: 'Sanskrit Language.' };
+  if (/german/i.test(t)) return { udc: "811.112.2'36", ddc: '435', breakdown: "German language and grammar.", desc: 'German Language.' };
+  if (/italian/i.test(t)) return { udc: "811.131.1'344", ddc: '451.52', breakdown: "Italian language and phonetics.", desc: 'Italian Language.' };
+
   return null;
 }
 
-async function queryHighModelAI(title, clientApiKey) {
+// ============================================================================
+// REAL GEMINI AI WITH GOOGLE SEARCH GROUNDING INTEGRATION
+// ============================================================================
+async function queryRealGeminiWithSearch(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
-  const prompt = `Classify "${title}" into UDC and DDC-23. Output ONLY JSON: {"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
+  if (!activeKey) return null;
 
-  if (activeKey) {
+  const prompt = `You are a professional library cataloguer specializing in UDC and Dewey Decimal Classification (DDC-23). 
+Search Google if needed to verify standard library classifications, then classify this book title or subject: "${title}".
+Provide exact Universal Decimal Classification (UDC) and exact Dewey Decimal Classification (DDC) notation.
+Output ONLY valid JSON in this exact structure:
+{"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
+
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  for (const m of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${activeKey}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }),
-        signal: AbortSignal.timeout(5000)
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          // Google Search Grounding Tool Enabled (ਅਸਲ ਗੂਗਲ ਸਰਚ ਮੋਡ)
+          tools: [{ googleSearch: {} }],
+          generationConfig: { responseMimeType: "application/json" }
+        }),
+        signal: AbortSignal.timeout(6000)
       });
+
       if (res.ok) {
         const json = await res.json();
         const txt = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (txt) {
           const parsed = JSON.parse(txt);
           if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-            return { ...parsed, source: 'Google Gemini High Model' };
+            return { ...parsed, source: `Google Gemini AI + Google Search (${m})` };
           }
         }
       }
     } catch (_) {}
   }
+
   return null;
 }
 
@@ -82,13 +96,13 @@ const HTML_CONTENT = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UDC & DDC Professional Classification Tool</title>
+  <title>UDC & DDC Professional Classification Tool with Google Search</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
     .wrap { max-width: 760px; margin: 0 auto; }
     .header { text-align: center; margin-bottom: 24px; }
-    h1 { font-size: clamp(24px, 5vw, 36px); font-weight: 800; color: #1e293b; margin: 0 0 8px; }
+    h1 { font-size: clamp(24px, 5vw, 36px); font-weight: 805; color: #1e293b; margin: 0 0 8px; }
     .v { color: #2563eb; }
     .lead { color: #64748b; font-size: 15px; margin: 0; }
     .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
@@ -124,14 +138,14 @@ const HTML_CONTENT = `<!DOCTYPE html>
 <body>
   <div class="wrap">
     <div class="header">
-      <h1>Library Classification <span class="v">Professional</span></h1>
-      <div class="lead">Gemini High Model & UDC/DDC Expert Tool</div>
+      <h1>Library Classification <span class="v">Pro with Google Search</span></h1>
+      <div class="lead">Gemini AI + Google Internet Search Grounding</div>
     </div>
     <div class="card">
       <label for="title">Book Title / Subject Query</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">German Pronouns</textarea>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Sanskrit Numerals</textarea>
       <div class="action-row">
-        <button id="go" class="btn-classify">⚡ CLASSIFY</button>
+        <button id="go" class="btn-classify">⚡ CLASSIFY WITH GOOGLE SEARCH</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
       </div>
       <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
@@ -191,7 +205,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
       const title = $('title').value.trim();
       if (!title) return;
       const keyVal = localStorage.getItem('perm_gemini_key') || '';
-      $('go').disabled = true; $('go').textContent = '⚡ SEARCHING...';
+      $('go').disabled = true; $('go').textContent = '🌐 GOOGLE SEARCHING...';
       try {
         const response = await fetch('/api/classify', {
           method: 'POST',
@@ -210,7 +224,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
       } catch (err) {
         alert('Error');
       } finally {
-        $('go').disabled = false; $('go').textContent = '⚡ CLASSIFY';
+        $('go').disabled = false; $('go').textContent = '⚡ CLASSIFY WITH GOOGLE SEARCH';
       }
     });
   </script>
@@ -238,10 +252,17 @@ const server = http.createServer(async (req, res) => {
         const title = String(body.title || '').trim();
         const clientApiKey = String(body.clientApiKey || '').trim();
         
-        const aiRes = await queryHighModelAI(title, clientApiKey);
-        const raw = masterClassify(title);
+        // Real Gemini with Google Search Grounding First
+        const aiRes = await queryRealGeminiWithSearch(title, clientApiKey);
+        const expertRes = expertFallbackClassify(title);
 
-        const finalRes = aiRes || raw || { udc: '020', ddc: '020', breakdown: 'General works', explanation: 'General classification', source: 'Standard Schedule' };
+        const finalRes = aiRes || expertRes || { 
+          udc: '020', 
+          ddc: '020', 
+          breakdown: 'General library works.', 
+          explanation: 'General classification.', 
+          source: 'Standard Schedule' 
+        };
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
