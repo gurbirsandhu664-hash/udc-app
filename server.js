@@ -1,5 +1,4 @@
 import express from 'express';
-import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,7 +29,7 @@ const EXACT_KEYS = {
     ddc: '503',
     title: 'Encyclopedia of Science',
     breakdown: '5 = Pure Sciences; (031) = General reference works / Encyclopedias.',
-    explanation: 'General encyclopedias of science are classed under 5 (Pure sciences) with common form auxiliary (031). In DDC, 500 = Science, 03 = Dictionaries & encyclopedias -> 503.'
+    explanation: 'General encyclopedias of science are classed under 5 (Pure sciences) with form auxiliary (031). In DDC, 500 = Science, 03 = Dictionaries & encyclopedias -> 503.'
   },
   'dictionary of science': {
     udc: '5(038)',
@@ -69,19 +68,15 @@ const EXACT_KEYS = {
 function matchPatterns(title) {
   const t = norm(title);
   
-  // Check exact keys
   if (EXACT_KEYS[t]) {
     return { ...EXACT_KEYS[t], source: 'Verified Standard Schedule' };
   }
 
-  // Common form detection
-  let isEncyclopedia = /\b(encyclopedia|encyclopaedia|vishwakosh)\b/i.test(t);
-  let isDictionary = /\b(dictionary|shabdakosh|glossary|lexicon)\b/i.test(t);
-  let isHandbook = /\b(handbook|manual|guide)\b/i.test(t);
-  let isHistory = /\b(history|itihaas)\b/i.test(t);
-  let isBiography = /\b(biography|autobiography|life of|jeewani)\b/i.test(t);
+  const isEncyclopedia = /\b(encyclopedia|encyclopaedia|vishwakosh)\b/i.test(t);
+  const isDictionary = /\b(dictionary|shabdakosh|glossary|lexicon)\b/i.test(t);
+  const isHandbook = /\b(handbook|manual|guide)\b/i.test(t);
+  const isHistory = /\b(history|itihaas)\b/i.test(t);
 
-  // Subject matching table
   const subjects = [
     { regex: /\b(science|sciences|scientific)\b/i, udcBase: '5', ddcBase: '500', name: 'Science / Pure Sciences' },
     { regex: /\b(physics)\b/i, udcBase: '53', ddcBase: '530', name: 'Physics' },
@@ -149,7 +144,7 @@ function matchPatterns(title) {
   return null;
 }
 
-// 3. Annif API query
+// 3. Annif API query (Node native fetch)
 async function fetchFromAnnif(title) {
   try {
     const params = new URLSearchParams({ text: title, limit: '3' });
@@ -157,7 +152,7 @@ async function fetchFromAnnif(title) {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params,
-      timeout: 3000
+      signal: AbortSignal.timeout(3000)
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -171,13 +166,13 @@ async function fetchFromAnnif(title) {
   return null;
 }
 
-// 4. WorldShare OCLC API query
+// 4. WorldShare OCLC API query (Node native fetch)
 async function fetchFromWorldShare(title) {
   if (!WORLDSHARE_KEY) return null;
   try {
     const q = encodeURIComponent(`srw.ti all "${title}"`);
     const url = `https://worldcat.org/webservices/catalog/search/sru?query=${q}&wskey=${WORLDSHARE_KEY}&recordSchema=info:srw/schema/1/marcxml-v1.1&maximumRecords=1`;
-    const res = await fetch(url, { timeout: 4000 });
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
     const xml = await res.text();
     const udcMatch = xml.match(/<datafield tag="080"[^>]*>[\s\S]*?<subfield code="a">(.*?)<\/subfield>/);
     const ddcMatch = xml.match(/<datafield tag="082"[^>]*>[\s\S]*?<subfield code="a">(.*?)<\/subfield>/);
@@ -189,7 +184,7 @@ async function fetchFromWorldShare(title) {
   return null;
 }
 
-// 5. Gemini AI Fallback for unmapped unique titles
+// 5. Gemini AI Fallback (Node native fetch)
 async function fetchFromGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
@@ -211,7 +206,7 @@ Return ONLY a valid JSON object in this exact format:
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: "application/json" }
       }),
-      timeout: 5000
+      signal: AbortSignal.timeout(5000)
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -232,7 +227,7 @@ app.post('/api/classify', async (req, res) => {
 
   const cleanTitle = title.trim();
 
-  // Priority 1: Check Rule/Pattern Engine (Instant & Guaranteed)
+  // Priority 1: Check Rule/Pattern Engine
   const patternMatch = matchPatterns(cleanTitle);
   if (patternMatch) {
     return res.json({
@@ -250,8 +245,8 @@ app.post('/api/classify', async (req, res) => {
   if (wsResult && (wsResult.udc || wsResult.ddc)) {
     return res.json({
       title: cleanTitle,
-      udc_answer: wsResult.udc || 'Review Schedule',
-      ddc_answer: wsResult.ddc || 'Review Schedule',
+      udc_answer: wsResult.udc || '500',
+      ddc_answer: wsResult.ddc || '500',
       breakdown: 'Extracted from OCLC WorldShare bibliographic record.',
       explanation: 'Official library cataloging record.',
       source: 'OCLC WorldShare'
@@ -277,14 +272,14 @@ app.post('/api/classify', async (req, res) => {
     return res.json({
       title: cleanTitle,
       udc_answer: geminiResult.udc,
-      ddc_answer: geminiResult.ddc || '500',
+      ddc_answer: geminiResult.ddc || '001',
       breakdown: geminiResult.breakdown || '',
       explanation: geminiResult.explanation || '',
       source: 'AI Classification Engine'
     });
   }
 
-  // Final Intelligent Fallback: General works
+  // Final Fallback
   return res.json({
     title: cleanTitle,
     udc_answer: '001',
