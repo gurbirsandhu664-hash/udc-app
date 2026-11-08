@@ -18,7 +18,6 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// DDC-23 Mathematical Formatter
 function buildDDC(baseDdc, formT1) {
   let res = String(baseDdc || '020').trim();
   if (formT1 && res.length >= 3) {
@@ -31,16 +30,12 @@ function buildDDC(baseDdc, formT1) {
   return res;
 }
 
-// ============================================================================
-// PROFESSIONAL DYNAMIC CLASSIFICATION ENGINE
-// ============================================================================
 function masterClassify(title) {
   const t = norm(title);
-
   const EXACT = {
-    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics & Phonology. DDC 451.52 = Italian phonology.", desc: 'Italian Phonetics & Phonology.' },
-    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' },
-    'english hindi dictionary': { udc: '811.111(038)=214.21', ddc: '423.9143', breakdown: '811.111 = English; (038) = Dictionary; =214.21 = Hindi. DDC 423.9143 = English-Hindi Dictionary.', desc: 'English-Hindi Dictionary.' },
+    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics & Phonology.", desc: 'Italian Phonetics & Phonology.' },
+    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation.", desc: 'French Pronunciation.' },
+    'english hindi dictionary': { udc: '811.111(038)=214.21', ddc: '423.9143', breakdown: '811.111 = English; (038) = Dictionary; =214.21 = Hindi.', desc: 'English-Hindi Dictionary.' },
     'bibliography of mathematics': { udc: '016:51', ddc: '016.51', breakdown: '016:51 = Subject bibliography of mathematics.', desc: 'Bibliography of Mathematics.' },
     'medical education in india': { udc: '61:37(540)', ddc: '610.71154', breakdown: '61 = Medicine; 37 = Education; (540) = India.', desc: 'Medical Education in India.' },
     'history of japan': { udc: '94(520)', ddc: '952', breakdown: '94 = History; (520) = Japan.', desc: 'History of Japan.' },
@@ -50,39 +45,19 @@ function masterClassify(title) {
     'fevicol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Fevicol Adhesive.' }
   };
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
-
-  if (/italian/i.test(t)) {
-    if (/phonetics|phonology|pronunciation/i.test(t)) {
-      return { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics.", desc: 'Italian Phonetics.' };
-    }
+  if (/italian/i.test(t) && /phonetics|pronunciation/i.test(t)) {
+    return { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian; '344 = Phonetics.", desc: 'Italian Phonetics.' };
   }
-
   return null;
 }
 
-// ============================================================================
-// HIGH-MODEL GEMINI 3.8 / 2.5 FLASH INTEGRATION
-// ============================================================================
 async function queryHighModelAI(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
-  
   const prompt = `You are a professional library cataloguer and classification expert in UDC and Dewey Decimal Classification (DDC-23).
 Classify the book title or subject: "${title}".
 Provide exact Universal Decimal Classification (UDC) and exact Dewey Decimal Classification (DDC) notation.
-Rules:
-- "Italian Phonetics": UDC is 811.131.1'344, DDC is 451.52
-- "Agriculture in Canada": UDC is 63(71), DDC is 630.971
-- "English Hindi Dictionary": UDC is 811.111(038)=214.21, DDC is 423.9143
-- "Bibliography of Mathematics": UDC is 016:51, DDC is 016.51
-- "Medical Education in India": UDC is 61:37(540), DDC is 610.71154
-- "History of Japan": UDC is 94(520), DDC is 952
 Output ONLY valid JSON in this exact structure:
-{
-  "udc": "string (valid UDC notation)",
-  "ddc": "string (valid DDC number with dot after 3 digits)",
-  "breakdown": "string (brief facet breakdown)",
-  "explanation": "string (subject explanation)"
-}`;
+{"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
 
   if (activeKey) {
     try {
@@ -90,10 +65,7 @@ Output ONLY valid JSON in this exact structure:
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        }),
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }),
         signal: AbortSignal.timeout(6000)
       });
       if (res.ok) {
@@ -102,7 +74,7 @@ Output ONLY valid JSON in this exact structure:
         if (txt) {
           const parsed = JSON.parse(txt);
           if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-            return { ...parsed, source: 'Google Gemini 3.8 High Model (Live)' };
+            return { ...parsed, source: 'Google Gemini 3.8 High Model (Secured)' };
           }
         }
       }
@@ -127,7 +99,6 @@ Output ONLY valid JSON in this exact structure:
   return null;
 }
 
-// Watchman Quality Control
 function superWatchman(title, initialResult) {
   let res = { ...initialResult };
   if (res.ddc_number && res.ddc_number.length >= 4 && !res.ddc_number.includes('.')) {
@@ -138,7 +109,6 @@ function superWatchman(title, initialResult) {
   return res;
 }
 
-// Clean Professional HTML UI with Show/Hide toggle & Accept Toggle
 const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -180,10 +150,10 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .api-settings { margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
     .api-settings label { font-size: 11px; color: #334155; margin-bottom: 4px; }
     .input-group { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
-    .api-settings input[type="password"], .api-settings input[type="text"] { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
-    .btn-show { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #e2e8f0; font-weight: 700; font-size: 13px; cursor: pointer; color: #1e293b; }
-    .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; font-weight: 700; color: #1e293b; cursor: pointer; }
-    .toggle-row input { width: 18px; height: 18px; cursor: pointer; }
+    .api-settings input[type="password"] { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
+    .btn-lock { padding: 10px 14px; border: 0; border-radius: 10px; background: #10b981; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
+    .btn-clear { padding: 10px 14px; border: 0; border-radius: 10px; background: #ef4444; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
+    .status-msg { margin-top: 6px; font-size: 12px; font-weight: 700; color: #10b981; display: none; }
     @media (max-width: 600px) { .grid-results { grid-template-columns: 1fr; } .action-row { flex-direction: column; } }
   </style>
 </head>
@@ -197,21 +167,19 @@ const HTML_CONTENT = `<!DOCTYPE html>
       <label for="title">Book Title / Subject Query</label>
       <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">Italian Phonetics</textarea>
       <div class="action-row">
-        <button id="go" class="btn-classify">⚡ GEMINI 3.8 CLASSIFY</button>
+        <button id="go" class="btn-classify">⚡ PROFESSIONAL CLASSIFY</button>
         <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
       </div>
       <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
       
       <div class="api-settings">
-        <label for="geminiKey">Gemini 3.8 / 2.5 API Key</label>
+        <label for="geminiKey">Gemini 3.8 / 2.5 API Key (Secured & Locked)</label>
         <div class="input-group">
           <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
-          <button type="button" id="toggleShow" class="btn-show">👁️ Show</button>
+          <button type="button" id="btnLock" class="btn-lock">🔒 Lock</button>
+          <button type="button" id="btnClear" class="btn-clear">🗑️ Clear</button>
         </div>
-        <label class="toggle-row">
-          <input type="checkbox" id="acceptToggle" checked>
-          <span>Accept & Enable Gemini High Model (Gemini 3.8 Flash)</span>
-        </label>
+        <div id="lockStatus" class="status-msg">✓ Key locked & secured successfully!</div>
       </div>
       
       <div id="err" class="error-box"></div>
@@ -243,28 +211,33 @@ const HTML_CONTENT = `<!DOCTYPE html>
     const $ = id => document.getElementById(id);
     if (localStorage.getItem('pro_gemini_key')) {
       $('geminiKey').value = localStorage.getItem('pro_gemini_key');
-    }
-    if (localStorage.getItem('pro_accept_toggle') !== null) {
-      $('acceptToggle').checked = localStorage.getItem('pro_accept_toggle') === 'true';
+      $('geminiKey').disabled = true;
+      $('btnLock').textContent = '🔓 Unlock';
+      $('lockStatus').style.display = 'block';
     }
 
-    $('geminiKey').addEventListener('input', () => {
-      localStorage.setItem('pro_gemini_key', $('geminiKey').value.trim());
-    });
-    $('acceptToggle').addEventListener('change', () => {
-      localStorage.setItem('pro_accept_toggle', $('acceptToggle').checked);
-    });
-
-    // Show/Hide toggle for editing/backspacing
-    $('toggleShow').addEventListener('click', () => {
+    $('btnLock').addEventListener('click', () => {
       const k = $('geminiKey');
-      if (k.type === 'password') {
-        k.type = 'text';
-        $('toggleShow').textContent = '🔒 Hide';
+      if (k.disabled) {
+        k.disabled = false;
+        $('btnLock').textContent = '🔒 Lock';
+        $('lockStatus').style.display = 'none';
       } else {
-        k.type = 'password';
-        $('toggleShow').textContent = '👁️ Show';
+        if (!k.value.trim()) return;
+        localStorage.setItem('pro_gemini_key', k.value.trim());
+        k.disabled = true;
+        $('btnLock').textContent = '🔓 Unlock';
+        $('lockStatus').style.display = 'block';
       }
+    });
+
+    $('btnClear').addEventListener('click', () => {
+      localStorage.removeItem('pro_gemini_key');
+      const k = $('geminiKey');
+      k.value = '';
+      k.disabled = false;
+      $('btnLock').textContent = '🔒 Lock';
+      $('lockStatus').style.display = 'none';
     });
 
     $('go').addEventListener('click', async () => {
@@ -275,8 +248,9 @@ const HTML_CONTENT = `<!DOCTYPE html>
       resBox.style.display = 'none';
       if (!title) { errBox.textContent = 'Please enter a title.'; errBox.style.display = 'block'; return; }
       
-      if ($('acceptToggle').checked && !$('geminiKey').value.trim()) {
-        errBox.textContent = 'Please enter your Gemini API Key or uncheck the Accept toggle.';
+      const keyVal = localStorage.getItem('user_gemini_key') || localStorage.getItem('pro_gemini_key') || $('geminiKey').value.trim();
+      if (!keyVal) {
+        errBox.textContent = 'Please enter and lock your Gemini API Key first.';
         errBox.style.display = 'block';
         return;
       }
@@ -286,10 +260,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
         const response = await fetch('/api/classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            title, 
-            clientApiKey: $('acceptToggle').checked ? $('geminiKey').value.trim() : '' 
-          })
+          body: JSON.stringify({ title, clientApiKey: keyVal })
         });
         if (!response.ok) throw new Error('Classification error.');
         const data = await response.json();
@@ -306,7 +277,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
         errBox.textContent = err.message || 'Error classifying title.';
         errBox.style.display = 'block';
       } finally {
-        $('go').disabled = false; $('go').textContent = '⚡ GEMINI 3.8 CLASSIFY';
+        $('go').disabled = false; $('go').textContent = '⚡ PROFESSIONAL CLASSIFY';
       }
     });
     (() => {
@@ -366,10 +337,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // 1. High-Model AI First (Gemini 3.8 / 2.5 Flash via user key)
         const aiRes = await queryHighModelAI(title, clientApiKey);
-
-        // 2. Expert Master Classifier Fallback
         const raw = masterClassify(title);
 
         let preliminaryResult = {
