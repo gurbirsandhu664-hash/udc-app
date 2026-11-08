@@ -50,18 +50,11 @@ function masterClassify(title) {
     'dictionary of physics': { udc: '53(038)', ddc: '530.03', breakdown: '53 = Physics; (038) = Dictionaries.', desc: 'Physics Dictionary.' },
     'fevicol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Fevicol Adhesive.' }
   };
-  if (EXACT[t]) return { ...EXACT[t], source: 'Professional Verified Schedule' };
+  if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
 
-  // Italian Language rules
   if (/italian/i.test(t)) {
     if (/phonetics|phonology|pronunciation/i.test(t)) {
       return { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics.", desc: 'Italian Phonetics.' };
-    }
-    if /grammar|syntax/i.test(t)) {
-      return { udc: "811.131.1'36", ddc: '455', breakdown: "811.131.1 = Italian language; '36 = Grammar.", desc: 'Italian Grammar.' };
-    }
-    if /dictionary/i.test(t)) {
-      return { udc: "811.131.1(038)", ddc: '453', breakdown: "811.131.1 = Italian; (038) = Dictionary.", desc: 'Italian Dictionary.' };
     }
   }
 
@@ -69,7 +62,7 @@ function masterClassify(title) {
 }
 
 // ============================================================================
-// HIGH-MODEL GEMINI & NEURAL AI INTEGRATION (Gemini 3.8 / 2.5 Flash)
+// HIGH-MODEL GEMINI & NEURAL AI INTEGRATION
 // ============================================================================
 async function queryHighModelAI(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
@@ -92,7 +85,6 @@ Output ONLY valid JSON in this exact structure:
   "explanation": "string (subject explanation)"
 }`;
 
-  // 1. Try Gemini High Model (Gemini 2.5 / 3.8 Flash)
   if (activeKey) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
@@ -118,7 +110,6 @@ Output ONLY valid JSON in this exact structure:
     } catch (_) {}
   }
 
-  // 2. Fallback Neural AI Engine
   try {
     const url = `https://text.pollinations.ai/${encodeURIComponent(prompt + ' Output pure JSON.')}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
@@ -154,7 +145,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UDC & DDC Professional Classification Tool</title>
+  <title>UDC One-Click V149 — Library Classification</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
@@ -186,7 +177,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #334155; line-height: 1.5; }
     .meta-box b { color: #0f172a; }
     .source-tag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; }
-    
     .api-settings { margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
     .api-settings label { font-size: 11px; color: #334155; margin-bottom: 4px; }
     .api-settings input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
@@ -269,12 +259,12 @@ const HTML_CONTENT = `<!DOCTYPE html>
       if (!title) { errBox.textContent = 'Please enter a title.'; errBox.style.display = 'block'; return; }
       
       if ($('acceptToggle').checked && !$('geminiKey').value.trim()) {
-        errBox.textContent = 'Please enter your Gemini API Key or uncheck the Accept toggle to use standard engine.';
+        errBox.textContent = 'Please enter your Gemini API Key or uncheck the Accept toggle.';
         errBox.style.display = 'block';
         return;
       }
 
-      $('go').disabled = true; $('go').textContent = '⚡ GEMINI 3.8 HIGH MODEL SEARCHING...';
+      $('go').disabled = true; $('go').textContent = '⚡ GEMINI HIGH MODEL SEARCHING...';
       try {
         const response = await fetch('/api/classify', {
           method: 'POST',
@@ -325,9 +315,10 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   const url = req.url.split('?')[0];
 
+  // HEALTH CHECK (Required for Render deployment success)
   if (req.method === 'GET' && url === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok' }));
+    res.end(JSON.stringify({ status: 'ok', bundledUDCReferencePages: 100, bundledDdcReferencePages: 100 }));
     return;
   }
 
@@ -359,10 +350,10 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // 1. High-Model AI First (Gemini 3.8 / 2.5 Flash)
+        // 1. High-Model AI First
         const aiRes = await queryHighModelAI(title, clientApiKey);
 
-        // 2. Expert Master Classifier
+        // 2. Expert Master Classifier Fallback
         const raw = masterClassify(title);
 
         let preliminaryResult = {
