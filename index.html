@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Library Classification — UDC & DDC</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      padding: 24px 16px 60px;
+    }
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: clamp(26px, 5vw, 40px);
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0 0 8px;
+    }
+    .header p {
+      color: #64748b;
+      font-size: 15px;
+      margin: 0;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 18px;
+      color: #0f172a;
+      outline: none;
+      resize: vertical;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    textarea:focus {
+      border-color: #3b82f6;
+    }
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    button.btn-classify {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 15px 20px;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 17px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button.btn-classify:hover {
+      opacity: 0.95;
+    }
+    button.btn-classify:active {
+      transform: scale(0.99);
+    }
+    button.btn-classify:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    button.btn-voice {
+      border: 0;
+      border-radius: 14px;
+      padding: 15px 20px;
+      background: #e2e8f0;
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button.btn-voice:hover {
+      background: #cbd5e1;
+    }
+    .voice-status {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+    .voice-status.error { color: #dc2626; }
+    .voice-status.good { color: #16a34a; }
+    
+    .error-box {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* Result Layout - Clean & Focused */
+    #result {
+      display: none;
+      margin-top: 24px;
+    }
+    .title-banner {
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 18px;
+    }
+    .title-banner .subhead {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .title-banner h2 {
+      margin: 6px 0 0;
+      font-size: 20px;
+      color: #0f172a;
+      word-break: break-word;
+    }
+    .grid-results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .result-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .result-box.highlight {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .result-box .tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #2563eb;
+      margin-bottom: 6px;
+    }
+    .result-box .number {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 900;
+      color: #0f172a;
+      margin: 4px 0 8px;
+      word-break: break-word;
+    }
+    .result-box .detail {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .meta-box b {
+      color: #0f172a;
+    }
+    .source-tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 600px) {
+      .grid-results { grid-template-columns: 1fr; }
+      .action-row { flex-direction: column; }
+      button.btn-voice { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Library Classification</h1>
+      <p>Universal Decimal Classification (UDC) & Dewey Decimal Classification (DDC)</p>
+    </div>
+
+    <div class="card">
+      <label for="title">Book Title</label>
+      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਦਰਜ ਕਰੋ / Enter book title...">Harvesting of Wheat and Maize</textarea>
+
+      <div class="action-row">
+        <button id="go" class="btn-classify">⚡ Classify Book</button>
+        <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
+      </div>
+      <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
+      <div id="err" class="error-box"></div>
+    </div>
+
+    <!-- CLEAN RESULT SECTION (No extra boxes) -->
+    <div id="result" class="card">
+      <div class="title-banner">
+        <div class="subhead">Title Received</div>
+        <h2 id="resTitle"></h2>
+      </div>
+
+      <div class="grid-results">
+        <!-- UDC Box (Annif & WorldShare Powered) -->
+        <div class="result-box highlight">
+          <div class="tag">UDC (Universal Decimal)</div>
+          <div id="resUdc" class="number">-</div>
+          <div id="resUdcBreakdown" class="detail"></div>
+        </div>
+
+        <!-- DDC Box (WorldShare Powered) -->
+        <div class="result-box">
+          <div class="tag">DDC (Dewey Decimal)</div>
+          <div id="resDdc" class="number">-</div>
+          <div id="resDdcBreakdown" class="detail"></div>
+        </div>
+      </div>
+
+      <div class="meta-box">
+        <div><b>Subject & Explanation:</b> <span id="resExplain"></span></div>
+        <div id="resSource" class="source-tag"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    $('go').addEventListener('click', async () => {
+      const title = $('title').value.trim();
+      const errBox = $('err');
+      const resBox = $('result');
+
+      errBox.style.display = 'none';
+      resBox.style.display = 'none';
+
+      if (!title) {
+        errBox.textContent = 'ਕਿਰਪਾ ਕਰਕੇ ਕੋਈ ਟਾਈਟਲ ਲਿਖੋ (Please enter a title).';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      $('go').disabled = true;
+      $('go').textContent = '⚡ ਲੱਭ ਰਿਹਾ ਹੈ... (Classifying)';
+
+      try {
+        const response = await fetch('/api/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: title })
+        });
+
+        if (!response.ok) {
+          throw new Error('ਸਰਵਰ ਵੱਲੋਂ ਜਵਾਬ ਨਹੀਂ ਮਿਲਿਆ (Server error)');
+        }
+
+        const data = await response.json();
+
+        // Populate clean fields
+        $('resTitle').textContent = data.full_title || data.title || title;
+        $('resUdc').textContent = data.udc_answer || data.udc_number || data.udc || 'ਉਪਲਬਧ ਨਹੀਂ';
+        $('resUdcBreakdown').textContent = data.breakdown || data.udc_breakdown || '';
+        
+        $('resDdc').textContent = data.ddc_answer || data.ddc_number || data.ddc || 'ਉਪਲਬਧ ਨਹੀਂ';
+        $('resDdcBreakdown').textContent = data.ddc_title || data.ddc_breakdown || '';
+
+        $('resExplain').textContent = data.explanation || data.main_subject || 'ਵਰਗੀਕਰਨ ਮੁਕੰਮਲ ਹੈ।';
+        $('resSource').textContent = 'Source: ' + (data.source || data.confidence || 'WorldShare / Annif Engine');
+
+        resBox.style.display = 'block';
+        resBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (err) {
+        errBox.textContent = err.message || 'ਗਲਤੀ ਆਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।';
+        errBox.style.display = 'block';
+      } finally {
+        $('go').disabled = false;
+        $('go').textContent = '⚡ Classify Book';
+      }
+    });
+
+    // Voice recognition support
+    (() => {
+      const btn = $('voice');
+      const status = $('voiceStatus');
+      const field = $('title');
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        btn.addEventListener('click', () => {
+          field.focus();
+          status.textContent = 'ਮਾਈਕ੍ਰੋਫੋਨ ਕੀਬੋਰਡ ਦੀ ਵਰਤੋਂ ਕਰੋ (Use your keyboard mic).';
+        });
+        return;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.lang = 'en-IN';
+      rec.interimResults = false;
+
+      let listening = false;
+
+      btn.addEventListener('click', () => {
+        if (listening) {
+          rec.stop();
+          return;
+        }
+        try {
+          rec.start();
+          listening = true;
+          btn.textContent = '⏹ ਰੋਕੋ';
+          status.textContent = 'ਸੁਣ ਰਿਹਾ ਹੈ... ਬੋਲੋ (Listening...)';
+          status.className = 'voice-status good';
+        } catch (e) {
+          listening = false;
+        }
+      });
+
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        field.value = text;
+        status.textContent = 'ਟਾਈਟਲ ਮਿਲ ਗਿਆ: ' + text;
+        status.className = 'voice-status good';
+        $('go').click();
+      };
+
+      rec.onerror = (e) => {
+        listening = false;
+        btn.textContent = '🎙️ Voice';
+        status.textContent = 'ਆਵਾਜ਼ ਪਛਾਣੀ ਨਹੀਂ ਗਈ (Voice error: ' + e.error + ')';
+        status.className = 'voice-status error';
+      };
+
+      rec.onend = () => {
+        listening = false;
+        btn.textContent = '🎙️ Voice';
+      };
+    })();
+  </script>
+</body>
+</html>
