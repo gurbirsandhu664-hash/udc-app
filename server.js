@@ -30,14 +30,11 @@ function buildDDC(baseDdc, formT1) {
   return res;
 }
 
-// Expert Linguistic & Subject Matcher
 function masterClassify(title) {
   const t = norm(title);
-
   const EXACT = {
-    'german pronouns': { udc: "811.112.2'36", ddc: '435', breakdown: "811.112.2 = German language; '36 = Grammar & Morphology. DDC 435 = German grammar.", desc: 'German Pronouns & Grammar.' },
-    'german grammar': { udc: "811.112.2'36", ddc: '435', breakdown: "811.112.2 = German language; '36 = Grammar.", desc: 'German Grammar.' },
-    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics.", desc: 'Italian Phonetics.' },
+    'german pronouns': { udc: "811.112.2'36", ddc: '435', breakdown: "811.112.2 = German language; '36 = Grammar & Morphology.", desc: 'German Pronouns & Grammar.' },
+    'italian phonetics': { udc: "811.131.1'344", ddc: '451.52', breakdown: "811.131.1 = Italian language; '344 = Phonetics & Phonology.", desc: 'Italian Phonetics & Phonology.' },
     'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation.", desc: 'French Pronunciation.' },
     'english hindi dictionary': { udc: '811.111(038)=214.21', ddc: '423.9143', breakdown: '811.111 = English; (038) = Dictionary; =214.21 = Hindi.', desc: 'English-Hindi Dictionary.' },
     'bibliography of mathematics': { udc: '016:51', ddc: '016.51', breakdown: '016:51 = Subject bibliography of mathematics.', desc: 'Bibliography of Mathematics.' },
@@ -49,43 +46,21 @@ function masterClassify(title) {
     'fevicol': { udc: '668.3', ddc: '668.3', breakdown: '668.3 = Adhesives and glues.', desc: 'Fevicol Adhesive.' }
   };
   if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
-
-  if (/german/i.test(t)) {
-    if (/pronoun|grammar|syntax|morphology|verb/i.test(t)) {
-      return { udc: "811.112.2'36", ddc: '435', breakdown: "811.112.2 = German language; '36 = Grammar.", desc: 'German Grammar & Pronouns.' };
-    }
+  if (/german/i.test(t) && /pronoun|grammar|verb/i.test(t)) {
+    return { udc: "811.112.2'36", ddc: '435', breakdown: "811.112.2 = German; '36 = Grammar.", desc: 'German Grammar.' };
   }
-
   return null;
 }
 
-// ============================================================================
-// GEMINI 3.8 / 2.5 LIVE AI CATALOGUER
-// ============================================================================
 async function queryHighModelAI(title, clientApiKey) {
   const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
-  
   const prompt = `You are a professional library cataloguer and classification expert in UDC and Dewey Decimal Classification (DDC-23).
 Classify the book title or subject: "${title}".
 Provide exact Universal Decimal Classification (UDC) and exact Dewey Decimal Classification (DDC) notation.
-Rules:
-- "German Pronouns": UDC is 811.112.2'36, DDC is 435
-- "Italian Phonetics": UDC is 811.131.1'344, DDC is 451.52
-- "Agriculture in Canada": UDC is 63(71), DDC is 630.971
-- "English Hindi Dictionary": UDC is 811.111(038)=214.21, DDC is 423.9143
-- "Bibliography of Mathematics": UDC is 016:51, DDC is 016.51
-- "Medical Education in India": UDC is 61:37(540), DDC is 610.71154
-- "History of Japan": UDC is 94(520), DDC is 952
 Output ONLY valid JSON in this exact structure:
-{
-  "udc": "string (valid UDC notation)",
-  "ddc": "string (valid DDC number with dot after 3 digits)",
-  "breakdown": "string (brief facet breakdown)",
-  "explanation": "string (subject explanation)"
-}`;
+{"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
 
   if (activeKey) {
-    // Try Gemini 2.5 Flash / 3.8 compatible endpoints
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     for (const m of models) {
       try {
@@ -93,10 +68,7 @@ Output ONLY valid JSON in this exact structure:
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-          }),
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }),
           signal: AbortSignal.timeout(5000)
         });
         if (res.ok) {
@@ -113,7 +85,6 @@ Output ONLY valid JSON in this exact structure:
     }
   }
 
-  // Neural Web Fallback
   try {
     const url = `https://text.pollinations.ai/${encodeURIComponent(prompt + ' Output pure JSON.')}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(5500) });
@@ -184,8 +155,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
     .api-settings label { font-size: 11px; color: #334155; margin-bottom: 4px; }
     .input-group { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
     .api-settings input[type="password"] { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
-    .btn-lock { padding: 10px 14px; border: 0; border-radius: 10px; background: #10b981; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
-    .btn-clear { padding: 10px 14px; border: 0; border-radius: 10px; background: #ef4444; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
+    .btn-lock { padding: 10px 18px; border: 0; border-radius: 10px; background: #10b981; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
     .status-msg { margin-top: 6px; font-size: 12px; font-weight: 700; color: #10b981; display: none; }
     @media (max-width: 600px) { .grid-results { grid-template-columns: 1fr; } .action-row { flex-direction: column; } }
   </style>
@@ -206,13 +176,12 @@ const HTML_CONTENT = `<!DOCTYPE html>
       <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
       
       <div class="api-settings">
-        <label for="geminiKey">Gemini 3.8 / 2.5 API Key (Permanent Lock)</label>
+        <label for="geminiKey">Gemini 3.8 / 2.5 API Key (Permanent Secure Lock)</label>
         <div class="input-group">
           <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
-          <button type="button" id="btnLock" class="btn-lock">🔒 Lock</button>
-          <button type="button" id="btnClear" class="btn-clear">🗑️ Clear</button>
+          <button type="button" id="btnLock" class="btn-lock">🔒 Permanent Lock</button>
         </div>
-        <div id="lockStatus" class="status-msg">✓ Key permanently locked & accepted!</div>
+        <div id="lockStatus" class="status-msg">✓ Key permanently locked & secured!</div>
       </div>
       
       <div id="err" class="error-box"></div>
@@ -242,35 +211,26 @@ const HTML_CONTENT = `<!DOCTYPE html>
   </div>
   <script>
     const $ = id => document.getElementById(id);
-    if (localStorage.getItem('pro_gemini_key')) {
-      $('geminiKey').value = localStorage.getItem('pro_gemini_key');
+    if (localStorage.getItem('perm_gemini_key')) {
+      $('geminiKey').value = '••••••••••••••••••••••••••••••';
       $('geminiKey').disabled = true;
-      $('btnLock').textContent = '🔒 Locked';
+      $('btnLock').textContent = '🔒 Permanently Locked';
+      $('btnLock'].style.background = '#64748b';
       $('lockStatus').style.display = 'block';
     }
 
     $('btnLock').addEventListener('click', () => {
       const k = $('geminiKey');
-      if (k.disabled) {
-        k.disabled = false;
-        $('btnLock').textContent = '🔒 Lock';
-        $('lockStatus').style.display = 'none';
-      } else {
-        if (!k.value.trim()) return;
-        localStorage.setItem('pro_gemini_key', k.value.trim());
-        k.disabled = true;
-        $('btnLock').textContent = '🔒 Locked';
-        $('lockStatus').style.display = 'block';
-      }
-    });
-
-    $('btnClear').addEventListener('click', () => {
-      localStorage.removeItem('pro_gemini_key');
-      const k = $('geminiKey');
-      k.value = '';
-      k.disabled = false;
-      $('btnLock').textContent = '🔒 Lock';
-      $('lockStatus').style.display = 'none';
+      if (k.disabled) return;
+      const val = k.value.trim();
+      if (!val || val.includes('•')) return;
+      
+      localStorage.setItem('perm_gemini_key', val);
+      k.value = '••••••••••••••••••••••••••••••';
+      k.disabled = true;
+      $('btnLock').textContent = '🔒 Permanently Locked';
+      $('btnLock').style.background = '#64748b';
+      $('lockStatus').style.display = 'block';
     });
 
     $('go').addEventListener('click', async () => {
@@ -281,9 +241,9 @@ const HTML_CONTENT = `<!DOCTYPE html>
       resBox.style.display = 'none';
       if (!title) { errBox.textContent = 'Please enter a title.'; errBox.style.display = 'block'; return; }
       
-      const keyVal = localStorage.getItem('pro_gemini_key') || $('geminiKey').value.trim();
+      const keyVal = localStorage.getItem('perm_gemini_key') || '';
       if (!keyVal) {
-        errBox.textContent = 'Please enter and lock your Gemini API Key first.';
+        errBox.textContent = 'Please enter your Gemini API Key and click Permanent Lock first.';
         errBox.style.display = 'block';
         return;
       }
@@ -390,39 +350,3 @@ const server = http.createServer(async (req, res) => {
         } else if (raw) {
           preliminaryResult.udc_number = raw.udc;
           preliminaryResult.ddc_number = raw.ddc;
-          preliminaryResult.breakdown = raw.breakdown;
-          preliminaryResult.explanation = raw.desc;
-          preliminaryResult.source = raw.source;
-        }
-
-        const finalResult = superWatchman(title, preliminaryResult);
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          status: 'classified',
-          title,
-          full_title: title,
-          udc_number: finalResult.udc_number,
-          udc_answer: finalResult.udc_number,
-          ddc_number: finalResult.ddc_number,
-          ddc_answer: finalResult.ddc_number,
-          breakdown: finalResult.breakdown,
-          explanation: finalResult.explanation,
-          title_coverage_audit: { verified: true },
-          source: finalResult.source
-        }));
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Error processing request.' }));
-      }
-    });
-    return;
-  }
-
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Not found.' }));
-});
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
