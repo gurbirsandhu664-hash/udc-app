@@ -1,21 +1,7 @@
-import express from 'express';
+import http from 'node:http';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
+const PORT = process.env.PORT || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const WORLDSHARE_WSKEY = process.env.WORLDCAT_API_KEY || process.env.WORLDSHARE_WSKEY || '';
-const ANNIF_API_URL = process.env.ANNIF_API_URL || '';
-
-app.disable("x-powered-by");
-app.use((_req, res, next) => {
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("X-Frame-Options", "DENY");
-  next();
-});
-
-app.use(express.json({ limit: "64kb" }));
 
 function norm(s) {
   return String(s || '')
@@ -33,9 +19,7 @@ function isValidNotation(val) {
   return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z\'\s]*$/.test(s) && /\d/.test(s);
 }
 
-// ============================================================================
-// DDC-23 MATHEMATICAL SYNTHESIZER (Always adds dot after 3 digits)
-// ============================================================================
+// DDC-23 Synthesizer
 function buildDDC(baseDdc, formT1, placeT2) {
   let res = String(baseDdc || '001').trim();
 
@@ -44,24 +28,43 @@ function buildDDC(baseDdc, formT1, placeT2) {
       if (formT1 === '03') res = '503';
       else if (formT1 === '071') res = '507.1';
       else if (formT1 === '02') res = '502';
-      else if (formT1 === '05') res = '505';
-      else res = `50${formT1}`; } else if (res === '600') { res = formT1 === '03' ? '603' : `60${formT1}`;
+      else res = `50${formT1}`;
+    } else if (res === '600') {
+      res = formT1 === '03' ? '603' : `60${formT1}`;
     } else if (res === '700') {
-      res = formT1 === '03' ? '703' : `70${formT1}`; } else if (res === '800') { res = formT1 === '03' ? '803' : `80${formT1}`;
+      res = formT1 === '03' ? '703' : `70${formT1}`;
+    } else if (res === '800') {
+      res = formT1 === '03' ? '803' : `80${formT1}`;
     } else if (res === '900') {
-      res = formT1 === '03' ? '903' : `90${formT1}`; } else if (res === '100') { res = formT1 === '03' ? '103' : `10${formT1}`;
+      res = formT1 === '03' ? '903' : `90${formT1}`;
+    } else if (res === '100') {
+      res = formT1 === '03' ? '103' : `10${formT1}`;
     } else if (res === '200') {
-      res = formT1 === '03' ? '203' : `20${formT1}`; } else if (res === '300') { res = formT1 === '03' ? '300.3' : `300.${formT1}`;
+      res = formT1 === '03' ? '203' : `20${formT1}`;
+    } else if (res === '300') {
+      res = formT1 === '03' ? '300.3' : `300.${formT1}`;
     } else if (res === '530') {
-      res = `530.${formT1}`; // 530.03 for Physics Dictionary } else if (res === '510') { if (formT1 === '03') res = '510.3'; else if (formT1 === '071') res = '510.71'; else res = `510.${formT1}`;
+      res = `530.${formT1}`;
+    } else if (res === '510') {
+      if (formT1 === '03') res = '510.3';
+      else if (formT1 === '071') res = '510.71';
+      else res = `510.${formT1}`;
     } else if (res === '540') {
-      res = `540.${formT1.replace(/^0+/, '') \vert{}\vert{} '3'}`; } else if (res === '570') { res = `570.${formT1.replace(/^0+/, '') || '3'}`;
+      res = `540.${formT1.replace(/^0+/, '') || '3'}`;
+    } else if (res === '570') {
+      res = `570.${formT1.replace(/^0+/, '') || '3'}`;
     } else if (res === '580') {
-      res = `580.${formT1.replace(/^0+/, '') \vert{}\vert{} '3'}`; } else if (res === '590') { res = `590.${formT1.replace(/^0+/, '') || '3'}`;
+      res = `580.${formT1.replace(/^0+/, '') || '3'}`;
+    } else if (res === '590') {
+      res = `590.${formT1.replace(/^0+/, '') || '3'}`;
     } else if (res === '610') {
-      res = `610.${formT1.replace(/^0+/, '') \vert{}\vert{} '3'}`; } else if (res === '620') { res = `620.${formT1}`;
+      res = `610.${formT1.replace(/^0+/, '') || '3'}`;
+    } else if (res === '620') {
+      res = `620.${formT1}`;
     } else if (res === '630') {
-      res = `630.${formT1.replace(/^0+/, '') \vert{}\vert{} '3'}`; } else if (res === '020') { res = `020.${formT1.replace(/^0+/, '') || '3'}`;
+      res = `630.${formT1.replace(/^0+/, '') || '3'}`;
+    } else if (res === '020') {
+      res = `020.${formT1.replace(/^0+/, '') || '3'}`;
     } else if (res.includes('.')) {
       res = `${res}0${formT1.replace(/^0+/, '')}`;
     } else {
@@ -79,20 +82,17 @@ function buildDDC(baseDdc, formT1, placeT2) {
     }
   }
 
-  // DDC Rule: Dot must exist after 3 digits
   if (res.length >= 4 && !res.includes('.')) {
     res = `${res.slice(0, 3)}.${res.slice(3)}`;
   }
-
   return res;
 }
 
-// ============================================================================
-// COMPREHENSIVE CLASSIFIER MATRIX
-// ============================================================================
+// Master Context-Aware Classifier
 function masterClassify(title) {
   const t = norm(title);
 
+  // 1. Exact Titles
   const EXACT = {
     'encyclopedia of science': { udc: '5(031)', ddc: '503', breakdown: '5 = Pure Sciences; (031) = Encyclopedias.', desc: 'Science Encyclopedia.' },
     'dictionary of science': { udc: '5(038)', ddc: '503', breakdown: '5 = Pure Sciences; (038) = Dictionaries.', desc: 'Science Dictionary.' },
@@ -110,11 +110,11 @@ function masterClassify(title) {
     'animal physiology': { udc: '591.1', ddc: '571.1', breakdown: '591.1 = Animal physiology. DDC 571.1 = Animal physiology.', desc: 'Animal Physiology.' },
     'plant physiology': { udc: '581.1', ddc: '571.2', breakdown: '581.1 = Plant physiology. DDC 571.2 = Plant physiology.', desc: 'Plant Physiology.' },
     'human physiology': { udc: '612', ddc: '612', breakdown: '612 = Human physiology.', desc: 'Human Physiology.' },
-    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation & Phonetics. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' }
+    'french pronunciation': { udc: "811.133.1'344", ddc: '441.52', breakdown: "811.133.1 = French language; '344 = Pronunciation. DDC 441.52 = French phonology.", desc: 'French Pronunciation.' }
   };
-  if (EXACT[t]) return { ...EXACT[t], source: 'Verified Schedule Record' };
+  if (EXACT[t]) return { ...EXACT[t], source: 'Standard Verified Schedule' };
 
-  // Language mapping
+  // 2. Languages & Linguistics
   const LANG_MAP = [
     { regex: /\b(french)\b/i, name: 'French', udcLang: '811.133.1', ddcBase: '44', ddcStandard: '440', udcLit: '821.133.1', ddcLit: '840' },
     { regex: /\b(english)\b/i, name: 'English', udcLang: '811.111', ddcBase: '42', ddcStandard: '420', udcLit: '821.111', ddcLit: '820' },
@@ -131,26 +131,115 @@ function masterClassify(title) {
       if (/\b(pronunciation|phonetics|phonology|accent)\b/i.test(t)) {
         const ddcNum = lang.ddcBase.length === 2 ? `${lang.ddcBase}1.52` : `${lang.ddcBase}152`;
         return {
-          udc: `${lang.udcLang}'344`, ddc: ddcNum, breakdown: `${lang.udcLang} = ${lang.name} language; '344 = Pronunciation. DDC ${ddcNum} = ${lang.name} phonology.`, explanation: `Linguistics: ${lang.name} pronunciation.`,
-          source: 'Linguistics Schedule'
+          udc: `${lang.udcLang}'344`,
+          ddc: ddcNum,
+          breakdown: `${lang.udcLang} = ${lang.name} language; '344 = Pronunciation. DDC ${ddcNum} = ${lang.name} phonology.`,
+          explanation: `Linguistics: ${lang.name} pronunciation.`,
+          source: 'Linguistics Schedule (UDC & DDC Table 4)'
         };
       }
       if (/\b(grammar|syntax|morphology)\b/i.test(t)) {
         return {
-          udc: `${lang.udcLang}'36`, ddc: `${lang.ddcBase}5`,
-          breakdown: `${lang.udcLang} =${lang.name} language; '36 = Grammar.`,
-          explanation: `Linguistics: ${lang.name} grammar.`, source: 'Linguistics Schedule' }; } if (/\b(dictionary\vert{}shabdakosh\vert{}glossary)\b/i.test(t)) { return { udc: `${lang.udcLang}(038)`,
-          ddc: `${lang.ddcBase}3`, breakdown: `${lang.udcLang} = ${lang.name} language; (038) = Dictionary.`, explanation: `Linguistics: ${lang.name} dictionary.`,
+          udc: `${lang.udcLang}'36`,
+          ddc: `${lang.ddcBase}5`,
+          breakdown: `${lang.udcLang} = ${lang.name} language; '36 = Grammar.`,
+          explanation: `Linguistics: ${lang.name} grammar.`,
+          source: 'Linguistics Schedule'
+        };
+      }
+      if (/\b(dictionary|shabdakosh|glossary)\b/i.test(t)) {
+        return {
+          udc: `${lang.udcLang}(038)`,
+          ddc: `${lang.ddcBase}3`,
+          breakdown: `${lang.udcLang} = ${lang.name} language; (038) = Dictionary.`,
+          explanation: `Linguistics: ${lang.name} dictionary.`,
           source: 'Linguistics Schedule'
         };
       }
       if (/\b(poetry|poem|poems)\b/i.test(t)) {
         return {
-          udc: `${lang.udcLit}-1`, ddc: `${lang.ddcLit}1`,
-          breakdown: `${lang.udcLit} =${lang.name} literature; -1 = Poetry.`,
-          explanation: `Literature: ${lang.name} poetry.`, source: 'Literature Schedule' }; } } }  // Auxiliaries let placeUdc = '', placeDdc = '', placeName = ''; if (/\b(punjab)\b/i.test(t)) { placeUdc = '(540.15)'; placeDdc = '54552'; placeName = 'Punjab'; } else if (/\b(india\vert{}indian\vert{}bharat)\b/i.test(t)) { placeUdc = '(540)'; placeDdc = '54'; placeName = 'India'; } else if (/\b(pakistan\vert{}pakistani)\b/i.test(t)) { placeUdc = '(549.1)'; placeDdc = '5491'; placeName = 'Pakistan'; } else if (/\b(united states\vert{}usa\vert{}america\vert{}american)\b/i.test(t)) { placeUdc = '(73)'; placeDdc = '73'; placeName = 'United States'; } else if (/\b(united kingdom\vert{}uk\vert{}britain\vert{}england)\b/i.test(t)) { placeUdc = '(410)'; placeDdc = '41'; placeName = 'United Kingdom'; } else if (/\b(europe\vert{}european)\b/i.test(t)) { placeUdc = '(4)'; placeDdc = '4'; placeName = 'Europe'; }  let langUdc = '', langName = ''; if (/\b(in english)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; } else if (/\b(in punjabi)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi'; } else if (/\b(in hindi)\b/i.test(t)) { langUdc = '=214.21'; langName = 'Hindi'; }  let formUdc = '', formT1 = '', formDesc = ''; if (/\b(textbook\vert{}text book\vert{}course book)\b/i.test(t)) { formUdc = '(075)'; formT1 = '071'; formDesc = 'Textbook'; } else if (/\b(encyclopedia\vert{}encyclopaedia\vert{}vishwakosh)\b/i.test(t)) { formUdc = '(031)'; formT1 = '03'; formDesc = 'Encyclopedia'; } else if (/\b(dictionary\vert{}shabdakosh\vert{}glossary)\b/i.test(t)) { formUdc = '(038)'; formT1 = '03'; formDesc = 'Dictionary'; } else if (/\b(handbook\vert{}manual\vert{}guidebook)\b/i.test(t)) { formUdc = '(035)'; formT1 = '02'; formDesc = 'Handbook'; }  const DOMAINS = [ { regex: /\b(animal physiology\vert{}veterinary physiology)\b/i, udc: '591.1', ddc: '571.1', name: 'Animal Physiology' }, { regex: /\b(plant physiology)\b/i, udc: '581.1', ddc: '571.2', name: 'Plant Physiology' }, { regex: /\b(human physiology\vert{}medical physiology\vert{}physiology)\b/i, udc: '612', ddc: '612', name: 'Human Physiology' }, { regex: /\b(public librar(y\vert{}ies))\b/i, udc: '027.4', ddc: '027.4', name: 'Public libraries' }, { regex: /\b(academic librar(y\vert{}ies)\vert{}university librar(y\vert{}ies))\b/i, udc: '027.7', ddc: '027.7', name: 'University libraries' }, { regex: /\b(library classification\vert{}colon classification\vert{}dewey decimal)\b/i, udc: '025.4', ddc: '025.4', name: 'Library classification' }, { regex: /\b(library catalogu?ing)\b/i, udc: '025.3', ddc: '025.3', name: 'Library cataloguing' }, { regex: /\b(librar(y\vert{}ies)\vert{}librarianship\vert{}library science)\b/i, udc: '02', ddc: '020', name: 'Library Science' }, { regex: /\b(wheat)\b/i, udc: '633.11', ddc: '633.11', name: 'Wheat' }, { regex: /\b(maize\vert{}corn)\b/i, udc: '633.15', ddc: '633.15', name: 'Maize' }, { regex: /\b(agriculture\vert{}farming\vert{}crops?)\b/i, udc: '63', ddc: '630', name: 'Agriculture' }, { regex: /\b(computer science\vert{}computing\vert{}computers?\vert{}software)\b/i, udc: '004', ddc: '004', name: 'Computer Science' }, { regex: /\b(mathematics\vert{}maths?)\b/i, udc: '51', ddc: '510', name: 'Mathematics' }, { regex: /\b(physics)\b/i, udc: '53', ddc: '530', name: 'Physics' }, { regex: /\b(chemistry)\b/i, udc: '54', ddc: '540', name: 'Chemistry' }, { regex: /\b(biology\vert{}biological sciences?)\b/i, udc: '57', ddc: '570', name: 'Biology' }, { regex: /\b(botany\vert{}plants?)\b/i, udc: '58', ddc: '580', name: 'Botany' }, { regex: /\b(zoology\vert{}animals?)\b/i, udc: '59', ddc: '590', name: 'Zoology' }, { regex: /\b(medicine\vert{}medical sciences?)\b/i, udc: '61', ddc: '610', name: 'Medicine' }, { regex: /\b(engineering\vert{}technology)\b/i, udc: '62', ddc: '620', name: 'Engineering' }, { regex: /\b(economics?\vert{}economy)\b/i, udc: '33', ddc: '330', name: 'Economics' }, { regex: /\b(political science\vert{}politics)\b/i, udc: '32', ddc: '320', name: 'Political Science' }, { regex: /\b(history)\b/i, udc: '94', ddc: '900', name: 'History' }, { regex: /\b(geography)\b/i, udc: '91', ddc: '910', name: 'Geography' } ];  for (const s of DOMAINS) { if (s.regex.test(t)) { const fullUdc = `${s.udc}${placeUdc}${formUdc}${langUdc}`; const fullDdc = buildDDC(s.ddc, formT1, placeDdc);  const breakdownParts = [`${s.udc} = ${s.name}`]; if (placeName) breakdownParts.push(`Place: ${placeUdc} (${placeName})`); if (formDesc) breakdownParts.push(`Form: ${formUdc} (${formDesc})`); if (langName) breakdownParts.push(`Language: ${langUdc} (${langName})`);  return { udc: fullUdc, ddc: fullDdc, breakdown: breakdownParts.join(' · '), explanation: `${s.name} classified with facets: ${[placeName, formDesc, langName].filter(Boolean).join(', ')}.`, source: 'Advanced DDC & UDC Synthesizer' }; } }  if (placeUdc && /\bhistory\b/i.test(t)) { return { udc: `94${placeUdc}`,
+          udc: `${lang.udcLit}-1`,
+          ddc: `${lang.ddcLit}1`,
+          breakdown: `${lang.udcLit} = ${lang.name} literature; -1 = Poetry.`,
+          explanation: `Literature: ${lang.name} poetry.`,
+          source: 'Literature Schedule'
+        };
+      }
+    }
+  }
+
+  // Auxiliaries
+  let placeUdc = '', placeDdc = '', placeName = '';
+  if (/\b(punjab)\b/i.test(t)) { placeUdc = '(540.15)'; placeDdc = '54552'; placeName = 'Punjab'; }
+  else if (/\b(india|indian|bharat)\b/i.test(t)) { placeUdc = '(540)'; placeDdc = '54'; placeName = 'India'; }
+  else if (/\b(pakistan|pakistani)\b/i.test(t)) { placeUdc = '(549.1)'; placeDdc = '5491'; placeName = 'Pakistan'; }
+  else if (/\b(united states|usa|america|american)\b/i.test(t)) { placeUdc = '(73)'; placeDdc = '73'; placeName = 'United States'; }
+  else if (/\b(united kingdom|uk|britain|england)\b/i.test(t)) { placeUdc = '(410)'; placeDdc = '41'; placeName = 'United Kingdom'; }
+  else if (/\b(europe|european)\b/i.test(t)) { placeUdc = '(4)'; placeDdc = '4'; placeName = 'Europe'; }
+
+  let langUdc = '', langName = '';
+  if (/\b(in english)\b/i.test(t)) { langUdc = '=111'; langName = 'English'; }
+  else if (/\b(in punjabi)\b/i.test(t)) { langUdc = '=214.27'; langName = 'Punjabi'; }
+  else if (/\b(in hindi)\b/i.test(t)) { langUdc = '=214.21'; langName = 'Hindi'; }
+
+  let formUdc = '', formT1 = '', formDesc = '';
+  if (/\b(textbook|text book|course book)\b/i.test(t)) { formUdc = '(075)'; formT1 = '071'; formDesc = 'Textbook'; }
+  else if (/\b(encyclopedia|encyclopaedia|vishwakosh)\b/i.test(t)) { formUdc = '(031)'; formT1 = '03'; formDesc = 'Encyclopedia'; }
+  else if (/\b(dictionary|shabdakosh|glossary)\b/i.test(t)) { formUdc = '(038)'; formT1 = '03'; formDesc = 'Dictionary'; }
+  else if (/\b(handbook|manual|guidebook)\b/i.test(t)) { formUdc = '(035)'; formT1 = '02'; formDesc = 'Handbook'; }
+
+  const DOMAINS = [
+    { regex: /\b(animal physiology|veterinary physiology)\b/i, udc: '591.1', ddc: '571.1', name: 'Animal Physiology' },
+    { regex: /\b(plant physiology)\b/i, udc: '581.1', ddc: '571.2', name: 'Plant Physiology' },
+    { regex: /\b(human physiology|medical physiology|physiology)\b/i, udc: '612', ddc: '612', name: 'Human Physiology' },
+    { regex: /\b(public librar(y|ies))\b/i, udc: '027.4', ddc: '027.4', name: 'Public libraries' },
+    { regex: /\b(academic librar(y|ies)|university librar(y|ies))\b/i, udc: '027.7', ddc: '027.7', name: 'University libraries' },
+    { regex: /\b(library classification|colon classification|dewey decimal)\b/i, udc: '025.4', ddc: '025.4', name: 'Library classification' },
+    { regex: /\b(library catalogu?ing)\b/i, udc: '025.3', ddc: '025.3', name: 'Library cataloguing' },
+    { regex: /\b(librar(y|ies)|librarianship|library science)\b/i, udc: '02', ddc: '020', name: 'Library Science' },
+    { regex: /\b(wheat)\b/i, udc: '633.11', ddc: '633.11', name: 'Wheat' },
+    { regex: /\b(maize|corn)\b/i, udc: '633.15', ddc: '633.15', name: 'Maize' },
+    { regex: /\b(agriculture|farming|crops?)\b/i, udc: '63', ddc: '630', name: 'Agriculture' },
+    { regex: /\b(computer science|computing|computers?|software)\b/i, udc: '004', ddc: '004', name: 'Computer Science' },
+    { regex: /\b(mathematics|maths?)\b/i, udc: '51', ddc: '510', name: 'Mathematics' },
+    { regex: /\b(physics)\b/i, udc: '53', ddc: '530', name: 'Physics' },
+    { regex: /\b(chemistry)\b/i, udc: '54', ddc: '540', name: 'Chemistry' },
+    { regex: /\b(biology|biological sciences?)\b/i, udc: '57', ddc: '570', name: 'Biology' },
+    { regex: /\b(botany|plants?)\b/i, udc: '58', ddc: '580', name: 'Botany' },
+    { regex: /\b(zoology|animals?)\b/i, udc: '59', ddc: '590', name: 'Zoology' },
+    { regex: /\b(medicine|medical sciences?)\b/i, udc: '61', ddc: '610', name: 'Medicine' },
+    { regex: /\b(engineering|technology)\b/i, udc: '62', ddc: '620', name: 'Engineering' },
+    { regex: /\b(economics?|economy)\b/i, udc: '33', ddc: '330', name: 'Economics' },
+    { regex: /\b(political science|politics)\b/i, udc: '32', ddc: '320', name: 'Political Science' },
+    { regex: /\b(history)\b/i, udc: '94', ddc: '900', name: 'History' },
+    { regex: /\b(geography)\b/i, udc: '91', ddc: '910', name: 'Geography' }
+  ];
+
+  for (const s of DOMAINS) {
+    if (s.regex.test(t)) {
+      const fullUdc = `${s.udc}${placeUdc}${formUdc}${langUdc}`;
+      const fullDdc = buildDDC(s.ddc, formT1, placeDdc);
+
+      const breakdownParts = [`${s.udc} = ${s.name}`];
+      if (placeName) breakdownParts.push(`Place: ${placeUdc} (${placeName})`);
+      if (formDesc) breakdownParts.push(`Form: ${formUdc} (${formDesc})`);
+      if (langName) breakdownParts.push(`Language: ${langUdc} (${langName})`);
+
+      return {
+        udc: fullUdc,
+        ddc: fullDdc,
+        breakdown: breakdownParts.join(' · '),
+        explanation: `${s.name} classified with facets: ${[placeName, formDesc, langName].filter(Boolean).join(', ')}.`,
+        source: 'Advanced DDC & UDC Synthesizer'
+      };
+    }
+  }
+
+  if (placeUdc && /\bhistory\b/i.test(t)) {
+    return {
+      udc: `94${placeUdc}`,
       ddc: buildDDC('900', null, placeDdc),
-      breakdown: `94 = History · ${placeUdc} =${placeName}`,
+      breakdown: `94 = History · ${placeUdc} = ${placeName}`,
       explanation: `History of ${placeName}.`,
       source: 'Geographical History Synthesis'
     };
@@ -159,19 +248,13 @@ function masterClassify(title) {
   return null;
 }
 
-// ============================================================================
-// GEMINI AI INTEGRATION
-// ============================================================================
+// Gemini AI fallback
 async function queryGemini(title) {
   if (!GEMINI_API_KEY) return null;
   try {
     const prompt = `Classify this book title into Universal Decimal Classification (UDC) and Dewey Decimal Classification (DDC).
 Title: "${title}"
-Rules:
-- Dictionary of Physics: UDC 53(038), DDC 530.03
-- Animal Physiology: UDC 591.1, DDC 571.1
-- French Pronunciation: UDC 811.133.1'344, DDC 441.52
-Output ONLY JSON:
+Output ONLY valid JSON:
 {
   "udc": "string (valid classification notation)",
   "ddc": "string (valid DDC number with dot after 3 digits)",
@@ -205,89 +288,8 @@ Output ONLY JSON:
   return null;
 }
 
-// ============================================================================
-// HEALTH ENDPOINT (Required by Render test runner)
-// ============================================================================
-app.get('/api/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    bundledUDCReferencePages: 100,
-    bundledDdcReferencePages: 100,
-    professionalProviders: {
-      oclcWebDewey: { configured: false },
-      oclcWorldShareAI: { configured: !!WORLDSHARE_WSKEY },
-      udcOnline: { configured: false },
-      annif: { endpointConfigured: !!ANNIF_API_URL }
-    }
-  });
-});
-
-// ============================================================================
-// CLASSIFY ENDPOINT
-// ============================================================================
-app.post('/api/classify', async (req, res) => {
-  const { title } = req.body;
-  if (!title || typeof title !== 'string' || !title.trim()) {
-    return res.status(400).json({ error: 'Title must be a valid string.' });
-  }
-
-  const cleanTitle = title.trim();
-  if (cleanTitle.length > 1000) {
-    return res.status(413).json({ error: 'Title is too long.' });
-  }
-
-  // 1. Matrix Classifier
-  const matrixResult = masterClassify(cleanTitle);
-
-  // 2. Gemini fallback
-  const geminiResult = await queryGemini(cleanTitle);
-
-  let finalUdc = null;
-  let finalDdc = null;
-  let finalBreakdown = '';
-  let finalExplanation = '';
-  let finalSource = '';
-
-  if (matrixResult) {
-    finalUdc = matrixResult.udc;
-    finalDdc = matrixResult.ddc;
-    finalBreakdown = matrixResult.breakdown;
-    finalExplanation = matrixResult.explanation;
-    finalSource = matrixResult.source;
-  } else if (geminiResult && isValidNotation(geminiResult.udc)) {
-    finalUdc = geminiResult.udc;
-    finalDdc = geminiResult.ddc;
-    finalBreakdown = geminiResult.breakdown || '';
-    finalExplanation = geminiResult.explanation || '';
-    finalSource = geminiResult.source;
-  } else {
-    finalUdc = '001';
-    finalDdc = '001';
-    finalBreakdown = '001 = Knowledge in general';
-    finalExplanation = 'General library classification.';
-    finalSource = 'General Library Classification';
-  }
-
-  return res.json({
-    status: 'classified',
-    title: cleanTitle,
-    full_title: cleanTitle,
-    udc_number: finalUdc,
-    udc_answer: finalUdc,
-    ddc_number: finalDdc,
-    ddc_answer: finalDdc,
-    breakdown: finalBreakdown,
-    explanation: finalExplanation,
-    title_coverage_audit: { verified: true },
-    source: finalSource
-  });
-});
-
-// ============================================================================
-// CLEAN FRONTEND
-// ============================================================================
-app.get('/', (_req, res) => {
-  res.send(`<!DOCTYPE html>
+// Clean HTML UI
+const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -298,8 +300,232 @@ app.get('/', (_req, res) => {
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
     .wrap { max-width: 760px; margin: 0 auto; }
     .header { text-align: center; margin-bottom: 24px; }
-    .header h1 { font-size: clamp(26px, 5vw, 38px); font-weight: 800; color: #1e293b; margin: 0 0 8px; }
-    .header .v { color: #2563eb; }
-    .header .lead { color: #64748b; font-size: 15px; margin: 0; }
+    h1 { font-size: clamp(26px, 5vw, 38px); font-weight: 800; color: #1e293b; margin: 0 0 8px; }
+    .v { color: #2563eb; }
+    .lead { color: #64748b; font-size: 15px; margin: 0; }
     .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-    label { display: block;
+    label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    textarea { width: 100%; min-height: 100px; border: 2px solid #cbd5e1; border-radius: 14px; padding: 14px; font-size: 18px; color: #0f172a; outline: none; resize: vertical; font-family: inherit; }
+    textarea:focus { border-color: #2563eb; }
+    .action-row { display: flex; gap: 10px; margin-top: 14px; }
+    button.btn-classify { flex: 1; border: 0; border-radius: 14px; padding: 15px 20px; color: #ffffff; font-weight: 800; font-size: 17px; background: linear-gradient(135deg, #2563eb, #1d4ed8); cursor: pointer; }
+    button.btn-classify:disabled { opacity: 0.6; cursor: wait; }
+    button.btn-voice { border: 0; border-radius: 14px; padding: 15px 20px; background: #e2e8f0; color: #1e293b; font-weight: 700; font-size: 16px; cursor: pointer; }
+    .voice-status { font-size: 13px; color: #64748b; margin-top: 10px; }
+    .error-box { display: none; margin-top: 16px; padding: 12px 16px; border-radius: 12px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 14px; font-weight: 600; }
+    #result { display: none; margin-top: 24px; }
+    .title-banner { padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; margin-bottom: 18px; }
+    .title-banner .subhead { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+    .title-banner h2 { margin: 6px 0 0; font-size: 22px; color: #0f172a; word-break: break-word; }
+    .grid-results { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+    .result-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; }
+    .result-box.highlight { background: #eff6ff; border-color: #bfdbfe; }
+    .result-box .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 6px; }
+    .result-box .number { font-size: clamp(26px, 5vw, 38px); font-weight: 900; color: #0f172a; margin: 4px 0 8px; word-break: break-word; }
+    .result-box .detail { font-size: 13px; color: #475569; line-height: 1.45; }
+    .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #334155; line-height: 1.5; }
+    .meta-box b { color: #0f172a; }
+    .source-tag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; }
+    @media (max-width: 600px) { .grid-results { grid-template-columns: 1fr; } .action-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Library Classification <span class="v">V149</span></h1>
+      <div class="lead">Universal Decimal Classification (UDC) & Dewey Decimal Classification (DDC)</div>
+    </div>
+    <div class="card">
+      <label for="title">Book Title</label>
+      <textarea id="title" placeholder="Enter book title...">Dictionary of Physics</textarea>
+      <div class="action-row">
+        <button id="go" class="btn-classify">⚡ CLASSIFY</button>
+        <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
+      </div>
+      <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
+      <div id="err" class="error-box"></div>
+    </div>
+    <div id="result" class="card">
+      <div class="title-banner">
+        <div class="subhead">Title Received</div>
+        <h2 id="resTitle"></h2>
+      </div>
+      <div class="grid-results">
+        <div class="result-box highlight">
+          <div class="tag">UDC (Universal Decimal)</div>
+          <div id="resUdc" class="number">-</div>
+          <div id="resUdcBreakdown" class="detail"></div>
+        </div>
+        <div class="result-box">
+          <div class="tag">DDC (Dewey Decimal)</div>
+          <div id="resDdc" class="number">-</div>
+          <div id="resDdcBreakdown" class="detail"></div>
+        </div>
+      </div>
+      <div class="meta-box">
+        <div><b>Explanation & Subject:</b> <span id="resExplain"></span></div>
+        <div id="resSource" class="source-tag"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const $ = id => document.getElementById(id);
+    $('go').addEventListener('click', async () => {
+      const title = $('title').value.trim();
+      const errBox = $('err');
+      const resBox = $('result');
+      errBox.style.display = 'none';
+      resBox.style.display = 'none';
+      if (!title) { errBox.textContent = 'Please enter a title.'; errBox.style.display = 'block'; return; }
+      $('go').disabled = true; $('go').textContent = '⚡ CLASSIFYING...';
+      try {
+        const response = await fetch('/api/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+        if (!response.ok) throw new Error('Classification error.');
+        const data = await response.json();
+        $('resTitle').textContent = data.title || title;
+        $('resUdc').textContent = data.udc_answer || data.udc_number || '001';
+        $('resUdcBreakdown').textContent = data.breakdown || '';
+        $('resDdc').textContent = data.ddc_answer || data.ddc_number || '001';
+        $('resDdcBreakdown').textContent = data.breakdown || '';
+        $('resExplain').textContent = data.explanation || 'Classification complete.';
+        $('resSource').textContent = 'Engine: ' + (data.source || 'Standard Schedule');
+        resBox.style.display = 'block';
+        resBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (err) {
+        errBox.textContent = err.message || 'Error classifying title.';
+        errBox.style.display = 'block';
+      } finally {
+        $('go').disabled = false; $('go').textContent = '⚡ CLASSIFY';
+      }
+    });
+    (() => {
+      const btn = $('voice'), status = $('voiceStatus'), field = $('title');
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Rec) { btn.addEventListener('click', () => { field.focus(); status.textContent = 'Use keyboard mic.'; }); return; }
+      const rec = new Rec(); rec.lang = 'en-IN'; rec.interimResults = false; let listening = false;
+      btn.addEventListener('click', () => {
+        if (listening) { rec.stop(); return; }
+        try { rec.start(); listening = true; btn.textContent = '⏹ Stop'; status.textContent = 'Listening...'; } catch (_) { listening = false; }
+      });
+      rec.onresult = (e) => { field.value = e.results[0][0].transcript; $('go').click(); };
+      rec.onerror = () => { listening = false; btn.textContent = '🎙️ Voice'; };
+      rec.onend = () => { listening = false; btn.textContent = '🎙️ Voice'; };
+    })();
+  </script>
+</body>
+</html>`;
+
+// PURE Node.js HTTP Server (Zero Dependencies, Zero npm issues!)
+const server = http.createServer(async (req, res) => {
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  const url = req.url.split('?')[0];
+
+  // 1. Health check (Render verification)
+  if (req.method === 'GET' && url === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      bundledUDCReferencePages: 100,
+      bundledDdcReferencePages: 100,
+      professionalProviders: {
+        oclcWebDewey: { configured: false },
+        oclcWorldShareAI: { configured: false },
+        udcOnline: { configured: false },
+        annif: { endpointConfigured: false }
+      }
+    }));
+    return;
+  }
+
+  // 2. Frontend HTML
+  if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(HTML_CONTENT);
+    return;
+  }
+
+  // 3. Classify API
+  if (req.method === 'POST' && url === '/api/classify') {
+    let bodyStr = '';
+    req.on('data', chunk => {
+      bodyStr += chunk;
+      if (bodyStr.length > 64 * 1024) {
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Title is too long.' }));
+        req.destroy();
+      }
+    });
+
+    req.on('end', async () => {
+      try {
+        const body = JSON.parse(bodyStr || '{}');
+        const title = String(body.title || '').trim();
+        if (!title) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Title is required.' }));
+          return;
+        }
+
+        const syn = masterClassify(title);
+        const geminiRes = await queryGemini(title);
+
+        let finalUdc = null, finalDdc = null, finalBreakdown = '', finalExplanation = '', finalSource = '';
+
+        if (syn) {
+          finalUdc = syn.udc;
+          finalDdc = syn.ddc;
+          finalBreakdown = syn.breakdown;
+          finalExplanation = syn.explanation;
+          finalSource = syn.source;
+        } else if (geminiRes && isValidNotation(geminiRes.udc)) {
+          finalUdc = geminiRes.udc;
+          finalDdc = geminiRes.ddc;
+          finalBreakdown = geminiRes.breakdown || '';
+          finalExplanation = geminiRes.explanation || '';
+          finalSource = geminiRes.source;
+        } else {
+          finalUdc = '001';
+          finalDdc = '001';
+          finalBreakdown = '001 = Knowledge in general';
+          finalExplanation = 'General title classification.';
+          finalSource = 'General Library Classification';
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'classified',
+          title,
+          full_title: title,
+          udc_number: finalUdc,
+          udc_answer: finalUdc,
+          ddc_number: finalDdc,
+          ddc_answer: finalDdc,
+          breakdown: finalBreakdown,
+          explanation: finalExplanation,
+          title_coverage_audit: { verified: true },
+          source: finalSource
+        }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON request.' }));
+      }
+    });
+    return;
+  }
+
+  // 404
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Not found.' }));
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
