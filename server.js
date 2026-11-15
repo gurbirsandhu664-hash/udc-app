@@ -3,7 +3,7 @@ const fs = process.getBuiltinModule('node:fs');
 const zlib = process.getBuiltinModule('node:zlib');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-final.json';
+const CACHE_FILE = './ai-cache-v8.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -56,7 +56,7 @@ try {
   }
 } catch (e) {}
 
-// 3. Specific-First DDC 23rd Ed. & UDC Schedule (Longest Match First)
+// 3. Specific-First DDC 23rd Ed. & UDC Schedule
 const SUBJECT_SCHEDULE = [
   // Library & Information Science
   { keys: ['library management', 'library administration'], udc: '025', ddc: '025.1', ddcBase: '0251', name: 'Library Management & Administration' },
@@ -69,7 +69,7 @@ const SUBJECT_SCHEDULE = [
   { keys: ['school library', 'school libraries'], udc: '027.8', ddc: '027.8', ddcBase: '0278', name: 'School Libraries' },
   { keys: ['library science', 'librarianship', 'library'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
 
-  // Specific Transport Modes (Before Generic Transport)
+  // Transport Modes
   { keys: ['railway transport', 'railways', 'railroad', 'rail transport'], udc: '656.2', ddc: '385', ddcBase: '385', name: 'Railway Transport' },
   { keys: ['air transport', 'aviation', 'airlines'], udc: '656.7', ddc: '387.7', ddcBase: '3877', name: 'Air Transport' },
   { keys: ['maritime transport', 'shipping', 'water transport'], udc: '656.6', ddc: '387.5', ddcBase: '3875', name: 'Maritime Transport' },
@@ -167,47 +167,104 @@ const SUBJECT_SCHEDULE = [
   { keys: ['history', 'civilization'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
 ];
 
-// 4. Form, Demographic, Geographic & Time Tables
+// 4. All UDC Common Auxiliary Signs Ordered by Official UDC Citation Order:
+// Base -> Special Auxiliaries (.00 / -0) -> Place (...) -> Time "..." -> Form (0...) -> Language =...
 const FACET_RULES = [
-  { pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Statistical tables (-021 / (083.4))' },
-  { pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Dictionary (-03 / (038))' },
-  { pattern: /\b(encyclopedias?|encyclopaedias?)\b/i, udcAdd: '(031)', ddcSub: '03', label: 'Encyclopedia (-03 / (031))' },
-  { pattern: /\b(bibliograph(y|ies))\b/i, udcAdd: '(01)', ddcSub: '016', label: 'Bibliography (016 / (01))' },
-  { pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Serials (-05 / (05))' },
-  { pattern: /\b(handbooks?|manuals?|guides?|guide to)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Handbook/Guide (-0202 / (035))' },
-  { pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Research (-072 / .001.5)' },
-  { pattern: /\b(teenagers?|youth|adolescents?)\b/i, udcAdd: '-053.6', ddcSub: '0835', label: 'Youth/Teenagers (-0835 / -053.6)' },
-  { pattern: /\b(children|child)\b/i, udcAdd: '-053.2', ddcSub: '083', label: 'Children (-083 / -053.2)' },
-  { pattern: /\b(women|females?)\b/i, udcAdd: '-055.2', ddcSub: '082', label: 'Women (-082 / -055.2)' },
-  { pattern: /\b(rural|villages?)\b/i, udcAdd: '(-22)', ddcSub: '091734', label: 'Rural regions (-091734 / (-22))' },
-  { pattern: /\b(urban|cities)\b/i, udcAdd: '(-21)', ddcSub: '091732', label: 'Urban regions (-091732 / (-21))' },
-  { pattern: /\b(punjab)\b/i, udcAdd: '(545.2)', ddcSub: '09545', label: 'Place: Punjab (-09545 / (545.2))' },
-  { pattern: /\b(india|indian)\b/i, udcAdd: '(540)', ddcSub: '0954', label: 'Place: India (-0954 / (540))' },
-  { pattern: /\b(nepal|nepalese)\b/i, udcAdd: '(541.35)', ddcSub: '095496', label: 'Place: Nepal (-095496 / (541.35))' },
-  { pattern: /\b(pakistan)\b/i, udcAdd: '(549.1)', ddcSub: '095491', label: 'Place: Pakistan (-095491 / (549.1))' },
-  { pattern: /\b(bangladesh)\b/i, udcAdd: '(549.3)', ddcSub: '095492', label: 'Place: Bangladesh (-095492 / (549.3))' },
-  { pattern: /\b(sri lanka)\b/i, udcAdd: '(548.7)', ddcSub: '095493', label: 'Place: Sri Lanka (-095493 / (548.7))' },
-  { pattern: /\b(bhutan)\b/i, udcAdd: '(541.31)', ddcSub: '095498', label: 'Place: Bhutan (-095498 / (541.31))' },
-  { pattern: /\b(china|chinese)\b/i, udcAdd: '(510)', ddcSub: '0951', label: 'Place: China (-0951 / (510))' },
-  { pattern: /\b(japan|japanese)\b/i, udcAdd: '(520)', ddcSub: '0952', label: 'Place: Japan (-0952 / (520))' },
-  { pattern: /\b(canada|canadian)\b/i, udcAdd: '(71)', ddcSub: '0971', label: 'Place: Canada (-0971 / (71))' },
-  { pattern: /\b(usa|united states|america|american)\b/i, udcAdd: '(73)', ddcSub: '0973', label: 'Place: USA (-0973 / (73))' },
-  { pattern: /\b(uk|united kingdom|britain|england|british)\b/i, udcAdd: '(410)', ddcSub: '0941', label: 'Place: UK (-0941 / (410))' },
-  { pattern: /\b(australia|australian)\b/i, udcAdd: '(94)', ddcSub: '0994', label: 'Place: Australia (-0994 / (94))' },
-  { pattern: /\b(germany|german)\b/i, udcAdd: '(430)', ddcSub: '0943', label: 'Place: Germany (-0943 / (430))' },
-  { pattern: /\b(france|french)\b/i, udcAdd: '(44)', ddcSub: '0944', label: 'Place: France (-0944 / (44))' },
-  { pattern: /\b(russia|russian)\b/i, udcAdd: '(470)', ddcSub: '0947', label: 'Place: Russia (-0947 / (470))' },
-  { pattern: /\b(africa|african)\b/i, udcAdd: '(6)', ddcSub: '096', label: 'Place: Africa (-096 / (6))' },
-  { pattern: /\b(europe|european)\b/i, udcAdd: '(4)', ddcSub: '094', label: 'Place: Europe (-094 / (4))' },
-  { pattern: /\b(asia|asian)\b/i, udcAdd: '(5)', ddcSub: '095', label: 'Place: Asia (-095 / (5))' },
-  { pattern: /\b(20th century)\b/i, udcAdd: '"19"', ddcSub: '0904', label: 'Time: 20th Century (-0904 / "19")' },
-  { pattern: /\b(21st century)\b/i, udcAdd: '"20"', ddcSub: '0905', label: 'Time: 21st Century (-0905 / "20")' }
+  // Point of View / Properties (.00... / -02...)
+  { order: 1, pattern: /\b(theory of|philosophy of|principles of)\b/i, udcAdd: '.001', ddcSub: '01', label: 'Point of View (.001) / DDC -01' },
+  { order: 1, pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Point of View (.001.5) / DDC -072' },
+
+  // Persons & Ethnic Signs (-05... / (=...))
+  { order: 2, pattern: /\b(teenagers?|youth|adolescents?)\b/i, udcAdd: '-053.6', ddcSub: '0835', label: 'Persons (-053.6 Youth) / DDC -0835' },
+  { order: 2, pattern: /\b(children|child)\b/i, udcAdd: '-053.2', ddcSub: '083', label: 'Persons (-053.2 Children) / DDC -083' },
+  { order: 2, pattern: /\b(women|females?)\b/i, udcAdd: '-055.2', ddcSub: '082', label: 'Persons (-055.2 Women) / DDC -082' },
+  { order: 2, pattern: /\b(sikhs)\b/i, udcAdd: '(=214.2:294.553)', ddcSub: '0882946', label: 'Ethnic/Group (=...) / DDC -088' },
+
+  // Place Auxiliaries (...)
+  { order: 3, pattern: /\b(rural|villages?)\b/i, udcAdd: '(-22)', ddcSub: '091734', label: 'Place (-22) Rural / DDC -091734' },
+  { order: 3, pattern: /\b(urban|cities)\b/i, udcAdd: '(-21)', ddcSub: '091732', label: 'Place (-21) Urban / DDC -091732' },
+  { order: 3, pattern: /\b(punjab)\b/i, udcAdd: '(545.2)', ddcSub: '09545', histDdc: '954.5', label: 'Place (545.2) Punjab / DDC -09545' },
+  { order: 3, pattern: /\b(india|indian)\b/i, udcAdd: '(540)', ddcSub: '0954', histDdc: '954', label: 'Place (540) India / DDC -0954' },
+  { order: 3, pattern: /\b(nepal|nepalese)\b/i, udcAdd: '(541.35)', ddcSub: '095496', histDdc: '954.96', label: 'Place (541.35) Nepal / DDC -095496' },
+  { order: 3, pattern: /\b(pakistan)\b/i, udcAdd: '(549.1)', ddcSub: '095491', histDdc: '954.91', label: 'Place (549.1) Pakistan / DDC -095491' },
+  { order: 3, pattern: /\b(bangladesh)\b/i, udcAdd: '(549.3)', ddcSub: '095492', histDdc: '954.92', label: 'Place (549.3) Bangladesh / DDC -095492' },
+  { order: 3, pattern: /\b(sri lanka)\b/i, udcAdd: '(548.7)', ddcSub: '095493', histDdc: '954.93', label: 'Place (548.7) Sri Lanka / DDC -095493' },
+  { order: 3, pattern: /\b(bhutan)\b/i, udcAdd: '(541.31)', ddcSub: '095498', histDdc: '954.98', label: 'Place (541.31) Bhutan / DDC -095498' },
+  { order: 3, pattern: /\b(china|chinese)\b/i, udcAdd: '(510)', ddcSub: '0951', histDdc: '951', label: 'Place (510) China / DDC -0951' },
+  { order: 3, pattern: /\b(japan|japanese)\b/i, udcAdd: '(520)', ddcSub: '0952', histDdc: '952', label: 'Place (520) Japan / DDC -0952' },
+  { order: 3, pattern: /\b(canada|canadian)\b/i, udcAdd: '(71)', ddcSub: '0971', histDdc: '971', label: 'Place (71) Canada / DDC -0971' },
+  { order: 3, pattern: /\b(usa|united states|america|american)\b/i, udcAdd: '(73)', ddcSub: '0973', histDdc: '973', label: 'Place (73) USA / DDC -0973' },
+  { order: 3, pattern: /\b(uk|united kingdom|britain|england|british)\b/i, udcAdd: '(410)', ddcSub: '0941', histDdc: '941', label: 'Place (410) UK / DDC -0941' },
+  { order: 3, pattern: /\b(australia|australian)\b/i, udcAdd: '(94)', ddcSub: '0994', histDdc: '994', label: 'Place (94) Australia / DDC -0994' },
+  { order: 3, pattern: /\b(germany|german)\b/i, udcAdd: '(430)', ddcSub: '0943', histDdc: '943', label: 'Place (430) Germany / DDC -0943' },
+  { order: 3, pattern: /\b(france|french)\b/i, udcAdd: '(44)', ddcSub: '0944', histDdc: '944', label: 'Place (44) France / DDC -0944' },
+  { order: 3, pattern: /\b(russia|russian)\b/i, udcAdd: '(470)', ddcSub: '0947', histDdc: '947', label: 'Place (470) Russia / DDC -0947' },
+  { order: 3, pattern: /\b(africa|african)\b/i, udcAdd: '(6)', ddcSub: '096', histDdc: '960', label: 'Place (6) Africa / DDC -096' },
+  { order: 3, pattern: /\b(europe|european)\b/i, udcAdd: '(4)', ddcSub: '094', histDdc: '940', label: 'Place (4) Europe / DDC -094' },
+  { order: 3, pattern: /\b(asia|asian)\b/i, udcAdd: '(5)', ddcSub: '095', histDdc: '950', label: 'Place (5) Asia / DDC -095' },
+
+  // Form Auxiliaries (0...)
+  { order: 5, pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Form (083.4) Tables / DDC -021' },
+  { order: 5, pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Form (038) Dictionary / DDC -03' },
+  { order: 5, pattern: /\b(encyclopedias?|encyclopaedias?)\b/i, udcAdd: '(031)', ddcSub: '03', label: 'Form (031) Encyclopedia / DDC -03' },
+  { order: 5, pattern: /\b(bibliograph(y|ies))\b/i, udcAdd: '(01)', ddcSub: '016', label: 'Form (01) Bibliography / DDC 016' },
+  { order: 5, pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Form (05) Serials / DDC -05' },
+  { order: 5, pattern: /\b(handbooks?|manuals?|guides?|guide to)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Form (035) Guide / DDC -0202' },
+
+  // Language Auxiliaries (=...)
+  { order: 6, pattern: /\b(in english|english language)\b/i, udcAdd: '=111', ddcSub: '', label: 'Language (=111 English)' },
+  { order: 6, pattern: /\b(in punjabi|punjabi language)\b/i, udcAdd: '=214.2', ddcSub: '', label: 'Language (=214.2 Punjabi)' },
+  { order: 6, pattern: /\b(in hindi|hindi language)\b/i, udcAdd: '=214.21', ddcSub: '', label: 'Language (=214.21 Hindi)' },
+  { order: 6, pattern: /\b(in french|french language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
 ];
 
-function formatDdcNumber(ddcBase, sub) {
+// 5. Complete Century Parser (1st to 21st Century - Official UDC "..." & DDC Table 1)
+function parseCenturyFacet(query) {
+  const match = query.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+century\b/i);
+  if (!match) return null;
+  const c = parseInt(match[1], 10);
+  if (c < 1 || c > 21) return null;
+
+  const udcDigits = String(c - 1).padStart(2, '0');
+  const udcSign = `"${udcDigits}"`;
+
+  let ddcPeriodSub = '0904';
+  if (c <= 5) ddcPeriodSub = '0901';
+  else if (c <= 15) ddcPeriodSub = '0902';
+  else if (c <= 18) ddcPeriodSub = '0903';
+  else if (c === 19) ddcPeriodSub = '09034';
+  else if (c === 20) ddcPeriodSub = '0904';
+  else if (c === 21) ddcPeriodSub = '0905';
+
+  return {
+    order: 4,
+    udcAdd: udcSign,
+    ddcSub: ddcPeriodSub,
+    label: `Time ${udcSign} (${c}th Century) / DDC -${ddcPeriodSub}`
+  };
+}
+
+// 6. Special UDC Signs: Asterisk (*) for ISO/Standards & Alphabetical (A/Z)
+function parseSpecialNotations(query) {
+  const extras = [];
+  // Asterisk (*) for ISO / Standards (e.g., "ISO 2709" -> *ISO2709)
+  const isoMatch = query.match(/\b(iso|ansi|bs|is)\s*[-:]?\s*(\d{3,6})\b/i);
+  if (isoMatch) {
+    const code = `${isoMatch[1].toUpperCase()}${isoMatch[2]}`;
+    extras.push({ order: 7, udcAdd: `*${code}`, ddcSub: '', label: `Asterisk (*${code}) Non-UDC Standard` });
+  }
+  return extras;
+}
+
+function formatDdcNumber(ddcBase, sub, isHistory, histDdc) {
+  if (!sub) return ddcBase;
+  if (isHistory && histDdc) return histDdc;
   if (sub === '016') return `016.${ddcBase.replace(/^0+/, '')}`;
   const cleanBase = ddcBase.replace('.', '');
-  const effectiveSub = (cleanBase.endsWith('0') && sub.startsWith('0')) ? sub.slice(1) : sub;
+  let effectiveSub = sub;
+  if (cleanBase.endsWith('0') && sub.startsWith('0') && !sub.startsWith('09')) {
+    effectiveSub = sub.slice(1);
+  }
   const raw = `${cleanBase}${effectiveSub}`;
   return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
 }
@@ -247,21 +304,41 @@ function synthesizeLocalSchedule(query) {
     }
   }
 
+  const centuryFacet = parseCenturyFacet(q);
+  if (centuryFacet) appliedFacets.push(centuryFacet);
+
+  const specialNotations = parseSpecialNotations(query);
+  appliedFacets.push(...specialNotations);
+
+  // Enforce Official UDC Citation Order: .00/-0 -> (...) -> "..." -> (0...) -> =... -> *...
+  appliedFacets.sort((a, b) => a.order - b.order);
+
   if (matchedDisciplines.length > 0) {
     const primary = matchedDisciplines[0];
     const secondary = matchedDisciplines[1] || null;
+    const isHistory = primary.name === 'History';
+
     let udcBuilt = primary.udc;
     let ddcBuilt = primary.ddc;
     const steps = [`Base: ${primary.name} (${primary.udc} / ${primary.ddc})`];
 
+    // UDC Connecting Signs: + (Addition), / (Stroke Extension), : (Relation), :: (Double Colon), [...] (Subgrouping)
     if (secondary) {
-      udcBuilt += `:${secondary.udc}`;
-      steps.push(`Relation (:): ${secondary.name} (${secondary.udc})`);
+      const isDoubleColon = /\b(role of|application of|impact of|use of|in)\b/i.test(q) && !/\b(and|&)\b/i.test(q);
+      const isPlus = /\b(and|&)\b/i.test(q);
+      const connector = isPlus ? '+' : (isDoubleColon ? '::' : ':');
+      udcBuilt = `${primary.udc}${connector}${secondary.udc}`;
+
+      // Apply Square Brackets [...] when combining compound subjects with a Place/Time auxiliary
+      if (appliedFacets.length > 0) {
+        udcBuilt = `[${udcBuilt}]`;
+      }
+      steps.push(`Sign (${connector}): ${secondary.name} (${secondary.udc})`);
     }
 
     for (const f of appliedFacets) {
       udcBuilt += f.udcAdd;
-      ddcBuilt = formatDdcNumber(ddcBuilt, f.ddcSub);
+      ddcBuilt = formatDdcNumber(ddcBuilt, f.ddcSub, isHistory && !!f.histDdc, f.histDdc);
       steps.push(f.label);
     }
 
@@ -269,18 +346,18 @@ function synthesizeLocalSchedule(query) {
       udc: udcBuilt,
       ddc: ddcBuilt,
       explanation: steps.length > 1 ? `Synthesized Class Number -> ${steps.join(' + ')}.` : `Standard Class Number for ${primary.name}.`,
-      source: '⚡ Synthesized Schedule (Instant)'
+      source: '⚡ UDC/DDC Rule Engine (Instant)'
     };
   }
 
   return null;
 }
 
-// 5. Fast Parallel Network Fetch (Gemini AI Mode + Open Library Race - Zero Traffic Hang!)
+// 7. Fast Parallel Network Fetch (Gemini AI Mode + Open Library Race)
 async function fetchGeminiSingle(model, prompt) {
   if (!GEMINI_API_KEY) throw new Error('No key');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000); // Fast 5s cutoff
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -347,13 +424,15 @@ async function fetchOpenLibraryFast(query) {
 }
 
 async function resolveOnlineParallel(query) {
-  const prompt = `You are a senior library cataloger expert in UDC and DDC 23rd Edition.
+  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition.
 Build the EXACT synthesized class number for: "${query}".
-Use proper UDC auxiliaries (relation ":", form "(0...)", persons "-05...", place "(...)", time '"..."') and DDC Table 1-6 subdivisions.
-Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis"}`;
+Follow official UDC signs and citation order:
+- Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form) -> =... (language).
+Use exact DDC 23rd Edition schedules and Tables 1-6.
+Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step breakdown"}`;
 
   try {
-    // Race all live sources simultaneously — fastest accurate response wins immediately!
     return await Promise.any([
       fetchGeminiSingle('gemini-2.5-flash', prompt),
       fetchGeminiSingle('gemini-3.8-flash', prompt),
@@ -364,7 +443,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
   }
 }
 
-// 6. Compressed Response Helper (Fast on Slow Mobile Networks)
+// 8. GZIP Response Helper
 function sendCompressed(req, res, statusCode, contentType, payload) {
   const acceptEncoding = req.headers['accept-encoding'] || '';
   const buf = Buffer.from(payload, 'utf8');
@@ -383,55 +462,101 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
+// 9. Professional Library Cataloger UI (All UDC Signs Displayed)
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UDC & DDC Classifier - Google AI Mode</title>
+  <title>UDC & DDC Classifier • Google AI Mode</title>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
-    body { background: #f8f9fa; margin: 0; padding: 24px 16px; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 720px; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 2px 14px rgba(0,0,0,0.08); }
-    .tabs { display: flex; gap: 22px; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px; overflow-x: auto; }
-    .tab { background: none; border: none; font-size: 15px; font-weight: 500; color: #5f6368; cursor: pointer; padding: 6px 2px; position: relative; white-space: nowrap; }
-    .tab.active { color: #1a73e8; font-weight: 600; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background: linear-gradient(135deg, #f0f4f9 0%, #e8eef5 100%); margin: 0; padding: 24px 14px; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
+    .container { width: 100%; max-width: 740px; background: #ffffff; border-radius: 24px; padding: 28px 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid rgba(255,255,255,0.8); }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #1a73e8, #4285f4); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+    .brand-title { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0; }
+    .brand-sub { font-size: 12px; color: #64748b; margin: 2px 0 0 0; }
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; overflow-x: auto; }
+    .tab { background: none; border: none; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; padding: 6px 2px; position: relative; white-space: nowrap; transition: color 0.2s; }
+    .tab:hover { color: #1a73e8; }
+    .tab.active { color: #1a73e8; }
     .tab.active::after { content: ""; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: #1a73e8; border-radius: 3px 3px 0 0; }
-    .search-box { display: flex; align-items: center; border: 1px solid #dfe1e5; border-radius: 28px; padding: 6px 14px; box-shadow: 0 1px 6px rgba(32,33,36,0.12); background: #fff; }
-    .search-box input { flex: 1; border: none; outline: none; font-size: 16px; padding: 10px; }
-    .search-box button { background: #1a73e8; color: #fff; border: none; border-radius: 20px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .search-box button:hover { background: #1557b0; }
-    .search-box button:disabled { background: #9aa0a6; cursor: not-allowed; }
-    .result-card { margin-top: 24px; border: 1px solid #e0e0e0; border-radius: 14px; padding: 20px; display: none; }
-    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: #e8f0fe; color: #1a73e8; margin-bottom: 14px; }
-    .code-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f3f4; }
-    .code-row:last-of-type { border-bottom: none; }
-    .code-label { font-weight: 600; color: #3c4043; font-size: 15px; }
-    .code-val { font-family: monospace; font-size: 16px; font-weight: 700; color: #0d652d; background: #e6f4ea; padding: 4px 10px; border-radius: 6px; word-break: break-all; }
-    .explanation { margin-top: 14px; font-size: 14px; color: #3c4043; line-height: 1.6; background: #f8f9fa; padding: 14px; border-radius: 10px; }
+    .search-box { display: flex; align-items: center; border: 1.5px solid #cbd5e1; border-radius: 30px; padding: 6px 8px 6px 18px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); background: #fff; transition: border-color 0.2s, box-shadow 0.2s; }
+    .search-box:focus-within { border-color: #1a73e8; box-shadow: 0 4px 14px rgba(26, 115, 232, 0.14); }
+    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #0f172a; padding: 10px 4px; background: transparent; }
+    .search-box button { background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff; border: none; border-radius: 24px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    .search-box button:hover { opacity: 0.92; }
+    .search-box button:disabled { background: #94a3b8; cursor: not-allowed; }
+    .signs-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .sign-pill { font-size: 11px; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
+    .result-card { margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; background: #fafbfc; display: none; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: #e8f0fe; color: #1a73e8; margin-bottom: 16px; }
+    .code-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
+    .code-label { font-weight: 600; color: #334155; font-size: 14px; }
+    .code-actions { display: flex; align-items: center; gap: 8px; }
+    .code-val { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 16px; font-weight: 700; color: #0f5132; background: #d1e7dd; padding: 5px 12px; border-radius: 8px; word-break: break-all; }
+    .copy-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .copy-btn:hover { background: #e2e8f0; }
+    .explanation { margin-top: 12px; font-size: 13.5px; color: #334155; line-height: 1.6; background: #fff; padding: 14px 16px; border-radius: 12px; border-left: 4px solid #1a73e8; }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="brand-icon">LC</div>
+        <div>
+          <h1 class="brand-title">UDC & DDC Precision Classifier</h1>
+          <p class="brand-sub">DDC 23rd Edition • Complete UDC Signs & Auxiliary Synthesis</p>
+        </div>
+      </div>
+    </div>
+
     <div class="tabs">
       <button class="tab active" data-mode="ai">✨ AI Mode</button>
       <button class="tab" data-mode="both">All (UDC + DDC)</button>
       <button class="tab" data-mode="udc">UDC Only</button>
       <button class="tab" data-mode="ddc">DDC Only</button>
     </div>
+
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter any book title or subject..." />
+      <input type="text" id="subjectInput" placeholder="Enter title (e.g., Physics and Chemistry in 19th century, History of India in 20th century)..." />
       <button id="classifyBtn">Search</button>
     </div>
+
+    <div class="signs-bar">
+      <span class="sign-pill">+ Addition</span>
+      <span class="sign-pill">/ Stroke</span>
+      <span class="sign-pill">: Colon</span>
+      <span class="sign-pill">:: Double Colon</span>
+      <span class="sign-pill">[ ] Subgroup</span>
+      <span class="sign-pill">* Code</span>
+      <span class="sign-pill">= Language</span>
+      <span class="sign-pill">(0...) Form</span>
+      <span class="sign-pill">(...) Place</span>
+      <span class="sign-pill">(=...) Ethnic</span>
+      <span class="sign-pill">"..." Time</span>
+      <span class="sign-pill">-05 Persons</span>
+      <span class="sign-pill">.00 Viewpoint</span>
+    </div>
+
     <div class="result-card" id="resultCard">
       <span class="badge" id="sourceBadge">✨ Google AI Mode</span>
       <div class="code-row" id="udcRow">
-        <span class="code-label">UDC Number</span>
-        <span class="code-val" id="udcValue">-</span>
+        <span class="code-label">UDC Notation</span>
+        <div class="code-actions">
+          <span class="code-val" id="udcValue">-</span>
+          <button class="copy-btn" onclick="copyText('udcValue', this)">Copy</button>
+        </div>
       </div>
       <div class="code-row" id="ddcRow">
-        <span class="code-label">DDC Number</span>
-        <span class="code-val" id="ddcValue">-</span>
+        <span class="code-label">DDC 23 Notation</span>
+        <div class="code-actions">
+          <span class="code-val" id="ddcValue">-</span>
+          <button class="copy-btn" onclick="copyText('ddcValue', this)">Copy</button>
+        </div>
       </div>
       <div class="explanation" id="explanationText"></div>
     </div>
@@ -450,6 +575,12 @@ const HTML_PAGE = `<!DOCTYPE html>
       document.getElementById('udcRow').style.display = currentMode === 'ddc' ? 'none' : 'flex';
       document.getElementById('ddcRow').style.display = currentMode === 'udc' ? 'none' : 'flex';
     }
+    function copyText(id, btn) {
+      const val = document.getElementById(id).textContent;
+      navigator.clipboard.writeText(val);
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
+    }
     function showResult(data) {
       document.getElementById('resultCard').style.display = 'block';
       document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
@@ -462,8 +593,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      // Instant Browser LocalStorage Check (0ms, Zero Internet Traffic!)
-      const localKey = 'udc_v6_' + query.toLowerCase();
+      const localKey = 'udc_v8_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -523,26 +653,22 @@ const server = http.createServer(async (req, res) => {
 
         const qKey = query.toLowerCase().trim();
 
-        // 1. Server Disk Cache (0ms)
         if (diskCache[qKey]) {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 2. Built-in Specific Synthesis Engine (0ms, Zero Network Traffic)
         const localSynthesized = synthesizeLocalSchedule(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(localSynthesized));
         }
 
-        // 3. Parallel Online Race (Gemini Live Search Grounding + World Library Catalog)
         const onlineResult = await resolveOnlineParallel(query);
         if (onlineResult) {
           saveCache(qKey, onlineResult);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(onlineResult));
         }
 
-        // 4. Safe General Classification
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '001',
           ddc: '001',
