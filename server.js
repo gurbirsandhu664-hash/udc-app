@@ -3,7 +3,7 @@ const fs = process.getBuiltinModule('node:fs');
 const zlib = process.getBuiltinModule('node:zlib');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-v11.json';
+const CACHE_FILE = './ai-cache-v12.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -69,16 +69,20 @@ const SUBJECT_SCHEDULE = [
   { keys: ['school library', 'school libraries'], udc: '027.8', ddc: '027.8', ddcBase: '0278', name: 'School Libraries' },
   { keys: ['library science', 'librarianship', 'library'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
 
-  // Literature Specific Genres (Before General Literature)
+  // Literature Specific Genres (Poems, Essays, Drama, Fiction)
   { keys: ['english poems', 'english poetry'], udc: '821.111-1', ddc: '821', ddcBase: '821', isLit: true, name: 'English Poetry' },
   { keys: ['punjabi poems', 'punjabi poetry'], udc: '821.214.2-1', ddc: '891.421', ddcBase: '891421', isLit: true, name: 'Punjabi Poetry' },
   { keys: ['hindi poems', 'hindi poetry'], udc: '821.214.21-1', ddc: '891.431', ddcBase: '891431', isLit: true, name: 'Hindi Poetry' },
+  { keys: ['english essays', 'essays in english'], udc: '821.111-4', ddc: '824', ddcBase: '824', isLit: true, name: 'English Essays' },
+  { keys: ['punjabi essays', 'essays in punjabi'], udc: '821.214.2-4', ddc: '891.424', ddcBase: '891424', isLit: true, name: 'Punjabi Essays' },
+  { keys: ['hindi essays', 'essays in hindi'], udc: '821.214.21-4', ddc: '891.434', ddcBase: '891434', isLit: true, name: 'Hindi Essays' },
   { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '89142', isLit: true, name: 'Punjabi Literature' },
   { keys: ['hindi literature'], udc: '821.214.21', ddc: '891.43', ddcBase: '89143', isLit: true, name: 'Hindi Literature' },
   { keys: ['english literature'], udc: '821.111', ddc: '820', ddcBase: '82', isLit: true, name: 'English Literature' },
   { keys: ['poetry', 'poems'], udc: '82-1', ddc: '808.81', ddcBase: '80881', isLit: true, name: 'Poetry' },
   { keys: ['drama', 'plays'], udc: '82-2', ddc: '808.82', ddcBase: '80882', isLit: true, name: 'Drama' },
   { keys: ['fiction', 'novels', 'short stories'], udc: '82-3', ddc: '808.83', ddcBase: '80883', isLit: true, name: 'Fiction' },
+  { keys: ['essays', 'essay'], udc: '82-4', ddc: '808.84', ddcBase: '80884', isLit: true, name: 'Essays' },
   { keys: ['literature'], udc: '82', ddc: '800', ddcBase: '80', isLit: true, name: 'Literature' },
 
   // Transport Modes
@@ -367,7 +371,7 @@ function synthesizePrecisionEngine(query) {
   return null;
 }
 
-// 5. PURE GOOGLE AI MODE (Live Search Grounding + High-Quota Gemini Fallback — NO Open Library!)
+// 5. PURE GOOGLE AI MODE (Live Search Grounding + Standard Gemini Fallback)
 async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) return null;
 
@@ -376,11 +380,9 @@ Build the EXACT synthesized class number for: "${query}".
 Follow official UDC signs and citation order strictly:
 - Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical).
 - Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form: (082) collection/anthology, (035) guide, (038) dictionary, (083.4) tables) -> =... (language: =111 English).
-- Example: "collection of English poems" -> UDC: "821.111-1(082)", DDC: "821.008".
+- Example: "A collection of Punjabi essays" -> UDC: "821.214.2-4(082)", DDC: "891.424008".
 Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
-  // Attempt 1: Live Google Search Grounding (Real Search AI Mode)
-  // Attempt 2: Standard Gemini Flash (High-Quota AI Mode if Search Grounding quota is exhausted)
   const attempts = [
     { model: 'gemini-2.5-flash', useSearch: true },
     { model: 'gemini-3.8-flash', useSearch: true },
@@ -583,7 +585,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v11_' + query.toLowerCase();
+      const localKey = 'udc_v12_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -648,7 +650,7 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 2. HIGH PRIORITY: Google AI Mode (Search Grounding + High-Quota Gemini Fallback)
+        // 2. HIGH PRIORITY: Google AI Mode (Live Search Grounding + Standard Gemini Fallback)
         const googleAiResult = await callGoogleAIMode(query);
         if (googleAiResult) {
           saveCache(qKey, googleAiResult);
