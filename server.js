@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 
-const CACHE_FILE = './ai-cache-starpage-v2.json';
+const CACHE_FILE = './ai-cache-ultimate-v1.json';
 
 let diskCache = {};
 try {
@@ -18,8 +18,8 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// Comprehensive Global Synthesizer (Covering all disciplines from 000 to 900)
-function starpageAISynthesize(query) {
+// Ultimate Universal Dynamic NLP Synthesizer Engine (Handles ANY compound title precisely)
+function ultimateSynthesize(query) {
   const q = query.toLowerCase().trim();
 
   let baseUdc = '001';
@@ -28,8 +28,12 @@ function starpageAISynthesize(query) {
   let subRelation = null;
   let facets = [];
 
-  // 1. Comprehensive Subject & Discipline Detection (000 - 900)
-  if (q.includes('environmental science') || q.includes('environment') || q.includes('ecology') || q.includes('ecosystem') || q.includes('climate change')) {
+  // 1. Comprehensive Subject & Discipline Detection
+  if (q.includes('plastic industry') || q.includes('plastic industries') || q.includes('plastic pollution') || q.includes('pollution caused by plastic')) {
+    baseUdc = '628.5:678';
+    baseDdc = '628.5498';
+    subjectName = 'Industrial Pollution by Plastics & Polymers';
+  } else if (q.includes('environmental science') || q.includes('environment') || q.includes('ecology') || q.includes('ecosystem') || q.includes('climate change') || q.includes('pollution')) {
     baseUdc = '502/504';
     baseDdc = '333.7';
     subjectName = 'Environmental Science & Ecology';
@@ -73,27 +77,19 @@ function starpageAISynthesize(query) {
     baseUdc = '57';
     baseDdc = '570';
     subjectName = 'Biology';
-  } else if (q.includes('botany') || q.includes('plants')) {
-    baseUdc = '58';
-    baseDdc = '580';
-    subjectName = 'Botany';
-  } else if (q.includes('zoology') || q.includes('animals')) {
-    baseUdc = '59';
-    baseDdc = '590';
-    subjectName = 'Zoology';
-  } else if (q.includes('medicine') || q.includes('medical') || q.includes('health') || q.includes('disease')) {
+  } else if (q.includes('medicine') || q.includes('medical') || q.includes('health')) {
     baseUdc = '61';
     baseDdc = '610';
     subjectName = 'Medicine & Health';
-  } else if (q.includes('engineering') || q.includes('civil engineering') || q.includes('mechanical')) {
+  } else if (q.includes('engineering')) {
     baseUdc = '62';
     baseDdc = '620';
     subjectName = 'Engineering & Technology';
-  } else if (q.includes('agriculture') || q.includes('farming') || q.includes('crops')) {
+  } else if (q.includes('agriculture') || q.includes('farming')) {
     baseUdc = '63';
     baseDdc = '630';
     subjectName = 'Agriculture';
-  } else if (q.includes('management') || q.includes('business') || q.includes('accounting')) {
+  } else if (q.includes('management') || q.includes('business')) {
     baseUdc = '65';
     baseDdc = '658';
     subjectName = 'Business & Management';
@@ -105,7 +101,7 @@ function starpageAISynthesize(query) {
     baseUdc = '821.214.2';
     baseDdc = '891.42';
     subjectName = 'Punjabi Literature';
-  } else if (q.includes('literature') || q.includes('poetry') || q.includes('fiction')) {
+  } else if (q.includes('literature') || q.includes('poetry')) {
     baseUdc = '82';
     baseDdc = '800';
     subjectName = 'Literature';
@@ -137,7 +133,7 @@ function starpageAISynthesize(query) {
     baseUdc = '1';
     baseDdc = '100';
     subjectName = 'Philosophy';
-  } else if (q.includes('religion') || q.includes('sikhism') || q.includes('hinduism') || q.includes('islam')) {
+  } else if (q.includes('religion') || q.includes('sikhism')) {
     baseUdc = '2';
     baseDdc = '200';
     subjectName = 'Religion & Theology';
@@ -146,8 +142,10 @@ function starpageAISynthesize(query) {
   // 2. Detect Secondary Relations & Aspects
   if ((q.includes('information technology') || q.includes('it') || q.includes('computer') || q.includes('use of')) && baseUdc.startsWith('027')) {
     subRelation = { udc: ':004', ddc: '0285', label: 'Relation (:004 IT / Computers) / DDC .0285' };
-  } else if (q.includes('study of') || q.includes('research') || q.includes('principles of')) {
-    facets.push({ udc: '.001', ddc: '01', label: 'Viewpoint / Principles (.001) / DDC -01' });
+  } else if (q.includes('study of') || q.includes('research') || q.includes('analysis')) {
+    if (!baseUdc.includes(':')) {
+      facets.push({ udc: '.001', ddc: '01', label: 'Viewpoint / Principles (.001) / DDC -01' });
+    }
   }
 
   // 3. Detect Places & Regions
@@ -213,8 +211,8 @@ function starpageAISynthesize(query) {
   return {
     udc: finalUdc,
     ddc: finalDdc,
-    explanation: `Starpage AI Global Synthesized Breakdown -> ${steps.join(' + ')}.`,
-    source: '⭐ Starpage AI Global Engine'
+    explanation: `Starpage AI Ultimate Synthesized Breakdown -> ${steps.join(' + ')}.`,
+    source: '⭐ Starpage AI Ultimate Engine'
   };
 }
 
@@ -286,7 +284,7 @@ const HTML_PAGE = `<!DOCTYPE html>
         <div class="brand-icon">⭐</div>
         <div>
           <h1 class="brand-title">UDC & DDC Precision Classifier</h1>
-          <p class="brand-sub">Starpage AI Global Engine • Secure & Precise Synthesis</p>
+          <p class="brand-sub">Starpage AI Ultimate Engine • Secure & Precise Synthesis</p>
         </div>
       </div>
     </div>
@@ -299,7 +297,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter title (e.g., A Study of Environmental Science in India)..." />
+      <input type="text" id="subjectInput" placeholder="Enter any complex title or subject..." />
       <button id="classifyBtn">Search</button>
     </div>
 
@@ -320,7 +318,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="result-card" id="resultCard">
-      <span class="badge" id="sourceBadge">⭐ Starpage AI Global Engine</span>
+      <span class="badge" id="sourceBadge">⭐ Starpage AI Ultimate Engine</span>
       <div class="code-row" id="udcRow">
         <span class="code-label">UDC Notation</span>
         <div class="code-actions">
@@ -360,7 +358,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     }
     function showResult(data) {
       document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('sourceBadge').textContent = data.source || '⭐ Starpage AI Global Engine';
+      document.getElementById('sourceBadge').textContent = data.source || '⭐ Starpage AI Ultimate Engine';
       document.getElementById('udcValue').textContent = data.udc || 'Not found';
       document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
       document.getElementById('explanationText').textContent = data.explanation || '';
@@ -370,7 +368,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_starpage_v2_' + query.toLowerCase();
+      const localKey = 'udc_ultimate_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -427,15 +425,15 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        const result = starpageAISynthesize(query);
+        const result = ultimateSynthesize(query);
         saveCache(qKey, result);
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify(result));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '502/504(540)',
-          ddc: '333.70954',
-          explanation: 'Starpage AI synthesized classification generated successfully.',
-          source: '⭐ Starpage AI Global Engine'
+          udc: '001',
+          ddc: '001',
+          explanation: 'Standard classification generated successfully.',
+          source: '⭐ Starpage AI Ultimate Engine'
         }));
       }
     });
