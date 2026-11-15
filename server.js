@@ -1,14 +1,13 @@
-import express from 'express';
-import fs from 'fs';
-import { GoogleGenAI } from '@google/genai';
+const express = require('express');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 
-// Pehlan ton environment (Render .env) vich payi GEMINI_API_KEY apne aap use hovegi
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Render Environment Variables vich payi GEMINI_API_KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// 1. Local Reference Indexes (0 API Quota Used)
+// 1. Local Reference Indexes (0 Quota Used)
 let ddcIndex = {};
 let udcIndex = {};
 try {
@@ -19,13 +18,25 @@ try {
     udcIndex = JSON.parse(fs.readFileSync('./udc-1961-reference-index.json', 'utf8'));
   }
 } catch (e) {
-  console.log('Index files skipped or empty.');
+  console.log('Local index skipped.');
 }
 
-// 2. Server-Side Memory Cache (Saves Quota on Repeat Searches)
+// 2. Server Cache + Rate Limiter (Quota Protection)
 const responseCache = new Map();
+const rateLimitMap = new Map();
 
-// 3. Single Clean UI Route (Google AI Mode + Vaddu Toggles Removed)
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute
+  const maxRequests = 12; // Max 12 searches per minute per user
+  const records = (rateLimitMap.get(ip) || []).filter(t => now - t < windowMs);
+  if (records.length >= maxRequests) return true;
+  records.push(now);
+  rateLimitMap.set(ip, records);
+  return false;
+}
+
+// 3. Google AI Mode Clean UI (Vaddu Boxes Removed)
 app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -139,14 +150,24 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-// 4. API Endpoint (Local Index -> Cache -> Gemini Google Search Grounding)
+// 4. Classification API
 app.post('/api/classify', async (req, res) => {
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (isRateLimited(clientIp)) {
+    return res.status(429).json({
+      udc: 'Limit Reached',
+      ddc: 'Limit Reached',
+      explanation: 'Quota protection: Please wait 1 minute before searching again.',
+      source: '🛡️ Rate Limit Active'
+    });
+  }
+
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: 'Query is required' });
 
   const qKey = query.toLowerCase().trim();
 
-  // Check Server Cache First (0 Quota)
+  // Check Cache First (0 Quota)
   if (responseCache.has(qKey)) {
     return res.json(responseCache.get(qKey));
   }
@@ -156,30 +177,44 @@ app.post('/api/classify', async (req, res) => {
     const localResult = {
       udc: udcIndex[qKey],
       ddc: ddcIndex[qKey],
-      explanation: \`Exact match from local UDC & DDC reference index for "\${query}".\`,
+      explanation: `Exact match from local UDC & DDC reference index for "${query}".`,
       source: '⚡ Local Index (0 Quota Used)'
     };
     responseCache.set(qKey, localResult);
     return res.json(localResult);
   }
 
-  // Call Gemini AI Mode with Real-Time Google Search Grounding
-  try {
-    const prompt = \`You are an expert library cataloger. Find the exact Universal Decimal Classification (UDC) number and Dewey Decimal Classification (DDC 23rd edition) number for the subject: "\${query}".
-Verify the classification numbers using Google Search. Do not guess or invent notation.
-Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation" (1-2 clear sentences explaining the subject hierarchy).\`;
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({
+      udc: 'Missing Key',
+      ddc: 'Missing Key',
+      explanation: 'GEMINI_API_KEY not found in Render Environment Variables.',
+      source: '⚠️ Config Error'
+    });
+  }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        temperature: 0.1
-      }
+  // Call Gemini AI Mode with Google Search Grounding (Native Fetch - No Extra NPM Needed)
+  try {
+    const prompt = `You are an expert library cataloger. Find the exact Universal Decimal Classification (UDC) number and Dewey Decimal Classification (DDC 23rd edition) number for the subject: "${query}".
+Verify the classification numbers using Google Search. Do not guess or invent notation.
+Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation" (1-2 clear sentences explaining the subject hierarchy).`;
+
+    const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { temperature: 0.1 }
+      })
     });
 
-    const rawText = response.text.replace(/\`\`\`json|\`\`\`/g, '').trim();
-    const parsed = JSON.parse(rawText);
+    const data = await apiRes.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const rawText = data.candidates[0].content.parts[0].text;
+    const cleanJson = rawText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleanJson);
 
     const finalResult = {
       udc: parsed.udc || 'Verify manually',
@@ -192,15 +227,15 @@ Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation"
     res.json(finalResult);
 
   } catch (error) {
-    console.error('AI Mode Error:', error);
+    console.error('AI Mode Error:', error.message);
     res.status(500).json({
       udc: 'Error',
       ddc: 'Error',
-      explanation: 'API limit reached or key missing in environment variables.',
+      explanation: error.message || 'API error occurred.',
       source: '⚠️ Fallback'
     });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
