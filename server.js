@@ -1,10 +1,6 @@
-const express = require('express');
-const fs = require('fs');
+const http = process.getBuiltinModule('node:http');
+const fs = process.getBuiltinModule('node:fs');
 
-const app = express();
-app.use(express.json());
-
-// Render Environment Variables vich payi GEMINI_API_KEY
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // 1. Local Reference Indexes (0 Quota Used)
@@ -17,28 +13,22 @@ try {
   if (fs.existsSync('./udc-1961-reference-index.json')) {
     udcIndex = JSON.parse(fs.readFileSync('./udc-1961-reference-index.json', 'utf8'));
   }
-} catch (e) {
-  console.log('Local index skipped.');
-}
+} catch (e) {}
 
-// 2. Server Cache + Rate Limiter (Quota Protection)
+// 2. Cache + Rate Limit (Quota Protection)
 const responseCache = new Map();
 const rateLimitMap = new Map();
 
 function isRateLimited(ip) {
   const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minute
-  const maxRequests = 12; // Max 12 searches per minute per user
-  const records = (rateLimitMap.get(ip) || []).filter(t => now - t < windowMs);
-  if (records.length >= maxRequests) return true;
+  const records = (rateLimitMap.get(ip) || []).filter(t => now - t < 60000);
+  if (records.length >= 12) return true;
   records.push(now);
   rateLimitMap.set(ip, records);
   return false;
 }
 
-// 3. Google AI Mode Clean UI (Vaddu Boxes Removed)
-app.get('/', (req, res) => {
-  res.send(`<!DOCTYPE html>
+const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -74,12 +64,10 @@ app.get('/', (req, res) => {
       <button class="tab" data-mode="udc">UDC Only</button>
       <button class="tab" data-mode="ddc">DDC Only</button>
     </div>
-
     <div class="search-box">
       <input type="text" id="subjectInput" placeholder="Ask anything or enter subject (e.g., Quantum Physics, Heart Surgery)..." />
       <button id="classifyBtn">Search</button>
     </div>
-
     <div class="result-card" id="resultCard">
       <span class="badge" id="sourceBadge">✨ Google AI Mode</span>
       <div class="code-row" id="udcRow">
@@ -93,10 +81,8 @@ app.get('/', (req, res) => {
       <div class="explanation" id="explanationText"></div>
     </div>
   </div>
-
   <script>
     let currentMode = 'ai';
-
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -105,20 +91,16 @@ app.get('/', (req, res) => {
         updateRowVisibility();
       });
     });
-
     function updateRowVisibility() {
       document.getElementById('udcRow').style.display = currentMode === 'ddc' ? 'none' : 'flex';
       document.getElementById('ddcRow').style.display = currentMode === 'udc' ? 'none' : 'flex';
     }
-
     async function classifySubject() {
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
-
       const btn = document.getElementById('classifyBtn');
       btn.textContent = 'Searching...';
       btn.disabled = true;
-
       try {
         const res = await fetch('/api/classify', {
           method: 'POST',
@@ -126,7 +108,6 @@ app.get('/', (req, res) => {
           body: JSON.stringify({ query })
         });
         const data = await res.json();
-
         document.getElementById('resultCard').style.display = 'block';
         document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
         document.getElementById('udcValue').textContent = data.udc || 'Not found';
@@ -140,102 +121,117 @@ app.get('/', (req, res) => {
         btn.disabled = false;
       }
     }
-
     document.getElementById('classifyBtn').addEventListener('click', classifySubject);
     document.getElementById('subjectInput').addEventListener('keypress', e => {
       if (e.key === 'Enter') classifySubject();
     });
   </script>
 </body>
-</html>`);
-});
+</html>`;
 
-// 4. Classification API
-app.post('/api/classify', async (req, res) => {
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  if (isRateLimited(clientIp)) {
-    return res.status(429).json({
-      udc: 'Limit Reached',
-      ddc: 'Limit Reached',
-      explanation: 'Quota protection: Please wait 1 minute before searching again.',
-      source: '🛡️ Rate Limit Active'
-    });
+const server = http.createServer(async (req, res) => {
+  if (req.method === 'GET' && req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(HTML_PAGE);
   }
 
-  const { query } = req.body;
-  if (!query) return res.status(400).json({ error: 'Query is required' });
+  if (req.method === 'POST' && req.url === '/api/classify') {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (isRateLimited(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        udc: 'Limit Reached',
+        ddc: 'Limit Reached',
+        explanation: 'Quota protection: Please wait 1 minute before searching again.',
+        source: '🛡️ Rate Limit Active'
+      }));
+    }
 
-  const qKey = query.toLowerCase().trim();
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { query } = JSON.parse(body || '{}');
+        if (!query) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ error: 'Query is required' }));
+        }
 
-  // Check Cache First (0 Quota)
-  if (responseCache.has(qKey)) {
-    return res.json(responseCache.get(qKey));
-  }
+        const qKey = query.toLowerCase().trim();
+        if (responseCache.has(qKey)) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify(responseCache.get(qKey)));
+        }
 
-  // Check Local JSON Indexes First (0 Quota)
-  if (udcIndex[qKey] && ddcIndex[qKey]) {
-    const localResult = {
-      udc: udcIndex[qKey],
-      ddc: ddcIndex[qKey],
-      explanation: `Exact match from local UDC & DDC reference index for "${query}".`,
-      source: '⚡ Local Index (0 Quota Used)'
-    };
-    responseCache.set(qKey, localResult);
-    return res.json(localResult);
-  }
+        if (udcIndex[qKey] && ddcIndex[qKey]) {
+          const localResult = {
+            udc: udcIndex[qKey],
+            ddc: ddcIndex[qKey],
+            explanation: `Exact match from local UDC & DDC reference index for "${query}".`,
+            source: '⚡ Local Index (0 Quota Used)'
+          };
+          responseCache.set(qKey, localResult);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify(localResult));
+        }
 
-  if (!GEMINI_API_KEY) {
-    return res.status(500).json({
-      udc: 'Missing Key',
-      ddc: 'Missing Key',
-      explanation: 'GEMINI_API_KEY not found in Render Environment Variables.',
-      source: '⚠️ Config Error'
-    });
-  }
+        if (!GEMINI_API_KEY) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({
+            udc: 'Missing Key',
+            ddc: 'Missing Key',
+            explanation: 'GEMINI_API_KEY not found in Render Environment Variables.',
+            source: '⚠️ Config Error'
+          }));
+        }
 
-  // Call Gemini AI Mode with Google Search Grounding (Native Fetch - No Extra NPM Needed)
-  try {
-    const prompt = `You are an expert library cataloger. Find the exact Universal Decimal Classification (UDC) number and Dewey Decimal Classification (DDC 23rd edition) number for the subject: "${query}".
+        const prompt = `You are an expert library cataloger. Find the exact Universal Decimal Classification (UDC) number and Dewey Decimal Classification (DDC 23rd edition) number for the subject: "${query}".
 Verify the classification numbers using Google Search. Do not guess or invent notation.
 Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation" (1-2 clear sentences explaining the subject hierarchy).`;
 
-    const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1 }
-      })
+        const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { temperature: 0.1 }
+          })
+        });
+
+        const data = await apiRes.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const rawText = data.candidates[0].content.parts[0].text;
+        const cleanJson = rawText.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        const finalResult = {
+          udc: parsed.udc || 'Verify manually',
+          ddc: parsed.ddc || 'Verify manually',
+          explanation: parsed.explanation || '',
+          source: '✨ Google AI Mode (Search Grounded)'
+        };
+
+        responseCache.set(qKey, finalResult);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(finalResult));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          udc: 'Error',
+          ddc: 'Error',
+          explanation: err.message || 'API error occurred.',
+          source: '⚠️ Fallback'
+        }));
+      }
     });
-
-    const data = await apiRes.json();
-    if (data.error) throw new Error(data.error.message);
-
-    const rawText = data.candidates[0].content.parts[0].text;
-    const cleanJson = rawText.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(cleanJson);
-
-    const finalResult = {
-      udc: parsed.udc || 'Verify manually',
-      ddc: parsed.ddc || 'Verify manually',
-      explanation: parsed.explanation || '',
-      source: '✨ Google AI Mode (Search Grounded)'
-    };
-
-    responseCache.set(qKey, finalResult);
-    res.json(finalResult);
-
-  } catch (error) {
-    console.error('AI Mode Error:', error.message);
-    res.status(500).json({
-      udc: 'Error',
-      ddc: 'Error',
-      explanation: error.message || 'API error occurred.',
-      source: '⚠️ Fallback'
-    });
+    return;
   }
+
+  res.writeHead(404);
+  res.end('Not Found');
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
