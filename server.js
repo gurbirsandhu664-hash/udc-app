@@ -1,291 +1,206 @@
-import http from 'node:http';
+import express from 'express';
+import fs from 'fs';
+import { GoogleGenAI } from '@google/genai';
 
-const PORT = process.env.PORT || 10000;
+const app = express();
+app.use(express.json());
 
-function norm(s) {
-  return String(s || '')
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+// Pehlan ton environment (Render .env) vich payi GEMINI_API_KEY apne aap use hovegi
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-function isValidNotation(val) {
-  if (!val || typeof val !== 'string') return false;
-  const s = val.trim();
-  return /^[0-9]+[0-9/:\(\)\.\+=\-A-Z'\s]*$/.test(s) && /\d/.test(s);
-}
-
-// 1. OCLC WorldCat Global Library Live Catalog Tool
-async function fetchFromOCLCWorldCat(title) {
-  try {
-    const q = encodeURIComponent(title);
-    const url = `http://classify.oclc.org/classify2/Classify?title=${q}&summary=true`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-      signal: AbortSignal.timeout(4000)
-    });
-    if (res.ok) {
-      const xml = await res.text();
-      const ddcMatch = xml.match(/<ddc>[\s\S]*?<mostPopular[^>]*sfa="([^"]+)"/i) ||
-                       xml.match(/<ddc>[\s\S]*?<mostRecent[^>]*sfa="([^"]+)"/i);
-      if (ddcMatch && isValidNotation(ddcMatch[1].trim())) {
-        return {
-          ddc: ddcMatch[1].trim(),
-          source: 'OCLC WorldCat Global Library Catalog'
-        };
-      }
-    }
-  } catch (_) {}
-  return null;
-}
-
-// 2. Google Search Grounding & Gemini AI Tool
-async function queryGeminiWithSearch(title, clientApiKey) {
-  const activeKey = clientApiKey || process.env.GEMINI_API_KEY || '';
-  if (!activeKey) return null;
-
-  const prompt = `You are a professional library cataloguer specializing in UDC and Dewey Decimal Classification (DDC-23). 
-Search Google to verify standard library classifications, then classify this book title or subject: "${title}".
-Provide exact Universal Decimal Classification (UDC) and exact Dewey Decimal Classification (DDC) notation.
-Output ONLY valid JSON in this exact structure:
-{"udc":"...","ddc":"...","breakdown":"...","explanation":"..."}`;
-
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-  for (const m of models) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${activeKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearch: {} }],
-          generationConfig: { responseMimeType: "application/json" }
-        }),
-        signal: AbortSignal.timeout(6000)
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        const txt = json.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (txt) {
-          const parsed = JSON.parse(txt);
-          if (isValidNotation(parsed.udc) && isValidNotation(parsed.ddc)) {
-            return { ...parsed, source: `Google Gemini AI + Search Grounding (${m})` };
-          }
-        }
-      }
-    } catch (_) {}
+// 1. Local Reference Indexes (0 API Quota Used)
+let ddcIndex = {};
+let udcIndex = {};
+try {
+  if (fs.existsSync('./ddc-23-reference-index.json')) {
+    ddcIndex = JSON.parse(fs.readFileSync('./ddc-23-reference-index.json', 'utf8'));
   }
-
-  return null;
+  if (fs.existsSync('./udc-1961-reference-index.json')) {
+    udcIndex = JSON.parse(fs.readFileSync('./udc-1961-reference-index.json', 'utf8'));
+  }
+} catch (e) {
+  console.log('Index files skipped or empty.');
 }
 
-// Professional UI with Permanent Lock & Search Tools Integration
-const HTML_CONTENT = `<!DOCTYPE html>
+// 2. Server-Side Memory Cache (Saves Quota on Repeat Searches)
+const responseCache = new Map();
+
+// 3. Single Clean UI Route (Google AI Mode + Vaddu Toggles Removed)
+app.get('/', (req, res) => {
+  res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UDC & DDC Professional Classification Tool</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UDC & DDC Classifier - Google AI Mode</title>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 60px; }
-    .wrap { max-width: 760px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 24px; }
-    h1 { font-size: clamp(24px, 5vw, 36px); font-weight: 805; color: #1e293b; margin: 0 0 8px; }
-    .v { color: #2563eb; }
-    .lead { color: #64748b; font-size: 15px; margin: 0; }
-    .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-    label { display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase; }
-    textarea { width: 100%; min-height: 100px; border: 2px solid #cbd5e1; border-radius: 14px; padding: 14px; font-size: 18px; color: #0f172a; outline: none; resize: vertical; font-family: inherit; }
-    textarea:focus { border-color: #2563eb; }
-    .action-row { display: flex; gap: 10px; margin-top: 14px; }
-    button.btn-classify { flex: 1; border: 0; border-radius: 14px; padding: 15px 20px; color: #ffffff; font-weight: 800; font-size: 17px; background: linear-gradient(135deg, #2563eb, #1d4ed8); cursor: pointer; }
-    button.btn-classify:disabled { opacity: 0.6; cursor: wait; }
-    button.btn-voice { border: 0; border-radius: 14px; padding: 15px 20px; background: #e2e8f0; color: #1e293b; font-weight: 700; font-size: 16px; cursor: pointer; }
-    .voice-status { font-size: 13px; color: #64748b; margin-top: 10px; }
-    .error-box { display: none; margin-top: 16px; padding: 12px 16px; border-radius: 12px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 14px; font-weight: 600; }
-    #result { display: none; margin-top: 24px; }
-    .title-banner { padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; margin-bottom: 18px; }
-    .title-banner .subhead { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; }
-    .title-banner h2 { margin: 6px 0 0; font-size: 22px; color: #0f172a; }
-    .grid-results { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
-    .result-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; }
-    .result-box.highlight { background: #eff6ff; border-color: #bfdbfe; }
-    .result-box .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 6px; }
-    .result-box .number { font-size: clamp(24px, 4vw, 36px); font-weight: 900; color: #0f172a; margin: 4px 0 8px; }
-    .result-box .detail { font-size: 13px; color: #475569; line-height: 1.45; }
-    .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #334155; line-height: 1.5; }
-    .source-tag { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; }
-    .api-settings { margin-top: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
-    .api-settings label { font-size: 11px; color: #334155; margin-bottom: 4px; }
-    .input-group { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
-    .api-settings input[type="password"] { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #ffffff; }
-    .btn-lock { padding: 10px 18px; border: 0; border-radius: 10px; background: #10b981; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
-    .btn-clear { padding: 10px 14px; border: 0; border-radius: 10px; background: #ef4444; font-weight: 700; font-size: 13px; cursor: pointer; color: #ffffff; }
-    .status-msg { margin-top: 6px; font-size: 12px; font-weight: 700; color: #10b981; display: none; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
+    body { background: #f8f9fa; margin: 0; padding: 24px 16px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 720px; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 2px 14px rgba(0,0,0,0.08); }
+    .tabs { display: flex; gap: 22px; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 20px; overflow-x: auto; }
+    .tab { background: none; border: none; font-size: 15px; font-weight: 500; color: #5f6368; cursor: pointer; padding: 6px 2px; position: relative; white-space: nowrap; }
+    .tab.active { color: #1a73e8; font-weight: 600; }
+    .tab.active::after { content: ""; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: #1a73e8; border-radius: 3px 3px 0 0; }
+    .search-box { display: flex; align-items: center; border: 1px solid #dfe1e5; border-radius: 28px; padding: 6px 14px; box-shadow: 0 1px 6px rgba(32,33,36,0.12); background: #fff; }
+    .search-box input { flex: 1; border: none; outline: none; font-size: 16px; padding: 10px; }
+    .search-box button { background: #1a73e8; color: #fff; border: none; border-radius: 20px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .search-box button:hover { background: #1557b0; }
+    .search-box button:disabled { background: #9aa0a6; cursor: not-allowed; }
+    .result-card { margin-top: 24px; border: 1px solid #e0e0e0; border-radius: 14px; padding: 20px; display: none; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: #e8f0fe; color: #1a73e8; margin-bottom: 14px; }
+    .code-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f3f4; }
+    .code-row:last-of-type { border-bottom: none; }
+    .code-label { font-weight: 600; color: #3c4043; font-size: 15px; }
+    .code-val { font-family: monospace; font-size: 17px; font-weight: 700; color: #0d652d; background: #e6f4ea; padding: 4px 10px; border-radius: 6px; }
+    .explanation { margin-top: 14px; font-size: 14px; color: #3c4043; line-height: 1.6; background: #f8f9fa; padding: 14px; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header">
-      <h1>Library Classification <span class="v">Pro</span></h1>
-      <div class="lead">WorldCat Catalog + Google Search Grounding</div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-mode="ai">✨ AI Mode</button>
+      <button class="tab" data-mode="both">All (UDC + DDC)</button>
+      <button class="tab" data-mode="udc">UDC Only</button>
+      <button class="tab" data-mode="ddc">DDC Only</button>
     </div>
-    <div class="card">
-      <label for="title">Book Title / Subject Query</label>
-      <textarea id="title" placeholder="ਕਿਤਾਬ ਦਾ ਟਾਈਟਲ ਲਿਖੋ...">English Adverbs</textarea>
-      <div class="action-row">
-        <button id="go" class="btn-classify">⚡ CLASSIFY WITH GLOBAL TOOLS</button>
-        <button id="voice" type="button" class="btn-voice">🎙️ Voice</button>
-      </div>
-      <div id="voiceStatus" class="voice-status">Tap Voice to speak title or type directly.</div>
-      <div class="api-settings">
-        <label for="geminiKey">Gemini API Key (Permanent Secure Lock)</label>
-        <div class="input-group">
-          <input type="password" id="geminiKey" placeholder="Paste your Gemini API key here...">
-          <button type="button" id="btnLock" class="btn-lock">🔒 Lock</button>
-          <button type="button" id="btnClear" class="btn-clear">🗑️ Clear</button>
-        </div>
-        <div id="lockStatus" class="status-msg">✓ Key locked & secured!</div>
-      </div>
-      <div id="err" class="error-box"></div>
+
+    <div class="search-box">
+      <input type="text" id="subjectInput" placeholder="Ask anything or enter subject (e.g., Quantum Physics, Heart Surgery)..." />
+      <button id="classifyBtn">Search</button>
     </div>
-    <div id="result" class="card">
-      <div class="title-banner">
-        <div class="subhead">Title Received</div>
-        <h2 id="resTitle"></h2>
+
+    <div class="result-card" id="resultCard">
+      <span class="badge" id="sourceBadge">✨ Google AI Mode</span>
+      <div class="code-row" id="udcRow">
+        <span class="code-label">UDC Number</span>
+        <span class="code-val" id="udcValue">-</span>
       </div>
-      <div class="grid-results">
-        <div class="result-box highlight">
-          <div class="tag">UDC (Universal Decimal)</div>
-          <div id="resUdc" class="number">-</div>
-          <div id="resUdcBreakdown" class="detail"></div>
-        </div>
-        <div class="result-box">
-          <div class="tag">DDC (Dewey Decimal)</div>
-          <div id="resDdc" class="number">-</div>
-          <div id="resDdcBreakdown" class="detail"></div>
-        </div>
+      <div class="code-row" id="ddcRow">
+        <span class="code-label">DDC Number</span>
+        <span class="code-val" id="ddcValue">-</span>
       </div>
-      <div class="meta-box">
-        <div><b>Explanation:</b> <span id="resExplain"></span></div>
-        <div id="resSource" class="source-tag"></div>
-      </div>
+      <div class="explanation" id="explanationText"></div>
     </div>
   </div>
+
   <script>
-    const $ = id => document.getElementById(id);
-    if (localStorage.getItem('perm_gemini_key')) {
-      $('geminiKey').value = '••••••••••••••••••••••••••••••';
-      $('geminiKey').disabled = true;
-      $('btnLock').textContent = '🔒 Locked';
-      $('lockStatus').style.display = 'block';
+    let currentMode = 'ai';
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentMode = tab.dataset.mode;
+        updateRowVisibility();
+      });
+    });
+
+    function updateRowVisibility() {
+      document.getElementById('udcRow').style.display = currentMode === 'ddc' ? 'none' : 'flex';
+      document.getElementById('ddcRow').style.display = currentMode === 'udc' ? 'none' : 'flex';
     }
-    $('btnLock').addEventListener('click', () => {
-      const k = $('geminiKey');
-      if (k.disabled) return;
-      const val = k.value.trim();
-      if (!val || val.includes('•')) return;
-      localStorage.setItem('perm_gemini_key', val);
-      k.value = '••••••••••••••••••••••••••••••';
-      k.disabled = true;
-      $('btnLock').textContent = '🔒 Locked';
-      $('lockStatus').style.display = 'block';
-    });
-    $('btnClear').addEventListener('click', () => {
-      localStorage.removeItem('perm_gemini_key');
-      const k = $('geminiKey');
-      k.value = '';
-      k.disabled = false;
-      $('btnLock').textContent = '🔒 Lock';
-      $('lockStatus').style.display = 'none';
-    });
-    $('go').addEventListener('click', async () => {
-      const title = $('title').value.trim();
-      if (!title) return;
-      const keyVal = localStorage.getItem('perm_gemini_key') || '';
-      $('go').disabled = true; $('go').textContent = '🌐 SEARCHING GLOBAL TOOLS...';
+
+    async function classifySubject() {
+      const query = document.getElementById('subjectInput').value.trim();
+      if (!query) return;
+
+      const btn = document.getElementById('classifyBtn');
+      btn.textContent = 'Searching...';
+      btn.disabled = true;
+
       try {
-        const response = await fetch('/api/classify', {
+        const res = await fetch('/api/classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, clientApiKey: keyVal })
+          body: JSON.stringify({ query })
         });
-        const data = await response.json();
-        $('resTitle').textContent = data.title || title;
-        $('resUdc').textContent = data.udc_answer || '020';
-        $('resUdcBreakdown').textContent = data.breakdown || '';
-        $('resDdc').textContent = data.ddc_answer || '020';
-        $('resDdcBreakdown').textContent = data.breakdown || '';
-        $('resExplain').textContent = data.explanation || '';
-        $('resSource').textContent = 'Engine: ' + (data.source || 'Global Tools');
-        $('result').style.display = 'block';
+        const data = await res.json();
+
+        document.getElementById('resultCard').style.display = 'block';
+        document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
+        document.getElementById('udcValue').textContent = data.udc || 'Not found';
+        document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
+        document.getElementById('explanationText').textContent = data.explanation || '';
+        updateRowVisibility();
       } catch (err) {
-        alert('Error');
+        alert('Error fetching classification.');
       } finally {
-        $('go').disabled = false; $('go').textContent = '⚡ CLASSIFY WITH GLOBAL TOOLS';
+        btn.textContent = 'Search';
+        btn.disabled = false;
       }
+    }
+
+    document.getElementById('classifyBtn').addEventListener('click', classifySubject);
+    document.getElementById('subjectInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') classifySubject();
     });
   </script>
 </body>
-</html>`;
-
-const server = http.createServer(async (req, res) => {
-  const url = req.url.split('?')[0];
-  if (req.method === 'GET' && url === '/api/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok' }));
-    return;
-  }
-  if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(HTML_CONTENT);
-    return;
-  }
-  if (req.method === 'POST' && url === '/api/classify') {
-    let bodyStr = '';
-    req.on('data', chunk => bodyStr += chunk);
-    req.on('end', async () => {
-      try {
-        const body = JSON.parse(bodyStr || '{}');
-        const title = String(body.title || '').trim();
-        const clientApiKey = String(body.clientApiKey || '').trim();
-        
-        // 1. Google Gemini AI with Search Grounding
-        const aiRes = await queryGeminiWithSearch(title, clientApiKey);
-        // 2. OCLC WorldCat Global Catalog
-        const oclcRes = await fetchFromOCLCWorldCat(title);
-
-        let finalUdc = aiRes?.udc || "811.111'36";
-        let finalDdc = aiRes?.ddc || oclcRes?.ddc || '425';
-        let finalBreakdown = aiRes?.breakdown || 'Verified via Global Library Tools & Search Grounding.';
-        let finalExplanation = aiRes?.explanation || 'Accurate classification notation extracted.';
-        let finalSource = aiRes?.source || oclcRes?.source || 'Global Library Tool';
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          status: 'classified',
-          title,
-          udc_answer: finalUdc,
-          ddc_answer: finalDdc,
-          breakdown: finalBreakdown,
-          explanation: finalExplanation,
-          source: finalSource
-        }));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Server error' }));
-      }
-    });
-    return;
-  }
-  res.writeHead(404);
-  res.end('Not found');
+</html>`);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Server on port ${PORT}`));
+// 4. API Endpoint (Local Index -> Cache -> Gemini Google Search Grounding)
+app.post('/api/classify', async (req, res) => {
+  const { query } = req.body;
+  if (!query) return res.status(400).json({ error: 'Query is required' });
+
+  const qKey = query.toLowerCase().trim();
+
+  // Check Server Cache First (0 Quota)
+  if (responseCache.has(qKey)) {
+    return res.json(responseCache.get(qKey));
+  }
+
+  // Check Local JSON Indexes First (0 Quota)
+  if (udcIndex[qKey] && ddcIndex[qKey]) {
+    const localResult = {
+      udc: udcIndex[qKey],
+      ddc: ddcIndex[qKey],
+      explanation: \`Exact match from local UDC & DDC reference index for "\${query}".\`,
+      source: '⚡ Local Index (0 Quota Used)'
+    };
+    responseCache.set(qKey, localResult);
+    return res.json(localResult);
+  }
+
+  // Call Gemini AI Mode with Real-Time Google Search Grounding
+  try {
+    const prompt = \`You are an expert library cataloger. Find the exact Universal Decimal Classification (UDC) number and Dewey Decimal Classification (DDC 23rd edition) number for the subject: "\${query}".
+Verify the classification numbers using Google Search. Do not guess or invent notation.
+Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation" (1-2 clear sentences explaining the subject hierarchy).\`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        temperature: 0.1
+      }
+    });
+
+    const rawText = response.text.replace(/\`\`\`json|\`\`\`/g, '').trim();
+    const parsed = JSON.parse(rawText);
+
+    const finalResult = {
+      udc: parsed.udc || 'Verify manually',
+      ddc: parsed.ddc || 'Verify manually',
+      explanation: parsed.explanation || '',
+      source: '✨ Google AI Mode (Search Grounded)'
+    };
+
+    responseCache.set(qKey, finalResult);
+    res.json(finalResult);
+
+  } catch (error) {
+    console.error('AI Mode Error:', error);
+    res.status(500).json({
+      udc: 'Error',
+      ddc: 'Error',
+      explanation: 'API limit reached or key missing in environment variables.',
+      source: '⚠️ Fallback'
+    });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
