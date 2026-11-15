@@ -1,9 +1,9 @@
-const http = process.getBuiltinModule('node:http');
-const fs = process.getBuiltinModule('node:fs');
-const zlib = process.getBuiltinModule('node:zlib');
+const http = require('http');
+const fs = require('fs');
+const zlib = require('zlib');
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v13.json';
+const CACHE_FILE = './ai-cache-v14.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -58,7 +58,7 @@ try {
 
 // 3. Specific-First DDC 23rd Ed. & UDC Schedule
 const SUBJECT_SCHEDULE = [
-  // Linguistics & Languages (Phonetics, Grammar, etc.)
+  // Linguistics & Languages
   { keys: ['phonetics of the english language', 'english phonetics', 'phonology of english'], udc: "811.111'34", ddc: '421.5', ddcBase: '4215', name: 'English Phonetics & Phonology' },
   { keys: ['english grammar'], udc: "811.111'36", ddc: '425', ddcBase: '425', name: 'English Grammar' },
   { keys: ['english language'], udc: '811.111', ddc: '420', ddcBase: '42', name: 'English Language' },
@@ -343,7 +343,7 @@ function synthesizePrecisionEngine(query) {
   return null;
 }
 
-// 5. PURE GOOGLE AI MODE (Valid Official Endpoints + Clear Diagnostics)
+// 5. PURE GOOGLE AI MODE
 async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) {
     return { errorReason: 'GEMINI_API_KEY is missing in Render Environment Variables.' };
@@ -384,7 +384,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
         continue;
       }
 
-      if (data.candidates?.[0]?.content?.parts) {
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
         const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -447,150 +447,4 @@ const HTML_PAGE = `<!DOCTYPE html>
     .tab:hover { color: #1a73e8; }
     .tab.active { color: #1a73e8; }
     .tab.active::after { content: ""; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: #1a73e8; border-radius: 3px 3px 0 0; }
-    .search-box { display: flex; align-items: center; border: 1.5px solid #cbd5e1; border-radius: 30px; padding: 6px 8px 6px 18px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); background: #fff; transition: border-color 0.2s, box-shadow 0.2s; }
-    .search-box:focus-within { border-color: #1a73e8; box-shadow: 0 4px 14px rgba(26, 115, 232, 0.14); }
-    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #0f172a; padding: 10px 4px; background: transparent; }
-    .search-box button { background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff; border: none; border-radius: 24px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-    .search-box button:hover { opacity: 0.92; }
-    .search-box button:disabled { background: #94a3b8; cursor: not-allowed; }
-    .signs-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .sign-pill { font-size: 11px; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
-    .result-card { margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; background: #fafbfc; display: none; }
-    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: #e8f0fe; color: #1a73e8; margin-bottom: 16px; }
-    .code-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
-    .code-label { font-weight: 600; color: #334155; font-size: 14px; }
-    .code-actions { display: flex; align-items: center; gap: 8px; }
-    .code-val { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 16px; font-weight: 700; color: #0f5132; background: #d1e7dd; padding: 5px 12px; border-radius: 8px; word-break: break-all; }
-    .copy-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .copy-btn:hover { background: #e2e8f0; }
-    .explanation { margin-top: 12px; font-size: 13.5px; color: #334155; line-height: 1.6; background: #fff; padding: 14px 16px; border-radius: 12px; border-left: 4px solid #1a73e8; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="brand">
-        <div class="brand-icon">LC</div>
-        <div>
-          <h1 class="brand-title">UDC & DDC Precision Classifier</h1>
-          <p class="brand-sub">Google AI Mode Priority • DDC 23 & Complete UDC Synthesis</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" data-mode="ai">✨ AI Mode</button>
-      <button class="tab" data-mode="both">All (UDC + DDC)</button>
-      <button class="tab" data-mode="udc">UDC Only</button>
-      <button class="tab" data-mode="ddc">DDC Only</button>
-    </div>
-
-    <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter any book title or subject..." />
-      <button id="classifyBtn">Search</button>
-    </div>
-
-    <div class="signs-bar">
-      <span class="sign-pill">+ Addition</span>
-      <span class="sign-pill">/ Stroke</span>
-      <span class="sign-pill">: Colon</span>
-      <span class="sign-pill">:: Double Colon</span>
-      <span class="sign-pill">[ ] Subgroup</span>
-      <span class="sign-pill">* Code</span>
-      <span class="sign-pill">= Language</span>
-      <span class="sign-pill">(0...) Form</span>
-      <span class="sign-pill">(...) Place</span>
-      <span class="sign-pill">(=...) Ethnic</span>
-      <span class="sign-pill">"..." Time</span>
-      <span class="sign-pill">-05 Persons</span>
-      <span class="sign-pill">.00 Viewpoint</span>
-    </div>
-
-    <div class="result-card" id="resultCard">
-      <span class="badge" id="sourceBadge">✨ Google AI Mode</span>
-      <div class="code-row" id="udcRow">
-        <span class="code-label">UDC Notation</span>
-        <div class="code-actions">
-          <span class="code-val" id="udcValue">-</span>
-          <button class="copy-btn" onclick="copyText('udcValue', this)">Copy</button>
-        </div>
-      </div>
-      <div class="code-row" id="ddcRow">
-        <span class="code-label">DDC 23 Notation</span>
-        <div class="code-actions">
-          <span class="code-val" id="ddcValue">-</span>
-          <button class="copy-btn" onclick="copyText('ddcValue', this)">Copy</button>
-        </div>
-      </div>
-      <div class="explanation" id="explanationText"></div>
-    </div>
-  </div>
-  <script>
-    let currentMode = 'ai';
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentMode = tab.dataset.mode;
-        updateRowVisibility();
-      });
-    });
-    function updateRowVisibility() {
-      document.getElementById('udcRow').style.display = currentMode === 'ddc' ? 'none' : 'flex';
-      document.getElementById('ddcRow').style.display = currentMode === 'udc' ? 'none' : 'flex';
-    }
-    function copyText(id, btn) {
-      const val = document.getElementById(id).textContent;
-      navigator.clipboard.writeText(val);
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
-    }
-    function showResult(data) {
-      document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
-      document.getElementById('udcValue').textContent = data.udc || 'Not found';
-      document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
-      document.getElementById('explanationText').textContent = data.explanation || '';
-      updateRowVisibility();
-    }
-    async function classifySubject() {
-      const query = document.getElementById('subjectInput').value.trim();
-      if (!query) return;
-
-      const localKey = 'udc_v13_' + query.toLowerCase();
-      const saved = localStorage.getItem(localKey);
-      if (saved) {
-        showResult(JSON.parse(saved));
-        return;
-      }
-
-      const btn = document.getElementById('classifyBtn');
-      btn.textContent = 'Searching...';
-      btn.disabled = true;
-
-      const controller = new AbortController();
-      const uiTimeout = setTimeout(() => controller.abort(), 14000);
-
-      try {
-        const res = await fetch('/api/classify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({ query })
-        });
-        clearTimeout(uiTimeout);
-        const data = await res.json();
-        if (data.udc && data.udc !== '001') {
-          localStorage.setItem(localKey, JSON.stringify(data));
-        }
-        showResult(data);
-      } catch (err) {
-        clearTimeout(uiTimeout);
-        alert('Connection slow. Tap Search once more.');
-      } finally {
-        btn.textContent = 'Search';
-        btn.disabled = false;
-      }
-    }
-    document.getElementById('classifyBtn').addEventListener('click', classifySubject);
-    document.getElementById('subjectInput').add
+    .search-box { display: flex; align-items: center; border: 1.5px solid #cbd5e1; border-radius: 30px; padding: 6px 8px 6px 18px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); background: #fff; transition: border-color 
