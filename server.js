@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v25.json';
+const CACHE_FILE = './ai-cache-v27.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -20,87 +20,56 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// 2. Intelligent Advanced Knowledge Base (Handles complex compound queries instantly)
-const KNOWLEDGE_BASE = [
-  { keys: ['public libraries in adult education', 'adult education in rural india', 'public library'], udc: '[027.4:374](540)(-22)', ddc: '027.40954091734', name: 'Public Libraries in Adult Education in Rural India' },
-  { keys: ['library services for visually impaired', 'blind students', 'visually impaired students'], udc: '[027.7:378]-056.262(540)', ddc: '027.708720954', name: 'Library Services for Visually Impaired' },
-  { keys: ['railway transportation in india', 'railway transport', 'railways in india'], udc: '656.2(540)"18/19"', ddc: '385.0954', name: 'Railway Transportation in India' },
-  { keys: ['science and technology', 'science & technology'], udc: '5/6', ddc: '600', name: 'Science & Technology' }
-];
-
-function intelligentHybridMatch(query) {
-  const q = query.toLowerCase().trim();
-  for (const item of KNOWLEDGE_BASE) {
-    for (const k of item.keys) {
-      if (q.includes(k) || k.includes(q)) {
-        return {
-          udc: item.udc,
-          ddc: item.ddc,
-          explanation: `Synthesized class number for "${query}" using official UDC signs and DDC 23rd Edition standards.`,
-          source: '✨ Google AI Mode (Advanced Engine)'
-        };
-      }
-    }
-  }
-  return null;
-}
-
-// 3. REAL LIVE GEMINI API CALL WITH DETAILED ERROR DIAGNOSTICS
+// 2. REAL LIVE GEMINI API CALL (Using official stable v1 endpoint)
 async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) {
     return { error: 'GEMINI_API_KEY is missing in Render Environment Variables.' };
   }
 
-  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition.
+  const prompt = `You are a senior library cataloger expert in UDC and DDC 23rd Edition.
 Build the EXACT synthesized class number for the book title/subject: "${query}".
 Follow official UDC signs and citation order strictly:
 - Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place, e.g., (540) India, (-22) Rural) -> "..." (time) -> (0...) (form) -> =... (language).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place, e.g., (540) India) -> "..." (time, e.g., 20th century = "19") -> (0...) (form) -> =... (language).
 Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
-  let lastError = '';
+  try {
+    const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+      })
+    });
 
-  for (const model of models) {
-    try {
-      const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
-        })
-      });
+    const data = await apiRes.json();
+    if (data.error) {
+      return { error: `Google API Error: ${data.error.message}` };
+    }
 
-      const data = await apiRes.json();
-      if (data.error) {
-        lastError = `${model}: ${data.error.message}`;
-        continue;
-      }
-
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-        const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.udc && parsed.ddc) {
-            return {
-              udc: parsed.udc,
-              ddc: parsed.ddc,
-              explanation: parsed.explanation || 'Synthesized via Gemini API Live.',
-              source: '✨ Google AI Mode (Gemini API Live)'
-            };
-          }
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.udc && parsed.ddc) {
+          return {
+            udc: parsed.udc,
+            ddc: parsed.ddc,
+            explanation: parsed.explanation || 'Synthesized via Gemini API Live.',
+            source: '✨ Google AI Mode (Gemini API Live)'
+          };
         }
       }
-    } catch (e) {
-      lastError = `${model}: ${e.message}`;
     }
+    return { error: 'Gemini API returned invalid or empty JSON format.' };
+  } catch (e) {
+    return { error: `Network Exception: ${e.message}` };
   }
-  return { error: `API Connection Failed: ${lastError || 'Invalid API Key or Network Error'}` };
 }
 
-// 4. GZIP Response Helper
+// 3. GZIP Response Helper
 function sendCompressed(req, res, statusCode, contentType, payload) {
   const acceptEncoding = req.headers['accept-encoding'] || '';
   const buf = Buffer.from(payload, 'utf8');
@@ -119,7 +88,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 5. Professional Library Cataloger UI
+// 4. Professional Library Cataloger UI
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -260,7 +229,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v25_' + query.toLowerCase();
+      const localKey = 'udc_v27_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -283,7 +252,7 @@ const HTML_PAGE = `<!DOCTYPE html>
         });
         clearTimeout(uiTimeout);
         const data = await res.json();
-        if (data.udc && data.udc !== '001') {
+        if (data.udc && data.udc !== 'ERROR') {
           localStorage.setItem(localKey, JSON.stringify(data));
         }
         showResult(data);
@@ -323,28 +292,20 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 1. Try Live Gemini AI Mode First
+        // DIRECT GOOGLE AI MODE EXECUTION
         const aiResult = await callGoogleAIMode(query);
         if (aiResult && aiResult.udc) {
           saveCache(qKey, aiResult);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(aiResult));
+        } else {
+          const errMsg = aiResult ? aiResult.error : 'Unknown AI error';
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
+            udc: 'ERROR',
+            ddc: 'ERROR',
+            explanation: `Google AI Error: ${errMsg}. Please ensure your GEMINI_API_KEY is active in Render and click 'Manual Deploy -> Clear Build Cache & Deploy'.`,
+            source: '❌ Google AI Mode Error'
+          }));
         }
-
-        // 2. Try Advanced Intelligent Hybrid Match
-        const hybridMatch = intelligentHybridMatch(qKey);
-        if (hybridMatch) {
-          saveCache(qKey, hybridMatch);
-          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(hybridMatch));
-        }
-
-        // 3. If API failed and no hybrid match, return the exact API error message so you see why
-        const errMsg = aiResult ? aiResult.error : 'API Key missing or invalid';
-        return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: 'ERROR',
-          ddc: 'ERROR',
-          explanation: `Google AI Mode Error: ${errMsg}. Please verify GEMINI_API_KEY in Render Environment Variables.`,
-          source: '❌ Google AI Mode Error'
-        }));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: 'ERROR',
