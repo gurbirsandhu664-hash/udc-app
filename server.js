@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v20.json';
+const CACHE_FILE = './ai-cache-v21.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -56,8 +56,9 @@ try {
   }
 } catch (e) {}
 
-// 3. Specific-First DDC 23rd Ed. & UDC Schedule (Science & Tech 5/6 Added)
+// 3. Specific-First DDC 23rd Ed. & UDC Schedule (Railway Transportation Fixed)
 const SUBJECT_SCHEDULE = [
+  { keys: ['railway transportation', 'railway transport', 'railways', 'railroad', 'rail transport'], udc: '656.2', ddc: '385', ddcBase: '385', name: 'Railway Transport' },
   { keys: ['science and technology', 'science & technology', 'science and tech', 'technology and science'], udc: '5/6', ddc: '600', ddcBase: '600', name: 'Science & Technology' },
   { keys: ['phonetics of the english language', 'english phonetics', 'phonology of english'], udc: "811.111'34", ddc: '421.5', ddcBase: '4215', name: 'English Phonetics & Phonology' },
   { keys: ['english grammar'], udc: "811.111'36", ddc: '425', ddcBase: '425', name: 'English Grammar' },
@@ -89,7 +90,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['fiction', 'novels', 'short stories'], udc: '82-3', ddc: '808.83', ddcBase: '80883', isLit: true, name: 'Fiction' },
   { keys: ['essays', 'essay'], udc: '82-4', ddc: '808.84', ddcBase: '80884', isLit: true, name: 'Essays' },
   { keys: ['literature'], udc: '82', ddc: '800', ddcBase: '80', isLit: true, name: 'Literature' },
-  { keys: ['railway transport', 'railways', 'railroad', 'rail transport'], udc: '656.2', ddc: '385', ddcBase: '385', name: 'Railway Transport' },
   { keys: ['air transport', 'aviation', 'airlines'], udc: '656.7', ddc: '387.7', ddcBase: '3877', name: 'Air Transport' },
   { keys: ['maritime transport', 'shipping', 'water transport'], udc: '656.6', ddc: '387.5', ddcBase: '3875', name: 'Maritime Transport' },
   { keys: ['road transport', 'highways'], udc: '656.1', ddc: '388.1', ddcBase: '3881', name: 'Road Transport' },
@@ -385,16 +385,16 @@ function synthesizePrecisionEngine(query) {
   return null;
 }
 
-// 5. PURE GOOGLE AI MODE (Gemini API Live Grounding)
+// 5. REAL GOOGLE AI MODE (Gemini API Live Grounding)
 async function callGoogleAIMode(query) {
-  if (!GEMINI_API_KEY) {
-    return null;
-  }
+  if (!GEMINI_API_KEY) return null;
 
-  const prompt = `You are a senior library cataloger expert in UDC and DDC 23.
-Classify the following query: "${query}".
-Follow official UDC signs and citation order strictly.
-Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "..."}`;
+  const prompt = `You are a senior library cataloger expert in UDC and DDC 23rd Edition.
+Build the EXACT synthesized class number for: "${query}".
+Follow official UDC signs and citation order strictly:
+- Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place, e.g., (540) India) -> "..." (time, e.g., 20th century = "19") -> (0...) (form) -> =... (language).
+Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
   const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
@@ -449,7 +449,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 7. Professional Library Cataloger UI (With Live Spinner & Smart Fallback)
+// 7. Professional Library Cataloger UI
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -582,7 +582,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v20_' + query.toLowerCase();
+      const localKey = 'udc_v21_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -646,14 +646,14 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 1. Try Live Gemini API First
+        // 1. HIGH PRIORITY: Live Gemini AI Mode (First Try)
         const aiResult = await callGoogleAIMode(query);
         if (aiResult && aiResult.udc) {
           saveCache(qKey, aiResult);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(aiResult));
         }
 
-        // 2. Fallback to Local Precision Engine (Science & Tech 5/6 included)
+        // 2. FALLBACK: Precision Local Rule Engine
         const localSynthesized = synthesizePrecisionEngine(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
@@ -661,15 +661,15 @@ const server = http.createServer(async (req, res) => {
         }
 
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '5/6',
-          ddc: '600',
-          explanation: `General Science & Technology Classification ("${query}").`,
+          udc: '001',
+          ddc: '001',
+          explanation: `General Classification for ("${query}").`,
           source: '✨ Google AI Mode'
         }));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '5/6',
-          ddc: '600',
+          udc: '001',
+          ddc: '001',
           explanation: 'Please try searching again.',
           source: '✨ Google AI Mode'
         }));
