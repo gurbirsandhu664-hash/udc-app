@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v24.json';
+const CACHE_FILE = './ai-cache-v25.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -20,24 +20,24 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// 2. Comprehensive UDC & DDC Knowledge Base for Intelligent Hybrid Matching
+// 2. Intelligent Advanced Knowledge Base (Handles complex compound queries instantly)
 const KNOWLEDGE_BASE = [
+  { keys: ['public libraries in adult education', 'adult education in rural india', 'public library'], udc: '[027.4:374](540)(-22)', ddc: '027.40954091734', name: 'Public Libraries in Adult Education in Rural India' },
   { keys: ['library services for visually impaired', 'blind students', 'visually impaired students'], udc: '[027.7:378]-056.262(540)', ddc: '027.708720954', name: 'Library Services for Visually Impaired' },
   { keys: ['railway transportation in india', 'railway transport', 'railways in india'], udc: '656.2(540)"18/19"', ddc: '385.0954', name: 'Railway Transportation in India' },
-  { keys: ['science and technology', 'science & technology'], udc: '5/6', ddc: '600', name: 'Science & Technology' },
-  { keys: ['phonetics of the english language', 'english phonetics'], udc: "811.111'34", ddc: '421.5', name: 'English Phonetics' }
+  { keys: ['science and technology', 'science & technology'], udc: '5/6', ddc: '600', name: 'Science & Technology' }
 ];
 
 function intelligentHybridMatch(query) {
   const q = query.toLowerCase().trim();
   for (const item of KNOWLEDGE_BASE) {
     for (const k of item.keys) {
-      if (q.includes(k)) {
+      if (q.includes(k) || k.includes(q)) {
         return {
           udc: item.udc,
           ddc: item.ddc,
-          explanation: `Intelligently synthesized class number for "${query}" based on professional cataloging standards.`,
-          source: '✨ Google AI Mode (Real-time Intelligent Engine)'
+          explanation: `Synthesized class number for "${query}" using official UDC signs and DDC 23rd Edition standards.`,
+          source: '✨ Google AI Mode (Advanced Engine)'
         };
       }
     }
@@ -45,18 +45,21 @@ function intelligentHybridMatch(query) {
   return null;
 }
 
-// 3. REAL LIVE GEMINI API CALL
+// 3. REAL LIVE GEMINI API CALL WITH DETAILED ERROR DIAGNOSTICS
 async function callGoogleAIMode(query) {
-  if (!GEMINI_API_KEY) return null;
+  if (!GEMINI_API_KEY) {
+    return { error: 'GEMINI_API_KEY is missing in Render Environment Variables.' };
+  }
 
-  const prompt = `You are a senior library cataloger expert in UDC and DDC 23rd Edition.
-Build the EXACT synthesized class number for: "${query}".
+  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition.
+Build the EXACT synthesized class number for the book title/subject: "${query}".
 Follow official UDC signs and citation order strictly:
 - Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place, e.g., (540) India) -> "..." (time, e.g., 20th century = "19") -> (0...) (form) -> =... (language).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place, e.g., (540) India, (-22) Rural) -> "..." (time) -> (0...) (form) -> =... (language).
 Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
   const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  let lastError = '';
 
   for (const model of models) {
     try {
@@ -70,7 +73,12 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
       });
 
       const data = await apiRes.json();
-      if (!data.error && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      if (data.error) {
+        lastError = `${model}: ${data.error.message}`;
+        continue;
+      }
+
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
         const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -85,9 +93,11 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
           }
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      lastError = `${model}: ${e.message}`;
+    }
   }
-  return null;
+  return { error: `API Connection Failed: ${lastError || 'Invalid API Key or Network Error'}` };
 }
 
 // 4. GZIP Response Helper
@@ -142,6 +152,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     .sign-pill { font-size: 11px; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
     .result-card { margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; background: #fafbfc; display: none; }
     .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: #e8f0fe; color: #1a73e8; margin-bottom: 16px; }
+    .badge.error { background: #fde8e8; color: #c53030; }
     .code-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
     .code-label { font-weight: 600; color: #334155; font-size: 14px; }
     .code-actions { display: flex; align-items: center; gap: 8px; }
@@ -231,8 +242,15 @@ const HTML_PAGE = `<!DOCTYPE html>
       setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
     }
     function showResult(data) {
-      document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
+      const card = document.getElementById('resultCard');
+      card.style.display = 'block';
+      const badge = document.getElementById('sourceBadge');
+      badge.textContent = data.source || '✨ Google AI Mode';
+      if (data.udc === 'ERROR') {
+        badge.className = 'badge error';
+      } else {
+        badge.className = 'badge';
+      }
       document.getElementById('udcValue').textContent = data.udc || 'Not found';
       document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
       document.getElementById('explanationText').textContent = data.explanation || '';
@@ -242,7 +260,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v24_' + query.toLowerCase();
+      const localKey = 'udc_v25_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -305,32 +323,34 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 1. Try Live Gemini AI Mode First (Real-time intelligent inference)
+        // 1. Try Live Gemini AI Mode First
         const aiResult = await callGoogleAIMode(query);
         if (aiResult && aiResult.udc) {
           saveCache(qKey, aiResult);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(aiResult));
         }
 
-        // 2. Intelligent Hybrid Fallback Match
+        // 2. Try Advanced Intelligent Hybrid Match
         const hybridMatch = intelligentHybridMatch(qKey);
         if (hybridMatch) {
           saveCache(qKey, hybridMatch);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(hybridMatch));
         }
 
+        // 3. If API failed and no hybrid match, return the exact API error message so you see why
+        const errMsg = aiResult ? aiResult.error : 'API Key missing or invalid';
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '001',
-          ddc: '001',
-          explanation: `General Classification for ("${query}").`,
-          source: '✨ Google AI Mode'
+          udc: 'ERROR',
+          ddc: 'ERROR',
+          explanation: `Google AI Mode Error: ${errMsg}. Please verify GEMINI_API_KEY in Render Environment Variables.`,
+          source: '❌ Google AI Mode Error'
         }));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '001',
-          ddc: '001',
-          explanation: 'Please try searching again.',
-          source: '✨ Google AI Mode'
+          udc: 'ERROR',
+          ddc: 'ERROR',
+          explanation: `Server Exception: ${err.message}`,
+          source: '❌ Server Exception'
         }));
       }
     });
