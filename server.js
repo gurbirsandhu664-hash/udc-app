@@ -2,9 +2,9 @@ const http = process.getBuiltinModule('node:http');
 const fs = process.getBuiltinModule('node:fs');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-v3.json';
+const CACHE_FILE = './ai-cache-v4.json';
 
-// 1. Persistent Disk Cache
+// 1. Persistent Disk Cache (0 Quota on Repeat Searches)
 let diskCache = {};
 try {
   if (fs.existsSync(CACHE_FILE)) {
@@ -55,27 +55,45 @@ try {
   }
 } catch (e) {}
 
-// 3. Expanded Subject & Sub-Discipline Schedule (0 Quota)
+// 3. Specific-First Subject Schedule (Sorted by Longest Keyword Match so specific topics NEVER fall back to broad main classes)
 const SUBJECT_SCHEDULE = [
-  { keys: ['social media', 'social networking'], udc: '004.738.5:316.77', ddc: '302.231', ddcBase: '302.231', name: 'Social Media' },
-  { keys: ['artificial intelligence', 'machine learning'], udc: '004.8', ddc: '006.3', ddcBase: '006.3', name: 'Artificial Intelligence' },
+  // Library & Information Science (Specific Subdivisions)
+  { keys: ['library management', 'library administration'], udc: '025', ddc: '025.1', ddcBase: '0251', name: 'Library Management & Administration' },
+  { keys: ['library classification', 'classification of books', 'ddc', 'udc'], udc: '025.4', ddc: '025.42', ddcBase: '02542', name: 'Library Classification' },
+  { keys: ['library cataloging', 'cataloguing', 'bibliographic control'], udc: '025.3', ddc: '025.3', ddcBase: '0253', name: 'Library Cataloging' },
+  { keys: ['reference service', 'information retrieval'], udc: '025.5', ddc: '025.52', ddcBase: '02552', name: 'Reference & Information Services' },
+  { keys: ['digital library', 'digital libraries', 'electronic library'], udc: '027:004', ddc: '025.04', ddcBase: '02504', name: 'Digital Libraries' },
+  { keys: ['academic library', 'university library', 'college library'], udc: '027.7', ddc: '027.7', ddcBase: '0277', name: 'Academic & University Libraries' },
+  { keys: ['public library', 'public libraries'], udc: '027.4', ddc: '027.4', ddcBase: '0274', name: 'Public Libraries' },
+  { keys: ['school library', 'school libraries'], udc: '027.8', ddc: '027.8', ddcBase: '0278', name: 'School Libraries' },
+  { keys: ['library science', 'librarianship', 'library'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
+
+  // Computer Science & Media
+  { keys: ['social media', 'social networking'], udc: '004.738.5:316.77', ddc: '302.231', ddcBase: '302231', name: 'Social Media' },
+  { keys: ['artificial intelligence', 'machine learning'], udc: '004.8', ddc: '006.3', ddcBase: '0063', name: 'Artificial Intelligence' },
+  { keys: ['data science', 'big data'], udc: '004.65', ddc: '005.7', ddcBase: '0057', name: 'Data Science & Databases' },
+  { keys: ['cyber security', 'cybersecurity', 'information security'], udc: '004.056', ddc: '005.8', ddcBase: '0058', name: 'Cybersecurity' },
   { keys: ['computer science', 'computing', 'information technology'], udc: '004', ddc: '004', ddcBase: '004', name: 'Computer Science' },
-  { keys: ['library science', 'librarianship', 'cataloging', 'classification'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
   { keys: ['journalism', 'mass media'], udc: '070', ddc: '070', ddcBase: '070', name: 'Journalism & Media' },
-  { keys: ['mental health', 'psychiatry'], udc: '616.89', ddc: '362.2', ddcBase: '362.2', name: 'Mental Health' },
+
+  // Philosophy, Psychology & Religion
+  { keys: ['mental health', 'psychiatry'], udc: '616.89', ddc: '362.2', ddcBase: '3622', name: 'Mental Health' },
+  { keys: ['educational psychology'], udc: '37.015.3', ddc: '370.15', ddcBase: '37015', name: 'Educational Psychology' },
   { keys: ['psychology', 'human behavior'], udc: '159.9', ddc: '150', ddcBase: '15', name: 'Psychology' },
   { keys: ['philosophy', 'metaphysics'], udc: '1', ddc: '100', ddcBase: '10', name: 'Philosophy' },
   { keys: ['logic'], udc: '16', ddc: '160', ddcBase: '16', name: 'Logic' },
   { keys: ['ethics'], udc: '17', ddc: '170', ddcBase: '17', name: 'Ethics' },
-  { keys: ['sikhism', 'sikh'], udc: '294.553', ddc: '294.6', ddcBase: '294.6', name: 'Sikhism' },
-  { keys: ['hinduism'], udc: '294.5', ddc: '294.5', ddcBase: '294.5', name: 'Hinduism' },
+  { keys: ['sikhism', 'sikh'], udc: '294.553', ddc: '294.6', ddcBase: '2946', name: 'Sikhism' },
+  { keys: ['hinduism'], udc: '294.5', ddc: '294.5', ddcBase: '2945', name: 'Hinduism' },
   { keys: ['islam'], udc: '297', ddc: '297', ddcBase: '297', name: 'Islam' },
   { keys: ['religion', 'theology'], udc: '2', ddc: '200', ddcBase: '20', name: 'Religion' },
+
+  // Social Sciences, Law & Education
   { keys: ['sociology', 'society'], udc: '316', ddc: '301', ddcBase: '301', name: 'Sociology' },
   { keys: ['statistics'], udc: '311', ddc: '310', ddcBase: '31', name: 'Statistics' },
   { keys: ['international relations', 'foreign policy'], udc: '327', ddc: '327', ddcBase: '327', name: 'International Relations' },
   { keys: ['political science', 'politics'], udc: '32', ddc: '320', ddcBase: '32', name: 'Political Science' },
-  { keys: ['banking', 'finance'], udc: '336.71', ddc: '332.1', ddcBase: '332.1', name: 'Banking & Finance' },
+  { keys: ['banking', 'finance'], udc: '336.71', ddc: '332.1', ddcBase: '3321', name: 'Banking & Finance' },
   { keys: ['economics', 'economy'], udc: '33', ddc: '330', ddcBase: '33', name: 'Economics' },
   { keys: ['constitutional law'], udc: '342', ddc: '342', ddcBase: '342', name: 'Constitutional Law' },
   { keys: ['criminal law', 'criminology'], udc: '343', ddc: '345', ddcBase: '345', name: 'Criminal Law' },
@@ -84,41 +102,47 @@ const SUBJECT_SCHEDULE = [
   { keys: ['higher education', 'universities'], udc: '378', ddc: '378', ddcBase: '378', name: 'Higher Education' },
   { keys: ['education', 'teaching'], udc: '37', ddc: '370', ddcBase: '37', name: 'Education' },
   { keys: ['commerce', 'trade'], udc: '339', ddc: '380', ddcBase: '38', name: 'Commerce' },
+
+  // Pure & Applied Sciences
   { keys: ['mathematics'], udc: '51', ddc: '510', ddcBase: '51', name: 'Mathematics' },
   { keys: ['astronomy'], udc: '52', ddc: '520', ddcBase: '52', name: 'Astronomy' },
-  { keys: ['quantum physics', 'quantum mechanics'], udc: '530.145', ddc: '530.12', ddcBase: '530.12', name: 'Quantum Physics' },
+  { keys: ['quantum physics', 'quantum mechanics'], udc: '530.145', ddc: '530.12', ddcBase: '53012', name: 'Quantum Physics' },
   { keys: ['physics'], udc: '53', ddc: '530', ddcBase: '53', name: 'Physics' },
+  { keys: ['organic chemistry'], udc: '547', ddc: '547', ddcBase: '547', name: 'Organic Chemistry' },
   { keys: ['chemistry'], udc: '54', ddc: '540', ddcBase: '54', name: 'Chemistry' },
   { keys: ['geology', 'earth science'], udc: '55', ddc: '551', ddcBase: '551', name: 'Geology' },
+  { keys: ['genetics'], udc: '575', ddc: '576.5', ddcBase: '5765', name: 'Genetics' },
   { keys: ['biology'], udc: '57', ddc: '570', ddcBase: '57', name: 'Biology' },
   { keys: ['botany'], udc: '58', ddc: '580', ddcBase: '58', name: 'Botany' },
   { keys: ['zoology'], udc: '59', ddc: '590', ddcBase: '59', name: 'Zoology' },
-  { keys: ['cardiology', 'heart'], udc: '616.12', ddc: '616.12', ddcBase: '616.12', name: 'Cardiology' },
+  { keys: ['cardiology', 'heart'], udc: '616.12', ddc: '616.12', ddcBase: '61612', name: 'Cardiology' },
   { keys: ['surgery'], udc: '617', ddc: '617', ddcBase: '617', name: 'Surgery' },
   { keys: ['anatomy'], udc: '611', ddc: '611', ddcBase: '611', name: 'Anatomy' },
   { keys: ['medicine', 'medical', 'health'], udc: '61', ddc: '610', ddcBase: '61', name: 'Medicine & Health' },
-  { keys: ['automobiles', 'vehicles', 'motor cars'], udc: '629.33', ddc: '629.222', ddcBase: '629.222', name: 'Automobiles' },
+  { keys: ['automobiles', 'vehicles', 'motor cars'], udc: '629.33', ddc: '629.222', ddcBase: '629222', name: 'Automobiles' },
   { keys: ['engineering'], udc: '62', ddc: '620', ddcBase: '62', name: 'Engineering' },
   { keys: ['agriculture', 'farming'], udc: '63', ddc: '630', ddcBase: '63', name: 'Agriculture' },
-  { keys: ['management', 'business'], udc: '65', ddc: '658', ddcBase: '658', name: 'Management' },
+  { keys: ['business management', 'management', 'business'], udc: '65', ddc: '658', ddcBase: '658', name: 'Business Management' },
+
+  // Arts, Literature & History
   { keys: ['architecture'], udc: '72', ddc: '720', ddcBase: '72', name: 'Architecture' },
   { keys: ['music'], udc: '78', ddc: '780', ddcBase: '78', name: 'Music' },
   { keys: ['linguistics', 'language'], udc: '81', ddc: '410', ddcBase: '41', name: 'Linguistics' },
-  { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '891.42', name: 'Punjabi Literature' },
+  { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '89142', name: 'Punjabi Literature' },
   { keys: ['english literature'], udc: '821.111', ddc: '820', ddcBase: '82', name: 'English Literature' },
   { keys: ['literature'], udc: '82', ddc: '800', ddcBase: '80', name: 'Literature' },
   { keys: ['geography'], udc: '91', ddc: '910', ddcBase: '91', name: 'Geography' },
   { keys: ['history'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
 ];
 
-// 4. Form, Demographic, Geographic & Time Auxiliaries (UDC + DDC Tables)
+// 4. Form, Demographic, Geographic & Time Auxiliaries
 const FACET_RULES = [
   { pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Statistical tables (-021 / (083.4))' },
   { pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Dictionary (-03 / (038))' },
   { pattern: /\b(encyclopedias?|encyclopaedias?)\b/i, udcAdd: '(031)', ddcSub: '03', label: 'Encyclopedia (-03 / (031))' },
   { pattern: /\b(bibliograph(y|ies))\b/i, udcAdd: '(01)', ddcSub: '016', label: 'Bibliography (016 / (01))' },
   { pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Serials (-05 / (05))' },
-  { pattern: /\b(handbooks?|manuals?|guides?)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Handbook (-0202 / (035))' },
+  { pattern: /\b(handbooks?|manuals?|guides?|guide to)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Handbook/Guide (-0202 / (035))' },
   { pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Research (-072 / .001.5)' },
   { pattern: /\b(teenagers?|youth|adolescents?)\b/i, udcAdd: '-053.6', ddcSub: '0835', label: 'Persons: Youth/Teenagers (-0835 / -053.6)' },
   { pattern: /\b(children|child)\b/i, udcAdd: '-053.2', ddcSub: '083', label: 'Persons: Children (-083 / -053.2)' },
@@ -136,7 +160,9 @@ const FACET_RULES = [
 function formatDdcNumber(ddcBase, sub) {
   if (sub === '016') return `016.${ddcBase.replace(/^0+/, '')}`;
   const cleanBase = ddcBase.replace('.', '');
-  const raw = `${cleanBase}${sub}`;
+  // Avoid double zero when base already ends in 0 (e.g., 370 + 021 -> 370.21, 0251 + 0202 -> 025.10202)
+  const effectiveSub = (cleanBase.endsWith('0') && sub.startsWith('0')) ? sub.slice(1) : sub;
+  const raw = `${cleanBase}${effectiveSub}`;
   return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
 }
 
@@ -155,13 +181,16 @@ function synthesizeEngine(query) {
     };
   }
 
-  // 2. Find All Matching Disciplines in Query (Supports Multi-Subject Colon Relation ":")
+  // 2. Specific-First Subject Matching (Removes matched phrase so generic sub-words like "management" don't double-match)
+  let remainingQuery = q;
   const matchedDisciplines = [];
+
   for (const item of SUBJECT_SCHEDULE) {
     for (const k of item.keys) {
       const rx = new RegExp(`\\b${k}\\b`, 'i');
-      if (rx.test(q)) {
+      if (rx.test(remainingQuery)) {
         matchedDisciplines.push(item);
+        remainingQuery = remainingQuery.replace(rx, ' ');
         break;
       }
     }
@@ -218,12 +247,14 @@ function synthesizeEngine(query) {
   return null;
 }
 
-// 5. AI Mode Fallback for Completely Unknown Subjects
+// 5. AI Mode Synthesis for Unknown/Deep Subjects
 async function callGeminiSynthesis(query) {
   const prompt = `You are a senior library classification specialist expert in UDC and DDC 23rd Edition.
-Build the EXACT synthesized class number for: "${query}".
-Use proper UDC auxiliaries: relation (:), form (0...), persons -05..., place (...), time "...".
-Use proper DDC Table 1-6 subdivisions.
+Build the EXACT, complete synthesized class number for: "${query}".
+Rules:
+- Never return only a broad main class if a specific subdivision or auxiliary applies.
+- Use proper UDC auxiliaries: relation (:), form (0...), persons -05..., place (...), time "...".
+- Use proper DDC Table 1-6 subdivisions.
 Return strictly valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis"}`;
 
   const models = ['gemini-3.8-flash', 'gemini-2.5-flash-lite'];
@@ -372,7 +403,7 @@ const server = http.createServer(async (req, res) => {
           return res.end(JSON.stringify(diskCache[qKey]));
         }
 
-        // 2. Multi-Subject & Facet Synthesis Engine (0 Quota)
+        // 2. Specific-First Multi-Subject & Facet Synthesis Engine (0 Quota)
         const synthesized = synthesizeEngine(qKey);
         if (synthesized) {
           saveCache(qKey, synthesized);
