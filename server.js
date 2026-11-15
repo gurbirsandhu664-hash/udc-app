@@ -1,8 +1,9 @@
 const http = process.getBuiltinModule('node:http');
 const fs = process.getBuiltinModule('node:fs');
+const zlib = process.getBuiltinModule('node:zlib');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-v6.json';
+const CACHE_FILE = './ai-cache-final.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -55,7 +56,7 @@ try {
   }
 } catch (e) {}
 
-// 3. Comprehensive DDC 23rd Ed. & UDC Schedule (Specific-First Longest Match)
+// 3. Specific-First DDC 23rd Ed. & UDC Schedule (Longest Match First)
 const SUBJECT_SCHEDULE = [
   // Library & Information Science
   { keys: ['library management', 'library administration'], udc: '025', ddc: '025.1', ddcBase: '0251', name: 'Library Management & Administration' },
@@ -67,6 +68,13 @@ const SUBJECT_SCHEDULE = [
   { keys: ['public library', 'public libraries'], udc: '027.4', ddc: '027.4', ddcBase: '0274', name: 'Public Libraries' },
   { keys: ['school library', 'school libraries'], udc: '027.8', ddc: '027.8', ddcBase: '0278', name: 'School Libraries' },
   { keys: ['library science', 'librarianship', 'library'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
+
+  // Specific Transport Modes (Before Generic Transport)
+  { keys: ['railway transport', 'railways', 'railroad', 'rail transport'], udc: '656.2', ddc: '385', ddcBase: '385', name: 'Railway Transport' },
+  { keys: ['air transport', 'aviation', 'airlines'], udc: '656.7', ddc: '387.7', ddcBase: '3877', name: 'Air Transport' },
+  { keys: ['maritime transport', 'shipping', 'water transport'], udc: '656.6', ddc: '387.5', ddcBase: '3875', name: 'Maritime Transport' },
+  { keys: ['road transport', 'highways'], udc: '656.1', ddc: '388.1', ddcBase: '3881', name: 'Road Transport' },
+  { keys: ['transport', 'transportation'], udc: '656', ddc: '388', ddcBase: '388', name: 'Transportation' },
 
   // Tourism, Economics, Commerce & Social Sciences
   { keys: ['ecotourism', 'eco-tourism', 'sustainable tourism'], udc: '338.48:502', ddc: '338.4791', ddcBase: '3384791', name: 'Ecotourism & Sustainable Tourism' },
@@ -107,7 +115,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['higher education', 'universities'], udc: '378', ddc: '378', ddcBase: '378', name: 'Higher Education' },
   { keys: ['education', 'teaching', 'schools'], udc: '37', ddc: '370', ddcBase: '37', name: 'Education' },
   { keys: ['commerce', 'trade', 'export', 'import'], udc: '339', ddc: '380', ddcBase: '38', name: 'Commerce & Trade' },
-  { keys: ['transport', 'transportation', 'railways', 'aviation'], udc: '656', ddc: '388', ddcBase: '388', name: 'Transportation' },
   { keys: ['folklore', 'customs', 'festivals'], udc: '39', ddc: '390', ddcBase: '39', name: 'Customs & Folklore' },
 
   // Sciences, Medicine, Engineering & Agriculture
@@ -160,7 +167,7 @@ const SUBJECT_SCHEDULE = [
   { keys: ['history', 'civilization'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
 ];
 
-// 4. Form, Demographic, Global Geographic Tables (Nepal, India, Canada, etc.) & Time
+// 4. Form, Demographic, Geographic & Time Tables
 const FACET_RULES = [
   { pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Statistical tables (-021 / (083.4))' },
   { pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Dictionary (-03 / (038))' },
@@ -174,7 +181,6 @@ const FACET_RULES = [
   { pattern: /\b(women|females?)\b/i, udcAdd: '-055.2', ddcSub: '082', label: 'Women (-082 / -055.2)' },
   { pattern: /\b(rural|villages?)\b/i, udcAdd: '(-22)', ddcSub: '091734', label: 'Rural regions (-091734 / (-22))' },
   { pattern: /\b(urban|cities)\b/i, udcAdd: '(-21)', ddcSub: '091732', label: 'Urban regions (-091732 / (-21))' },
-  // Countries & Regions (UDC Place Table + DDC Table 2)
   { pattern: /\b(punjab)\b/i, udcAdd: '(545.2)', ddcSub: '09545', label: 'Place: Punjab (-09545 / (545.2))' },
   { pattern: /\b(india|indian)\b/i, udcAdd: '(540)', ddcSub: '0954', label: 'Place: India (-0954 / (540))' },
   { pattern: /\b(nepal|nepalese)\b/i, udcAdd: '(541.35)', ddcSub: '095496', label: 'Place: Nepal (-095496 / (541.35))' },
@@ -216,7 +222,7 @@ function synthesizeLocalSchedule(query) {
       udc: udcJson,
       ddc: ddcJson,
       explanation: `Exact class number matched from reference schedule for "${query}".`,
-      source: '⚡ Reference Index'
+      source: '⚡ Reference Index (Instant)'
     };
   }
 
@@ -263,100 +269,118 @@ function synthesizeLocalSchedule(query) {
       udc: udcBuilt,
       ddc: ddcBuilt,
       explanation: steps.length > 1 ? `Synthesized Class Number -> ${steps.join(' + ')}.` : `Standard Class Number for ${primary.name}.`,
-      source: '⚡ Synthesized Schedule'
+      source: '⚡ Synthesized Schedule (Instant)'
     };
   }
 
   return null;
 }
 
-// 5. Real Google AI Mode (Gemini + Live Google Search Grounding)
-async function callRealGoogleAiMode(query) {
-  if (!GEMINI_API_KEY) return null;
-
-  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition (Dewey Decimal Classification).
-Use Google Search to verify and build the EXACT synthesized class number for: "${query}".
-Rules:
-1. Build complete synthesized class numbers using UDC auxiliaries (relation ":", form "(0...)", persons "-05...", place "(...)", time '"..."') and DDC Table 1-6 subdivisions.
-2. Example: "Tourism in Nepal" -> UDC: "338.48(541.35)", DDC: "338.47915496".
-3. Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis"}`;
-
-  const models = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-2.5-flash-lite'];
-
-  for (const model of models) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
-    try {
-      const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ google_search: {} }],
-          generationConfig: { temperature: 0.1 }
-        })
-      });
-      clearTimeout(timer);
-
-      const data = await apiRes.json();
-      if (!data.error && data.candidates?.[0]?.content?.parts) {
-        const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.udc && parsed.ddc) {
-            return {
-              udc: parsed.udc,
-              ddc: parsed.ddc,
-              explanation: parsed.explanation || `Verified via Google AI Mode for "${query}".`,
-              source: '✨ Google AI Mode (Live Search Grounded)'
-            };
-          }
-        }
-      }
-    } catch (e) {
-      clearTimeout(timer);
-    }
+// 5. Fast Parallel Network Fetch (Gemini AI Mode + Open Library Race - Zero Traffic Hang!)
+async function fetchGeminiSingle(model, prompt) {
+  if (!GEMINI_API_KEY) throw new Error('No key');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000); // Fast 5s cutoff
+  try {
+    const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { temperature: 0.1 }
+      })
+    });
+    clearTimeout(timer);
+    const data = await apiRes.json();
+    if (data.error || !data.candidates?.[0]?.content?.parts) throw new Error('API error');
+    const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Parse error');
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!parsed.udc || !parsed.ddc) throw new Error('Incomplete');
+    return {
+      udc: parsed.udc,
+      ddc: parsed.ddc,
+      explanation: parsed.explanation || 'Verified via Google AI Mode.',
+      source: '✨ Google AI Mode (Live Search Grounded)'
+    };
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
   }
-  return null;
 }
 
-// 6. Free Unlimited Open Library Catalog Lookup (Zero API Key, Zero Quota Limit!)
-async function callOpenLibraryCatalog(query) {
+async function fetchOpenLibraryFast(query) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 6000);
+  const timer = setTimeout(() => controller.abort(), 4500);
   try {
-    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,ddc,subject`;
+    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=4&fields=title,ddc`;
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     const data = await res.json();
-    if (data.docs && data.docs.length > 0) {
+    if (data.docs) {
       for (const doc of data.docs) {
         if (doc.ddc && doc.ddc.length > 0) {
           const rawDdc = doc.ddc[0].replace(/[^0-9.]/g, '');
           if (rawDdc) {
-            // Map DDC main class to corresponding UDC equivalent
-            const ddcPrefix = rawDdc.slice(0, 3);
             let udcApprox = rawDdc;
-            if (ddcPrefix.startsWith('301')) udcApprox = rawDdc.replace(/^301/, '316');
-            else if (ddcPrefix.startsWith('02')) udcApprox = rawDdc.replace(/^020/, '02');
-            else if (ddcPrefix.startsWith('634.9')) udcApprox = rawDdc.replace(/^634\.9/, '630');
-
+            if (rawDdc.startsWith('301')) udcApprox = rawDdc.replace(/^301/, '316');
+            else if (rawDdc.startsWith('020')) udcApprox = rawDdc.replace(/^020/, '02');
+            else if (rawDdc.startsWith('634.9')) udcApprox = rawDdc.replace(/^634\.9/, '630');
             return {
               udc: udcApprox,
               ddc: rawDdc,
-              explanation: `Matched via World Library Catalog records for "${doc.title || query}".`,
-              source: '📚 Library Catalog Grounded (0 Quota)'
+              explanation: `Matched from World Library Catalog for "${doc.title || query}".`,
+              source: '📚 Library Catalog Grounded'
             };
           }
         }
       }
     }
+    throw new Error('No DDC match');
   } catch (e) {
     clearTimeout(timer);
+    throw e;
   }
-  return null;
+}
+
+async function resolveOnlineParallel(query) {
+  const prompt = `You are a senior library cataloger expert in UDC and DDC 23rd Edition.
+Build the EXACT synthesized class number for: "${query}".
+Use proper UDC auxiliaries (relation ":", form "(0...)", persons "-05...", place "(...)", time '"..."') and DDC Table 1-6 subdivisions.
+Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis"}`;
+
+  try {
+    // Race all live sources simultaneously — fastest accurate response wins immediately!
+    return await Promise.any([
+      fetchGeminiSingle('gemini-2.5-flash', prompt),
+      fetchGeminiSingle('gemini-3.8-flash', prompt),
+      fetchOpenLibraryFast(query)
+    ]);
+  } catch (e) {
+    return null;
+  }
+}
+
+// 6. Compressed Response Helper (Fast on Slow Mobile Networks)
+function sendCompressed(req, res, statusCode, contentType, payload) {
+  const acceptEncoding = req.headers['accept-encoding'] || '';
+  const buf = Buffer.from(payload, 'utf8');
+  if (acceptEncoding.includes('gzip')) {
+    zlib.gzip(buf, (err, compressed) => {
+      if (!err) {
+        res.writeHead(statusCode, { 'Content-Type': contentType, 'Content-Encoding': 'gzip', 'Cache-Control': 'public, max-age=3600' });
+        return res.end(compressed);
+      }
+      res.writeHead(statusCode, { 'Content-Type': contentType });
+      res.end(buf);
+    });
+  } else {
+    res.writeHead(statusCode, { 'Content-Type': contentType });
+    res.end(buf);
+  }
 }
 
 const HTML_PAGE = `<!DOCTYPE html>
@@ -426,15 +450,32 @@ const HTML_PAGE = `<!DOCTYPE html>
       document.getElementById('udcRow').style.display = currentMode === 'ddc' ? 'none' : 'flex';
       document.getElementById('ddcRow').style.display = currentMode === 'udc' ? 'none' : 'flex';
     }
+    function showResult(data) {
+      document.getElementById('resultCard').style.display = 'block';
+      document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
+      document.getElementById('udcValue').textContent = data.udc || 'Not found';
+      document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
+      document.getElementById('explanationText').textContent = data.explanation || '';
+      updateRowVisibility();
+    }
     async function classifySubject() {
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
+
+      // Instant Browser LocalStorage Check (0ms, Zero Internet Traffic!)
+      const localKey = 'udc_v6_' + query.toLowerCase();
+      const saved = localStorage.getItem(localKey);
+      if (saved) {
+        showResult(JSON.parse(saved));
+        return;
+      }
+
       const btn = document.getElementById('classifyBtn');
       btn.textContent = 'Searching...';
       btn.disabled = true;
 
       const controller = new AbortController();
-      const uiTimeout = setTimeout(() => controller.abort(), 16000);
+      const uiTimeout = setTimeout(() => controller.abort(), 12000);
 
       try {
         const res = await fetch('/api/classify', {
@@ -445,15 +486,13 @@ const HTML_PAGE = `<!DOCTYPE html>
         });
         clearTimeout(uiTimeout);
         const data = await res.json();
-        document.getElementById('resultCard').style.display = 'block';
-        document.getElementById('sourceBadge').textContent = data.source || '✨ Google AI Mode';
-        document.getElementById('udcValue').textContent = data.udc || 'Not found';
-        document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
-        document.getElementById('explanationText').textContent = data.explanation || '';
-        updateRowVisibility();
+        if (data.udc && data.udc !== '001') {
+          localStorage.setItem(localKey, JSON.stringify(data));
+        }
+        showResult(data);
       } catch (err) {
         clearTimeout(uiTimeout);
-        alert('Server waking up. Tap Search once more.');
+        alert('Connection slow. Tap Search once more.');
       } finally {
         btn.textContent = 'Search';
         btn.disabled = false;
@@ -469,8 +508,7 @@ const HTML_PAGE = `<!DOCTYPE html>
 
 const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    return res.end(HTML_PAGE);
+    return sendCompressed(req, res, 200, 'text/html; charset=utf-8', HTML_PAGE);
   }
 
   if (req.method === 'POST' && req.url === '/api/classify') {
@@ -480,53 +518,39 @@ const server = http.createServer(async (req, res) => {
       try {
         const { query } = JSON.parse(body || '{}');
         if (!query) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: 'Query is required' }));
+          return sendCompressed(req, res, 400, 'application/json', JSON.stringify({ error: 'Query is required' }));
         }
 
         const qKey = query.toLowerCase().trim();
 
-        // 1. Check Cache
+        // 1. Server Disk Cache (0ms)
         if (diskCache[qKey]) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify(diskCache[qKey]));
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 2. Real Google AI Mode (Live Search Grounding)
-        const aiResult = await callRealGoogleAiMode(query);
-        if (aiResult) {
-          saveCache(qKey, aiResult);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify(aiResult));
-        }
-
-        // 3. Built-in Number-Building Schedule (Instant, 0 Quota)
+        // 2. Built-in Specific Synthesis Engine (0ms, Zero Network Traffic)
         const localSynthesized = synthesizeLocalSchedule(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify(localSynthesized));
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(localSynthesized));
         }
 
-        // 4. Free Unlimited Open Library Catalog Lookup (For ANY unknown book/subject worldwide)
-        const catalogResult = await callOpenLibraryCatalog(query);
-        if (catalogResult) {
-          saveCache(qKey, catalogResult);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify(catalogResult));
+        // 3. Parallel Online Race (Gemini Live Search Grounding + World Library Catalog)
+        const onlineResult = await resolveOnlineParallel(query);
+        if (onlineResult) {
+          saveCache(qKey, onlineResult);
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(onlineResult));
         }
 
-        // 5. Final General Knowledge Classification
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        // 4. Safe General Classification
+        return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '001',
           ddc: '001',
           explanation: `General Knowledge & Interdisciplinary Subject ("${query}").`,
           source: '🛡️ General Classification'
         }));
       } catch (err) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '001',
           ddc: '001',
           explanation: 'Please try searching again.',
@@ -540,6 +564,9 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404);
   res.end('Not Found');
 });
+
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
