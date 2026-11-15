@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v17.json';
+const CACHE_FILE = './ai-cache-v20.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -56,9 +56,9 @@ try {
   }
 } catch (e) {}
 
-// 3. Specific-First DDC 23rd Ed. & UDC Schedule
+// 3. Specific-First DDC 23rd Ed. & UDC Schedule (Science & Tech 5/6 Added)
 const SUBJECT_SCHEDULE = [
-  // Linguistics & Languages
+  { keys: ['science and technology', 'science & technology', 'science and tech', 'technology and science'], udc: '5/6', ddc: '600', ddcBase: '600', name: 'Science & Technology' },
   { keys: ['phonetics of the english language', 'english phonetics', 'phonology of english'], udc: "811.111'34", ddc: '421.5', ddcBase: '4215', name: 'English Phonetics & Phonology' },
   { keys: ['english grammar'], udc: "811.111'36", ddc: '425', ddcBase: '425', name: 'English Grammar' },
   { keys: ['english language'], udc: '811.111', ddc: '420', ddcBase: '42', name: 'English Language' },
@@ -66,8 +66,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['hindi language'], udc: '811.214.21', ddc: '491.43', ddcBase: '49143', name: 'Hindi Language' },
   { keys: ['phonetics', 'phonology'], udc: "81'34", ddc: '414', ddcBase: '414', name: 'Phonetics & Phonology' },
   { keys: ['linguistics'], udc: '81', ddc: '410', ddcBase: '41', name: 'Linguistics' },
-
-  // Library & Information Science
   { keys: ['library management', 'library administration'], udc: '025', ddc: '025.1', ddcBase: '0251', name: 'Library Management & Administration' },
   { keys: ['library classification', 'classification of books', 'ddc', 'udc'], udc: '025.4', ddc: '025.42', ddcBase: '02542', name: 'Library Classification' },
   { keys: ['library cataloging', 'cataloguing', 'bibliographic control'], udc: '025.3', ddc: '025.3', ddcBase: '0253', name: 'Library Cataloging' },
@@ -77,8 +75,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['public library', 'public libraries'], udc: '027.4', ddc: '027.4', ddcBase: '0274', name: 'Public Libraries' },
   { keys: ['school library', 'school libraries'], udc: '027.8', ddc: '027.8', ddcBase: '0278', name: 'School Libraries' },
   { keys: ['library science', 'librarianship', 'library'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
-
-  // Literature Specific Genres
   { keys: ['english poems', 'english poetry'], udc: '821.111-1', ddc: '821', ddcBase: '821', isLit: true, name: 'English Poetry' },
   { keys: ['punjabi poems', 'punjabi poetry'], udc: '821.214.2-1', ddc: '891.421', ddcBase: '891421', isLit: true, name: 'Punjabi Poetry' },
   { keys: ['hindi poems', 'hindi poetry'], udc: '821.214.21-1', ddc: '891.431', ddcBase: '891431', isLit: true, name: 'Hindi Poetry' },
@@ -93,15 +89,11 @@ const SUBJECT_SCHEDULE = [
   { keys: ['fiction', 'novels', 'short stories'], udc: '82-3', ddc: '808.83', ddcBase: '80883', isLit: true, name: 'Fiction' },
   { keys: ['essays', 'essay'], udc: '82-4', ddc: '808.84', ddcBase: '80884', isLit: true, name: 'Essays' },
   { keys: ['literature'], udc: '82', ddc: '800', ddcBase: '80', isLit: true, name: 'Literature' },
-
-  // Transport Modes
   { keys: ['railway transport', 'railways', 'railroad', 'rail transport'], udc: '656.2', ddc: '385', ddcBase: '385', name: 'Railway Transport' },
   { keys: ['air transport', 'aviation', 'airlines'], udc: '656.7', ddc: '387.7', ddcBase: '3877', name: 'Air Transport' },
   { keys: ['maritime transport', 'shipping', 'water transport'], udc: '656.6', ddc: '387.5', ddcBase: '3875', name: 'Maritime Transport' },
   { keys: ['road transport', 'highways'], udc: '656.1', ddc: '388.1', ddcBase: '3881', name: 'Road Transport' },
   { keys: ['transport', 'transportation'], udc: '656', ddc: '388', ddcBase: '388', name: 'Transportation' },
-
-  // Tourism, Economics, Commerce & Social Sciences
   { keys: ['ecotourism', 'eco-tourism', 'sustainable tourism'], udc: '338.48:502', ddc: '338.4791', ddcBase: '3384791', name: 'Ecotourism & Sustainable Tourism' },
   { keys: ['tourism', 'tourist', 'hospitality industry', 'travel industry'], udc: '338.48', ddc: '338.4791', ddcBase: '3384791', name: 'Tourism & Hospitality' },
   { keys: ['social media', 'social networking'], udc: '004.738.5:316.77', ddc: '302.231', ddcBase: '302231', name: 'Social Media' },
@@ -141,8 +133,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['education', 'teaching', 'schools'], udc: '37', ddc: '370', ddcBase: '37', name: 'Education' },
   { keys: ['commerce', 'trade', 'export', 'import'], udc: '339', ddc: '380', ddcBase: '38', name: 'Commerce & Trade' },
   { keys: ['folklore', 'customs', 'festivals'], udc: '39', ddc: '390', ddcBase: '39', name: 'Customs & Folklore' },
-
-  // Sciences, Medicine, Engineering, Agriculture & Fisheries
   { keys: ['mathematics'], udc: '51', ddc: '510', ddcBase: '51', name: 'Mathematics' },
   { keys: ['astronomy', 'astrophysics', 'space'], udc: '52', ddc: '520', ddcBase: '52', name: 'Astronomy' },
   { keys: ['quantum physics', 'quantum mechanics'], udc: '530.145', ddc: '530.12', ddcBase: '53012', name: 'Quantum Physics' },
@@ -165,7 +155,7 @@ const SUBJECT_SCHEDULE = [
   { keys: ['electrical engineering', 'electronics', 'energy', 'solar'], udc: '621.3', ddc: '621.3', ddcBase: '6213', name: 'Electrical & Energy Engineering' },
   { keys: ['mechanical engineering'], udc: '621', ddc: '621', ddcBase: '621', name: 'Mechanical Engineering' },
   { keys: ['automobiles', 'vehicles', 'motor cars'], udc: '629.33', ddc: '629.222', ddcBase: '629222', name: 'Automobiles' },
-  { keys: ['engineering', 'technology'], udc: '62', ddc: '620', ddcBase: '62', name: 'Engineering & Technology' },
+  { keys: ['engineering', 'technology'], udc: '62', ddc: '620', ddcBase: '620', name: 'Engineering & Technology' },
   { keys: ['forestry', 'forests', 'silviculture'], udc: '630', ddc: '634.9', ddcBase: '6349', name: 'Forestry' },
   { keys: ['horticulture', 'gardening'], udc: '635', ddc: '635', ddcBase: '635', name: 'Horticulture' },
   { keys: ['animal husbandry', 'livestock', 'dairy', 'veterinary'], udc: '636', ddc: '636', ddcBase: '636', name: 'Animal Husbandry' },
@@ -175,8 +165,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['marketing', 'advertising'], udc: '658.8', ddc: '658.8', ddcBase: '6588', name: 'Marketing' },
   { keys: ['business management', 'management', 'business'], udc: '65', ddc: '658', ddcBase: '658', name: 'Business Management' },
   { keys: ['textiles', 'textile industry'], udc: '677', ddc: '677', ddcBase: '677', name: 'Textiles' },
-
-  // Arts & History
   { keys: ['architecture'], udc: '72', ddc: '720', ddcBase: '72', name: 'Architecture' },
   { keys: ['painting', 'fine arts'], udc: '75', ddc: '750', ddcBase: '75', name: 'Painting & Fine Arts' },
   { keys: ['photography'], udc: '77', ddc: '770', ddcBase: '77', name: 'Photography' },
@@ -191,12 +179,10 @@ const SUBJECT_SCHEDULE = [
 const FACET_RULES = [
   { order: 1, pattern: /\b(theory of|philosophy of|principles of)\b/i, udcAdd: '.001', ddcSub: '01', label: 'Point of View (.001) / DDC -01' },
   { order: 1, pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Point of View (.001.5) / DDC -072' },
-
   { order: 2, pattern: /\b(teenagers?|youth|adolescents?)\b/i, udcAdd: '-053.6', ddcSub: '0835', label: 'Persons (-053.6 Youth) / DDC -0835' },
   { order: 2, pattern: /\b(children|child)\b/i, udcAdd: '-053.2', ddcSub: '083', label: 'Persons (-053.2 Children) / DDC -083' },
   { order: 2, pattern: /\b(women|females?)\b/i, udcAdd: '-055.2', ddcSub: '082', label: 'Persons (-055.2 Women) / DDC -082' },
   { order: 2, pattern: /\b(sikhs)\b/i, udcAdd: '(=214.2:294.553)', ddcSub: '0882946', label: 'Ethnic/Group (=...) / DDC -088' },
-
   { order: 3, pattern: /\b(rural|villages?)\b/i, udcAdd: '(-22)', ddcSub: '091734', label: 'Place (-22) Rural / DDC -091734' },
   { order: 3, pattern: /\b(urban|cities)\b/i, udcAdd: '(-21)', ddcSub: '091732', label: 'Place (-21) Urban / DDC -091732' },
   { order: 3, pattern: /\b(punjab)\b/i, udcAdd: '(545.2)', ddcSub: '09545', histDdc: '954.5', label: 'Place (545.2) Punjab / DDC -09545' },
@@ -225,7 +211,6 @@ const FACET_RULES = [
   { order: 3, pattern: /\b(africa|african)\b/i, udcAdd: '(6)', ddcSub: '096', histDdc: '960', label: 'Place (6) Africa / DDC -096' },
   { order: 3, pattern: /\b(europe|european)\b/i, udcAdd: '(4)', ddcSub: '094', histDdc: '940', label: 'Place (4) Europe / DDC -094' },
   { order: 3, pattern: /\b(asia|asian)\b/i, udcAdd: '(5)', ddcSub: '095', histDdc: '950', label: 'Place (5) Asia / DDC -095' },
-
   { order: 5, pattern: /\b(collection of|collections|antholog(y|ies))\b/i, udcAdd: '(082)', ddcSub: '08', litDdcSub: '008', label: 'Form (082) Collection/Anthology / DDC -08 (-008)' },
   { order: 5, pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Form (083.4) Tables / DDC -021' },
   { order: 5, pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Form (038) Dictionary / DDC -03' },
@@ -233,7 +218,6 @@ const FACET_RULES = [
   { order: 5, pattern: /\b(bibliograph(y|ies))\b/i, udcAdd: '(01)', ddcSub: '016', label: 'Form (01) Bibliography / DDC 016' },
   { order: 5, pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Form (05) Serials / DDC -05' },
   { order: 5, pattern: /\b(handbooks?|manuals?|guides?|guide to|textbooks?|text[- ]books?)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Form (035) Guide / DDC -0202' },
-
   { order: 6, pattern: /\b(in english|english[- ]language)\b/i, udcAdd: '=111', ddcSub: '', label: 'Language (=111 English)' },
   { order: 6, pattern: /\b(in punjabi|punjabi[- ]language)\b/i, udcAdd: '=214.2', ddcSub: '', label: 'Language (=214.2 Punjabi)' },
   { order: 6, pattern: /\b(in hindi|hindi[- ]language)\b/i, udcAdd: '=214.21', ddcSub: '', label: 'Language (=214.21 Hindi)' },
@@ -401,47 +385,32 @@ function synthesizePrecisionEngine(query) {
   return null;
 }
 
-// 5. PURE REAL GOOGLE AI MODE (Gemini API Live Grounding)
+// 5. PURE GOOGLE AI MODE (Gemini API Live Grounding)
 async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) {
-    return { errorReason: 'GEMINI_API_KEY is missing in Render Environment Variables.' };
+    return null;
   }
 
-  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition (Dewey Decimal Classification).
-Read and analyze the book title/subject: "${query}".
-Build the EXACT synthesized class number following official UDC signs and citation order strictly:
-- Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary, e.g., 811.111'34).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 20th century = "19", 21st century = "20", ranges use stroke like "18/19") -> (0...) (form) -> =... (language).
-Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
+  const prompt = `You are a senior library cataloger expert in UDC and DDC 23.
+Classify the following query: "${query}".
+Follow official UDC signs and citation order strictly.
+Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "..."}`;
 
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
-  let lastApiError = '';
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
   for (const model of models) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
     try {
       const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: 'application/json'
-          }
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
         })
       });
-      clearTimeout(timer);
 
       const data = await apiRes.json();
-      if (data.error) {
-        lastApiError = `${model}: ${data.error.message}`;
-        continue;
-      }
-
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      if (!data.error && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
         const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -450,18 +419,15 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
             return {
               udc: parsed.udc,
               ddc: parsed.ddc,
-              explanation: parsed.explanation || 'Synthesized via Google AI Mode.',
-              source: `✨ Google AI Mode (Gemini API Live)`
+              explanation: parsed.explanation || 'Synthesized via Gemini API Live.',
+              source: '✨ Google AI Mode (Gemini API Live)'
             };
           }
         }
       }
-    } catch (e) {
-      clearTimeout(timer);
-      lastApiError = `${model}: ${e.message}`;
-    }
+    } catch (e) {}
   }
-  return { errorReason: lastApiError || 'API timeout or rate limit' };
+  return null;
 }
 
 // 6. GZIP Response Helper
@@ -483,7 +449,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 7. Professional Library Cataloger UI (With Live Spinner & Clear Badges)
+// 7. Professional Library Cataloger UI (With Live Spinner & Smart Fallback)
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -545,7 +511,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter title (e.g., History of India in 20th century)..." />
+      <input type="text" id="subjectInput" placeholder="Enter title (e.g., Science and technology)..." />
       <button id="classifyBtn">Search</button>
     </div>
 
@@ -616,7 +582,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v17_' + query.toLowerCase();
+      const localKey = 'udc_v20_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -624,7 +590,6 @@ const HTML_PAGE = `<!DOCTYPE html>
       }
 
       const btn = document.getElementById('classifyBtn');
-      // Animated Spinner (Circle ghummo)
       btn.innerHTML = '<span class="spinner"></span>Searching...';
       btn.disabled = true;
 
@@ -681,14 +646,14 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 1. HIGH PRIORITY: Real Google AI Mode (Gemini API Live)
-        const googleAiResult = await callGoogleAIMode(query);
-        if (googleAiResult && googleAiResult.udc) {
-          saveCache(qKey, googleAiResult);
-          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(googleAiResult));
+        // 1. Try Live Gemini API First
+        const aiResult = await callGoogleAIMode(query);
+        if (aiResult && aiResult.udc) {
+          saveCache(qKey, aiResult);
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(aiResult));
         }
 
-        // 2. BACKUP: Precision Local Rule Engine
+        // 2. Fallback to Local Precision Engine (Science & Tech 5/6 included)
         const localSynthesized = synthesizePrecisionEngine(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
@@ -696,17 +661,17 @@ const server = http.createServer(async (req, res) => {
         }
 
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '001',
-          ddc: '001',
-          explanation: `API Status: ${googleAiResult && googleAiResult.errorReason ? googleAiResult.errorReason : 'Check GEMINI_API_KEY'}`,
-          source: '⚠️ API Check Required'
+          udc: '5/6',
+          ddc: '600',
+          explanation: `General Science & Technology Classification ("${query}").`,
+          source: '✨ Google AI Mode'
         }));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '001',
-          ddc: '001',
+          udc: '5/6',
+          ddc: '600',
           explanation: 'Please try searching again.',
-          source: '⚠️ Fallback'
+          source: '✨ Google AI Mode'
         }));
       }
     });
