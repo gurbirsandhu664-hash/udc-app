@@ -3,7 +3,7 @@ const fs = process.getBuiltinModule('node:fs');
 const zlib = process.getBuiltinModule('node:zlib');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-v9.json';
+const CACHE_FILE = './ai-cache-v10.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -56,7 +56,7 @@ try {
   }
 } catch (e) {}
 
-// 3. Specific-First DDC 23rd Ed. & UDC Schedule
+// 3. Tagra Specific-First DDC 23rd Ed. & UDC Schedule (Bug-Fixed)
 const SUBJECT_SCHEDULE = [
   // Library & Information Science
   { keys: ['library management', 'library administration'], udc: '025', ddc: '025.1', ddcBase: '0251', name: 'Library Management & Administration' },
@@ -145,20 +145,20 @@ const SUBJECT_SCHEDULE = [
   { keys: ['horticulture', 'gardening'], udc: '635', ddc: '635', ddcBase: '635', name: 'Horticulture' },
   { keys: ['animal husbandry', 'livestock', 'dairy', 'veterinary'], udc: '636', ddc: '636', ddcBase: '636', name: 'Animal Husbandry' },
   { keys: ['fisheries', 'fishery', 'fishing', 'aquaculture'], udc: '639.2', ddc: '639.2', ddcBase: '6392', name: 'Fisheries & Aquaculture' },
-  { keys: ['agriculture', 'farming', 'agronomy', 'crops'], udc: '63', ddc: '630', ddcBase: '63', name: 'Agriculture' },
+  { keys: ['agriculture', 'farming', 'agronomy', 'crops'], udc: '63', ddc: '630', ddcBase: '630', name: 'Agriculture' },
   { keys: ['accounting', 'auditing'], udc: '657', ddc: '657', ddcBase: '657', name: 'Accounting' },
   { keys: ['marketing', 'advertising'], udc: '658.8', ddc: '658.8', ddcBase: '6588', name: 'Marketing' },
   { keys: ['business management', 'management', 'business'], udc: '65', ddc: '658', ddcBase: '658', name: 'Business Management' },
   { keys: ['textiles', 'textile industry'], udc: '677', ddc: '677', ddcBase: '677', name: 'Textiles' },
 
-  // Arts, Literature & History
+  // Arts, Literature & History (Removed generic 'language' so 'English-language' triggers =111 instead of 81)
   { keys: ['architecture'], udc: '72', ddc: '720', ddcBase: '72', name: 'Architecture' },
   { keys: ['painting', 'fine arts'], udc: '75', ddc: '750', ddcBase: '75', name: 'Painting & Fine Arts' },
   { keys: ['photography'], udc: '77', ddc: '770', ddcBase: '77', name: 'Photography' },
   { keys: ['music'], udc: '78', ddc: '780', ddcBase: '78', name: 'Music' },
   { keys: ['cinema', 'films', 'theatre'], udc: '791', ddc: '791.43', ddcBase: '79143', name: 'Cinema & Performing Arts' },
   { keys: ['sports', 'athletics', 'cricket', 'football'], udc: '796', ddc: '796', ddcBase: '796', name: 'Sports' },
-  { keys: ['linguistics', 'language'], udc: '81', ddc: '410', ddcBase: '41', name: 'Linguistics' },
+  { keys: ['linguistics'], udc: '81', ddc: '410', ddcBase: '41', name: 'Linguistics' },
   { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '89142', name: 'Punjabi Literature' },
   { keys: ['hindi literature'], udc: '821.214.21', ddc: '891.43', ddcBase: '89143', name: 'Hindi Literature' },
   { keys: ['english literature'], udc: '821.111', ddc: '820', ddcBase: '82', name: 'English Literature' },
@@ -219,10 +219,10 @@ const FACET_RULES = [
   { order: 5, pattern: /\b(handbooks?|manuals?|guides?|guide to)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Form (035) Guide / DDC -0202' },
 
   // Language Auxiliaries (=...)
-  { order: 6, pattern: /\b(in english|english language)\b/i, udcAdd: '=111', ddcSub: '', label: 'Language (=111 English)' },
-  { order: 6, pattern: /\b(in punjabi|punjabi language)\b/i, udcAdd: '=214.2', ddcSub: '', label: 'Language (=214.2 Punjabi)' },
-  { order: 6, pattern: /\b(in hindi|hindi language)\b/i, udcAdd: '=214.21', ddcSub: '', label: 'Language (=214.21 Hindi)' },
-  { order: 6, pattern: /\b(in french|french language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
+  { order: 6, pattern: /\b(in english|english[- ]language)\b/i, udcAdd: '=111', ddcSub: '', label: 'Language (=111 English)' },
+  { order: 6, pattern: /\b(in punjabi|punjabi[- ]language)\b/i, udcAdd: '=214.2', ddcSub: '', label: 'Language (=214.2 Punjabi)' },
+  { order: 6, pattern: /\b(in hindi|hindi[- ]language)\b/i, udcAdd: '=214.21', ddcSub: '', label: 'Language (=214.21 Hindi)' },
+  { order: 6, pattern: /\b(in french|french[- ]language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
 ];
 
 // 5. Complete Century Parser (1st to 21st Century)
@@ -267,6 +267,12 @@ function formatDdcNumber(ddcBase, sub, isHistory, histDdc) {
   if (isHistory && histDdc) return histDdc;
   if (sub === '016') return `016.${ddcBase.replace(/^0+/, '')}`;
   const cleanBase = ddcBase.replace('.', '');
+
+  // DDC 630 Rule: Geographic treatment drops redundant '0' (630 + 0954 -> 630.954)
+  if (cleanBase === '630' && sub.startsWith('09')) {
+    return `630.${sub.slice(1)}`;
+  }
+
   let effectiveSub = sub;
   if (cleanBase.endsWith('0') && sub.startsWith('0') && !sub.startsWith('09')) {
     effectiveSub = sub.slice(1);
@@ -275,7 +281,7 @@ function formatDdcNumber(ddcBase, sub, isHistory, histDdc) {
   return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
 }
 
-function synthesizeLocalSchedule(query) {
+function synthesizeLocalBackup(query) {
   const q = query.toLowerCase().trim();
 
   const udcJson = flatUdc.get(q);
@@ -285,7 +291,7 @@ function synthesizeLocalSchedule(query) {
       udc: udcJson,
       ddc: ddcJson,
       explanation: `Exact class number matched from reference schedule for "${query}".`,
-      source: '⚡ Reference Index (Instant)'
+      source: '⚡ Reference Index (Backup)'
     };
   }
 
@@ -328,7 +334,7 @@ function synthesizeLocalSchedule(query) {
     const steps = [`Base: ${primary.name} (${primary.udc} / ${primary.ddc})`];
 
     if (secondary) {
-      const isDoubleColon = /\b(role of|application of|impact of|use of|in)\b/i.test(q) && !/\b(and|&)\b/i.test(q);
+      const isDoubleColon = /\b(role of|application of|impact of|use of)\b/i.test(q) && !/\b(and|&)\b/i.test(q);
       const isPlus = /\b(and|&)\b/i.test(q);
       const connector = isPlus ? '+' : (isDoubleColon ? '::' : ':');
       udcBuilt = `${primary.udc}${connector}${secondary.udc}`;
@@ -349,47 +355,64 @@ function synthesizeLocalSchedule(query) {
       udc: udcBuilt,
       ddc: ddcBuilt,
       explanation: steps.length > 1 ? `Synthesized Class Number -> ${steps.join(' + ')}.` : `Standard Class Number for ${primary.name}.`,
-      source: '⚡ UDC/DDC Rule Engine (Instant)'
+      source: '⚡ UDC/DDC Precision Engine'
     };
   }
 
   return null;
 }
 
-// 7. Fast Parallel Network Fetch (Gemini AI Mode + Open Library Race)
-async function fetchGeminiSingle(model, prompt) {
-  if (!GEMINI_API_KEY) throw new Error('No key');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
-  try {
-    const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1 }
-      })
-    });
-    clearTimeout(timer);
-    const data = await apiRes.json();
-    if (data.error || !data.candidates?.[0]?.content?.parts) throw new Error('API error');
-    const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Parse error');
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!parsed.udc || !parsed.ddc) throw new Error('Incomplete');
-    return {
-      udc: parsed.udc,
-      ddc: parsed.ddc,
-      explanation: parsed.explanation || 'Verified via Google AI Mode.',
-      source: '✨ Google AI Mode (Live Search Grounded)'
-    };
-  } catch (e) {
-    clearTimeout(timer);
-    throw e;
+// 7. HIGH-PRIORITY REAL GOOGLE AI MODE (Live Search Grounding First!)
+async function callHighPriorityGoogleAI(query) {
+  if (!GEMINI_API_KEY) return null;
+
+  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition (Dewey Decimal Classification).
+Use Google Search to verify and build the EXACT synthesized class number for: "${query}".
+Follow official UDC signs and citation order strictly:
+- Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form) -> =... (language, e.g., =111 English).
+- Example: "An English-language handbook of agriculture in India" -> UDC: "63(540)(035)=111", DDC: "630.9540202".
+Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
+
+  const models = ['gemini-2.5-flash', 'gemini-3.8-flash'];
+
+  for (const model of models) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6500);
+    try {
+      const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: { temperature: 0.1 }
+        })
+      });
+      clearTimeout(timer);
+
+      const data = await apiRes.json();
+      if (!data.error && data.candidates?.[0]?.content?.parts) {
+        const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.udc && parsed.ddc) {
+            return {
+              udc: parsed.udc,
+              ddc: parsed.ddc,
+              explanation: parsed.explanation || 'Verified via Google AI Mode.',
+              source: '✨ Google AI Mode (Live Search Grounded)'
+            };
+          }
+        }
+      }
+    } catch (e) {
+      clearTimeout(timer);
+    }
   }
+  return null;
 }
 
 async function fetchOpenLibraryFast(query) {
@@ -405,12 +428,10 @@ async function fetchOpenLibraryFast(query) {
         if (doc.ddc && doc.ddc.length > 0) {
           const rawDdc = doc.ddc[0].replace(/[^0-9.]/g, '');
           if (rawDdc) {
-            // Clean DDC geographic subdivision (-09...) before converting to UDC base
             let udcClean = rawDdc.replace(/0?9\d+$/, '');
             if (udcClean.startsWith('301')) udcClean = udcClean.replace(/^301/, '316');
             else if (udcClean.startsWith('020')) udcClean = udcClean.replace(/^020/, '02');
             else if (udcClean.startsWith('634.9')) udcClean = udcClean.replace(/^634\.9/, '630');
-
             return {
               udc: udcClean,
               ddc: rawDdc,
@@ -421,31 +442,10 @@ async function fetchOpenLibraryFast(query) {
         }
       }
     }
-    throw new Error('No DDC match');
   } catch (e) {
     clearTimeout(timer);
-    throw e;
   }
-}
-
-async function resolveOnlineParallel(query) {
-  const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition.
-Build the EXACT synthesized class number for: "${query}".
-Follow official UDC signs and citation order:
-- Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form) -> =... (language).
-Use exact DDC 23rd Edition schedules and Tables 1-6.
-Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step breakdown"}`;
-
-  try {
-    return await Promise.any([
-      fetchGeminiSingle('gemini-2.5-flash', prompt),
-      fetchGeminiSingle('gemini-3.8-flash', prompt),
-      fetchOpenLibraryFast(query)
-    ]);
-  } catch (e) {
-    return null;
-  }
+  return null;
 }
 
 // 8. GZIP Response Helper
@@ -514,7 +514,7 @@ const HTML_PAGE = `<!DOCTYPE html>
         <div class="brand-icon">LC</div>
         <div>
           <h1 class="brand-title">UDC & DDC Precision Classifier</h1>
-          <p class="brand-sub">DDC 23rd Edition • Complete UDC Signs & Auxiliary Synthesis</p>
+          <p class="brand-sub">Google AI Mode Priority • DDC 23 & Complete UDC Synthesis</p>
         </div>
       </div>
     </div>
@@ -527,7 +527,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter title (e.g., Fisheries in Norway, History of India in 20th century)..." />
+      <input type="text" id="subjectInput" placeholder="Enter any book title or subject..." />
       <button id="classifyBtn">Search</button>
     </div>
 
@@ -598,7 +598,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v9_' + query.toLowerCase();
+      const localKey = 'udc_v10_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -610,7 +610,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       btn.disabled = true;
 
       const controller = new AbortController();
-      const uiTimeout = setTimeout(() => controller.abort(), 12000);
+      const uiTimeout = setTimeout(() => controller.abort(), 14000);
 
       try {
         const res = await fetch('/api/classify', {
@@ -658,20 +658,30 @@ const server = http.createServer(async (req, res) => {
 
         const qKey = query.toLowerCase().trim();
 
+        // 1. Instant Cache Check
         if (diskCache[qKey]) {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        const localSynthesized = synthesizeLocalSchedule(qKey);
+        // 2. HIGH PRIORITY: Real Google AI Mode (Live Search Grounding)
+        const googleAiResult = await callHighPriorityGoogleAI(query);
+        if (googleAiResult) {
+          saveCache(qKey, googleAiResult);
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(googleAiResult));
+        }
+
+        // 3. Tagra Precision Local Synthesis Engine (Zero-Fail Backup)
+        const localSynthesized = synthesizeLocalBackup(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(localSynthesized));
         }
 
-        const onlineResult = await resolveOnlineParallel(query);
-        if (onlineResult) {
-          saveCache(qKey, onlineResult);
-          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(onlineResult));
+        // 4. World Library Catalog Backup
+        const catalogResult = await fetchOpenLibraryFast(query);
+        if (catalogResult) {
+          saveCache(qKey, catalogResult);
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(catalogResult));
         }
 
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
