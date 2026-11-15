@@ -2,9 +2,9 @@ const http = process.getBuiltinModule('node:http');
 const fs = process.getBuiltinModule('node:fs');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache.json';
+const CACHE_FILE = './ai-cache-v3.json';
 
-// 1. Persistent Disk Cache (Survives Render Restarts - Never Wastes Quota Twice)
+// 1. Persistent Disk Cache
 let diskCache = {};
 try {
   if (fs.existsSync(CACHE_FILE)) {
@@ -19,7 +19,7 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// 2. Load & Flatten Local Reference Indexes (0 Quota Used)
+// 2. Load Local Reference Indexes
 const flatUdc = new Map();
 const flatDdc = new Map();
 
@@ -55,121 +55,162 @@ try {
   }
 } catch (e) {}
 
-// 3. Comprehensive Built-in UDC & DDC Core Dictionary (0 Quota, Instant)
-const CORE_SUBJECTS = {
-  'computer science': { udc: '004', ddc: '004', exp: 'Computer Science, Data Processing & Computing.' },
-  'artificial intelligence': { udc: '004.8', ddc: '006.3', exp: 'Artificial Intelligence & Machine Learning.' },
-  'library science': { udc: '02', ddc: '020', exp: 'Library & Information Sciences.' },
-  'journalism': { udc: '070', ddc: '070', exp: 'News Media, Journalism & Publishing.' },
-  'philosophy': { udc: '1', ddc: '100', exp: 'General Philosophy & Metaphysics.' },
-  'psychology': { udc: '159.9', ddc: '150', exp: 'Psychology (UDC 159.9; DDC 150).' },
-  'logic': { udc: '16', ddc: '160', exp: 'Logic & Reasoning.' },
-  'ethics': { udc: '17', ddc: '170', exp: 'Moral Philosophy & Ethics.' },
-  'religion': { udc: '2', ddc: '200', exp: 'Religion & Theology.' },
-  'sikhism': { udc: '294.553', ddc: '294.6', exp: 'Sikhism & Sikh Studies.' },
-  'hinduism': { udc: '294.5', ddc: '294.5', exp: 'Hinduism.' },
-  'islam': { udc: '297', ddc: '297', exp: 'Islam.' },
-  'christianity': { udc: '22/28', ddc: '230', exp: 'Christianity & Christian Theology.' },
-  'social sciences': { udc: '3', ddc: '300', exp: 'Social Sciences.' },
-  'sociology': { udc: '316', ddc: '301', exp: 'Sociology & Society (UDC Class 316; DDC 301).' },
-  'statistics': { udc: '311', ddc: '310', exp: 'Statistical Science.' },
-  'political science': { udc: '32', ddc: '320', exp: 'Political Science & Politics (UDC Class 32; DDC 320).' },
-  'politics': { udc: '32', ddc: '320', exp: 'Political Science & Government.' },
-  'international relations': { udc: '327', ddc: '327', exp: 'International Relations & Foreign Policy.' },
-  'economics': { udc: '33', ddc: '330', exp: 'Economics & Economic Science.' },
-  'banking': { udc: '336.71', ddc: '332.1', exp: 'Banks & Banking Finance.' },
-  'law': { udc: '34', ddc: '340', exp: 'Law & Jurisprudence.' },
-  'constitutional law': { udc: '342', ddc: '342', exp: 'Constitutional & Administrative Law.' },
-  'criminal law': { udc: '343', ddc: '345', exp: 'Criminal Law & Criminology.' },
-  'public administration': { udc: '35', ddc: '350', exp: 'Public Administration & Government.' },
-  'education': { udc: '37', ddc: '370', exp: 'Education & Teaching.' },
-  'commerce': { udc: '339', ddc: '380', exp: 'Commerce, Trade & Communications.' },
-  'mathematics': { udc: '51', ddc: '510', exp: 'Mathematics.' },
-  'algebra': { udc: '512', ddc: '512', exp: 'Algebra & Number Theory.' },
-  'geometry': { udc: '514', ddc: '516', exp: 'Geometry.' },
-  'astronomy': { udc: '52', ddc: '520', exp: 'Astronomy & Astrophysics.' },
-  'physics': { udc: '53', ddc: '530', exp: 'Physics.' },
-  'quantum physics': { udc: '530.145', ddc: '530.12', exp: 'Quantum Mechanics & Quantum Theory.' },
-  'chemistry': { udc: '54', ddc: '540', exp: 'Chemistry & Mineralogy.' },
-  'organic chemistry': { udc: '547', ddc: '547', exp: 'Organic Chemistry.' },
-  'geology': { udc: '55', ddc: '551', exp: 'Earth Sciences & Geology.' },
-  'biology': { udc: '57', ddc: '570', exp: 'Biological Sciences.' },
-  'genetics': { udc: '575', ddc: '576.5', exp: 'Genetics & Evolution.' },
-  'botany': { udc: '58', ddc: '580', exp: 'Botany & Plant Sciences.' },
-  'zoology': { udc: '59', ddc: '590', exp: 'Zoology & Animal Sciences.' },
-  'medicine': { udc: '61', ddc: '610', exp: 'Medical Sciences & Medicine.' },
-  'anatomy': { udc: '611', ddc: '611', exp: 'Human Anatomy.' },
-  'physiology': { udc: '612', ddc: '612', exp: 'Human Physiology.' },
-  'pharmacology': { udc: '615', ddc: '615', exp: 'Pharmacology & Therapeutics.' },
-  'cardiology': { udc: '616.12', ddc: '616.12', exp: 'Diseases of Heart & Cardiology.' },
-  'surgery': { udc: '617', ddc: '617', exp: 'Surgery & Regional Medicine.' },
-  'engineering': { udc: '62', ddc: '620', exp: 'Engineering & Technology.' },
-  'mechanical engineering': { udc: '621', ddc: '621', exp: 'Mechanical Engineering.' },
-  'electrical engineering': { udc: '621.3', ddc: '621.3', exp: 'Electrical & Electronic Engineering.' },
-  'civil engineering': { udc: '624', ddc: '624', exp: 'Civil & Structural Engineering.' },
-  'vehicles': { udc: '629', ddc: '629.2', exp: 'Transport Vehicle Engineering & Motor Vehicles.' },
-  'automobiles': { udc: '629.33', ddc: '629.222', exp: 'Automobiles & Motor Cars.' },
-  'agriculture': { udc: '63', ddc: '630', exp: 'Agriculture & Agronomy.' },
-  'management': { udc: '65', ddc: '658', exp: 'Management & Business Organization.' },
-  'accounting': { udc: '657', ddc: '657', exp: 'Accounting & Bookkeeping.' },
-  'architecture': { udc: '72', ddc: '720', exp: 'Architecture.' },
-  'music': { udc: '78', ddc: '780', exp: 'Music.' },
-  'sports': { udc: '796', ddc: '796', exp: 'Athletic & Outdoor Sports.' },
-  'linguistics': { udc: '81', ddc: '410', exp: 'Linguistics & Languages.' },
-  'english literature': { udc: '821.111', ddc: '820', exp: 'English Literature.' },
-  'punjabi literature': { udc: '821.214.2', ddc: '891.42', exp: 'Punjabi Literature.' },
-  'literature': { udc: '82', ddc: '800', exp: 'General Literature & Rhetoric.' },
-  'geography': { udc: '91', ddc: '910', exp: 'Geography & Travel.' },
-  'history': { udc: '93/94', ddc: '900', exp: 'General History.' },
-  'indian history': { udc: '94(540)', ddc: '954', exp: 'History of India.' }
-};
+// 3. Expanded Subject & Sub-Discipline Schedule (0 Quota)
+const SUBJECT_SCHEDULE = [
+  { keys: ['social media', 'social networking'], udc: '004.738.5:316.77', ddc: '302.231', ddcBase: '302.231', name: 'Social Media' },
+  { keys: ['artificial intelligence', 'machine learning'], udc: '004.8', ddc: '006.3', ddcBase: '006.3', name: 'Artificial Intelligence' },
+  { keys: ['computer science', 'computing', 'information technology'], udc: '004', ddc: '004', ddcBase: '004', name: 'Computer Science' },
+  { keys: ['library science', 'librarianship', 'cataloging', 'classification'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
+  { keys: ['journalism', 'mass media'], udc: '070', ddc: '070', ddcBase: '070', name: 'Journalism & Media' },
+  { keys: ['mental health', 'psychiatry'], udc: '616.89', ddc: '362.2', ddcBase: '362.2', name: 'Mental Health' },
+  { keys: ['psychology', 'human behavior'], udc: '159.9', ddc: '150', ddcBase: '15', name: 'Psychology' },
+  { keys: ['philosophy', 'metaphysics'], udc: '1', ddc: '100', ddcBase: '10', name: 'Philosophy' },
+  { keys: ['logic'], udc: '16', ddc: '160', ddcBase: '16', name: 'Logic' },
+  { keys: ['ethics'], udc: '17', ddc: '170', ddcBase: '17', name: 'Ethics' },
+  { keys: ['sikhism', 'sikh'], udc: '294.553', ddc: '294.6', ddcBase: '294.6', name: 'Sikhism' },
+  { keys: ['hinduism'], udc: '294.5', ddc: '294.5', ddcBase: '294.5', name: 'Hinduism' },
+  { keys: ['islam'], udc: '297', ddc: '297', ddcBase: '297', name: 'Islam' },
+  { keys: ['religion', 'theology'], udc: '2', ddc: '200', ddcBase: '20', name: 'Religion' },
+  { keys: ['sociology', 'society'], udc: '316', ddc: '301', ddcBase: '301', name: 'Sociology' },
+  { keys: ['statistics'], udc: '311', ddc: '310', ddcBase: '31', name: 'Statistics' },
+  { keys: ['international relations', 'foreign policy'], udc: '327', ddc: '327', ddcBase: '327', name: 'International Relations' },
+  { keys: ['political science', 'politics'], udc: '32', ddc: '320', ddcBase: '32', name: 'Political Science' },
+  { keys: ['banking', 'finance'], udc: '336.71', ddc: '332.1', ddcBase: '332.1', name: 'Banking & Finance' },
+  { keys: ['economics', 'economy'], udc: '33', ddc: '330', ddcBase: '33', name: 'Economics' },
+  { keys: ['constitutional law'], udc: '342', ddc: '342', ddcBase: '342', name: 'Constitutional Law' },
+  { keys: ['criminal law', 'criminology'], udc: '343', ddc: '345', ddcBase: '345', name: 'Criminal Law' },
+  { keys: ['law', 'jurisprudence'], udc: '34', ddc: '340', ddcBase: '34', name: 'Law' },
+  { keys: ['public administration'], udc: '35', ddc: '350', ddcBase: '35', name: 'Public Administration' },
+  { keys: ['higher education', 'universities'], udc: '378', ddc: '378', ddcBase: '378', name: 'Higher Education' },
+  { keys: ['education', 'teaching'], udc: '37', ddc: '370', ddcBase: '37', name: 'Education' },
+  { keys: ['commerce', 'trade'], udc: '339', ddc: '380', ddcBase: '38', name: 'Commerce' },
+  { keys: ['mathematics'], udc: '51', ddc: '510', ddcBase: '51', name: 'Mathematics' },
+  { keys: ['astronomy'], udc: '52', ddc: '520', ddcBase: '52', name: 'Astronomy' },
+  { keys: ['quantum physics', 'quantum mechanics'], udc: '530.145', ddc: '530.12', ddcBase: '530.12', name: 'Quantum Physics' },
+  { keys: ['physics'], udc: '53', ddc: '530', ddcBase: '53', name: 'Physics' },
+  { keys: ['chemistry'], udc: '54', ddc: '540', ddcBase: '54', name: 'Chemistry' },
+  { keys: ['geology', 'earth science'], udc: '55', ddc: '551', ddcBase: '551', name: 'Geology' },
+  { keys: ['biology'], udc: '57', ddc: '570', ddcBase: '57', name: 'Biology' },
+  { keys: ['botany'], udc: '58', ddc: '580', ddcBase: '58', name: 'Botany' },
+  { keys: ['zoology'], udc: '59', ddc: '590', ddcBase: '59', name: 'Zoology' },
+  { keys: ['cardiology', 'heart'], udc: '616.12', ddc: '616.12', ddcBase: '616.12', name: 'Cardiology' },
+  { keys: ['surgery'], udc: '617', ddc: '617', ddcBase: '617', name: 'Surgery' },
+  { keys: ['anatomy'], udc: '611', ddc: '611', ddcBase: '611', name: 'Anatomy' },
+  { keys: ['medicine', 'medical', 'health'], udc: '61', ddc: '610', ddcBase: '61', name: 'Medicine & Health' },
+  { keys: ['automobiles', 'vehicles', 'motor cars'], udc: '629.33', ddc: '629.222', ddcBase: '629.222', name: 'Automobiles' },
+  { keys: ['engineering'], udc: '62', ddc: '620', ddcBase: '62', name: 'Engineering' },
+  { keys: ['agriculture', 'farming'], udc: '63', ddc: '630', ddcBase: '63', name: 'Agriculture' },
+  { keys: ['management', 'business'], udc: '65', ddc: '658', ddcBase: '658', name: 'Management' },
+  { keys: ['architecture'], udc: '72', ddc: '720', ddcBase: '72', name: 'Architecture' },
+  { keys: ['music'], udc: '78', ddc: '780', ddcBase: '78', name: 'Music' },
+  { keys: ['linguistics', 'language'], udc: '81', ddc: '410', ddcBase: '41', name: 'Linguistics' },
+  { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '891.42', name: 'Punjabi Literature' },
+  { keys: ['english literature'], udc: '821.111', ddc: '820', ddcBase: '82', name: 'English Literature' },
+  { keys: ['literature'], udc: '82', ddc: '800', ddcBase: '80', name: 'Literature' },
+  { keys: ['geography'], udc: '91', ddc: '910', ddcBase: '91', name: 'Geography' },
+  { keys: ['history'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
+];
 
-function findZeroQuotaMatch(query) {
+// 4. Form, Demographic, Geographic & Time Auxiliaries (UDC + DDC Tables)
+const FACET_RULES = [
+  { pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Statistical tables (-021 / (083.4))' },
+  { pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Dictionary (-03 / (038))' },
+  { pattern: /\b(encyclopedias?|encyclopaedias?)\b/i, udcAdd: '(031)', ddcSub: '03', label: 'Encyclopedia (-03 / (031))' },
+  { pattern: /\b(bibliograph(y|ies))\b/i, udcAdd: '(01)', ddcSub: '016', label: 'Bibliography (016 / (01))' },
+  { pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Serials (-05 / (05))' },
+  { pattern: /\b(handbooks?|manuals?|guides?)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Handbook (-0202 / (035))' },
+  { pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Research (-072 / .001.5)' },
+  { pattern: /\b(teenagers?|youth|adolescents?)\b/i, udcAdd: '-053.6', ddcSub: '0835', label: 'Persons: Youth/Teenagers (-0835 / -053.6)' },
+  { pattern: /\b(children|child)\b/i, udcAdd: '-053.2', ddcSub: '083', label: 'Persons: Children (-083 / -053.2)' },
+  { pattern: /\b(women|females?)\b/i, udcAdd: '-055.2', ddcSub: '082', label: 'Persons: Women (-082 / -055.2)' },
+  { pattern: /\b(rural|villages?)\b/i, udcAdd: '(-22)', ddcSub: '091734', label: 'Rural regions (-091734 / (-22))' },
+  { pattern: /\b(urban|cities)\b/i, udcAdd: '(-21)', ddcSub: '091732', label: 'Urban regions (-091732 / (-21))' },
+  { pattern: /\b(punjab)\b/i, udcAdd: '(545.2)', ddcSub: '09545', label: 'Place: Punjab (-09545 / (545.2))' },
+  { pattern: /\b(india|indian)\b/i, udcAdd: '(540)', ddcSub: '0954', label: 'Place: India (-0954 / (540))' },
+  { pattern: /\b(usa|united states|america)\b/i, udcAdd: '(73)', ddcSub: '0973', label: 'Place: USA (-0973 / (73))' },
+  { pattern: /\b(uk|united kingdom|britain)\b/i, udcAdd: '(410)', ddcSub: '0941', label: 'Place: UK (-0941 / (410))' },
+  { pattern: /\b(20th century)\b/i, udcAdd: '"19"', ddcSub: '0904', label: 'Time: 20th Century (-0904 / "19")' },
+  { pattern: /\b(21st century)\b/i, udcAdd: '"20"', ddcSub: '0905', label: 'Time: 21st Century (-0905 / "20")' }
+];
+
+function formatDdcNumber(ddcBase, sub) {
+  if (sub === '016') return `016.${ddcBase.replace(/^0+/, '')}`;
+  const cleanBase = ddcBase.replace('.', '');
+  const raw = `${cleanBase}${sub}`;
+  return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
+}
+
+function synthesizeEngine(query) {
   const q = query.toLowerCase().trim();
 
-  // Exact Core Match
-  if (CORE_SUBJECTS[q]) {
+  // 1. Exact Local JSON Schedule Check
+  const udcJson = flatUdc.get(q);
+  const ddcJson = flatDdc.get(q);
+  if (udcJson && ddcJson) {
     return {
-      udc: CORE_SUBJECTS[q].udc,
-      ddc: CORE_SUBJECTS[q].ddc,
-      explanation: CORE_SUBJECTS[q].exp,
-      source: '⚡ Verified Reference (0 Quota Used)'
+      udc: udcJson,
+      ddc: ddcJson,
+      explanation: `Exact class number matched from reference schedule for "${query}".`,
+      source: '⚡ Reference Index (0 Quota Used)'
     };
   }
 
-  // Exact Local JSON Match
-  const udcExact = flatUdc.get(q);
-  const ddcExact = flatDdc.get(q);
-  if (udcExact || ddcExact) {
-    return {
-      udc: udcExact || 'See DDC',
-      ddc: ddcExact || 'See UDC',
-      explanation: `Exact match found in project reference index for "${query}".`,
-      source: '⚡ Local Index (0 Quota Used)'
-    };
-  }
-
-  // Smart Partial / Keyword Match in Core Subjects (Saves Quota on variations)
-  for (const [key, val] of Object.entries(CORE_SUBJECTS)) {
-    if (q.includes(key) || (q.length > 4 && key.includes(q))) {
-      return {
-        udc: val.udc,
-        ddc: val.ddc,
-        explanation: `${val.exp} (Matched closest subject: ${key})`,
-        source: '⚡ Smart Local Match (0 Quota Used)'
-      };
+  // 2. Find All Matching Disciplines in Query (Supports Multi-Subject Colon Relation ":")
+  const matchedDisciplines = [];
+  for (const item of SUBJECT_SCHEDULE) {
+    for (const k of item.keys) {
+      const rx = new RegExp(`\\b${k}\\b`, 'i');
+      if (rx.test(q)) {
+        matchedDisciplines.push(item);
+        break;
+      }
     }
   }
 
-  // Partial Match in Local JSON Indexes
-  for (const [k, uVal] of flatUdc.entries()) {
-    if (k.includes(q) && q.length >= 4) {
-      const dVal = flatDdc.get(k) || 'See UDC';
+  // 3. Apply Auxiliaries / Subdivisions
+  const appliedFacets = [];
+  for (const rule of FACET_RULES) {
+    if (rule.pattern.test(q)) {
+      appliedFacets.push(rule);
+    }
+  }
+
+  if (matchedDisciplines.length > 0) {
+    const primary = matchedDisciplines[0];
+    const secondary = matchedDisciplines[1] || null;
+
+    // Exact Single Subject
+    if (matchedDisciplines.length === 1 && appliedFacets.length === 0 && primary.keys.includes(q)) {
       return {
-        udc: uVal,
-        ddc: dVal,
-        explanation: `Matched "${k}" in local reference index.`,
-        source: '⚡ Local Index (0 Quota Used)'
+        udc: primary.udc,
+        ddc: primary.ddc,
+        explanation: `Standard Class Number for ${primary.name} (UDC ${primary.udc}; DDC ${primary.ddc}).`,
+        source: '⚡ Verified Schedule (0 Quota Used)'
+      };
+    }
+
+    // Compound / Multi-Facet Synthesis
+    if (secondary || appliedFacets.length > 0) {
+      let udcBuilt = primary.udc;
+      let ddcBuilt = primary.ddc;
+      const steps = [`Base: ${primary.name} (${primary.udc} / ${primary.ddc})`];
+
+      if (secondary) {
+        udcBuilt += `:${secondary.udc}`;
+        steps.push(`Relation (:): ${secondary.name} (${secondary.udc})`);
+      }
+
+      for (const f of appliedFacets) {
+        udcBuilt += f.udcAdd;
+        ddcBuilt = formatDdcNumber(ddcBuilt, f.ddcSub);
+        steps.push(f.label);
+      }
+
+      return {
+        udc: udcBuilt,
+        ddc: ddcBuilt,
+        explanation: `Synthesized Class Number -> ${steps.join(' + ')}.`,
+        source: '⚡ Number-Building Engine (0 Quota Used)'
       };
     }
   }
@@ -177,8 +218,14 @@ function findZeroQuotaMatch(query) {
   return null;
 }
 
-// 4. Multi-Model Gemini Caller (Automatic Fallback if one model hits quota)
-async function callGeminiWithFallback(prompt) {
+// 5. AI Mode Fallback for Completely Unknown Subjects
+async function callGeminiSynthesis(query) {
+  const prompt = `You are a senior library classification specialist expert in UDC and DDC 23rd Edition.
+Build the EXACT synthesized class number for: "${query}".
+Use proper UDC auxiliaries: relation (:), form (0...), persons -05..., place (...), time "...".
+Use proper DDC Table 1-6 subdivisions.
+Return strictly valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis"}`;
+
   const models = ['gemini-3.8-flash', 'gemini-2.5-flash-lite'];
   for (const model of models) {
     try {
@@ -187,10 +234,7 @@ async function callGeminiWithFallback(prompt) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: 'application/json'
-          }
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
         })
       });
       const data = await apiRes.json();
@@ -226,7 +270,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     .code-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f3f4; }
     .code-row:last-of-type { border-bottom: none; }
     .code-label { font-weight: 600; color: #3c4043; font-size: 15px; }
-    .code-val { font-family: monospace; font-size: 17px; font-weight: 700; color: #0d652d; background: #e6f4ea; padding: 4px 10px; border-radius: 6px; }
+    .code-val { font-family: monospace; font-size: 16px; font-weight: 700; color: #0d652d; background: #e6f4ea; padding: 4px 10px; border-radius: 6px; word-break: break-all; }
     .explanation { margin-top: 14px; font-size: 14px; color: #3c4043; line-height: 1.6; background: #f8f9fa; padding: 14px; border-radius: 10px; }
   </style>
 </head>
@@ -239,7 +283,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       <button class="tab" data-mode="ddc">DDC Only</button>
     </div>
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter subject (e.g., Political Science, Sociology, Cardiology)..." />
+      <input type="text" id="subjectInput" placeholder="Enter any book title or subject..." />
       <button id="classifyBtn">Search</button>
     </div>
     <div class="result-card" id="resultCard">
@@ -322,32 +366,29 @@ const server = http.createServer(async (req, res) => {
 
         const qKey = query.toLowerCase().trim();
 
-        // 1. Check Persistent Disk Cache (0 Quota)
+        // 1. Check Cache (0 Quota)
         if (diskCache[qKey]) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           return res.end(JSON.stringify(diskCache[qKey]));
         }
 
-        // 2. Check Local JSON + Core Subject Dictionary (0 Quota)
-        const zeroQuotaHit = findZeroQuotaMatch(qKey);
-        if (zeroQuotaHit) {
-          saveCache(qKey, zeroQuotaHit);
+        // 2. Multi-Subject & Facet Synthesis Engine (0 Quota)
+        const synthesized = synthesizeEngine(qKey);
+        if (synthesized) {
+          saveCache(qKey, synthesized);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify(zeroQuotaHit));
+          return res.end(JSON.stringify(synthesized));
         }
 
-        // 3. Call AI Mode with Automatic Model Fallback
+        // 3. AI Synthesis Fallback
         if (GEMINI_API_KEY) {
-          const prompt = `Provide the exact Universal Decimal Classification (UDC) number and Dewey Decimal Classification (DDC 23rd ed.) number for: "${query}".
-Return strictly JSON: {"udc": "...", "ddc": "...", "explanation": "short 1-sentence hierarchy"}`;
-
-          const aiParsed = await callGeminiWithFallback(prompt);
+          const aiParsed = await callGeminiSynthesis(query);
           if (aiParsed && (aiParsed.udc || aiParsed.ddc)) {
             const finalResult = {
-              udc: aiParsed.udc || '0 (Generalities)',
-              ddc: aiParsed.ddc || '000 (Generalities)',
-              explanation: aiParsed.explanation || `Classified "${query}" using AI Mode.`,
-              source: '✨ Google AI Mode'
+              udc: aiParsed.udc || '001',
+              ddc: aiParsed.ddc || '001',
+              explanation: aiParsed.explanation || `Synthesized classification for "${query}".`,
+              source: '✨ Google AI Mode (Synthesized)'
             };
             saveCache(qKey, finalResult);
             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -355,22 +396,20 @@ Return strictly JSON: {"udc": "...", "ddc": "...", "explanation": "short 1-sente
           }
         }
 
-        // 4. Never-Fail Fallback (Even if API quota hits 0, never shows "Error")
-        const safeFallback = {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
           udc: '001',
           ddc: '001',
-          explanation: `General Knowledge & Interdisciplinary Subject ("${query}"). Try searching a broader discipline (e.g., Sociology, Medicine, Engineering, History).`,
+          explanation: `General Knowledge topic ("${query}").`,
           source: '🛡️ Offline Fallback (0 Quota)'
-        };
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(safeFallback));
+        }));
       } catch (err) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           udc: '001',
           ddc: '001',
-          explanation: 'General Knowledge classification.',
-          source: '🛡️ Offline Fallback'
+          explanation: 'Please try searching again.',
+          source: '🛡️ Fallback'
         }));
       }
     });
