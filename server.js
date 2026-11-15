@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v15.json';
+const CACHE_FILE = './ai-cache-v16.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -234,7 +234,7 @@ const FACET_RULES = [
   { order: 5, pattern: /\b(encyclopedias?|encyclopaedias?)\b/i, udcAdd: '(031)', ddcSub: '03', label: 'Form (031) Encyclopedia / DDC -03' },
   { order: 5, pattern: /\b(bibliograph(y|ies))\b/i, udcAdd: '(01)', ddcSub: '016', label: 'Form (01) Bibliography / DDC 016' },
   { order: 5, pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Form (05) Serials / DDC -05' },
-  { order: 5, pattern: /\b(handbooks?|manuals?|guides?|guide to)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Form (035) Guide / DDC -0202' },
+  { order: 5, pattern: /\b(handbooks?|manuals?|guides?|guide to|textbooks?|text[- ]books?)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Form (035) Guide / DDC -0202' },
 
   // Language Auxiliaries (=...)
   { order: 6, pattern: /\b(in english|english[- ]language)\b/i, udcAdd: '=111', ddcSub: '', label: 'Language (=111 English)' },
@@ -243,11 +243,39 @@ const FACET_RULES = [
   { order: 6, pattern: /\b(in french|french[- ]language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
 ];
 
+// 5. Advanced Century Word & Digit Parser (Supports 1st to 21st Century & Ranges with stroke '/')
+const CENTURY_WORDS = {
+  'first': 1, '1st': 1, 'second': 2, '2nd': 2, 'third': 3, '3rd': 3, 'fourth': 4, '4th': 4,
+  'fifth': 5, '5th': 5, 'sixth': 6, '6th': 6, 'seventh': 7, '7th': 7, 'eighth': 8, '8th': 8,
+  'ninth': 9, '9th': 9, 'tenth': 10, '10th': 10, 'eleventh': 11, '11th': 11, 'twelfth': 12, '12th': 12,
+  'thirteenth': 13, '13th': 13, 'fourteenth': 14, '14th': 14, 'fifteenth': 15, '15th': 15,
+  'sixteenth': 16, '16th': 16, 'seventeenth': 17, '17th': 17, 'eighteenth': 18, '18th': 18,
+  'nineteenth': 19, '19th': 19, 'twentieth': 20, '20th': 20, 'twenty-first': 21, '21st': 21
+};
+
 function parseCenturyFacet(query) {
-  const match = query.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+century\b/i);
+  // Check for range like "19th to 20th century" or "19th-20th century"
+  const rangeMatch = query.match(new RegExp(`\\b(${Object.keys(CENTURY_WORDS).join('|')})\\s*(?:st|nd|rd|th)?\\s*(?:to|-)\\s*(${Object.keys(CENTURY_WORDS).join('|')})\\s*(?:st|nd|rd|th)?\\s+century\\b`, 'i'));
+  if (rangeMatch) {
+    const c1 = CENTURY_WORDS[rangeMatch[1].toLowerCase()];
+    const c2 = CENTURY_WORDS[rangeMatch[2].toLowerCase()];
+    if (c1 && c2) {
+      const u1 = String(c1 - 1).padStart(2, '0');
+      const u2 = String(c2 - 1).padStart(2, '0');
+      return {
+        order: 4,
+        udcAdd: `"${u1}/${u2}"`,
+        ddcSub: '0904',
+        label: `Time Range Century ("${u1}/${u2}") / DDC -0904`
+      };
+    }
+  }
+
+  // Single century match (digits or words)
+  const match = query.match(new RegExp(`\\b(${Object.keys(CENTURY_WORDS).join('|')})\\s+century\\b`, 'i'));
   if (!match) return null;
-  const c = parseInt(match[1], 10);
-  if (c < 1 || c > 21) return null;
+  const c = CENTURY_WORDS[match[1].toLowerCase()];
+  if (!c || c < 1 || c > 21) return null;
 
   const udcDigits = String(c - 1).padStart(2, '0');
   const udcSign = `"${udcDigits}"`;
@@ -379,7 +407,7 @@ function synthesizePrecisionEngine(query) {
   return null;
 }
 
-// 5. PURE GOOGLE AI MODE
+// 6. PURE GOOGLE AI MODE
 async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) {
     return { errorReason: 'GEMINI_API_KEY is missing in Render Environment Variables.' };
@@ -389,8 +417,7 @@ async function callGoogleAIMode(query) {
 Build the EXACT synthesized class number for: "${query}".
 Follow official UDC signs and citation order strictly:
 - Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary, e.g., 811.111'34).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form: (082) collection/anthology, (035) guide, (038) dictionary, (083.4) tables) -> =... (language: =111 English).
-- Example: "Phonetics of the English language" -> UDC: "811.111'34", DDC: "421.5".
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 20th century = "19", 21st century = "20", century ranges use stroke like "18/19") -> (0...) (form) -> =... (language).
 Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
   const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
@@ -443,7 +470,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
   return { errorReason: lastApiError || 'API timeout or rate limit' };
 }
 
-// 6. GZIP Response Helper
+// 7. GZIP Response Helper
 function sendCompressed(req, res, statusCode, contentType, payload) {
   const acceptEncoding = req.headers['accept-encoding'] || '';
   const buf = Buffer.from(payload, 'utf8');
@@ -462,7 +489,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 7. Professional Library Cataloger UI
+// 8. Professional Library Cataloger UI
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -522,7 +549,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter any book title or subject..." />
+      <input type="text" id="subjectInput" placeholder="Enter title (e.g., History of India in 20th century)..." />
       <button id="classifyBtn">Search</button>
     </div>
 
@@ -593,7 +620,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v15_' + query.toLowerCase();
+      const localKey = 'udc_v16_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -672,7 +699,7 @@ const server = http.createServer(async (req, res) => {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '001',
           ddc: '001',
-          explanation: `API Status: ${googleAiResult && googleAiResult.errorReason ? googleAiResult.errorReason : 'Check GEMINI_API_KEY in Render'}`,
+          explanation: `API Status: ${googleAiResult && googleAiResult.errorReason ? googleAiResult.errorReason : 'Check GEMINI_API_KEY'}`,
           source: '⚠️ API Check Required'
         }));
       } catch (err) {
