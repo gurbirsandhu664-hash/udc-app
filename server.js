@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
-const CACHE_FILE = './ai-cache-v16.json';
+const CACHE_FILE = './ai-cache-v17.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -188,7 +188,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['history', 'civilization'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
 ];
 
-// 4. All UDC Common Auxiliary Signs Ordered by Official UDC Citation Order
 const FACET_RULES = [
   { order: 1, pattern: /\b(theory of|philosophy of|principles of)\b/i, udcAdd: '.001', ddcSub: '01', label: 'Point of View (.001) / DDC -01' },
   { order: 1, pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Point of View (.001.5) / DDC -072' },
@@ -227,7 +226,6 @@ const FACET_RULES = [
   { order: 3, pattern: /\b(europe|european)\b/i, udcAdd: '(4)', ddcSub: '094', histDdc: '940', label: 'Place (4) Europe / DDC -094' },
   { order: 3, pattern: /\b(asia|asian)\b/i, udcAdd: '(5)', ddcSub: '095', histDdc: '950', label: 'Place (5) Asia / DDC -095' },
 
-  // Form Auxiliaries (0...)
   { order: 5, pattern: /\b(collection of|collections|antholog(y|ies))\b/i, udcAdd: '(082)', ddcSub: '08', litDdcSub: '008', label: 'Form (082) Collection/Anthology / DDC -08 (-008)' },
   { order: 5, pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Form (083.4) Tables / DDC -021' },
   { order: 5, pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Form (038) Dictionary / DDC -03' },
@@ -236,14 +234,12 @@ const FACET_RULES = [
   { order: 5, pattern: /\b(periodicals?|journals?)\b/i, udcAdd: '(05)', ddcSub: '05', label: 'Form (05) Serials / DDC -05' },
   { order: 5, pattern: /\b(handbooks?|manuals?|guides?|guide to|textbooks?|text[- ]books?)\b/i, udcAdd: '(035)', ddcSub: '0202', label: 'Form (035) Guide / DDC -0202' },
 
-  // Language Auxiliaries (=...)
   { order: 6, pattern: /\b(in english|english[- ]language)\b/i, udcAdd: '=111', ddcSub: '', label: 'Language (=111 English)' },
   { order: 6, pattern: /\b(in punjabi|punjabi[- ]language)\b/i, udcAdd: '=214.2', ddcSub: '', label: 'Language (=214.2 Punjabi)' },
   { order: 6, pattern: /\b(in hindi|hindi[- ]language)\b/i, udcAdd: '=214.21', ddcSub: '', label: 'Language (=214.21 Hindi)' },
   { order: 6, pattern: /\b(in french|french[- ]language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
 ];
 
-// 5. Advanced Century Word & Digit Parser (Supports 1st to 21st Century & Ranges with stroke '/')
 const CENTURY_WORDS = {
   'first': 1, '1st': 1, 'second': 2, '2nd': 2, 'third': 3, '3rd': 3, 'fourth': 4, '4th': 4,
   'fifth': 5, '5th': 5, 'sixth': 6, '6th': 6, 'seventh': 7, '7th': 7, 'eighth': 8, '8th': 8,
@@ -254,7 +250,6 @@ const CENTURY_WORDS = {
 };
 
 function parseCenturyFacet(query) {
-  // Check for range like "19th to 20th century" or "19th-20th century"
   const rangeMatch = query.match(new RegExp(`\\b(${Object.keys(CENTURY_WORDS).join('|')})\\s*(?:st|nd|rd|th)?\\s*(?:to|-)\\s*(${Object.keys(CENTURY_WORDS).join('|')})\\s*(?:st|nd|rd|th)?\\s+century\\b`, 'i'));
   if (rangeMatch) {
     const c1 = CENTURY_WORDS[rangeMatch[1].toLowerCase()];
@@ -271,7 +266,6 @@ function parseCenturyFacet(query) {
     }
   }
 
-  // Single century match (digits or words)
   const match = query.match(new RegExp(`\\b(${Object.keys(CENTURY_WORDS).join('|')})\\s+century\\b`, 'i'));
   if (!match) return null;
   const c = CENTURY_WORDS[match[1].toLowerCase()];
@@ -335,7 +329,7 @@ function synthesizePrecisionEngine(query) {
       udc: udcJson,
       ddc: ddcJson,
       explanation: `Exact class number matched from reference schedule for "${query}".`,
-      source: '✨ Google AI Mode • Reference Verified'
+      source: '⚡ UDC/DDC Rule Engine (Local Backup)'
     };
   }
 
@@ -400,24 +394,24 @@ function synthesizePrecisionEngine(query) {
       udc: udcBuilt,
       ddc: ddcBuilt,
       explanation: steps.length > 1 ? `Synthesized Class Number -> ${steps.join(' + ')}.` : `Standard Class Number for ${primary.name}.`,
-      source: '✨ Google AI Mode • Precision Synthesized'
+      source: '⚡ UDC/DDC Rule Engine (Local Backup)'
     };
   }
 
   return null;
 }
 
-// 6. PURE GOOGLE AI MODE
+// 5. PURE REAL GOOGLE AI MODE (Gemini API Live Grounding)
 async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) {
     return { errorReason: 'GEMINI_API_KEY is missing in Render Environment Variables.' };
   }
 
   const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition (Dewey Decimal Classification).
-Build the EXACT synthesized class number for: "${query}".
-Follow official UDC signs and citation order strictly:
+Read and analyze the book title/subject: "${query}".
+Build the EXACT synthesized class number following official UDC signs and citation order strictly:
 - Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary, e.g., 811.111'34).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 20th century = "19", 21st century = "20", century ranges use stroke like "18/19") -> (0...) (form) -> =... (language).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 20th century = "19", 21st century = "20", ranges use stroke like "18/19") -> (0...) (form) -> =... (language).
 Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
   const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
@@ -425,7 +419,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
 
   for (const model of models) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
+    const timer = setTimeout(() => controller.abort(), 8000);
     try {
       const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
@@ -457,7 +451,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
               udc: parsed.udc,
               ddc: parsed.ddc,
               explanation: parsed.explanation || 'Synthesized via Google AI Mode.',
-              source: `✨ Google AI Mode (${model})`
+              source: `✨ Google AI Mode (Gemini API Live)`
             };
           }
         }
@@ -470,7 +464,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
   return { errorReason: lastApiError || 'API timeout or rate limit' };
 }
 
-// 7. GZIP Response Helper
+// 6. GZIP Response Helper
 function sendCompressed(req, res, statusCode, contentType, payload) {
   const acceptEncoding = req.headers['accept-encoding'] || '';
   const buf = Buffer.from(payload, 'utf8');
@@ -489,7 +483,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 8. Professional Library Cataloger UI
+// 7. Professional Library Cataloger UI (With Live Spinner & Clear Badges)
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,9 +507,11 @@ const HTML_PAGE = `<!DOCTYPE html>
     .search-box { display: flex; align-items: center; border: 1.5px solid #cbd5e1; border-radius: 30px; padding: 6px 8px 6px 18px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); background: #fff; transition: border-color 0.2s, box-shadow 0.2s; }
     .search-box:focus-within { border-color: #1a73e8; box-shadow: 0 4px 14px rgba(26, 115, 232, 0.14); }
     .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #0f172a; padding: 10px 4px; background: transparent; }
-    .search-box button { background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff; border: none; border-radius: 24px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    .search-box button { background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff; border: none; border-radius: 24px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; min-width: 90px; }
     .search-box button:hover { opacity: 0.92; }
     .search-box button:disabled { background: #94a3b8; cursor: not-allowed; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px; }
     .signs-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
     .sign-pill { font-size: 11px; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
     .result-card { margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; background: #fafbfc; display: none; }
@@ -620,7 +616,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v16_' + query.toLowerCase();
+      const localKey = 'udc_v17_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -628,11 +624,12 @@ const HTML_PAGE = `<!DOCTYPE html>
       }
 
       const btn = document.getElementById('classifyBtn');
-      btn.textContent = 'Searching...';
+      // Animated Spinner (Circle ghummo)
+      btn.innerHTML = '<span class="spinner"></span>Searching...';
       btn.disabled = true;
 
       const controller = new AbortController();
-      const uiTimeout = setTimeout(() => controller.abort(), 14000);
+      const uiTimeout = setTimeout(() => controller.abort(), 16000);
 
       try {
         const res = await fetch('/api/classify', {
@@ -684,12 +681,14 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
+        // 1. HIGH PRIORITY: Real Google AI Mode (Gemini API Live)
         const googleAiResult = await callGoogleAIMode(query);
         if (googleAiResult && googleAiResult.udc) {
           saveCache(qKey, googleAiResult);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(googleAiResult));
         }
 
+        // 2. BACKUP: Precision Local Rule Engine
         const localSynthesized = synthesizePrecisionEngine(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
