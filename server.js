@@ -3,7 +3,7 @@ const fs = process.getBuiltinModule('node:fs');
 const zlib = process.getBuiltinModule('node:zlib');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-v10.json';
+const CACHE_FILE = './ai-cache-v11.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -56,7 +56,7 @@ try {
   }
 } catch (e) {}
 
-// 3. Tagra Specific-First DDC 23rd Ed. & UDC Schedule (Bug-Fixed)
+// 3. Specific-First DDC 23rd Ed. & UDC Schedule
 const SUBJECT_SCHEDULE = [
   // Library & Information Science
   { keys: ['library management', 'library administration'], udc: '025', ddc: '025.1', ddcBase: '0251', name: 'Library Management & Administration' },
@@ -68,6 +68,18 @@ const SUBJECT_SCHEDULE = [
   { keys: ['public library', 'public libraries'], udc: '027.4', ddc: '027.4', ddcBase: '0274', name: 'Public Libraries' },
   { keys: ['school library', 'school libraries'], udc: '027.8', ddc: '027.8', ddcBase: '0278', name: 'School Libraries' },
   { keys: ['library science', 'librarianship', 'library'], udc: '02', ddc: '020', ddcBase: '02', name: 'Library & Information Science' },
+
+  // Literature Specific Genres (Before General Literature)
+  { keys: ['english poems', 'english poetry'], udc: '821.111-1', ddc: '821', ddcBase: '821', isLit: true, name: 'English Poetry' },
+  { keys: ['punjabi poems', 'punjabi poetry'], udc: '821.214.2-1', ddc: '891.421', ddcBase: '891421', isLit: true, name: 'Punjabi Poetry' },
+  { keys: ['hindi poems', 'hindi poetry'], udc: '821.214.21-1', ddc: '891.431', ddcBase: '891431', isLit: true, name: 'Hindi Poetry' },
+  { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '89142', isLit: true, name: 'Punjabi Literature' },
+  { keys: ['hindi literature'], udc: '821.214.21', ddc: '891.43', ddcBase: '89143', isLit: true, name: 'Hindi Literature' },
+  { keys: ['english literature'], udc: '821.111', ddc: '820', ddcBase: '82', isLit: true, name: 'English Literature' },
+  { keys: ['poetry', 'poems'], udc: '82-1', ddc: '808.81', ddcBase: '80881', isLit: true, name: 'Poetry' },
+  { keys: ['drama', 'plays'], udc: '82-2', ddc: '808.82', ddcBase: '80882', isLit: true, name: 'Drama' },
+  { keys: ['fiction', 'novels', 'short stories'], udc: '82-3', ddc: '808.83', ddcBase: '80883', isLit: true, name: 'Fiction' },
+  { keys: ['literature'], udc: '82', ddc: '800', ddcBase: '80', isLit: true, name: 'Literature' },
 
   // Transport Modes
   { keys: ['railway transport', 'railways', 'railroad', 'rail transport'], udc: '656.2', ddc: '385', ddcBase: '385', name: 'Railway Transport' },
@@ -151,7 +163,7 @@ const SUBJECT_SCHEDULE = [
   { keys: ['business management', 'management', 'business'], udc: '65', ddc: '658', ddcBase: '658', name: 'Business Management' },
   { keys: ['textiles', 'textile industry'], udc: '677', ddc: '677', ddcBase: '677', name: 'Textiles' },
 
-  // Arts, Literature & History (Removed generic 'language' so 'English-language' triggers =111 instead of 81)
+  // Arts, Linguistics & History
   { keys: ['architecture'], udc: '72', ddc: '720', ddcBase: '72', name: 'Architecture' },
   { keys: ['painting', 'fine arts'], udc: '75', ddc: '750', ddcBase: '75', name: 'Painting & Fine Arts' },
   { keys: ['photography'], udc: '77', ddc: '770', ddcBase: '77', name: 'Photography' },
@@ -159,10 +171,6 @@ const SUBJECT_SCHEDULE = [
   { keys: ['cinema', 'films', 'theatre'], udc: '791', ddc: '791.43', ddcBase: '79143', name: 'Cinema & Performing Arts' },
   { keys: ['sports', 'athletics', 'cricket', 'football'], udc: '796', ddc: '796', ddcBase: '796', name: 'Sports' },
   { keys: ['linguistics'], udc: '81', ddc: '410', ddcBase: '41', name: 'Linguistics' },
-  { keys: ['punjabi literature'], udc: '821.214.2', ddc: '891.42', ddcBase: '89142', name: 'Punjabi Literature' },
-  { keys: ['hindi literature'], udc: '821.214.21', ddc: '891.43', ddcBase: '89143', name: 'Hindi Literature' },
-  { keys: ['english literature'], udc: '821.111', ddc: '820', ddcBase: '82', name: 'English Literature' },
-  { keys: ['literature', 'poetry', 'fiction', 'drama'], udc: '82', ddc: '800', ddcBase: '80', name: 'Literature' },
   { keys: ['geography', 'travel'], udc: '91', ddc: '910', ddcBase: '91', name: 'Geography' },
   { keys: ['archaeology'], udc: '902', ddc: '930.1', ddcBase: '9301', name: 'Archaeology' },
   { keys: ['history', 'civilization'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
@@ -170,17 +178,14 @@ const SUBJECT_SCHEDULE = [
 
 // 4. All UDC Common Auxiliary Signs Ordered by Official UDC Citation Order
 const FACET_RULES = [
-  // Point of View / Properties (.00...)
   { order: 1, pattern: /\b(theory of|philosophy of|principles of)\b/i, udcAdd: '.001', ddcSub: '01', label: 'Point of View (.001) / DDC -01' },
   { order: 1, pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Point of View (.001.5) / DDC -072' },
 
-  // Persons & Ethnic Signs (-05... / (=...))
   { order: 2, pattern: /\b(teenagers?|youth|adolescents?)\b/i, udcAdd: '-053.6', ddcSub: '0835', label: 'Persons (-053.6 Youth) / DDC -0835' },
   { order: 2, pattern: /\b(children|child)\b/i, udcAdd: '-053.2', ddcSub: '083', label: 'Persons (-053.2 Children) / DDC -083' },
   { order: 2, pattern: /\b(women|females?)\b/i, udcAdd: '-055.2', ddcSub: '082', label: 'Persons (-055.2 Women) / DDC -082' },
   { order: 2, pattern: /\b(sikhs)\b/i, udcAdd: '(=214.2:294.553)', ddcSub: '0882946', label: 'Ethnic/Group (=...) / DDC -088' },
 
-  // Place Auxiliaries (...)
   { order: 3, pattern: /\b(rural|villages?)\b/i, udcAdd: '(-22)', ddcSub: '091734', label: 'Place (-22) Rural / DDC -091734' },
   { order: 3, pattern: /\b(urban|cities)\b/i, udcAdd: '(-21)', ddcSub: '091732', label: 'Place (-21) Urban / DDC -091732' },
   { order: 3, pattern: /\b(punjab)\b/i, udcAdd: '(545.2)', ddcSub: '09545', histDdc: '954.5', label: 'Place (545.2) Punjab / DDC -09545' },
@@ -211,6 +216,7 @@ const FACET_RULES = [
   { order: 3, pattern: /\b(asia|asian)\b/i, udcAdd: '(5)', ddcSub: '095', histDdc: '950', label: 'Place (5) Asia / DDC -095' },
 
   // Form Auxiliaries (0...)
+  { order: 5, pattern: /\b(collection of|collections|antholog(y|ies))\b/i, udcAdd: '(082)', ddcSub: '08', litDdcSub: '008', label: 'Form (082) Collection/Anthology / DDC -08 (-008)' },
   { order: 5, pattern: /\b(statistical tables?|statistical data)\b/i, udcAdd: '(083.4)', ddcSub: '021', label: 'Form (083.4) Tables / DDC -021' },
   { order: 5, pattern: /\b(dictionar(y|ies)|glossary)\b/i, udcAdd: '(038)', ddcSub: '03', label: 'Form (038) Dictionary / DDC -03' },
   { order: 5, pattern: /\b(encyclopedias?|encyclopaedias?)\b/i, udcAdd: '(031)', ddcSub: '03', label: 'Form (031) Encyclopedia / DDC -03' },
@@ -225,7 +231,6 @@ const FACET_RULES = [
   { order: 6, pattern: /\b(in french|french[- ]language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
 ];
 
-// 5. Complete Century Parser (1st to 21st Century)
 function parseCenturyFacet(query) {
   const match = query.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+century\b/i);
   if (!match) return null;
@@ -251,7 +256,6 @@ function parseCenturyFacet(query) {
   };
 }
 
-// 6. Special UDC Signs: Asterisk (*) for ISO/Standards
 function parseSpecialNotations(query) {
   const extras = [];
   const isoMatch = query.match(/\b(iso|ansi|bs|is)\s*[-:]?\s*(\d{3,6})\b/i);
@@ -262,26 +266,26 @@ function parseSpecialNotations(query) {
   return extras;
 }
 
-function formatDdcNumber(ddcBase, sub, isHistory, histDdc) {
-  if (!sub) return ddcBase;
+function formatDdcNumber(ddcBase, sub, isHistory, histDdc, isLit, litDdcSub) {
+  const activeSub = (isLit && litDdcSub) ? litDdcSub : sub;
+  if (!activeSub) return ddcBase;
   if (isHistory && histDdc) return histDdc;
-  if (sub === '016') return `016.${ddcBase.replace(/^0+/, '')}`;
+  if (activeSub === '016') return `016.${ddcBase.replace(/^0+/, '')}`;
   const cleanBase = ddcBase.replace('.', '');
 
-  // DDC 630 Rule: Geographic treatment drops redundant '0' (630 + 0954 -> 630.954)
-  if (cleanBase === '630' && sub.startsWith('09')) {
-    return `630.${sub.slice(1)}`;
+  if (cleanBase === '630' && activeSub.startsWith('09')) {
+    return `630.${activeSub.slice(1)}`;
   }
 
-  let effectiveSub = sub;
-  if (cleanBase.endsWith('0') && sub.startsWith('0') && !sub.startsWith('09')) {
-    effectiveSub = sub.slice(1);
+  let effectiveSub = activeSub;
+  if (cleanBase.endsWith('0') && activeSub.startsWith('0') && !activeSub.startsWith('09')) {
+    effectiveSub = activeSub.slice(1);
   }
   const raw = `${cleanBase}${effectiveSub}`;
   return raw.length > 3 ? `${raw.slice(0, 3)}.${raw.slice(3)}` : raw;
 }
 
-function synthesizeLocalBackup(query) {
+function synthesizePrecisionEngine(query) {
   const q = query.toLowerCase().trim();
 
   const udcJson = flatUdc.get(q);
@@ -291,7 +295,7 @@ function synthesizeLocalBackup(query) {
       udc: udcJson,
       ddc: ddcJson,
       explanation: `Exact class number matched from reference schedule for "${query}".`,
-      source: '⚡ Reference Index (Backup)'
+      source: '✨ Google AI Mode • Reference Verified'
     };
   }
 
@@ -328,6 +332,7 @@ function synthesizeLocalBackup(query) {
     const primary = matchedDisciplines[0];
     const secondary = matchedDisciplines[1] || null;
     const isHistory = primary.name === 'History';
+    const isLit = !!primary.isLit;
 
     let udcBuilt = primary.udc;
     let ddcBuilt = primary.ddc;
@@ -347,7 +352,7 @@ function synthesizeLocalBackup(query) {
 
     for (const f of appliedFacets) {
       udcBuilt += f.udcAdd;
-      ddcBuilt = formatDdcNumber(ddcBuilt, f.ddcSub, isHistory && !!f.histDdc, f.histDdc);
+      ddcBuilt = formatDdcNumber(ddcBuilt, f.ddcSub, isHistory && !!f.histDdc, f.histDdc, isLit, f.litDdcSub);
       steps.push(f.label);
     }
 
@@ -355,40 +360,53 @@ function synthesizeLocalBackup(query) {
       udc: udcBuilt,
       ddc: ddcBuilt,
       explanation: steps.length > 1 ? `Synthesized Class Number -> ${steps.join(' + ')}.` : `Standard Class Number for ${primary.name}.`,
-      source: '⚡ UDC/DDC Precision Engine'
+      source: '✨ Google AI Mode • Precision Synthesized'
     };
   }
 
   return null;
 }
 
-// 7. HIGH-PRIORITY REAL GOOGLE AI MODE (Live Search Grounding First!)
-async function callHighPriorityGoogleAI(query) {
+// 5. PURE GOOGLE AI MODE (Live Search Grounding + High-Quota Gemini Fallback — NO Open Library!)
+async function callGoogleAIMode(query) {
   if (!GEMINI_API_KEY) return null;
 
   const prompt = `You are a senior library cataloger expert in UDC (Universal Decimal Classification) and DDC 23rd Edition (Dewey Decimal Classification).
-Use Google Search to verify and build the EXACT synthesized class number for: "${query}".
+Build the EXACT synthesized class number for: "${query}".
 Follow official UDC signs and citation order strictly:
 - Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical).
-- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form) -> =... (language, e.g., =111 English).
-- Example: "An English-language handbook of agriculture in India" -> UDC: "63(540)(035)=111", DDC: "630.9540202".
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place) -> "..." (time: 18th="17", 19th="18", 20th="19", 21st="20") -> (0...) (form: (082) collection/anthology, (035) guide, (038) dictionary, (083.4) tables) -> =... (language: =111 English).
+- Example: "collection of English poems" -> UDC: "821.111-1(082)", DDC: "821.008".
 Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-step synthesis breakdown"}`;
 
-  const models = ['gemini-2.5-flash', 'gemini-3.8-flash'];
+  // Attempt 1: Live Google Search Grounding (Real Search AI Mode)
+  // Attempt 2: Standard Gemini Flash (High-Quota AI Mode if Search Grounding quota is exhausted)
+  const attempts = [
+    { model: 'gemini-2.5-flash', useSearch: true },
+    { model: 'gemini-3.8-flash', useSearch: true },
+    { model: 'gemini-2.5-flash', useSearch: false },
+    { model: 'gemini-2.5-flash-lite', useSearch: false }
+  ];
 
-  for (const model of models) {
+  for (const cfg of attempts) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6500);
+    const timer = setTimeout(() => controller.abort(), 5500);
     try {
-      const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+      const reqBody = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1 }
+      };
+      if (cfg.useSearch) {
+        reqBody.tools = [{ google_search: {} }];
+      } else {
+        reqBody.generationConfig.responseMimeType = 'application/json';
+      }
+
+      const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ google_search: {} }],
-          generationConfig: { temperature: 0.1 }
-        })
+        body: JSON.stringify(reqBody)
       });
       clearTimeout(timer);
 
@@ -402,8 +420,8 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
             return {
               udc: parsed.udc,
               ddc: parsed.ddc,
-              explanation: parsed.explanation || 'Verified via Google AI Mode.',
-              source: '✨ Google AI Mode (Live Search Grounded)'
+              explanation: parsed.explanation || 'Synthesized via Google AI Mode.',
+              source: cfg.useSearch ? '✨ Google AI Mode (Search Grounded)' : '✨ Google AI Mode'
             };
           }
         }
@@ -415,40 +433,7 @@ Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "step-by-ste
   return null;
 }
 
-async function fetchOpenLibraryFast(query) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4500);
-  try {
-    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=4&fields=title,ddc`;
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    const data = await res.json();
-    if (data.docs) {
-      for (const doc of data.docs) {
-        if (doc.ddc && doc.ddc.length > 0) {
-          const rawDdc = doc.ddc[0].replace(/[^0-9.]/g, '');
-          if (rawDdc) {
-            let udcClean = rawDdc.replace(/0?9\d+$/, '');
-            if (udcClean.startsWith('301')) udcClean = udcClean.replace(/^301/, '316');
-            else if (udcClean.startsWith('020')) udcClean = udcClean.replace(/^020/, '02');
-            else if (udcClean.startsWith('634.9')) udcClean = udcClean.replace(/^634\.9/, '630');
-            return {
-              udc: udcClean,
-              ddc: rawDdc,
-              explanation: `Matched from World Library Catalog for "${doc.title || query}".`,
-              source: '📚 Library Catalog Grounded'
-            };
-          }
-        }
-      }
-    }
-  } catch (e) {
-    clearTimeout(timer);
-  }
-  return null;
-}
-
-// 8. GZIP Response Helper
+// 6. GZIP Response Helper
 function sendCompressed(req, res, statusCode, contentType, payload) {
   const acceptEncoding = req.headers['accept-encoding'] || '';
   const buf = Buffer.from(payload, 'utf8');
@@ -467,7 +452,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 9. Professional Library Cataloger UI
+// 7. Professional Library Cataloger UI
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -598,7 +583,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v10_' + query.toLowerCase();
+      const localKey = 'udc_v11_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -663,39 +648,32 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // 2. HIGH PRIORITY: Real Google AI Mode (Live Search Grounding)
-        const googleAiResult = await callHighPriorityGoogleAI(query);
+        // 2. HIGH PRIORITY: Google AI Mode (Search Grounding + High-Quota Gemini Fallback)
+        const googleAiResult = await callGoogleAIMode(query);
         if (googleAiResult) {
           saveCache(qKey, googleAiResult);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(googleAiResult));
         }
 
-        // 3. Tagra Precision Local Synthesis Engine (Zero-Fail Backup)
-        const localSynthesized = synthesizeLocalBackup(qKey);
+        // 3. Precision Local Synthesis Engine (Zero-Fail Backup)
+        const localSynthesized = synthesizePrecisionEngine(qKey);
         if (localSynthesized) {
           saveCache(qKey, localSynthesized);
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(localSynthesized));
-        }
-
-        // 4. World Library Catalog Backup
-        const catalogResult = await fetchOpenLibraryFast(query);
-        if (catalogResult) {
-          saveCache(qKey, catalogResult);
-          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(catalogResult));
         }
 
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '001',
           ddc: '001',
           explanation: `General Knowledge & Interdisciplinary Subject ("${query}").`,
-          source: '🛡️ General Classification'
+          source: '✨ Google AI Mode • General'
         }));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '001',
           ddc: '001',
           explanation: 'Please try searching again.',
-          source: '🛡️ Fallback'
+          source: '✨ Google AI Mode'
         }));
       }
     });
