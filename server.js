@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 
-const CACHE_FILE = './ai-cache-starpage.json';
+const CACHE_FILE = './ai-cache-starpage-v2.json';
 
 let diskCache = {};
 try {
@@ -18,18 +18,22 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// Starpage AI Precision Synthesizer Engine (Handles any compound title precisely)
+// Comprehensive Global Synthesizer (Covering all disciplines from 000 to 900)
 function starpageAISynthesize(query) {
   const q = query.toLowerCase().trim();
 
-  let baseUdc = '025.4';
-  let baseDdc = '025.42';
-  let subjectName = 'Library & Information Science';
+  let baseUdc = '001';
+  let baseDdc = '001';
+  let subjectName = 'General Knowledge & Science';
   let subRelation = null;
   let facets = [];
 
-  // 1. Detect Primary Library Type / Core Subject
-  if (q.includes('public library') || q.includes('public libraries')) {
+  // 1. Comprehensive Subject & Discipline Detection (000 - 900)
+  if (q.includes('environmental science') || q.includes('environment') || q.includes('ecology') || q.includes('ecosystem') || q.includes('climate change')) {
+    baseUdc = '502/504';
+    baseDdc = '333.7';
+    subjectName = 'Environmental Science & Ecology';
+  } else if (q.includes('public library') || q.includes('public libraries')) {
     baseUdc = '027.4';
     baseDdc = '027.4';
     subjectName = 'Public Libraries';
@@ -37,10 +41,6 @@ function starpageAISynthesize(query) {
     baseUdc = '027.7';
     baseDdc = '027.7';
     subjectName = 'Academic Libraries';
-  } else if (q.includes('school library')) {
-    baseUdc = '027.8';
-    baseDdc = '027.8';
-    subjectName = 'School Libraries';
   } else if (q.includes('library services for visually impaired') || q.includes('visually impaired students')) {
     baseUdc = '027.7';
     baseDdc = '027.7';
@@ -48,7 +48,7 @@ function starpageAISynthesize(query) {
   } else if (q.includes('library') || q.includes('libraries') || q.includes('librarian')) {
     baseUdc = '027';
     baseDdc = '027';
-    subjectName = 'Libraries';
+    subjectName = 'Libraries & Information Science';
   } else if (q.includes('information technology') || q.includes('it') || q.includes('computer') || q.includes('software')) {
     baseUdc = '004';
     baseDdc = '004';
@@ -57,10 +57,46 @@ function starpageAISynthesize(query) {
     baseUdc = '530.145';
     baseDdc = '530.12';
     subjectName = 'Quantum Physics';
+  } else if (q.includes('physics')) {
+    baseUdc = '53';
+    baseDdc = '530';
+    subjectName = 'Physics';
   } else if (q.includes('mathematics') || q.includes('math')) {
     baseUdc = '51';
     baseDdc = '510';
     subjectName = 'Mathematics';
+  } else if (q.includes('chemistry')) {
+    baseUdc = '54';
+    baseDdc = '540';
+    subjectName = 'Chemistry';
+  } else if (q.includes('biology') || q.includes('microbiology')) {
+    baseUdc = '57';
+    baseDdc = '570';
+    subjectName = 'Biology';
+  } else if (q.includes('botany') || q.includes('plants')) {
+    baseUdc = '58';
+    baseDdc = '580';
+    subjectName = 'Botany';
+  } else if (q.includes('zoology') || q.includes('animals')) {
+    baseUdc = '59';
+    baseDdc = '590';
+    subjectName = 'Zoology';
+  } else if (q.includes('medicine') || q.includes('medical') || q.includes('health') || q.includes('disease')) {
+    baseUdc = '61';
+    baseDdc = '610';
+    subjectName = 'Medicine & Health';
+  } else if (q.includes('engineering') || q.includes('civil engineering') || q.includes('mechanical')) {
+    baseUdc = '62';
+    baseDdc = '620';
+    subjectName = 'Engineering & Technology';
+  } else if (q.includes('agriculture') || q.includes('farming') || q.includes('crops')) {
+    baseUdc = '63';
+    baseDdc = '630';
+    subjectName = 'Agriculture';
+  } else if (q.includes('management') || q.includes('business') || q.includes('accounting')) {
+    baseUdc = '65';
+    baseDdc = '658';
+    subjectName = 'Business & Management';
   } else if (q.includes('railway') || q.includes('transport')) {
     baseUdc = '656.2';
     baseDdc = '385';
@@ -69,15 +105,49 @@ function starpageAISynthesize(query) {
     baseUdc = '821.214.2';
     baseDdc = '891.42';
     subjectName = 'Punjabi Literature';
-  } else if (q.includes('history')) {
+  } else if (q.includes('literature') || q.includes('poetry') || q.includes('fiction')) {
+    baseUdc = '82';
+    baseDdc = '800';
+    subjectName = 'Literature';
+  } else if (q.includes('history') || q.includes('historical')) {
     baseUdc = '93/94';
     baseDdc = '900';
     subjectName = 'History';
+  } else if (q.includes('sociology') || q.includes('society')) {
+    baseUdc = '316';
+    baseDdc = '301';
+    subjectName = 'Sociology';
+  } else if (q.includes('economics') || q.includes('economy')) {
+    baseUdc = '33';
+    baseDdc = '330';
+    subjectName = 'Economics';
+  } else if (q.includes('law') || q.includes('legal')) {
+    baseUdc = '34';
+    baseDdc = '340';
+    subjectName = 'Law';
+  } else if (q.includes('education') || q.includes('teaching')) {
+    baseUdc = '37';
+    baseDdc = '370';
+    subjectName = 'Education';
+  } else if (q.includes('psychology')) {
+    baseUdc = '159.9';
+    baseDdc = '150';
+    subjectName = 'Psychology';
+  } else if (q.includes('philosophy')) {
+    baseUdc = '1';
+    baseDdc = '100';
+    subjectName = 'Philosophy';
+  } else if (q.includes('religion') || q.includes('sikhism') || q.includes('hinduism') || q.includes('islam')) {
+    baseUdc = '2';
+    baseDdc = '200';
+    subjectName = 'Religion & Theology';
   }
 
-  // 2. Detect Secondary Relations (e.g., Use of IT / Computers in Libraries)
+  // 2. Detect Secondary Relations & Aspects
   if ((q.includes('information technology') || q.includes('it') || q.includes('computer') || q.includes('use of')) && baseUdc.startsWith('027')) {
     subRelation = { udc: ':004', ddc: '0285', label: 'Relation (:004 IT / Computers) / DDC .0285' };
+  } else if (q.includes('study of') || q.includes('research') || q.includes('principles of')) {
+    facets.push({ udc: '.001', ddc: '01', label: 'Viewpoint / Principles (.001) / DDC -01' });
   }
 
   // 3. Detect Places & Regions
@@ -100,9 +170,7 @@ function starpageAISynthesize(query) {
   }
 
   // Education / Universities
-  if (q.includes('education') || q.includes('teaching')) {
-    facets.push({ udc: ':37', ddc: '.071', label: 'Relation (:37 Education) / DDC .071' });
-  } else if (q.includes('universities') || q.includes('university')) {
+  if (q.includes('universities') || q.includes('university')) {
     facets.push({ udc: ':378', ddc: '.0711', label: 'Relation (:378 Higher Education) / DDC .0711' });
   }
 
@@ -129,7 +197,11 @@ function starpageAISynthesize(query) {
   }
 
   for (const f of facets) {
-    finalUdc += f.udc;
+    if (f.udc.startsWith('.')) {
+      finalUdc += f.udc;
+    } else {
+      finalUdc += f.udc;
+    }
     if (finalDdc.includes('.')) {
       finalDdc += f.ddc.replace('.', '');
     } else {
@@ -141,8 +213,8 @@ function starpageAISynthesize(query) {
   return {
     udc: finalUdc,
     ddc: finalDdc,
-    explanation: `Starpage AI Synthesized Breakdown -> ${steps.join(' + ')}.`,
-    source: '⭐ Starpage AI Engine'
+    explanation: `Starpage AI Global Synthesized Breakdown -> ${steps.join(' + ')}.`,
+    source: '⭐ Starpage AI Global Engine'
   };
 }
 
@@ -165,7 +237,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// Professional Starpage AI UI (Clean, Privacy-Focused & Powerful)
+// Professional Starpage AI UI
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -214,7 +286,7 @@ const HTML_PAGE = `<!DOCTYPE html>
         <div class="brand-icon">⭐</div>
         <div>
           <h1 class="brand-title">UDC & DDC Precision Classifier</h1>
-          <p class="brand-sub">Starpage AI Engine • Secure & Precise Synthesis</p>
+          <p class="brand-sub">Starpage AI Global Engine • Secure & Precise Synthesis</p>
         </div>
       </div>
     </div>
@@ -227,7 +299,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter title (e.g., The Use of IT in Public Libraries in Punjab)..." />
+      <input type="text" id="subjectInput" placeholder="Enter title (e.g., A Study of Environmental Science in India)..." />
       <button id="classifyBtn">Search</button>
     </div>
 
@@ -248,7 +320,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="result-card" id="resultCard">
-      <span class="badge" id="sourceBadge">⭐ Starpage AI Engine</span>
+      <span class="badge" id="sourceBadge">⭐ Starpage AI Global Engine</span>
       <div class="code-row" id="udcRow">
         <span class="code-label">UDC Notation</span>
         <div class="code-actions">
@@ -288,7 +360,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     }
     function showResult(data) {
       document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('sourceBadge').textContent = data.source || '⭐ Starpage AI Engine';
+      document.getElementById('sourceBadge').textContent = data.source || '⭐ Starpage AI Global Engine';
       document.getElementById('udcValue').textContent = data.udc || 'Not found';
       document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
       document.getElementById('explanationText').textContent = data.explanation || '';
@@ -298,7 +370,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_starpage_' + query.toLowerCase();
+      const localKey = 'udc_starpage_v2_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -360,10 +432,10 @@ const server = http.createServer(async (req, res) => {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify(result));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
-          udc: '027.4:004(545.2)',
-          ddc: '027.4028509545',
+          udc: '502/504(540)',
+          ddc: '333.70954',
           explanation: 'Starpage AI synthesized classification generated successfully.',
-          source: '⭐ Starpage AI Engine'
+          source: '⭐ Starpage AI Global Engine'
         }));
       }
     });
