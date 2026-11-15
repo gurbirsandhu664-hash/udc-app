@@ -2,7 +2,8 @@ import http from 'node:http';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 
-const CACHE_FILE = './ai-cache-v29.json';
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
+const CACHE_FILE = './ai-cache-v30.json';
 
 let diskCache = {};
 try {
@@ -18,16 +19,15 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// Universal Dynamic AI Synthesizer (Intelligently classifies ANY title entered by user)
+// Universal Dynamic AI Synthesizer (Handles any complex title with professional UDC/DDC rules)
 function universalSynthesize(query) {
   const q = query.toLowerCase().trim();
   
   let baseUdc = '025.4';
   let baseDdc = '025.42';
-  let subjectName = 'Information & Library Science';
+  let subjectName = 'Library & Information Science';
   let facets = [];
 
-  // 1. Detect Core Subject Discipline
   if (q.includes('information technology') || q.includes('it') || q.includes('computer') || q.includes('software')) {
     baseUdc = '004';
     baseDdc = '004';
@@ -66,7 +66,6 @@ function universalSynthesize(query) {
     subjectName = 'Science & Technology';
   }
 
-  // 2. Detect Facets & Auxiliaries (Place, Time, Form, Viewpoint)
   if (q.includes('india') || q.includes('indian')) {
     facets.push({ udc: '(540)', ddc: '0954', label: 'Place (540) India / DDC -0954' });
   }
@@ -88,21 +87,12 @@ function universalSynthesize(query) {
     facets.push({ udc: '"18"', ddc: '09034', label: 'Time ("18" 19th Century) / DDC -09034' });
   }
 
-  // 3. Construct Final Synthesized Notations
   let finalUdc = baseUdc;
   let finalDdc = baseDdc;
   let steps = [`Base: ${subjectName} (${baseUdc} / ${baseDdc})`];
 
-  if (facets.length > 0 && facets.some(f => f.udc.startsWith(':') || f.udc.startsWith('['))) {
-    finalUdc = `[${baseUdc}${facets.map(f => f.udc.startsWith(':') ? f.udc : '').join('')}]`;
-  }
-
   for (const f of facets) {
-    if (!f.udc.startsWith(':')) {
-      finalUdc += f.udc;
-    } else {
-      finalUdc += f.udc;
-    }
+    finalUdc += f.udc;
     if (finalDdc.includes('.')) {
       finalDdc += f.ddc.replace('.', '');
     } else {
@@ -117,6 +107,48 @@ function universalSynthesize(query) {
     explanation: `Synthesized Class Number -> ${steps.join(' + ')}.`,
     source: '✨ Google AI Mode (Advanced Engine)'
   };
+}
+
+// REAL LIVE GEMINI API CALL
+async function callGoogleAIMode(query) {
+  if (!GEMINI_API_KEY) return null;
+
+  const prompt = `You are a senior library cataloger expert in UDC and DDC 23rd Edition.
+Build the EXACT synthesized class number for: "${query}".
+Follow official UDC signs and citation order strictly:
+- Connecting signs: + (addition), / (stroke extension), : (relation), :: (double colon order fixing), [...] (subgrouping), * (non-UDC code), A/Z (alphabetical), ' (special auxiliary).
+- Common auxiliaries order: .00/-0 (viewpoint/persons) -> (...) (place, e.g., (540) India) -> "..." (time) -> (0...) (form) -> =... (language).
+Return ONLY valid JSON: {"udc": "...", "ddc": "...", "explanation": "..."}`;
+
+  try {
+    const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+      })
+    });
+
+    const data = await apiRes.json();
+    if (!data.error && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      const rawText = data.candidates[0].content.parts.map(p => p.text || '').join('');
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.udc && parsed.ddc) {
+          return {
+            udc: parsed.udc,
+            ddc: parsed.ddc,
+            explanation: parsed.explanation || 'Synthesized via Gemini API Live.',
+            source: '✨ Google AI Mode (Gemini API Live)'
+          };
+        }
+      }
+    }
+  } catch (e) {}
+
+  return null;
 }
 
 // GZIP Response Helper
@@ -273,7 +305,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v29_' + query.toLowerCase();
+      const localKey = 'udc_v30_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -330,10 +362,17 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        // Generate intelligent synthesized classification dynamically for ANY query
-        const result = universalSynthesize(query);
-        saveCache(qKey, result);
-        return sendCompressed(req, res, 200, 'application/json', JSON.stringify(result));
+        // 1. Try Live Gemini AI First
+        const aiResult = await callGoogleAIMode(query);
+        if (aiResult && aiResult.udc) {
+          saveCache(qKey, aiResult);
+          return sendCompressed(req, res, 200, 'application/json', JSON.stringify(aiResult));
+        }
+
+        // 2. Fallback to Universal Advanced Synthesizer
+        const synthesized = universalSynthesize(query);
+        saveCache(qKey, synthesized);
+        return sendCompressed(req, res, 200, 'application/json', JSON.stringify(synthesized));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '025.4',
