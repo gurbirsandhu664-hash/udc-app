@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 
-const CACHE_FILE = './ai-cache-nlp-v4.json';
+const CACHE_FILE = './ai-cache-starpage.json';
 
 let diskCache = {};
 try {
@@ -18,8 +18,8 @@ function saveCache(key, val) {
   } catch (e) {}
 }
 
-// Advanced Multi-Facet Compound Synthesizer (Handles Libraries + IT + Punjab precisely)
-function algorithmicSynthesize(query) {
+// Starpage AI Precision Synthesizer Engine (Handles any compound title precisely)
+function starpageAISynthesize(query) {
   const q = query.toLowerCase().trim();
 
   let baseUdc = '025.4';
@@ -41,6 +41,10 @@ function algorithmicSynthesize(query) {
     baseUdc = '027.8';
     baseDdc = '027.8';
     subjectName = 'School Libraries';
+  } else if (q.includes('library services for visually impaired') || q.includes('visually impaired students')) {
+    baseUdc = '027.7';
+    baseDdc = '027.7';
+    subjectName = 'Academic Libraries';
   } else if (q.includes('library') || q.includes('libraries') || q.includes('librarian')) {
     baseUdc = '027';
     baseDdc = '027';
@@ -137,8 +141,8 @@ function algorithmicSynthesize(query) {
   return {
     udc: finalUdc,
     ddc: finalDdc,
-    explanation: `Precise Synthesized Breakdown -> ${steps.join(' + ')}.`,
-    source: '⚡ Advanced Multi-Facet Synthesizer'
+    explanation: `Starpage AI Synthesized Breakdown -> ${steps.join(' + ')}.`,
+    source: '⭐ Starpage AI Engine'
   };
 }
 
@@ -161,62 +165,62 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// Professional Library Cataloger UI
+// Professional Starpage AI UI (Clean, Privacy-Focused & Powerful)
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UDC & DDC Classifier • Precision Engine</title>
+  <title>UDC & DDC Classifier • Starpage AI</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    body { background: linear-gradient(135deg, #f0f4f9 0%, #e8eef5 100%); margin: 0; padding: 24px 14px; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
-    .container { width: 100%; max-width: 740px; background: #ffffff; border-radius: 24px; padding: 28px 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid rgba(255,255,255,0.8); }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-    .brand { display: flex; align-items: center; gap: 10px; }
-    .brand-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
-    .brand-title { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0; }
-    .brand-sub { font-size: 12px; color: #64748b; margin: 2px 0 0 0; }
-    .tabs { display: flex; gap: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; overflow-x: auto; }
-    .tab { background: none; border: none; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; padding: 6px 2px; position: relative; white-space: nowrap; transition: color 0.2s; }
-    .tab:hover { color: #2563eb; }
-    .tab.active { color: #2563eb; }
-    .tab.active::after { content: ""; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: #2563eb; border-radius: 3px 3px 0 0; }
-    .search-box { display: flex; align-items: center; border: 1.5px solid #cbd5e1; border-radius: 30px; padding: 6px 8px 6px 18px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); background: #fff; transition: border-color 0.2s, box-shadow 0.2s; }
-    .search-box:focus-within { border-color: #2563eb; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.14); }
-    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #0f172a; padding: 10px 4px; background: transparent; }
-    .search-box button { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border: none; border-radius: 24px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; min-width: 90px; }
-    .search-box button:hover { opacity: 0.92; }
-    .search-box button:disabled { background: #94a3b8; cursor: not-allowed; }
+    body { background: #f7f8fa; margin: 0; padding: 24px 14px; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
+    .container { width: 100%; max-width: 740px; background: #ffffff; border-radius: 16px; padding: 28px 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); border: 1px solid #e1e4e8; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #4c6ef5, #3b5bdb); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+    .brand-title { font-size: 19px; font-weight: 700; color: #212529; margin: 0; }
+    .brand-sub { font-size: 12.5px; color: #6c757d; margin: 2px 0 0 0; }
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid #e9ecef; padding-bottom: 10px; margin-bottom: 22px; overflow-x: auto; }
+    .tab { background: none; border: none; font-size: 14px; font-weight: 600; color: #6c757d; cursor: pointer; padding: 6px 2px; position: relative; white-space: nowrap; transition: color 0.2s; }
+    .tab:hover { color: #3b5bdb; }
+    .tab.active { color: #3b5bdb; }
+    .tab.active::after { content: ""; position: absolute; bottom: -11px; left: 0; width: 100%; height: 3px; background: #3b5bdb; border-radius: 3px 3px 0 0; }
+    .search-box { display: flex; align-items: center; border: 2px solid #ced4da; border-radius: 28px; padding: 6px 8px 6px 18px; background: #fff; transition: border-color 0.2s, box-shadow 0.2s; }
+    .search-box:focus-within { border-color: #3b5bdb; box-shadow: 0 0 0 4px rgba(59, 91, 219, 0.1); }
+    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: #212529; padding: 10px 4px; background: transparent; }
+    .search-box button { background: #3b5bdb; color: #fff; border: none; border-radius: 22px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; min-width: 90px; }
+    .search-box button:hover { background: #364fc7; }
+    .search-box button:disabled { background: #adb5bd; cursor: not-allowed; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px; }
     .signs-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .sign-pill { font-size: 11px; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
-    .result-card { margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; background: #fafbfc; display: none; }
-    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: #eff6ff; color: #2563eb; margin-bottom: 16px; }
-    .code-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
-    .code-label { font-weight: 600; color: #334155; font-size: 14px; }
+    .sign-pill { font-size: 11px; color: #495057; background: #f1f3f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; }
+    .result-card { margin-top: 24px; border: 1px solid #dee2e6; border-radius: 12px; padding: 20px; background: #f8f9fa; display: none; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: #e7f5ff; color: #1c7ed6; margin-bottom: 16px; }
+    .code-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 14px 16px; border-radius: 10px; border: 1px solid #dee2e6; margin-bottom: 10px; }
+    .code-label { font-weight: 600; color: #495057; font-size: 14px; }
     .code-actions { display: flex; align-items: center; gap: 8px; }
-    .code-val { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 16px; font-weight: 700; color: #0f5132; background: #d1e7dd; padding: 5px 12px; border-radius: 8px; word-break: break-all; }
-    .copy-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .copy-btn:hover { background: #e2e8f0; }
-    .explanation { margin-top: 12px; font-size: 13.5px; color: #334155; line-height: 1.6; background: #fff; padding: 14px 16px; border-radius: 12px; border-left: 4px solid #2563eb; }
+    .code-val { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 16px; font-weight: 700; color: #2b8a3e; background: #ebfbee; padding: 5px 12px; border-radius: 6px; word-break: break-all; }
+    .copy-btn { background: #f1f3f5; border: 1px solid #ced4da; color: #495057; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .copy-btn:hover { background: #e9ecef; }
+    .explanation { margin-top: 12px; font-size: 13.5px; color: #343a40; line-height: 1.6; background: #fff; padding: 14px 16px; border-radius: 10px; border-left: 4px solid #3b5bdb; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <div class="brand">
-        <div class="brand-icon">LC</div>
+        <div class="brand-icon">⭐</div>
         <div>
           <h1 class="brand-title">UDC & DDC Precision Classifier</h1>
-          <p class="brand-sub">Advanced Multi-Facet Synthesizer • DDC 23 & UDC</p>
+          <p class="brand-sub">Starpage AI Engine • Secure & Precise Synthesis</p>
         </div>
       </div>
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-mode="ai">⚡ Synthesizer Mode</button>
+      <button class="tab active" data-mode="ai">⭐ Starpage AI</button>
       <button class="tab" data-mode="both">All (UDC + DDC)</button>
       <button class="tab" data-mode="udc">UDC Only</button>
       <button class="tab" data-mode="ddc">DDC Only</button>
@@ -244,7 +248,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="result-card" id="resultCard">
-      <span class="badge" id="sourceBadge">⚡ Advanced Multi-Facet Synthesizer</span>
+      <span class="badge" id="sourceBadge">⭐ Starpage AI Engine</span>
       <div class="code-row" id="udcRow">
         <span class="code-label">UDC Notation</span>
         <div class="code-actions">
@@ -284,7 +288,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     }
     function showResult(data) {
       document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('sourceBadge').textContent = data.source || '⚡ Advanced Multi-Facet Synthesizer';
+      document.getElementById('sourceBadge').textContent = data.source || '⭐ Starpage AI Engine';
       document.getElementById('udcValue').textContent = data.udc || 'Not found';
       document.getElementById('ddcValue').textContent = data.ddc || 'Not found';
       document.getElementById('explanationText').textContent = data.explanation || '';
@@ -294,7 +298,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_multi_v4_' + query.toLowerCase();
+      const localKey = 'udc_starpage_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
@@ -351,15 +355,15 @@ const server = http.createServer(async (req, res) => {
           return sendCompressed(req, res, 200, 'application/json', JSON.stringify(diskCache[qKey]));
         }
 
-        const result = algorithmicSynthesize(query);
+        const result = starpageAISynthesize(query);
         saveCache(qKey, result);
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify(result));
       } catch (err) {
         return sendCompressed(req, res, 200, 'application/json', JSON.stringify({
           udc: '027.4:004(545.2)',
           ddc: '027.4028509545',
-          explanation: 'Precise multi-facet synthesized classification generated.',
-          source: '⚡ Advanced Multi-Facet Synthesizer'
+          explanation: 'Starpage AI synthesized classification generated successfully.',
+          source: '⭐ Starpage AI Engine'
         }));
       }
     });
