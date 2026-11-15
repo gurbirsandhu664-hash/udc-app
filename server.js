@@ -3,7 +3,7 @@ const fs = process.getBuiltinModule('node:fs');
 const zlib = process.getBuiltinModule('node:zlib');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CACHE_FILE = './ai-cache-v8.json';
+const CACHE_FILE = './ai-cache-v9.json';
 
 // 1. Persistent Disk Cache
 let diskCache = {};
@@ -117,7 +117,7 @@ const SUBJECT_SCHEDULE = [
   { keys: ['commerce', 'trade', 'export', 'import'], udc: '339', ddc: '380', ddcBase: '38', name: 'Commerce & Trade' },
   { keys: ['folklore', 'customs', 'festivals'], udc: '39', ddc: '390', ddcBase: '39', name: 'Customs & Folklore' },
 
-  // Sciences, Medicine, Engineering & Agriculture
+  // Sciences, Medicine, Engineering, Agriculture & Fisheries
   { keys: ['mathematics'], udc: '51', ddc: '510', ddcBase: '51', name: 'Mathematics' },
   { keys: ['astronomy', 'astrophysics', 'space'], udc: '52', ddc: '520', ddcBase: '52', name: 'Astronomy' },
   { keys: ['quantum physics', 'quantum mechanics'], udc: '530.145', ddc: '530.12', ddcBase: '53012', name: 'Quantum Physics' },
@@ -144,6 +144,7 @@ const SUBJECT_SCHEDULE = [
   { keys: ['forestry', 'forests', 'silviculture'], udc: '630', ddc: '634.9', ddcBase: '6349', name: 'Forestry' },
   { keys: ['horticulture', 'gardening'], udc: '635', ddc: '635', ddcBase: '635', name: 'Horticulture' },
   { keys: ['animal husbandry', 'livestock', 'dairy', 'veterinary'], udc: '636', ddc: '636', ddcBase: '636', name: 'Animal Husbandry' },
+  { keys: ['fisheries', 'fishery', 'fishing', 'aquaculture'], udc: '639.2', ddc: '639.2', ddcBase: '6392', name: 'Fisheries & Aquaculture' },
   { keys: ['agriculture', 'farming', 'agronomy', 'crops'], udc: '63', ddc: '630', ddcBase: '63', name: 'Agriculture' },
   { keys: ['accounting', 'auditing'], udc: '657', ddc: '657', ddcBase: '657', name: 'Accounting' },
   { keys: ['marketing', 'advertising'], udc: '658.8', ddc: '658.8', ddcBase: '6588', name: 'Marketing' },
@@ -167,10 +168,9 @@ const SUBJECT_SCHEDULE = [
   { keys: ['history', 'civilization'], udc: '93/94', ddc: '900', ddcBase: '90', name: 'History' }
 ];
 
-// 4. All UDC Common Auxiliary Signs Ordered by Official UDC Citation Order:
-// Base -> Special Auxiliaries (.00 / -0) -> Place (...) -> Time "..." -> Form (0...) -> Language =...
+// 4. All UDC Common Auxiliary Signs Ordered by Official UDC Citation Order
 const FACET_RULES = [
-  // Point of View / Properties (.00... / -02...)
+  // Point of View / Properties (.00...)
   { order: 1, pattern: /\b(theory of|philosophy of|principles of)\b/i, udcAdd: '.001', ddcSub: '01', label: 'Point of View (.001) / DDC -01' },
   { order: 1, pattern: /\b(research|methodology)\b/i, udcAdd: '.001.5', ddcSub: '072', label: 'Point of View (.001.5) / DDC -072' },
 
@@ -198,7 +198,14 @@ const FACET_RULES = [
   { order: 3, pattern: /\b(australia|australian)\b/i, udcAdd: '(94)', ddcSub: '0994', histDdc: '994', label: 'Place (94) Australia / DDC -0994' },
   { order: 3, pattern: /\b(germany|german)\b/i, udcAdd: '(430)', ddcSub: '0943', histDdc: '943', label: 'Place (430) Germany / DDC -0943' },
   { order: 3, pattern: /\b(france|french)\b/i, udcAdd: '(44)', ddcSub: '0944', histDdc: '944', label: 'Place (44) France / DDC -0944' },
+  { order: 3, pattern: /\b(norway|norwegian)\b/i, udcAdd: '(481)', ddcSub: '09481', histDdc: '948.1', label: 'Place (481) Norway / DDC -09481' },
+  { order: 3, pattern: /\b(sweden|swedish)\b/i, udcAdd: '(485)', ddcSub: '09485', histDdc: '948.5', label: 'Place (485) Sweden / DDC -09485' },
+  { order: 3, pattern: /\b(denmark|danish)\b/i, udcAdd: '(489)', ddcSub: '09489', histDdc: '948.9', label: 'Place (489) Denmark / DDC -09489' },
+  { order: 3, pattern: /\b(italy|italian)\b/i, udcAdd: '(450)', ddcSub: '0945', histDdc: '945', label: 'Place (450) Italy / DDC -0945' },
+  { order: 3, pattern: /\b(spain|spanish)\b/i, udcAdd: '(460)', ddcSub: '0946', histDdc: '946', label: 'Place (460) Spain / DDC -0946' },
   { order: 3, pattern: /\b(russia|russian)\b/i, udcAdd: '(470)', ddcSub: '0947', histDdc: '947', label: 'Place (470) Russia / DDC -0947' },
+  { order: 3, pattern: /\b(brazil|brazilian)\b/i, udcAdd: '(81)', ddcSub: '0981', histDdc: '981', label: 'Place (81) Brazil / DDC -0981' },
+  { order: 3, pattern: /\b(south africa)\b/i, udcAdd: '(680)', ddcSub: '0968', histDdc: '968', label: 'Place (680) South Africa / DDC -0968' },
   { order: 3, pattern: /\b(africa|african)\b/i, udcAdd: '(6)', ddcSub: '096', histDdc: '960', label: 'Place (6) Africa / DDC -096' },
   { order: 3, pattern: /\b(europe|european)\b/i, udcAdd: '(4)', ddcSub: '094', histDdc: '940', label: 'Place (4) Europe / DDC -094' },
   { order: 3, pattern: /\b(asia|asian)\b/i, udcAdd: '(5)', ddcSub: '095', histDdc: '950', label: 'Place (5) Asia / DDC -095' },
@@ -218,7 +225,7 @@ const FACET_RULES = [
   { order: 6, pattern: /\b(in french|french language)\b/i, udcAdd: '=133.1', ddcSub: '', label: 'Language (=133.1 French)' }
 ];
 
-// 5. Complete Century Parser (1st to 21st Century - Official UDC "..." & DDC Table 1)
+// 5. Complete Century Parser (1st to 21st Century)
 function parseCenturyFacet(query) {
   const match = query.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+century\b/i);
   if (!match) return null;
@@ -244,10 +251,9 @@ function parseCenturyFacet(query) {
   };
 }
 
-// 6. Special UDC Signs: Asterisk (*) for ISO/Standards & Alphabetical (A/Z)
+// 6. Special UDC Signs: Asterisk (*) for ISO/Standards
 function parseSpecialNotations(query) {
   const extras = [];
-  // Asterisk (*) for ISO / Standards (e.g., "ISO 2709" -> *ISO2709)
   const isoMatch = query.match(/\b(iso|ansi|bs|is)\s*[-:]?\s*(\d{3,6})\b/i);
   if (isoMatch) {
     const code = `${isoMatch[1].toUpperCase()}${isoMatch[2]}`;
@@ -310,7 +316,6 @@ function synthesizeLocalSchedule(query) {
   const specialNotations = parseSpecialNotations(query);
   appliedFacets.push(...specialNotations);
 
-  // Enforce Official UDC Citation Order: .00/-0 -> (...) -> "..." -> (0...) -> =... -> *...
   appliedFacets.sort((a, b) => a.order - b.order);
 
   if (matchedDisciplines.length > 0) {
@@ -322,14 +327,12 @@ function synthesizeLocalSchedule(query) {
     let ddcBuilt = primary.ddc;
     const steps = [`Base: ${primary.name} (${primary.udc} / ${primary.ddc})`];
 
-    // UDC Connecting Signs: + (Addition), / (Stroke Extension), : (Relation), :: (Double Colon), [...] (Subgrouping)
     if (secondary) {
       const isDoubleColon = /\b(role of|application of|impact of|use of|in)\b/i.test(q) && !/\b(and|&)\b/i.test(q);
       const isPlus = /\b(and|&)\b/i.test(q);
       const connector = isPlus ? '+' : (isDoubleColon ? '::' : ':');
       udcBuilt = `${primary.udc}${connector}${secondary.udc}`;
 
-      // Apply Square Brackets [...] when combining compound subjects with a Place/Time auxiliary
       if (appliedFacets.length > 0) {
         udcBuilt = `[${udcBuilt}]`;
       }
@@ -402,12 +405,14 @@ async function fetchOpenLibraryFast(query) {
         if (doc.ddc && doc.ddc.length > 0) {
           const rawDdc = doc.ddc[0].replace(/[^0-9.]/g, '');
           if (rawDdc) {
-            let udcApprox = rawDdc;
-            if (rawDdc.startsWith('301')) udcApprox = rawDdc.replace(/^301/, '316');
-            else if (rawDdc.startsWith('020')) udcApprox = rawDdc.replace(/^020/, '02');
-            else if (rawDdc.startsWith('634.9')) udcApprox = rawDdc.replace(/^634\.9/, '630');
+            // Clean DDC geographic subdivision (-09...) before converting to UDC base
+            let udcClean = rawDdc.replace(/0?9\d+$/, '');
+            if (udcClean.startsWith('301')) udcClean = udcClean.replace(/^301/, '316');
+            else if (udcClean.startsWith('020')) udcClean = udcClean.replace(/^020/, '02');
+            else if (udcClean.startsWith('634.9')) udcClean = udcClean.replace(/^634\.9/, '630');
+
             return {
-              udc: udcApprox,
+              udc: udcClean,
               ddc: rawDdc,
               explanation: `Matched from World Library Catalog for "${doc.title || query}".`,
               source: '📚 Library Catalog Grounded'
@@ -462,7 +467,7 @@ function sendCompressed(req, res, statusCode, contentType, payload) {
   }
 }
 
-// 9. Professional Library Cataloger UI (All UDC Signs Displayed)
+// 9. Professional Library Cataloger UI
 const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -522,7 +527,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
 
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Enter title (e.g., Physics and Chemistry in 19th century, History of India in 20th century)..." />
+      <input type="text" id="subjectInput" placeholder="Enter title (e.g., Fisheries in Norway, History of India in 20th century)..." />
       <button id="classifyBtn">Search</button>
     </div>
 
@@ -593,7 +598,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       const query = document.getElementById('subjectInput').value.trim();
       if (!query) return;
 
-      const localKey = 'udc_v8_' + query.toLowerCase();
+      const localKey = 'udc_v9_' + query.toLowerCase();
       const saved = localStorage.getItem(localKey);
       if (saved) {
         showResult(JSON.parse(saved));
