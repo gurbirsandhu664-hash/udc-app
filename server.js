@@ -65,7 +65,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       <button class="tab" data-mode="ddc">DDC Only</button>
     </div>
     <div class="search-box">
-      <input type="text" id="subjectInput" placeholder="Ask anything or enter subject (e.g., Quantum Physics, Heart Surgery)..." />
+      <input type="text" id="subjectInput" placeholder="Ask anything or enter subject (e.g., Sociology, Quantum Physics)..." />
       <button id="classifyBtn">Search</button>
     </div>
     <div class="result-card" id="resultCard">
@@ -189,7 +189,8 @@ const server = http.createServer(async (req, res) => {
 Verify the classification numbers using Google Search. Do not guess or invent notation.
 Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation" (1-2 clear sentences explaining the subject hierarchy).`;
 
-        const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        // Updated to models/gemini-3.8-flash per API error notice
+        const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -202,9 +203,12 @@ Respond strictly in valid JSON format with keys: "udc", "ddc", and "explanation"
         const data = await apiRes.json();
         if (data.error) throw new Error(data.error.message);
 
-        const rawText = data.candidates[0].content.parts[0].text;
-        const cleanJson = rawText.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(cleanJson);
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        const rawText = parts.map(p => p.text || '').join('');
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Invalid JSON returned by model');
+        
+        const parsed = JSON.parse(jsonMatch[0]);
 
         const finalResult = {
           udc: parsed.udc || 'Verify manually',
