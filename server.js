@@ -2,17 +2,25 @@ import express from 'express';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables safely
+// Load environment variables
 dotenv.config();
 
+// ES module vich __dirname set karan layi
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-// Render assigns a dynamic PORT, default to 3000 for local testing
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// FIX: Tera frontend (index.html) serve karan layi
+app.use(express.static(__dirname));
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -21,7 +29,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * Powerful rule-based AI function for UDC/DDC synthesis
  */
 async function classifyLibraryTitle(title, description) {
-    // Using a robust reasoning model 
     const model = genAI.getGenerativeModel({
         model: "gemini-1.5-pro", 
         systemInstruction: `You are an expert Library Classifier AI processing requests for the LSP5003 Knowledge Organisation syllabus. Your task is to generate highly accurate UDC and DDC classifications, combining principles from authoritative manuals.
@@ -51,7 +58,7 @@ async function classifyLibraryTitle(title, description) {
         const result = await model.generateContent(prompt);
         let textResponse = result.response.text();
         
-        // Strip markdown formatting completely to prevent JSON parse crashes
+        // Strip markdown formatting completely
         textResponse = textResponse.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
         
         return JSON.parse(textResponse);
@@ -77,11 +84,6 @@ app.post('/api/classify', async (req, res) => {
         console.error("Server API Error:", error);
         res.status(500).json({ error: error.message });
     }
-});
-
-// Health check route for Render
-app.get('/', (req, res) => {
-    res.send("UDC/DDC Classification API Engine is running.");
 });
 
 // BIND TO 0.0.0.0 FOR RENDER TO PREVENT DEPLOYMENT FAILURE
