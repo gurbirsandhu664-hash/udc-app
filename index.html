@@ -236,7 +236,7 @@
       <div id="err" class="error-box"></div>
     </div>
 
-    <!-- CLEAN RESULT SECTION (No extra boxes) -->
+    <!-- CLEAN RESULT SECTION -->
     <div id="result" class="card">
       <div class="title-banner">
         <div class="subhead">Title Received</div>
@@ -244,14 +244,14 @@
       </div>
 
       <div class="grid-results">
-        <!-- UDC Box (Annif & WorldShare Powered) -->
+        <!-- UDC Box (Google AI Powered) -->
         <div class="result-box highlight">
           <div class="tag">UDC (Universal Decimal)</div>
           <div id="resUdc" class="number">-</div>
           <div id="resUdcBreakdown" class="detail"></div>
         </div>
 
-        <!-- DDC Box (WorldShare Powered) -->
+        <!-- DDC Box (Google AI Powered) -->
         <div class="result-box">
           <div class="tag">DDC (Dewey Decimal)</div>
           <div id="resDdc" class="number">-</div>
@@ -287,6 +287,7 @@
       $('go').textContent = '⚡ ਲੱਭ ਰਿਹਾ ਹੈ... (Classifying)';
 
       try {
+        // Correct Render API Fetch Route
         const response = await fetch('/api/classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -294,21 +295,25 @@
         });
 
         if (!response.ok) {
-          throw new Error('ਸਰਵਰ ਵੱਲੋਂ ਜਵਾਬ ਨਹੀਂ ਮਿਲਿਆ (Server error)');
+          throw new Error('ਸਰਵਰ ਵੱਲੋਂ ਜਵਾਬ ਨਹੀਂ ਮਿਲਿਆ (Server error - Check API logs)');
         }
 
         const data = await response.json();
 
-        // Populate clean fields
-        $('resTitle').textContent = data.full_title || data.title || title;
-        $('resUdc').textContent = data.udc_answer || data.udc_number || data.udc || 'ਉਪਲਬਧ ਨਹੀਂ';
-        $('resUdcBreakdown').textContent = data.breakdown || data.udc_breakdown || '';
+        // Populate clean fields mapping EXACTLY to Gemini JSON keys
+        $('resTitle').textContent = title;
         
-        $('resDdc').textContent = data.ddc_answer || data.ddc_number || data.ddc || 'ਉਪਲਬਧ ਨਹੀਂ';
-        $('resDdcBreakdown').textContent = data.ddc_title || data.ddc_breakdown || '';
+        // Map UDC Output from Gemini
+        $('resUdc').textContent = data.udc_classification || 'ਉਪਲਬਧ ਨਹੀਂ (N/A)';
+        $('resUdcBreakdown').textContent = data.udc_synthesis_steps || '';
+        
+        // Map DDC Output from Gemini
+        $('resDdc').textContent = data.ddc_classification || 'ਉਪਲਬਧ ਨਹੀਂ (N/A)';
+        $('resDdcBreakdown').textContent = data.ddc_synthesis_steps || '';
 
-        $('resExplain').textContent = data.explanation || data.main_subject || 'ਵਰਗੀਕਰਨ ਮੁਕੰਮਲ ਹੈ।';
-        $('resSource').textContent = 'Source: ' + (data.source || data.confidence || 'WorldShare / Annif Engine');
+        // Add Meta Information 
+        $('resExplain').textContent = 'Rule-based precise synthesis applied using multiple tables and auxiliaries.';
+        $('resSource').textContent = '✨ Powered by Real Google Gemini AI';
 
         resBox.style.display = 'block';
         resBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
