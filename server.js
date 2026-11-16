@@ -8,7 +8,6 @@ import { fileURLToPath } from 'url';
 // Load environment variables
 dotenv.config();
 
-// ES module vich __dirname set karan layi
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -18,8 +17,6 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// FIX: Tera frontend (index.html) serve karan layi
 app.use(express.static(__dirname));
 
 // Initialize Gemini API
@@ -30,7 +27,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function classifyLibraryTitle(title, description) {
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro", 
+        model: "gemini-1.5-flash", 
+        generationConfig: {
+            responseMimeType: "application/json", 
+        },
         systemInstruction: `You are an expert Library Classifier AI processing requests for the LSP5003 Knowledge Organisation syllabus. Your task is to generate highly accurate UDC and DDC classifications, combining principles from authoritative manuals.
 
         ### Universal Decimal Classification (UDC)
@@ -42,8 +42,7 @@ async function classifyLibraryTitle(title, description) {
         - Section D: Construct class numbers demanding multiple synthesis by executing repeated use of "add to..." instructions to a given base number from more than one place (using the schedules and Tables 1-6).
         - Resolve multi-faceted overlapping aspects by strictly observing the Tables of Precedence. 
 
-        OUTPUT FORMAT:
-        Return ONLY a valid JSON object with no markdown formatting (do not include \`\`\`json or \`\`\`):
+        OUTPUT FORMAT MUST BE A VALID JSON OBJECT:
         {
           "udc_classification": "[Final UDC Number]",
           "udc_synthesis_steps": "[Step-by-step mapping of Main Class + Auxiliaries]",
@@ -52,41 +51,38 @@ async function classifyLibraryTitle(title, description) {
         }`
     });
 
-    const prompt = `Classify this document exactly strictly following the rules:\nTitle: ${title}\nDescription: ${description}`;
+    const prompt = `Classify this document exactly strictly following the rules:\nTitle: ${title}\nDescription: ${description || "No description provided"}`;
 
     try {
         const result = await model.generateContent(prompt);
-        let textResponse = result.response.text();
-        
-        // Strip markdown formatting completely
-        textResponse = textResponse.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-        
-        return JSON.parse(textResponse);
+        return JSON.parse(result.response.text());
     } catch (error) {
         console.error("AI Engine/Parsing Error:", error);
-        throw new Error("Failed to parse classification data from AI.");
+        throw new Error("Google AI da jawaab nahi aaya. API Key check karo.");
     }
 }
-    } // Line 69 (function da end)
-    
-    // API Key Health Check Route (Eh navan add kitta)
-    app.get('/api/health', (req, res) => {
-        if (process.env.GEMINI_API_KEY) {
-            res.status(200).json({ status: "Success", message: "GEMINI_API_KEY is SET properly." });
-        } else {
-            res.status(500).json({ status: "Error", message: "GEMINI_API_KEY is MISSING!" });
-        }
-    });
 
-    // API Route for Frontend (Eh teri purani Line 71)
-    app.post('/api/classify', async (req, res) => {
-        try {
-            const { title, description } = req.body;
-            // ... (tera baaki code)
+// ----------------------------------------------------
+// 1. API KEY HEALTH CHECK ROUTE
+// ----------------------------------------------------
+app.get('/api/health', (req, res) => {
+    if (process.env.GEMINI_API_KEY) {
+        res.status(200).json({ status: "Success", message: "GEMINI_API_KEY is SET properly on Render." });
+    } else {
+        res.status(500).json({ status: "Error", message: "GEMINI_API_KEY is MISSING!" });
+    }
+});
 
-// API Route for Frontend
+
+// ----------------------------------------------------
+// 2. MAIN CLASSIFICATION ROUTE FOR FRONTEND
+// ----------------------------------------------------
 app.post('/api/classify', async (req, res) => {
     try {
+        if (!process.env.GEMINI_API_KEY) {
+             return res.status(500).json({ error: "Server Configuration Error: GEMINI_API_KEY is missing." });
+        }
+
         const { title, description } = req.body;
         
         if (!title) {
