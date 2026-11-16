@@ -20,9 +20,10 @@ app.use(express.static(__dirname));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function classifyLibraryTitle(title, description) {
-    // FIX: Model da naam 'gemini-1.5-flash' ton badal ke 'gemini-2.5-flash' (ya gemini-1.5-pro) kar ditta hai
+    // FIX: Model updated to gemini-3.8-flash as per Google API error log. 
+    // Eh model limit jaldi khatam nahi karda te sab ton fast hai.
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash", 
+        model: "gemini-3.8-flash", 
         generationConfig: {
             responseMimeType: "application/json", 
         },
