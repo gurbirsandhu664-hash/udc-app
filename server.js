@@ -20,10 +20,13 @@ app.use(express.static(__dirname));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function classifyLibraryTitle(title, description) {
+    // FIX: Model da naam 'gemini-1.5-flash' ton badal ke 'gemini-2.5-flash' (ya gemini-1.5-pro) kar ditta hai
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash", 
-        // Strict JSON mode hata ditta hai taki API crash na hove
-        systemInstruction: `You are an expert Library Classifier AI. Generate highly accurate UDC and DDC classifications.
+        model: "gemini-2.5-flash", 
+        generationConfig: {
+            responseMimeType: "application/json", 
+        },
+        systemInstruction: `You are an expert Library Classifier AI processing requests for the LSP5003 Knowledge Organisation syllabus. Generate highly accurate UDC and DDC classifications.
         OUTPUT FORMAT MUST BE EXACTLY THIS JSON AND NOTHING ELSE:
         {
           "udc_classification": "[Final UDC Number]",
@@ -33,13 +36,12 @@ async function classifyLibraryTitle(title, description) {
         }`
     });
 
-    const prompt = `Classify this document exactly following the rules:\nTitle: ${title}\nDescription: ${description || "None"}\n\nRETURN ONLY VALID JSON.`;
+    const prompt = `Classify this document exactly strictly following the rules:\nTitle: ${title}\nDescription: ${description || "None"}\n\nRETURN ONLY VALID JSON.`;
 
     try {
         const result = await model.generateContent(prompt);
         let textResponse = result.response.text();
         
-        // Super robust JSON extractor
         const startIndex = textResponse.indexOf('{');
         const endIndex = textResponse.lastIndexOf('}');
         
@@ -50,7 +52,6 @@ async function classifyLibraryTitle(title, description) {
         return JSON.parse(textResponse);
     } catch (error) {
         console.error("AI Error:", error);
-        // CRASH HON DI JAGAH UI VICH ERROR BHEJO
         return {
             "udc_classification": "Error",
             "udc_synthesis_steps": "Google API Issue: " + error.message,
