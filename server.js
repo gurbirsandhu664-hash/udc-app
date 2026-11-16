@@ -67,6 +67,22 @@ async function classifyLibraryTitle(title, description) {
         throw new Error("Failed to parse classification data from AI.");
     }
 }
+    } // Line 69 (function da end)
+    
+    // API Key Health Check Route (Eh navan add kitta)
+    app.get('/api/health', (req, res) => {
+        if (process.env.GEMINI_API_KEY) {
+            res.status(200).json({ status: "Success", message: "GEMINI_API_KEY is SET properly." });
+        } else {
+            res.status(500).json({ status: "Error", message: "GEMINI_API_KEY is MISSING!" });
+        }
+    });
+
+    // API Route for Frontend (Eh teri purani Line 71)
+    app.post('/api/classify', async (req, res) => {
+        try {
+            const { title, description } = req.body;
+            // ... (tera baaki code)
 
 // API Route for Frontend
 app.post('/api/classify', async (req, res) => {
