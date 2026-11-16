@@ -20,10 +20,9 @@ app.use(express.static(__dirname));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function classifyLibraryTitle(title, description) {
-    // FIX: Model updated to gemini-3.8-flash as per Google API error log. 
-    // Eh model limit jaldi khatam nahi karda te sab ton fast hai.
+    // FIX: Model updated to 'gemini-1.5-pro' for maximum stability and uptime
     const model = genAI.getGenerativeModel({
-        model: "gemini-3.8-flash", 
+        model: "gemini-1.5-pro", 
         generationConfig: {
             responseMimeType: "application/json", 
         },
@@ -57,7 +56,7 @@ async function classifyLibraryTitle(title, description) {
             "udc_classification": "Error",
             "udc_synthesis_steps": "Google API Issue: " + error.message,
             "ddc_classification": "Error",
-            "ddc_synthesis_steps": "Check your Google API Key limits or billing."
+            "ddc_synthesis_steps": "Please try again. Server was busy."
         };
     }
 }
